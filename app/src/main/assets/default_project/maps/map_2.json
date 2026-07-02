@@ -304,5 +304,6 @@
     ],
     "spawns": [],
     "bgm": "village",
+    "weather": "NONE",
     "parallaxLayers": []
 }

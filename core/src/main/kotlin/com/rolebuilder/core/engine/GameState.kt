@@ -2,6 +2,7 @@ package com.rolebuilder.core.engine
 
 import com.rolebuilder.core.model.Database
 import com.rolebuilder.core.model.Project
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.Direction
 import kotlinx.serialization.Serializable
 
@@ -37,6 +38,13 @@ data class GameState(
     var playTimeSeconds: Float = 0f,
     /** Momento del último guardado (epoch ms); 0 = nunca guardada. */
     var savedAtEpochMs: Long = 0,
+    /** Clima activo (el mapa lo impone al entrar; los comandos pueden cambiarlo). */
+    var weather: Weather = Weather.NONE,
+    /** Tinte de pantalla DESTINO, RGBA en 0..1 (a = 0 sin tinte). */
+    var tintR: Float = 0f,
+    var tintG: Float = 0f,
+    var tintB: Float = 0f,
+    var tintA: Float = 0f,
 ) {
     fun switchOn(id: Int): Boolean = switches[id] == true
 

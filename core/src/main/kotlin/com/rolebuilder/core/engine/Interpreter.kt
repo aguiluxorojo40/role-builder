@@ -194,6 +194,26 @@ class Interpreter(private val engine: RpgEngine) {
                 StepResult.CONTINUE
             }
 
+            is EventCommand.TintScreen -> {
+                engine.startTint(cmd.r, cmd.g, cmd.b, cmd.a, cmd.seconds)
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.FlashScreen -> {
+                engine.startFlash(cmd.r, cmd.g, cmd.b, cmd.seconds)
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.SetWeather -> {
+                state.weather = cmd.weather
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.ShakeScreen -> {
+                engine.startShake(cmd.seconds)
+                StepResult.CONTINUE
+            }
+
             EventCommand.EraseEvent -> {
                 source?.erased = true
                 StepResult.CONTINUE

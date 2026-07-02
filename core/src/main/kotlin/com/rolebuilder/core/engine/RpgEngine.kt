@@ -86,6 +86,29 @@ class RpgEngine(
     /** Aviso puntual para la UI (p. ej. "¡Nivel 5!"); la UI lo consume poniéndolo a null. */
     var notice: String? = null
 
+    // ---- efectos de pantalla (el renderer los lee cada frame) ----------------
+
+    /**
+     * Tinte RGBA del frame actual, interpolado linealmente hacia el destino
+     * persistente (state.tintR..tintA). Tamaño 4. Al cargar partida arranca
+     * ya en el destino, sin transición.
+     */
+    val tintCurrent: FloatArray =
+        floatArrayOf(state.tintR, state.tintG, state.tintB, state.tintA)
+    private val tintStart = FloatArray(4)
+    private var tintElapsed = 0f
+    private var tintDuration = 0f
+
+    /** Color RGB del destello actual (válido mientras [flashIntensity] > 0). */
+    val flashColor: FloatArray = floatArrayOf(1f, 1f, 1f)
+
+    /** Intensidad del destello: 1 al lanzarlo, decae linealmente a 0 en tick. */
+    var flashIntensity: Float = 0f
+    private var flashDuration = 0.3f
+
+    /** Segundos restantes de temblor de cámara (el renderer decide la amplitud). */
+    var shakeTimeLeft: Float = 0f
+
     // ---- input (lo escribe la capa de UI) -----------------------------------
 
     /** Ejes del joystick virtual, en [-1, 1]. */
@@ -128,6 +151,8 @@ class RpgEngine(
             ?: Tileset(id = 0, name = "?", image = "")
 
         state.mapId = map.id
+        // El mapa impone su presentación; los comandos pueden sobreescribirla después.
+        state.weather = map.weather
         player.x = x
         player.y = y
         player.dir = dir
@@ -172,6 +197,10 @@ class RpgEngine(
     fun tick(dt: Float) {
         if (gameOver || paused) return
         state.playTimeSeconds += dt
+
+        // Los efectos de pantalla avanzan SIEMPRE, incluso con la UI bloqueada
+        // (un evento puede hacer FlashScreen + ShowText y verse el destello).
+        updateScreenEffects(dt)
 
         refreshEventPages()
         if (!uiBlocked) {
@@ -929,6 +958,68 @@ class RpgEngine(
         } else {
             events.firstOrNull { it.event.id == target }?.routeActive == true
         }
+
+    // =========================================================================
+    // Efectos de pantalla: tinte, destello y temblor
+    // =========================================================================
+
+    /**
+     * Inicia una transición gradual del tinte de pantalla desde el tinte
+     * actual hasta el RGBA dado (0..1) en [seconds]. El destino se persiste
+     * en el estado; con seconds <= 0 el cambio es inmediato.
+     */
+    fun startTint(r: Float, g: Float, b: Float, a: Float, seconds: Float) {
+        state.tintR = r
+        state.tintG = g
+        state.tintB = b
+        state.tintA = a
+        if (seconds <= 0f) {
+            snapTintToTarget()
+            return
+        }
+        tintCurrent.copyInto(tintStart)
+        tintElapsed = 0f
+        tintDuration = seconds
+    }
+
+    /** Lanza un destello del color RGB dado que decae a nada en [seconds]. */
+    fun startFlash(r: Float, g: Float, b: Float, seconds: Float) {
+        flashColor[0] = r
+        flashColor[1] = g
+        flashColor[2] = b
+        flashDuration = maxOf(0.01f, seconds)
+        flashIntensity = 1f
+    }
+
+    /** Inicia un temblor de cámara de [seconds] segundos. */
+    fun startShake(seconds: Float) {
+        shakeTimeLeft = maxOf(shakeTimeLeft, seconds)
+    }
+
+    private fun snapTintToTarget() {
+        tintCurrent[0] = state.tintR
+        tintCurrent[1] = state.tintG
+        tintCurrent[2] = state.tintB
+        tintCurrent[3] = state.tintA
+        tintDuration = 0f
+    }
+
+    private fun updateScreenEffects(dt: Float) {
+        if (tintDuration > 0f) {
+            tintElapsed += dt
+            if (tintElapsed >= tintDuration) {
+                snapTintToTarget()
+            } else {
+                val t = tintElapsed / tintDuration
+                tintCurrent[0] = tintStart[0] + (state.tintR - tintStart[0]) * t
+                tintCurrent[1] = tintStart[1] + (state.tintG - tintStart[1]) * t
+                tintCurrent[2] = tintStart[2] + (state.tintB - tintStart[2]) * t
+                tintCurrent[3] = tintStart[3] + (state.tintA - tintStart[3]) * t
+            }
+        }
+        flashIntensity = (flashIntensity - dt / flashDuration).coerceAtLeast(0f)
+        shakeTimeLeft = (shakeTimeLeft - dt).coerceAtLeast(0f)
+    }
 
     // =========================================================================
     // Mensajes y elecciones
