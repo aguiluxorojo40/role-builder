@@ -733,6 +733,45 @@
                     ]
                 }
             ]
+        },
+        {
+            "id": 3,
+            "name": "Tendero",
+            "x": 12,
+            "y": 7,
+            "pages": [
+                {
+                    "conditions": {
+                        "switchId": null,
+                        "selfSwitch": null,
+                        "variableId": null,
+                        "variableAtLeast": 0,
+                        "itemId": null
+                    },
+                    "sprite": {
+                        "image": "npc.png",
+                        "direction": "DOWN"
+                    },
+                    "trigger": "ACTION_BUTTON",
+                    "passable": false,
+                    "moveType": "FIXED",
+                    "commands": [
+                        {
+                            "type": "showText",
+                            "text": "¡Bienvenido, viajero! Echa un vistazo a mis mercancías.",
+                            "speaker": "Tendero"
+                        },
+                        {
+                            "type": "openShop",
+                            "itemIds": [
+                                3,
+                                4,
+                                1
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "spawns": [

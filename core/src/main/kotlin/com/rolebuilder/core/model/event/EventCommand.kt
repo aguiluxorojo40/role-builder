@@ -87,6 +87,21 @@ sealed class EventCommand {
     @SerialName("changeHp")
     data class ChangeHp(val delta: Int) : EventCommand()
 
+    /** Suma (o resta) oro al grupo; el total nunca baja de 0. */
+    @Serializable
+    @SerialName("changeGold")
+    data class ChangeGold(val delta: Int) : EventCommand()
+
+    /** Da experiencia al jugador (puede subir de nivel). Los deltas negativos se ignoran. */
+    @Serializable
+    @SerialName("changeExp")
+    data class ChangeExp(val delta: Int) : EventCommand()
+
+    /** Abre la tienda con estos objetos y espera a que la UI la cierre. */
+    @Serializable
+    @SerialName("openShop")
+    data class OpenShop(val itemIds: List<Int>) : EventCommand()
+
     @Serializable
     @SerialName("playSound")
     data class PlaySound(val name: String) : EventCommand()
@@ -105,12 +120,12 @@ data class Condition(
     val id: Int = 0,
     /** Clave del self-switch cuando kind == SELF_SWITCH. */
     val key: String = "A",
-    /** Umbral cuando kind == VARIABLE_AT_LEAST. */
+    /** Umbral cuando kind == VARIABLE_AT_LEAST o GOLD_AT_LEAST. */
     val value: Int = 0,
     /** Valor esperado para SWITCH / SELF_SWITCH / HAS_ITEM. */
     val expected: Boolean = true,
 ) {
-    enum class Kind { SWITCH, SELF_SWITCH, VARIABLE_AT_LEAST, HAS_ITEM }
+    enum class Kind { SWITCH, SELF_SWITCH, VARIABLE_AT_LEAST, HAS_ITEM, GOLD_AT_LEAST }
 }
 
 enum class MoveStep {

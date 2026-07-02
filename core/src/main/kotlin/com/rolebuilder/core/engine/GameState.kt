@@ -20,6 +20,16 @@ data class GameState(
     val items: MutableMap<Int, Int> = mutableMapOf(),
     var hp: Int = 1,
     var maxHp: Int = 1,
+    /** Oro del grupo; nunca baja de 0. */
+    var gold: Int = 0,
+    /** Nivel actual del jugador. */
+    var level: Int = 1,
+    /** Progreso de experiencia dentro del nivel actual. */
+    var exp: Int = 0,
+    /** Item equipado en la ranura de arma, o null. Está fuera del inventario. */
+    var weaponItemId: Int? = null,
+    /** Item equipado en la ranura de armadura, o null. Está fuera del inventario. */
+    var armorItemId: Int? = null,
     var mapId: Int = 1,
     var x: Float = 0f,
     var y: Float = 0f,

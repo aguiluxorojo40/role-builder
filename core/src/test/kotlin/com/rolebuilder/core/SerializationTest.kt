@@ -1,5 +1,6 @@
 package com.rolebuilder.core
 
+import com.rolebuilder.core.engine.GameState
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.Database
 import com.rolebuilder.core.model.DefaultProjectFactory
@@ -11,6 +12,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SerializationTest {
@@ -50,6 +52,9 @@ class SerializationTest {
             ),
             EventCommand.TransferPlayer(2, 3, 4),
             EventCommand.Wait(1.5f),
+            EventCommand.ChangeGold(25),
+            EventCommand.ChangeExp(8),
+            EventCommand.OpenShop(itemIds = listOf(3, 4, 1)),
             EventCommand.EraseEvent,
         )
         val encoded = json.encodeToString(
@@ -75,10 +80,64 @@ class SerializationTest {
             val loaded = ProjectIo.loadFull(dir)
             assertEquals("Disco", loaded.project.name)
             assertEquals(1, loaded.maps.size)
-            assertEquals(2, loaded.maps.getValue(1).events.size)
+            assertEquals(3, loaded.maps.getValue(1).events.size)
         } finally {
             dir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun `game state round trip with progression fields`() {
+        val state = GameState(
+            hp = 12,
+            maxHp = 24,
+            gold = 55,
+            level = 3,
+            exp = 6,
+            weaponItemId = 3,
+            armorItemId = 4,
+        )
+        val restored = json.decodeFromString(GameState.serializer(), json.encodeToString(GameState.serializer(), state))
+        assertEquals(state, restored)
+    }
+
+    @Test
+    fun `legacy save without progression fields loads with defaults`() {
+        // Partida guardada antes de la Fase 5: sin gold/level/exp/equipo.
+        val legacy = """
+            {"switches":{},"variables":{},"selfSwitches":{},"items":{"1":2},
+             "hp":12,"maxHp":20,"mapId":1,"x":5.5,"y":8.5,"dir":"DOWN","playTimeSeconds":3.0}
+        """.trimIndent()
+        val state = json.decodeFromString(GameState.serializer(), legacy)
+        assertEquals(0, state.gold)
+        assertEquals(1, state.level)
+        assertEquals(0, state.exp)
+        assertNull(state.weaponItemId)
+        assertNull(state.armorItemId)
+        assertEquals(12, state.hp)
+        assertEquals(2, state.itemCount(1))
+    }
+
+    @Test
+    fun `legacy database without progression fields loads with defaults`() {
+        // Base de datos guardada antes de la Fase 5: sin recompensas ni equipo.
+        val legacy = """{"actors":[{"id":1}],"enemies":[{"id":1}],"items":[{"id":1}]}"""
+        val db = json.decodeFromString(Database.serializer(), legacy)
+        val actor = db.actor(1)!!
+        assertEquals(4, actor.hpPerLevel)
+        assertEquals(1, actor.attackPerLevel)
+        assertEquals(1, actor.defensePerLevel)
+        assertEquals(8, actor.expBase)
+        assertEquals(20, actor.maxLevel)
+        val enemy = db.enemy(1)!!
+        assertEquals(3, enemy.expReward)
+        assertEquals(2, enemy.goldReward)
+        val item = db.item(1)!!
+        assertEquals(0, item.price)
+        assertNull(item.equipSlot)
+        assertEquals(0, item.attackBonus)
+        assertEquals(0, item.defenseBonus)
+        assertEquals(0, item.maxHpBonus)
     }
 
     @Test

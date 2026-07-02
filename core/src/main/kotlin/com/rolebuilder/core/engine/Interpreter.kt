@@ -25,6 +25,7 @@ class Interpreter(private val engine: RpgEngine) {
     private var waitingMessage = false
     private var waitingChoice: EventCommand.ShowChoices? = null
     private var waitingMoveTarget: Int? = null
+    private var waitingShop = false
 
     val running: Boolean get() = stack.isNotEmpty()
 
@@ -34,6 +35,7 @@ class Interpreter(private val engine: RpgEngine) {
         waitingMessage = false
         waitingChoice = null
         waitingMoveTarget = null
+        waitingShop = false
         this.source = source
         sourceMapId = engine.state.mapId
         if (commands.isNotEmpty()) stack.addLast(Frame(commands))
@@ -44,12 +46,18 @@ class Interpreter(private val engine: RpgEngine) {
         waitingMessage = false
         waitingChoice = null
         waitingMoveTarget = null
+        waitingShop = false
         source = null
     }
 
     /** Llamado por el motor cuando el jugador cierra la caja de mensaje. */
     fun onMessageDismissed() {
         waitingMessage = false
+    }
+
+    /** Llamado por el motor cuando la UI cierra la tienda. */
+    fun onShopClosed() {
+        waitingShop = false
     }
 
     /** Llamado por el motor cuando el jugador elige una opción. */
@@ -67,7 +75,7 @@ class Interpreter(private val engine: RpgEngine) {
             waitTimer -= dt
             if (waitTimer > 0f) return
         }
-        if (waitingMessage || waitingChoice != null) return
+        if (waitingMessage || waitingChoice != null || waitingShop) return
         waitingMoveTarget?.let { target ->
             if (engine.isRouteActive(target)) return
             waitingMoveTarget = null
@@ -164,6 +172,22 @@ class Interpreter(private val engine: RpgEngine) {
                 StepResult.CONTINUE
             }
 
+            is EventCommand.ChangeGold -> {
+                engine.gainGold(cmd.delta)
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.ChangeExp -> {
+                engine.gainExp(cmd.delta)
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.OpenShop -> {
+                if (!engine.tryOpenShop(cmd.itemIds, this)) return StepResult.RETRY_LATER
+                waitingShop = true
+                StepResult.BLOCKED_AFTER
+            }
+
             is EventCommand.PlaySound -> {
                 engine.soundQueue.add(cmd.name)
                 StepResult.CONTINUE
@@ -184,4 +208,5 @@ fun RpgEngine.evaluate(condition: Condition): Boolean = when (condition.kind) {
         state.selfSwitch(state.mapId, condition.id, condition.key) == condition.expected
     Condition.Kind.VARIABLE_AT_LEAST -> state.variable(condition.id) >= condition.value
     Condition.Kind.HAS_ITEM -> (state.itemCount(condition.id) > 0) == condition.expected
+    Condition.Kind.GOLD_AT_LEAST -> state.gold >= condition.value
 }
