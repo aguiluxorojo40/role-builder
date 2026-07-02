@@ -56,7 +56,7 @@ object DefaultProjectFactory {
 
     fun defaultDatabase(): Database = Database(
         actors = listOf(
-            Actor(id = 1, name = "Héroe", sprite = "hero.png", maxHp = 20, attack = 5, defense = 1, moveSpeed = 4.5f, attackSkillId = 1),
+            Actor(id = 1, name = "Héroe", sprite = "hero.png", maxHp = 20, attack = 5, defense = 1, moveSpeed = 4.5f, attackSkillId = 1, secondarySkillId = 2),
         ),
         enemies = listOf(
             Enemy(id = 1, name = "Slime", sprite = "slime.png", maxHp = 6, attack = 2, defense = 0, moveSpeed = 1.8f, behavior = EnemyBehavior.CHASE, sightRange = 5, dropItemId = 1, dropChance = 0.3f),

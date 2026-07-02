@@ -31,6 +31,8 @@ data class Actor(
     /** Casillas por segundo. */
     val moveSpeed: Float = 4f,
     val attackSkillId: Int = 1,
+    /** Habilidad del botón secundario (proyectil), o null si no tiene. */
+    val secondarySkillId: Int? = null,
 )
 
 @Serializable
