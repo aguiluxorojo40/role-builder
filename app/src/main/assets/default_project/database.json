@@ -1,0 +1,160 @@
+{
+    "actors": [
+        {
+            "id": 1,
+            "name": "Héroe",
+            "sprite": "hero.png",
+            "maxHp": 20,
+            "attack": 5,
+            "defense": 1,
+            "moveSpeed": 4.5,
+            "attackSkillId": 1
+        }
+    ],
+    "enemies": [
+        {
+            "id": 1,
+            "name": "Slime",
+            "sprite": "slime.png",
+            "maxHp": 6,
+            "attack": 2,
+            "defense": 0,
+            "moveSpeed": 1.8,
+            "behavior": "CHASE",
+            "sightRange": 5,
+            "touchDamage": true,
+            "dropItemId": 1,
+            "dropChance": 0.3
+        },
+        {
+            "id": 2,
+            "name": "Murciélago",
+            "sprite": "bat.png",
+            "maxHp": 4,
+            "attack": 3,
+            "defense": 0,
+            "moveSpeed": 3.0,
+            "behavior": "WANDER",
+            "sightRange": 6,
+            "touchDamage": true,
+            "dropItemId": null,
+            "dropChance": 0.3
+        }
+    ],
+    "items": [
+        {
+            "id": 1,
+            "name": "Poción",
+            "description": "Recupera 10 PV.",
+            "effect": "HEAL_HP",
+            "power": 10,
+            "consumable": true
+        },
+        {
+            "id": 2,
+            "name": "Llave",
+            "description": "Abre una puerta cerrada.",
+            "effect": "KEY",
+            "power": 0,
+            "consumable": false
+        }
+    ],
+    "skills": [
+        {
+            "id": 1,
+            "name": "Espada",
+            "kind": "MELEE",
+            "power": 0,
+            "range": 1.0,
+            "cooldownSeconds": 0.35,
+            "projectileSpeed": 8.0,
+            "knockback": 0.6
+        },
+        {
+            "id": 2,
+            "name": "Disparo",
+            "kind": "PROJECTILE",
+            "power": 2,
+            "range": 6.0,
+            "cooldownSeconds": 0.8,
+            "projectileSpeed": 9.0,
+            "knockback": 0.5
+        }
+    ],
+    "tilesets": [
+        {
+            "id": 1,
+            "name": "Campo",
+            "image": "tileset.png",
+            "tileSize": 16,
+            "columns": 8,
+            "rows": 8,
+            "passable": [
+                true,
+                true,
+                true,
+                true,
+                false,
+                false,
+                false,
+                false,
+                false,
+                true,
+                true,
+                true,
+                false,
+                true,
+                true,
+                false,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ]
+        }
+    ]
+}
