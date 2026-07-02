@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Espada pixelada -->
+    <path
+        android:fillColor="#E8E4D8"
+        android:pathData="M62,30 L70,38 L48,60 L40,52 Z" />
+    <path
+        android:fillColor="#C8B860"
+        android:pathData="M44,56 L52,64 L46,70 L38,62 Z" />
+    <path
+        android:fillColor="#8A6D3B"
+        android:pathData="M40,66 L42,68 L34,76 L32,74 Z" />
+    <!-- Casilla de mapa -->
+    <path
+        android:fillColor="#4C9F50"
+        android:pathData="M58,58 L78,58 L78,78 L58,78 Z" />
+    <path
+        android:fillColor="#66BB6A"
+        android:pathData="M60,60 L68,60 L68,68 L60,68 Z" />
+</vector>
