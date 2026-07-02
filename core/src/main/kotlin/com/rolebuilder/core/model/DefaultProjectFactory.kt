@@ -63,12 +63,14 @@ object DefaultProjectFactory {
             Actor(id = 1, name = "Héroe", sprite = "hero.png", maxHp = 20, attack = 5, defense = 1, moveSpeed = 4.5f, attackSkillId = 1, secondarySkillId = 2),
         ),
         enemies = listOf(
-            Enemy(id = 1, name = "Slime", sprite = "slime.png", maxHp = 6, attack = 2, defense = 0, moveSpeed = 1.8f, behavior = EnemyBehavior.CHASE, sightRange = 5, dropItemId = 1, dropChance = 0.3f),
-            Enemy(id = 2, name = "Murciélago", sprite = "bat.png", maxHp = 4, attack = 3, defense = 0, moveSpeed = 3f, behavior = EnemyBehavior.WANDER, sightRange = 6),
+            Enemy(id = 1, name = "Slime", sprite = "slime.png", maxHp = 6, attack = 2, defense = 0, moveSpeed = 1.8f, behavior = EnemyBehavior.CHASE, sightRange = 5, dropItemId = 1, dropChance = 0.3f, expReward = 3, goldReward = 2),
+            Enemy(id = 2, name = "Murciélago", sprite = "bat.png", maxHp = 4, attack = 3, defense = 0, moveSpeed = 3f, behavior = EnemyBehavior.WANDER, sightRange = 6, expReward = 4, goldReward = 3),
         ),
         items = listOf(
-            Item(id = 1, name = "Poción", description = "Recupera 10 PV.", effect = ItemEffect.HEAL_HP, power = 10),
+            Item(id = 1, name = "Poción", description = "Recupera 10 PV.", effect = ItemEffect.HEAL_HP, power = 10, price = 10),
             Item(id = 2, name = "Llave", description = "Abre una puerta cerrada.", effect = ItemEffect.KEY, consumable = false),
+            Item(id = 3, name = "Espada de hierro", description = "Un arma sencilla pero fiable. +2 al ataque.", consumable = false, price = 30, equipSlot = EquipSlot.WEAPON, attackBonus = 2),
+            Item(id = 4, name = "Escudo de cuero", description = "Protección ligera. +1 a la defensa.", consumable = false, price = 20, equipSlot = EquipSlot.ARMOR, defenseBonus = 1),
         ),
         skills = listOf(
             Skill(id = 1, name = "Espada", kind = SkillKind.MELEE, power = 0, range = 1f, cooldownSeconds = 0.35f, knockback = 0.6f),
@@ -169,8 +171,25 @@ object DefaultProjectFactory {
                         EventCommand.PlaySound("select"),
                         EventCommand.TransferPlayer(mapId = 2, x = 4, y = 6, direction = Direction.UP),
                     ),
-                    // Farolillo del puesto: luz cálida de muestra del estilo HD-2D.
+                    // Farolillo de la entrada: luz cálida de muestra del estilo HD-2D.
                     lightRadius = 2.5f,
+                ),
+            ),
+        )
+
+        val shopkeeper = MapEvent(
+            id = 4,
+            name = "Tendero",
+            x = 12,
+            y = 7,
+            pages = listOf(
+                EventPage(
+                    sprite = SpriteRef("npc.png", Direction.DOWN),
+                    trigger = EventTrigger.ACTION_BUTTON,
+                    commands = listOf(
+                        EventCommand.ShowText("¡Bienvenido, viajero! Echa un vistazo a mis mercancías.", speaker = "Tendero"),
+                        EventCommand.OpenShop(itemIds = listOf(3, 4, 1)),
+                    ),
                 ),
             ),
         )
@@ -180,7 +199,7 @@ object DefaultProjectFactory {
             parallaxLayers = listOf(
                 ParallaxLayer("clouds.png", factor = 0.35f, autoX = 0.25f, above = true, alpha = 0.5f),
             ),
-            events = listOf(npc, chest, door),
+            events = listOf(npc, chest, door, shopkeeper),
             spawns = listOf(
                 EnemySpawn(enemyId = 1, x = 10, y = 5),
                 EnemySpawn(enemyId = 1, x = 6, y = 3),

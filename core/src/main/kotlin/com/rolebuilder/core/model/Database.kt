@@ -33,6 +33,15 @@ data class Actor(
     val attackSkillId: Int = 1,
     /** Habilidad del botón secundario (proyectil), o null si no tiene. */
     val secondarySkillId: Int? = null,
+    /** PV máximos ganados por cada nivel. */
+    val hpPerLevel: Int = 4,
+    /** Ataque ganado por cada nivel. */
+    val attackPerLevel: Int = 1,
+    /** Defensa ganada por cada nivel. */
+    val defensePerLevel: Int = 1,
+    /** Exp necesaria para subir del nivel n al n+1 = expBase * n. */
+    val expBase: Int = 8,
+    val maxLevel: Int = 20,
 )
 
 @Serializable
@@ -51,6 +60,10 @@ data class Enemy(
     val touchDamage: Boolean = true,
     val dropItemId: Int? = null,
     val dropChance: Float = 0.3f,
+    /** Experiencia otorgada al jugador al morir. */
+    val expReward: Int = 3,
+    /** Oro otorgado al jugador al morir. */
+    val goldReward: Int = 2,
 )
 
 enum class EnemyBehavior { STILL, WANDER, CHASE }
@@ -65,9 +78,22 @@ data class Item(
     val power: Int = 0,
     /** Se consume al usarse desde el menú. */
     val consumable: Boolean = true,
+    /** Precio de compra en la tienda (venta = mitad, redondeando abajo). */
+    val price: Int = 0,
+    /** Ranura de equipo; != null convierte el objeto en equipo (no consumible al usarse). */
+    val equipSlot: EquipSlot? = null,
+    /** Bonus de ataque mientras está equipado. */
+    val attackBonus: Int = 0,
+    /** Bonus de defensa mientras está equipado. */
+    val defenseBonus: Int = 0,
+    /** Bonus de PV máximos mientras está equipado. */
+    val maxHpBonus: Int = 0,
 )
 
 enum class ItemEffect { NONE, HEAL_HP, KEY }
+
+/** Ranuras de equipo del jugador. */
+enum class EquipSlot { WEAPON, ARMOR }
 
 /** Habilidad de combate de acción (ataque cuerpo a cuerpo o proyectil). */
 @Serializable
