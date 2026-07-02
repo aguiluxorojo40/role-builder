@@ -831,6 +831,7 @@
         }
     ],
     "bgm": "field",
+    "weather": "NONE",
     "parallaxLayers": [
         {
             "image": "clouds.png",

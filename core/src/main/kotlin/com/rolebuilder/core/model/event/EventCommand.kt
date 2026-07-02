@@ -1,5 +1,6 @@
 package com.rolebuilder.core.model.event
 
+import com.rolebuilder.core.model.Weather
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -105,6 +106,41 @@ sealed class EventCommand {
     @Serializable
     @SerialName("playSound")
     data class PlaySound(val name: String) : EventCommand()
+
+    /**
+     * Tiñe la pantalla gradualmente hasta el color RGBA dado (0..1, a = 0
+     * quita el tinte) en [seconds]. No bloquea al intérprete: para esperar
+     * a que termine, añade un [Wait] a continuación.
+     */
+    @Serializable
+    @SerialName("tintScreen")
+    data class TintScreen(
+        val r: Float,
+        val g: Float,
+        val b: Float,
+        val a: Float,
+        val seconds: Float = 1f,
+    ) : EventCommand()
+
+    /** Destello de pantalla que decae a nada en [seconds]. No bloquea. */
+    @Serializable
+    @SerialName("flashScreen")
+    data class FlashScreen(
+        val r: Float = 1f,
+        val g: Float = 1f,
+        val b: Float = 1f,
+        val seconds: Float = 0.3f,
+    ) : EventCommand()
+
+    /** Cambia el clima (hasta el próximo cambio de mapa o comando). */
+    @Serializable
+    @SerialName("setWeather")
+    data class SetWeather(val weather: Weather) : EventCommand()
+
+    /** Temblor de cámara durante [seconds]. No bloquea. */
+    @Serializable
+    @SerialName("shakeScreen")
+    data class ShakeScreen(val seconds: Float = 0.5f) : EventCommand()
 
     /** Borra el evento que lo ejecuta hasta que se recargue el mapa. */
     @Serializable

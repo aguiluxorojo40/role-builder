@@ -23,6 +23,8 @@ data class GameMap(
     val spawns: List<EnemySpawn> = emptyList(),
     /** Pista de música de fondo del mapa (ver MusicTracks); null = silencio. */
     val bgm: String? = null,
+    /** Clima ambiental al entrar al mapa. */
+    val weather: Weather = Weather.NONE,
     /** Capas de parallax (cielo lejano, niebla...) que dibuja el runtime. */
     val parallaxLayers: List<ParallaxLayer> = emptyList(),
 ) {
