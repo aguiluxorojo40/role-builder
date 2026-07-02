@@ -163,6 +163,7 @@ object DefaultProjectFactory {
         )
 
         return map.copy(
+            bgm = "pueblo",
             events = listOf(npc, chest, shopkeeper),
             spawns = listOf(
                 EnemySpawn(enemyId = 1, x = 15, y = 10),

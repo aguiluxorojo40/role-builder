@@ -7,6 +7,7 @@ import com.rolebuilder.core.model.DefaultProjectFactory
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tiles
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.EventCommand
 import java.io.File
 import kotlin.test.Test
@@ -55,6 +56,12 @@ class SerializationTest {
             EventCommand.ChangeGold(25),
             EventCommand.ChangeExp(8),
             EventCommand.OpenShop(itemIds = listOf(3, 4, 1)),
+            EventCommand.PlayMusic("mazmorra"),
+            EventCommand.StopMusic,
+            EventCommand.TintScreen(1f, 0f, 0f, 0.5f, seconds = 2f),
+            EventCommand.FlashScreen(seconds = 0.4f),
+            EventCommand.SetWeather(Weather.RAIN),
+            EventCommand.ShakeScreen(0.7f),
             EventCommand.EraseEvent,
         )
         val encoded = json.encodeToString(
@@ -102,6 +109,35 @@ class SerializationTest {
     }
 
     @Test
+    fun `game state round trip with presentation fields`() {
+        val state = GameState(
+            currentBgm = "mazmorra",
+            weather = Weather.SNOW,
+            tintR = 0.1f,
+            tintG = 0.2f,
+            tintB = 0.3f,
+            tintA = 0.4f,
+        )
+        val restored = json.decodeFromString(GameState.serializer(), json.encodeToString(GameState.serializer(), state))
+        assertEquals(state, restored)
+    }
+
+    @Test
+    fun `map round trip with bgm and weather`() {
+        val map = GameMap.empty(1, "m", 4, 4).copy(bgm = "campo", weather = Weather.RAIN)
+        val restored = json.decodeFromString(GameMap.serializer(), json.encodeToString(GameMap.serializer(), map))
+        assertEquals(map, restored)
+    }
+
+    @Test
+    fun `legacy map without presentation fields loads with defaults`() {
+        val legacy = """{"id":1,"name":"m","width":1,"height":1,"layers":[[0],[-1]]}"""
+        val map = json.decodeFromString(GameMap.serializer(), legacy)
+        assertEquals("", map.bgm)
+        assertEquals(Weather.NONE, map.weather)
+    }
+
+    @Test
     fun `legacy save without progression fields loads with defaults`() {
         // Partida guardada antes de la Fase 5: sin gold/level/exp/equipo.
         val legacy = """
@@ -116,6 +152,10 @@ class SerializationTest {
         assertNull(state.armorItemId)
         assertEquals(12, state.hp)
         assertEquals(2, state.itemCount(1))
+        // Campos de la Fase 6 tampoco están: cargan con sus defaults.
+        assertEquals("", state.currentBgm)
+        assertEquals(Weather.NONE, state.weather)
+        assertEquals(0f, state.tintA)
     }
 
     @Test
