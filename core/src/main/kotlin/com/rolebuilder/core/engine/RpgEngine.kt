@@ -46,14 +46,18 @@ class RpgEngine(
     val drops = mutableListOf<DropEntity>()
     val effects = mutableListOf<HitEffect>()
 
-    /** Sonidos pendientes de reproducir; la app los consume cada frame. */
-    val soundQueue = mutableListOf<String>()
+    /** Sonidos pendientes de reproducir; la app los consume cada frame.
+     *  Cola concurrente: la UI puede encolar desde otro hilo. */
+    val soundQueue = java.util.concurrent.ConcurrentLinkedQueue<String>()
 
     /** Se pone a true al cambiar de mapa para que el renderer se reconstruya. */
     var mapChanged = true
 
     var gameOver = false
         private set
+
+    /** Pausa total del mundo (menú abierto). */
+    var paused = false
 
     // ---- UI de mensajes -----------------------------------------------------
 
@@ -137,7 +141,7 @@ class RpgEngine(
     // =========================================================================
 
     fun tick(dt: Float) {
-        if (gameOver) return
+        if (gameOver || paused) return
         state.playTimeSeconds += dt
 
         refreshEventPages()
