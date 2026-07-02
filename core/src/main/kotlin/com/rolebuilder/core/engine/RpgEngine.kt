@@ -3,7 +3,9 @@ package com.rolebuilder.core.engine
 import com.rolebuilder.core.io.LoadedProject
 import com.rolebuilder.core.model.Actor
 import com.rolebuilder.core.model.EnemyBehavior
+import com.rolebuilder.core.model.EquipSlot
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.Item
 import com.rolebuilder.core.model.ItemEffect
 import com.rolebuilder.core.model.Skill
 import com.rolebuilder.core.model.SkillKind
@@ -20,6 +22,9 @@ import kotlin.random.Random
 
 /** Caja de mensaje visible (la UI la muestra y llama a dismissMessage). */
 data class MessageBox(val text: String, val speaker: String)
+
+/** Tienda abierta (la UI la muestra y llama a buyItem/sellItem/closeShop). */
+class ShopSession(val itemIds: List<Int>)
 
 /**
  * Motor de juego completo e independiente del renderizado. La app Android
@@ -73,6 +78,14 @@ class RpgEngine(
     private var messageOwner: Interpreter? = null
     private var choiceOwner: Interpreter? = null
 
+    /** Tienda abierta, o null. La UI la dibuja y la cierra con [closeShop]. */
+    var shop: ShopSession? = null
+        private set
+    private var shopOwner: Interpreter? = null
+
+    /** Aviso puntual para la UI (p. ej. "¡Nivel 5!"); la UI lo consume poniéndolo a null. */
+    var notice: String? = null
+
     // ---- input (lo escribe la capa de UI) -----------------------------------
 
     /** Ejes del joystick virtual, en [-1, 1]. */
@@ -92,12 +105,13 @@ class RpgEngine(
     private val mainInterpreter = Interpreter(this)
     private val parallelInterpreters = mutableMapOf<Int, Interpreter>()
 
-    /** true mientras una escena bloquea al jugador (evento en curso o mensaje). */
+    /** true mientras una escena bloquea al jugador (evento en curso, mensaje o tienda). */
     val uiBlocked: Boolean
-        get() = mainInterpreter.running || message != null || choices != null
+        get() = mainInterpreter.running || message != null || choices != null || shop != null
 
     init {
         loadMap(state.mapId, state.x, state.y, state.dir)
+        syncMaxHp()
     }
 
     // =========================================================================
@@ -473,6 +487,144 @@ class RpgEngine(
     }
 
     // =========================================================================
+    // Progresión: nivel, experiencia y stats efectivas
+    // =========================================================================
+
+    /** PV máximos efectivos = base + crecimiento por nivel + bonus del equipo. */
+    val effectiveMaxHp: Int
+        get() = actor.maxHp + actor.hpPerLevel * (state.level - 1) + equipBonus { it.maxHpBonus }
+
+    /** Ataque efectivo = base + crecimiento por nivel + bonus del equipo. */
+    val effectiveAttack: Int
+        get() = actor.attack + actor.attackPerLevel * (state.level - 1) + equipBonus { it.attackBonus }
+
+    /** Defensa efectiva = base + crecimiento por nivel + bonus del equipo. */
+    val effectiveDefense: Int
+        get() = actor.defense + actor.defensePerLevel * (state.level - 1) + equipBonus { it.defenseBonus }
+
+    private inline fun equipBonus(selector: (Item) -> Int): Int {
+        var total = 0
+        state.weaponItemId?.let { id -> data.database.item(id)?.let { total += selector(it) } }
+        state.armorItemId?.let { id -> data.database.item(id)?.let { total += selector(it) } }
+        return total
+    }
+
+    /**
+     * Sincroniza state.maxHp con [effectiveMaxHp]: si el máximo sube, el HP
+     * actual sube en la misma cantidad; si baja, se recorta al nuevo máximo.
+     */
+    private fun syncMaxHp() {
+        val newMax = effectiveMaxHp
+        val diff = newMax - state.maxHp
+        state.maxHp = newMax
+        state.hp = if (diff > 0) (state.hp + diff).coerceAtMost(newMax) else state.hp.coerceAtMost(newMax)
+    }
+
+    /**
+     * Acumula experiencia y sube de nivel mientras se alcance el umbral
+     * (expBase * nivel actual), respetando maxLevel. Al subir aplica el
+     * crecimiento de stats, cura el HP ganado, encola el sonido "levelup"
+     * y publica [notice]. Las cantidades negativas o nulas se ignoran.
+     */
+    fun gainExp(amount: Int) {
+        if (amount <= 0) return
+        state.exp += amount
+        var leveled = false
+        while (state.level < actor.maxLevel && state.exp >= actor.expBase * state.level) {
+            state.exp -= actor.expBase * state.level
+            state.level++
+            leveled = true
+        }
+        // En el nivel máximo no hay progreso hacia el siguiente.
+        if (state.level >= actor.maxLevel) state.exp = 0
+        if (leveled) {
+            syncMaxHp()
+            soundQueue.add("levelup")
+            notice = "¡Nivel ${state.level}!"
+        }
+    }
+
+    /** Suma oro (delta puede ser negativo); el total nunca baja de 0. */
+    fun gainGold(delta: Int) {
+        state.gold = (state.gold + delta).coerceAtLeast(0)
+    }
+
+    // =========================================================================
+    // Equipo
+    // =========================================================================
+
+    /**
+     * Equipa [itemId] en [slot] (null = desequipar). Equipar consume 1 unidad
+     * del inventario y devuelve al inventario lo que estuviera equipado.
+     * Devuelve false si el item no existe, no está en el inventario o su
+     * equipSlot no coincide con [slot].
+     */
+    fun equip(slot: EquipSlot, itemId: Int?): Boolean {
+        if (itemId != null) {
+            val item = data.database.item(itemId) ?: return false
+            if (item.equipSlot != slot) return false
+            if (state.itemCount(itemId) <= 0) return false
+        }
+        val previous = when (slot) {
+            EquipSlot.WEAPON -> state.weaponItemId
+            EquipSlot.ARMOR -> state.armorItemId
+        }
+        if (itemId != null) state.addItem(itemId, -1)
+        if (previous != null) state.addItem(previous, 1)
+        when (slot) {
+            EquipSlot.WEAPON -> state.weaponItemId = itemId
+            EquipSlot.ARMOR -> state.armorItemId = itemId
+        }
+        syncMaxHp()
+        return true
+    }
+
+    // =========================================================================
+    // Tienda
+    // =========================================================================
+
+    /** Abre la tienda para el intérprete [owner]; falla si ya hay una abierta. */
+    internal fun tryOpenShop(itemIds: List<Int>, owner: Interpreter): Boolean {
+        if (shop != null) return false
+        shop = ShopSession(itemIds)
+        shopOwner = owner
+        return true
+    }
+
+    /** La UI cierra la tienda; el intérprete que la abrió continúa. */
+    fun closeShop() {
+        if (shop == null) return
+        shop = null
+        shopOwner?.onShopClosed()
+        shopOwner = null
+    }
+
+    /** Compra 1 unidad de [itemId]. Devuelve false si no existe o falta oro. */
+    fun buyItem(itemId: Int): Boolean {
+        val item = data.database.item(itemId) ?: return false
+        if (state.gold < item.price) return false
+        state.gold -= item.price
+        state.addItem(itemId, 1)
+        soundQueue.add("coin")
+        return true
+    }
+
+    /**
+     * Vende 1 unidad de [itemId] a mitad de precio (redondeando abajo).
+     * Solo si hay existencias en el inventario y el precio es > 0; el equipo
+     * equipado está fuera del inventario, así que no puede venderse.
+     */
+    fun sellItem(itemId: Int): Boolean {
+        val item = data.database.item(itemId) ?: return false
+        if (item.price <= 0) return false
+        if (state.itemCount(itemId) <= 0) return false
+        state.addItem(itemId, -1)
+        state.gold += item.price / 2
+        soundQueue.add("coin")
+        return true
+    }
+
+    // =========================================================================
     // Combate
     // =========================================================================
 
@@ -493,7 +645,7 @@ class RpgEngine(
                 for (enemy in enemies) {
                     if (!enemy.alive || enemy.invulnTime > 0f) continue
                     if (abs(enemy.x - cx) <= halfW && abs(enemy.y - cy) <= halfH) {
-                        val damage = maxOf(1, actor.attack + skill.power - enemy.def.defense)
+                        val damage = maxOf(1, effectiveAttack + skill.power - enemy.def.defense)
                         damageEnemy(enemy, damage, p.dir.dx.toFloat(), p.dir.dy.toFloat(), skill.knockback)
                     }
                 }
@@ -510,7 +662,7 @@ class RpgEngine(
                         dx = p.dir.dx.toFloat(),
                         dy = p.dir.dy.toFloat(),
                         speed = skill.projectileSpeed,
-                        damage = maxOf(1, actor.attack + skill.power),
+                        damage = maxOf(1, effectiveAttack + skill.power),
                         maxRange = skill.range,
                         knockback = skill.knockback,
                         fromPlayer = true,
@@ -531,6 +683,8 @@ class RpgEngine(
         if (enemy.hp <= 0) {
             enemy.alive = false
             soundQueue.add("defeat")
+            gainExp(enemy.def.expReward)
+            gainGold(enemy.def.goldReward)
             val dropId = enemy.def.dropItemId
             if (dropId != null && random.nextFloat() < enemy.def.dropChance) {
                 drops.add(DropEntity(enemy.x, enemy.y, dropId))
@@ -540,7 +694,7 @@ class RpgEngine(
 
     private fun damagePlayer(amount: Int, fromX: Float, fromY: Float) {
         if (player.invulnTime > 0f) return
-        val damage = maxOf(1, amount - actor.defense)
+        val damage = maxOf(1, amount - effectiveDefense)
         state.hp = (state.hp - damage).coerceAtLeast(0)
         player.invulnTime = 1f
         player.knockbackTime = 0.15f

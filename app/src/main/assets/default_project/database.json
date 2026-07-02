@@ -9,7 +9,12 @@
             "defense": 1,
             "moveSpeed": 4.5,
             "attackSkillId": 1,
-            "secondarySkillId": 2
+            "secondarySkillId": 2,
+            "hpPerLevel": 4,
+            "attackPerLevel": 1,
+            "defensePerLevel": 1,
+            "expBase": 8,
+            "maxLevel": 20
         }
     ],
     "enemies": [
@@ -25,7 +30,9 @@
             "sightRange": 5,
             "touchDamage": true,
             "dropItemId": 1,
-            "dropChance": 0.3
+            "dropChance": 0.3,
+            "expReward": 3,
+            "goldReward": 2
         },
         {
             "id": 2,
@@ -39,7 +46,9 @@
             "sightRange": 6,
             "touchDamage": true,
             "dropItemId": null,
-            "dropChance": 0.3
+            "dropChance": 0.3,
+            "expReward": 4,
+            "goldReward": 3
         }
     ],
     "items": [
@@ -49,7 +58,12 @@
             "description": "Recupera 10 PV.",
             "effect": "HEAL_HP",
             "power": 10,
-            "consumable": true
+            "consumable": true,
+            "price": 10,
+            "equipSlot": null,
+            "attackBonus": 0,
+            "defenseBonus": 0,
+            "maxHpBonus": 0
         },
         {
             "id": 2,
@@ -57,7 +71,38 @@
             "description": "Abre una puerta cerrada.",
             "effect": "KEY",
             "power": 0,
-            "consumable": false
+            "consumable": false,
+            "price": 0,
+            "equipSlot": null,
+            "attackBonus": 0,
+            "defenseBonus": 0,
+            "maxHpBonus": 0
+        },
+        {
+            "id": 3,
+            "name": "Espada de hierro",
+            "description": "Un arma sencilla pero fiable. +2 al ataque.",
+            "effect": "NONE",
+            "power": 0,
+            "consumable": false,
+            "price": 30,
+            "equipSlot": "WEAPON",
+            "attackBonus": 2,
+            "defenseBonus": 0,
+            "maxHpBonus": 0
+        },
+        {
+            "id": 4,
+            "name": "Escudo de cuero",
+            "description": "Protección ligera. +1 a la defensa.",
+            "effect": "NONE",
+            "power": 0,
+            "consumable": false,
+            "price": 20,
+            "equipSlot": "ARMOR",
+            "attackBonus": 0,
+            "defenseBonus": 1,
+            "maxHpBonus": 0
         }
     ],
     "skills": [
