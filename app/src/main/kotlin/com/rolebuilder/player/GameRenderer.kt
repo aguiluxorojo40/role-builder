@@ -117,18 +117,18 @@ class GameRenderer(
     // ------------------------------------------------------------- characters
 
     private fun drawCharacters() {
-        data class Char(val y: Float, val draw: () -> Unit)
+        data class Sortable(val y: Float, val draw: () -> Unit)
 
-        val list = mutableListOf<Char>()
+        val list = mutableListOf<Sortable>()
 
         for (event in engine.events) {
             val sprite = event.page?.sprite ?: continue
             if (event.erased) continue
-            list.add(Char(event.y) { drawSheet(sprite.image, event.x, event.y, event.dir, event.animTime, event.moving) })
+            list.add(Sortable(event.y) { drawSheet(sprite.image, event.x, event.y, event.dir, event.animTime, event.moving) })
         }
         for (enemy in engine.enemies) {
             list.add(
-                Char(enemy.y) {
+                Sortable(enemy.y) {
                     val flash = !enemy.alive || enemy.invulnTime > 0.15f
                     drawSheet(enemy.def.sprite, enemy.x, enemy.y, enemy.dir, enemy.animTime, enemy.moving, flash)
                 },
@@ -137,7 +137,7 @@ class GameRenderer(
         val p = engine.player
         val blink = p.invulnTime > 0f && ((p.invulnTime * 10f).toInt() % 2 == 0)
         if (!blink && !engine.gameOver) {
-            list.add(Char(p.y) { drawSheet(engine.actor.sprite, p.x, p.y, p.dir, p.animTime, p.moving) })
+            list.add(Sortable(p.y) { drawSheet(engine.actor.sprite, p.x, p.y, p.dir, p.animTime, p.moving) })
         }
 
         list.sortBy { it.y }
