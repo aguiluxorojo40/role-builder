@@ -57,6 +57,8 @@ class SoundFx(private val context: Context) {
         "chest" -> tone(440f, 880f, 200)
         "heal" -> tone(520f, 780f, 250)
         "shoot" -> tone(500f, 240f, 110, square = true)
+        "levelup" -> arpeggio(listOf(523f, 659f, 784f, 1046f), 80)
+        "coin" -> arpeggio(listOf(1319f, 1760f), 45)
         else -> tone(440f, 440f, 80)
     }
 
@@ -71,6 +73,22 @@ class SoundFx(private val context: Context) {
             val envelope = (1f - t) * minOf(1f, i / 80f)
             (sample * envelope * 0.5f * Short.MAX_VALUE).toInt().toShort()
         }
+    }
+
+    /** Notas seguidas (arpegio); cada nota con su propia envolvente. */
+    private fun arpeggio(freqs: List<Float>, noteMs: Int): ShortArray {
+        val perNote = SAMPLE_RATE * noteMs / 1000
+        val out = ShortArray(perNote * freqs.size)
+        freqs.forEachIndexed { index, freq ->
+            for (i in 0 until perNote) {
+                val t = i.toFloat() / perNote
+                val phase = 2f * PI.toFloat() * freq * i / SAMPLE_RATE
+                val envelope = (1f - t) * minOf(1f, i / 60f)
+                out[index * perNote + i] =
+                    (sin(phase.toDouble()).toFloat() * envelope * 0.5f * Short.MAX_VALUE).toInt().toShort()
+            }
+        }
+        return out
     }
 
     private fun noise(ms: Int, fade: Float): ShortArray {
@@ -106,6 +124,9 @@ class SoundFx(private val context: Context) {
 
     companion object {
         private const val SAMPLE_RATE = 22050
-        private val NAMES = listOf("attack", "hit", "hurt", "defeat", "pickup", "select", "chest", "heal", "shoot")
+        private val NAMES = listOf(
+            "attack", "hit", "hurt", "defeat", "pickup", "select", "chest", "heal", "shoot",
+            "levelup", "coin",
+        )
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -330,7 +331,7 @@ fun CommandListEditor(
     }
 }
 
-private fun List<EventCommand>.swapped(a: Int, b: Int): List<EventCommand> =
+private fun <T> List<T>.swapped(a: Int, b: Int): List<T> =
     toMutableList().also { val t = it[a]; it[a] = it[b]; it[b] = t }
 
 // =============================================================================
@@ -353,6 +354,9 @@ private val COMMAND_OPTIONS = listOf(
     CommandOption("Ruta de movimiento") { EventCommand.MoveRoute(steps = emptyList()) },
     CommandOption("Dar/quitar objeto") { EventCommand.ChangeItems(1, 1) },
     CommandOption("Cambiar HP del jugador") { EventCommand.ChangeHp(-1) },
+    CommandOption("Cambiar oro") { EventCommand.ChangeGold(10) },
+    CommandOption("Dar experiencia") { EventCommand.ChangeExp(5) },
+    CommandOption("Abrir tienda") { EventCommand.OpenShop(emptyList()) },
     CommandOption("Reproducir sonido") { EventCommand.PlaySound("chest") },
     CommandOption("Borrar este evento") { EventCommand.EraseEvent },
 )
@@ -622,6 +626,65 @@ private fun CommandFields(
             IntField("HP (+ curar, − dañar)", command.delta, { onChange(command.copy(delta = it)) })
         }
 
+        is EventCommand.ChangeGold -> {
+            IntField("Oro (+ dar, − quitar)", command.delta, { onChange(command.copy(delta = it)) })
+            Text("El oro del grupo nunca baja de 0.", style = MaterialTheme.typography.bodySmall)
+        }
+
+        is EventCommand.ChangeExp -> {
+            IntField("Cantidad de experiencia", command.delta, { onChange(command.copy(delta = it.coerceAtLeast(0))) })
+            Text("Puede hacer subir de nivel al jugador.", style = MaterialTheme.typography.bodySmall)
+        }
+
+        is EventCommand.OpenShop -> {
+            Text("En venta (en este orden):", style = MaterialTheme.typography.labelLarge)
+            if (command.itemIds.isEmpty()) {
+                Text("(ningún objeto todavía)", style = MaterialTheme.typography.bodySmall)
+            }
+            command.itemIds.forEachIndexed { index, itemId ->
+                val item = state.database.item(itemId)
+                Card {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "${item?.name ?: "Objeto $itemId"} · ${item?.price ?: 0} oro",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(onClick = {
+                            if (index > 0) onChange(command.copy(itemIds = command.itemIds.swapped(index, index - 1)))
+                        }) { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Subir") }
+                        IconButton(onClick = {
+                            if (index < command.itemIds.size - 1) onChange(command.copy(itemIds = command.itemIds.swapped(index, index + 1)))
+                        }) { Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Bajar") }
+                        IconButton(onClick = {
+                            onChange(command.copy(itemIds = command.itemIds.filterIndexed { i, _ -> i != index }))
+                        }) { Icon(Icons.Filled.Delete, contentDescription = "Quitar") }
+                    }
+                }
+            }
+            HorizontalDivider()
+            Text("Catálogo de la base de datos:", style = MaterialTheme.typography.labelLarge)
+            state.database.items.forEach { item ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = item.id in command.itemIds,
+                        onCheckedChange = { checked ->
+                            onChange(
+                                command.copy(
+                                    itemIds = if (checked) command.itemIds + item.id
+                                    else command.itemIds.filter { it != item.id },
+                                ),
+                            )
+                        },
+                    )
+                    Text("${item.name} · ${item.price} oro", modifier = Modifier.weight(1f))
+                }
+            }
+        }
+
         is EventCommand.PlaySound -> {
             DropdownField(
                 label = "Sonido",
@@ -655,6 +718,7 @@ private fun ConditionEditor(
                     Condition.Kind.SELF_SWITCH -> "Self-switch"
                     Condition.Kind.VARIABLE_AT_LEAST -> "Variable ≥ valor"
                     Condition.Kind.HAS_ITEM -> "Tiene objeto"
+                    Condition.Kind.GOLD_AT_LEAST -> "Oro ≥ cantidad"
                 }
             },
             onSelect = { onChange(condition.copy(kind = it)) },
@@ -699,6 +763,9 @@ private fun ConditionEditor(
                     onSelect = { onChange(condition.copy(id = it)) },
                 )
                 ExpectedToggle(condition.expected, "lo tiene", "NO lo tiene") { onChange(condition.copy(expected = it)) }
+            }
+            Condition.Kind.GOLD_AT_LEAST -> {
+                IntField("Oro mínimo", condition.value, { onChange(condition.copy(value = it.coerceAtLeast(0))) })
             }
         }
     }
@@ -764,6 +831,9 @@ private fun EventCommand.typeName(): String = when (this) {
     is EventCommand.MoveRoute -> "Ruta de movimiento"
     is EventCommand.ChangeItems -> "Dar/quitar objeto"
     is EventCommand.ChangeHp -> "Cambiar HP"
+    is EventCommand.ChangeGold -> "Cambiar oro"
+    is EventCommand.ChangeExp -> "Dar experiencia"
+    is EventCommand.OpenShop -> "Abrir tienda"
     is EventCommand.PlaySound -> "Reproducir sonido"
     EventCommand.EraseEvent -> "Borrar este evento"
 }
@@ -787,6 +857,16 @@ fun EventCommand.summary(state: EditorState): String = when (this) {
     is EventCommand.MoveRoute -> "🚶 Ruta (${steps.size} pasos)"
     is EventCommand.ChangeItems -> "🎒 ${state.database.item(itemId)?.name ?: "Objeto $itemId"} ${if (delta >= 0) "+$delta" else "$delta"}"
     is EventCommand.ChangeHp -> "❤ HP ${if (delta >= 0) "+$delta" else "$delta"}"
+    is EventCommand.ChangeGold -> "🪙 Oro ${if (delta >= 0) "+$delta" else "$delta"}"
+    is EventCommand.ChangeExp -> "⭐ Exp +$delta"
+    is EventCommand.OpenShop -> {
+        val names = itemIds.map { state.database.item(it)?.name ?: "Objeto $it" }
+        "🛒 Tienda: " + when {
+            names.isEmpty() -> "(vacía)"
+            names.size > 3 -> names.take(3).joinToString(", ") + "…"
+            else -> names.joinToString(", ")
+        }
+    }
     is EventCommand.PlaySound -> "🔊 $name"
     EventCommand.EraseEvent -> "🗑 Borrar este evento"
 }

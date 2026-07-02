@@ -51,6 +51,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.rolebuilder.core.model.Actor
 import com.rolebuilder.core.model.Enemy
 import com.rolebuilder.core.model.EnemyBehavior
+import com.rolebuilder.core.model.EquipSlot
 import com.rolebuilder.core.model.Item
 import com.rolebuilder.core.model.ItemEffect
 import com.rolebuilder.core.model.Skill
@@ -205,6 +206,20 @@ private fun ActorList(state: EditorState) {
                 { id2 -> id2?.let { state.database.skill(it)?.name ?: "Habilidad $it" } ?: "(ninguna)" },
                 { update(actor.copy(secondarySkillId = it)) },
             )
+            Text("Progresión", style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("PV por nivel", actor.hpPerLevel, { update(actor.copy(hpPerLevel = it.coerceAtLeast(0))) }, Modifier.weight(1f))
+                IntField("Ataque por nivel", actor.attackPerLevel, { update(actor.copy(attackPerLevel = it.coerceAtLeast(0))) }, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("Defensa por nivel", actor.defensePerLevel, { update(actor.copy(defensePerLevel = it.coerceAtLeast(0))) }, Modifier.weight(1f))
+                IntField("Nivel máximo", actor.maxLevel, { update(actor.copy(maxLevel = it.coerceAtLeast(1))) }, Modifier.weight(1f))
+            }
+            IntField("Exp base", actor.expBase, { update(actor.copy(expBase = it.coerceAtLeast(1))) })
+            Text(
+                "Exp para subir del nivel n al n+1 = Exp base × n.",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
@@ -254,6 +269,10 @@ private fun EnemyList(state: EditorState) {
                 Switch(enemy.touchDamage, { update(enemy.copy(touchDamage = it)) })
                 Text("  Daña al tocar al jugador")
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("Exp al morir", enemy.expReward, { update(enemy.copy(expReward = it.coerceAtLeast(0))) }, Modifier.weight(1f))
+                IntField("Oro al morir", enemy.goldReward, { update(enemy.copy(goldReward = it.coerceAtLeast(0))) }, Modifier.weight(1f))
+            }
             DropdownField(
                 "Objeto que suelta",
                 listOf<Int?>(null) + state.database.items.map { it.id },
@@ -286,7 +305,10 @@ private fun ItemList(state: EditorState) {
     EntityList(
         entries = db.items,
         title = { "${it.id}: ${it.name}" },
-        subtitle = { it.description.ifBlank { it.effect.spanish() } },
+        subtitle = { item ->
+            val base = item.description.ifBlank { item.kindLabel() }
+            if (item.price > 0) "$base · ${item.price} oro" else base
+        },
         onAdd = {
             val id = (db.items.maxOfOrNull { it.id } ?: 0) + 1
             state.updateDatabase(db.copy(items = db.items + Item(id = id, name = "Objeto $id")))
@@ -301,13 +323,38 @@ private fun ItemList(state: EditorState) {
         EditDialog("Objeto ${item.id}", onDismiss = { editing = null }) {
             OutlinedTextField(item.name, { update(item.copy(name = it)) }, label = { Text("Nombre") }, singleLine = true)
             OutlinedTextField(item.description, { update(item.copy(description = it)) }, label = { Text("Descripción") })
-            DropdownField("Efecto", ItemEffect.entries, item.effect, { it.spanish() }, { update(item.copy(effect = it)) })
-            if (item.effect == ItemEffect.HEAL_HP) {
-                IntField("PV que cura", item.power, { update(item.copy(power = it)) })
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(item.consumable, { update(item.copy(consumable = it)) })
-                Text("  Se consume al usarlo")
+            IntField("Precio (0 = no se vende)", item.price, { update(item.copy(price = it.coerceAtLeast(0))) })
+            DropdownField(
+                "Ranura de equipo",
+                listOf<EquipSlot?>(null) + EquipSlot.entries,
+                item.equipSlot,
+                { it.spanish() },
+                { slot ->
+                    update(
+                        if (slot != null) item.copy(equipSlot = slot, effect = ItemEffect.NONE, consumable = false)
+                        else item.copy(equipSlot = null, consumable = true),
+                    )
+                },
+            )
+            if (item.equipSlot != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    IntField("+Ataque", item.attackBonus, { update(item.copy(attackBonus = it)) }, Modifier.weight(1f))
+                    IntField("+Defensa", item.defenseBonus, { update(item.copy(defenseBonus = it)) }, Modifier.weight(1f))
+                    IntField("+PV máx", item.maxHpBonus, { update(item.copy(maxHpBonus = it)) }, Modifier.weight(1f))
+                }
+                Text(
+                    "El equipo no se consume; los bonus se aplican mientras está equipado.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                DropdownField("Efecto", ItemEffect.entries, item.effect, { it.spanish() }, { update(item.copy(effect = it)) })
+                if (item.effect == ItemEffect.HEAL_HP) {
+                    IntField("PV que cura", item.power, { update(item.copy(power = it)) })
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(item.consumable, { update(item.copy(consumable = it)) })
+                    Text("  Se consume al usarlo")
+                }
             }
         }
     }
@@ -317,6 +364,19 @@ private fun ItemEffect.spanish(): String = when (this) {
     ItemEffect.NONE -> "Sin efecto (objeto clave)"
     ItemEffect.HEAL_HP -> "Cura PV"
     ItemEffect.KEY -> "Llave"
+}
+
+private fun EquipSlot?.spanish(): String = when (this) {
+    EquipSlot.WEAPON -> "Arma"
+    EquipSlot.ARMOR -> "Armadura"
+    null -> "Ninguna"
+}
+
+/** Etiqueta corta del tipo de objeto para la lista. */
+private fun Item.kindLabel(): String = when (equipSlot) {
+    EquipSlot.WEAPON -> "Arma"
+    EquipSlot.ARMOR -> "Armadura"
+    null -> effect.spanish()
 }
 
 // =============================================================================

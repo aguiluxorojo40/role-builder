@@ -1,6 +1,7 @@
 package com.rolebuilder.player.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -129,6 +131,64 @@ fun HeartsRow(hp: Int, maxHp: Int, modifier: Modifier = Modifier) {
             }
             Icon(Icons.Filled.Favorite, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         }
+    }
+}
+
+/**
+ * Nivel actual y barra fina de experiencia.
+ * [expToNext] <= 0 significa nivel máximo: la barra se muestra llena.
+ */
+@Composable
+fun LevelExpIndicator(level: Int, exp: Int, expToNext: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("Nv $level", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        val fraction = if (expToNext <= 0) 1f else (exp.toFloat() / expToNext).coerceIn(0f, 1f)
+        Box(
+            modifier = Modifier
+                .size(width = 64.dp, height = 5.dp)
+                .background(Color(0x66000000), RoundedCornerShape(3.dp)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
+                    .background(Color(0xFF7ED957), RoundedCornerShape(3.dp)),
+            )
+        }
+    }
+}
+
+/** Moneda dibujada + cantidad de oro (también sirve para mostrar precios). */
+@Composable
+fun GoldCounter(gold: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(14.dp)
+                .background(Color(0xFFFFC94D), CircleShape)
+                .border(1.5.dp, Color(0xFFB8860B), CircleShape),
+        )
+        Text("$gold", color = Color(0xFFFFE082), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** Aviso temporal del motor (p. ej. "¡Nivel 3!") centrado arriba. */
+@Composable
+fun NoticeBanner(text: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .background(Color(0xE6101426), RoundedCornerShape(20.dp))
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+    ) {
+        Text(text, color = Color(0xFFFFC94D), fontSize = 16.sp, fontWeight = FontWeight.Bold)
     }
 }
 
