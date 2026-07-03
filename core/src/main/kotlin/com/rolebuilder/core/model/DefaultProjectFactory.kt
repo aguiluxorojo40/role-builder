@@ -31,8 +31,11 @@ object Tiles {
 
     val IMPASSABLE = setOf(WATER, TREE, BUSH, ROCK, WALL, DOOR_CLOSED, ROOF)
 
-    /** Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2. */
-    val STANDING = listOf(TREE, BUSH, ROCK, DOOR_CLOSED, DOOR_OPEN)
+    /**
+     * Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2.
+     * Las cadenas verticales (muro + tejado) forman una fachada de una pieza.
+     */
+    val STANDING = listOf(TREE, BUSH, ROCK, WALL, DOOR_CLOSED, DOOR_OPEN, ROOF)
 }
 
 /**
@@ -101,6 +104,11 @@ object DefaultProjectFactory {
         }
         // Arbusto y roca también en la capa 2, de pie sobre la hierba.
         map = map.withTile(1, 4, 5, Tiles.BUSH).withTile(1, 11, 11, Tiles.ROCK)
+        // Casita de muestra del eje Z: columnas tejado+muro en la capa 2
+        // que el diorama levanta como una fachada de una pieza.
+        for (x in 5..6) {
+            map = map.withTile(1, x, 3, Tiles.ROOF).withTile(1, x, 4, Tiles.WALL)
+        }
 
         val npc = MapEvent(
             id = 1,

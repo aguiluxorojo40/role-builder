@@ -6,6 +6,13 @@ Cada versión etiquetada (`v0.X.Y`) tiene release propia en GitHub con su
 APK; la release rodante `apk-latest` siempre apunta a la última build de
 la rama de desarrollo.
 
+## v0.9.2 — «Diorama» (eje Z)
+El eje perpendicular al suelo se formaliza: las cadenas verticales de
+tiles «De pie» (muro + tejado) se levantan como UNA fachada de edificio
+anclada en su base, con una sola sombra y oclusión correcta con los
+personajes; los números de daño flotan a lo largo del eje Z (no se
+comprimen con el suelo). La plantilla estrena una casita de muestra.
+
 ## v0.9.1 — «Diorama» (control en juego)
 El 2.5D pasa a ser dirigible desde el juego: comando de evento
 «Inclinación del diorama» (grados + transición suave; combinable con

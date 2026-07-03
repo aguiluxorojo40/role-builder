@@ -220,36 +220,55 @@ class GameRenderer(
 
         val list = mutableListOf<Sortable>()
 
-        // Tiles "de pie": billboards verticales con la base en la parte
-        // inferior de su casilla (ty + 1) y alto 1/s; compiten por Y con los
-        // personajes (clave ty + 0.5, comparable con los centros de entidad)
-        // para que un árbol tape al héroe que pasa por detrás y viceversa.
-        // Con s = 1 el quad es exactamente el 1x1 de su casilla.
+        // Tiles "de pie": el suelo vive en el plano XY y lo erguido en el eje
+        // Z perpendicular. Las CADENAS verticales de tiles de pie (muro +
+        // tejado = fachada de edificio) forman UN solo billboard anclado en
+        // la base de su casilla inferior, apilando cada tile a altura
+        // completa (1/s) a lo largo de Z. Compiten por Y con los personajes
+        // (clave base - 0.5, comparable con los centros de entidad) para que
+        // el edificio tape al héroe que pasa por detrás y viceversa. Con
+        // s = 1 cada tile queda exactamente en el 1x1 de su casilla.
         val map = engine.currentMap
         val tileset = engine.tileset
         if (tileset.standingTiles.isNotEmpty() && map.layers.size > 1) {
             val tex = texture(tileset.image)
             val minX = (camera.x - camera.viewTilesX / 2f - 1f).toInt().coerceAtLeast(0)
             val maxX = (camera.x + camera.viewTilesX / 2f + 1f).toInt().coerceAtMost(map.width - 1)
-            val minY = (camera.y - camera.viewTilesYWorld / 2f - 1f).toInt().coerceAtLeast(0)
-            val maxY = (camera.y + camera.viewTilesYWorld / 2f + 1f).toInt().coerceAtMost(map.height - 1)
-            for (ty in minY..maxY) {
-                for (tx in minX..maxX) {
+            val viewTop = camera.y - camera.viewTilesYWorld / 2f - 1f
+            val viewBottom = camera.y + camera.viewTilesYWorld / 2f + 1f
+            val h = 1f / squash
+            for (tx in minX..maxX) {
+                var ty = 0
+                while (ty < map.height) {
                     val tile = map.tileAt(1, tx, ty)
-                    if (tile < 0 || tile !in tileset.standingTiles) continue
-                    val col = tile % tileset.columns
-                    val row = tile / tileset.columns
+                    if (tile < 0 || tile !in tileset.standingTiles) {
+                        ty++
+                        continue
+                    }
+                    // Cadena vertical de tiles de pie: de arriba abajo.
+                    val runTiles = mutableListOf<Int>()
+                    while (ty < map.height) {
+                        val runTile = map.tileAt(1, tx, ty)
+                        if (runTile < 0 || runTile !in tileset.standingTiles) break
+                        runTiles.add(runTile)
+                        ty++
+                    }
+                    val baseY = ty.toFloat() // base de la casilla inferior
+                    if (baseY < viewTop || baseY - runTiles.size * h > viewBottom) continue
                     list.add(
-                        Sortable(ty + 0.5f) {
-                            val h = 1f / squash
-                            batch.draw(
-                                tex,
-                                tx.toFloat(), ty + 1f - h, 1f, h,
-                                u0 = col / tileset.columns.toFloat(),
-                                v0 = row / tileset.rows.toFloat(),
-                                u1 = (col + 1) / tileset.columns.toFloat(),
-                                v1 = (row + 1) / tileset.rows.toFloat(),
-                            )
+                        Sortable(baseY - 0.5f) {
+                            runTiles.forEachIndexed { index, runTile ->
+                                val col = runTile % tileset.columns
+                                val row = runTile / tileset.columns
+                                batch.draw(
+                                    tex,
+                                    tx.toFloat(), baseY - (runTiles.size - index) * h, 1f, h,
+                                    u0 = col / tileset.columns.toFloat(),
+                                    v0 = row / tileset.rows.toFloat(),
+                                    u1 = (col + 1) / tileset.columns.toFloat(),
+                                    v1 = (row + 1) / tileset.rows.toFloat(),
+                                )
+                            }
                         },
                     )
                 }
@@ -338,6 +357,13 @@ class GameRenderer(
         batch.draw(white, cx - w / 2f, cy - h / 2f, w, h, r = 1f, g = 1f, b = 0.85f, a = 0.55f * alpha)
     }
 
+    /**
+     * Altura sobre el suelo (eje Z, en casillas de pantalla) a unidades de
+     * mundo: el suelo se comprime con cos(t) pero lo que flota sobre él no,
+     * así que z casillas de pantalla son z/s unidades del mundo dibujado.
+     */
+    private fun lift(z: Float): Float = z / squash
+
     private fun drawEffects() {
         for (effect in engine.effects) {
             val progress = 1f - (effect.timer / 0.8f)
@@ -355,7 +381,7 @@ class GameRenderer(
                 val dx = (i - (count - 1) / 2f) * 0.22f
                 batch.draw(
                     white,
-                    effect.x + dx - 0.06f, effect.y - 0.5f - yOffset - 0.06f,
+                    effect.x + dx - 0.06f, effect.y - lift(0.5f + yOffset) - 0.06f,
                     0.12f, 0.12f, r = r, g = g, b = b, a = alpha,
                 )
             }
@@ -461,9 +487,10 @@ class GameRenderer(
         }
         if (!engine.gameOver) shadow(engine.player.x, engine.player.y)
 
-        // Con el diorama activo, los tiles "de pie" también proyectan la
-        // misma elipse, centrada en la base de su casilla, para asentarlos
-        // en el suelo. Con s = 1 se dibujan planos y no necesitan sombra.
+        // Con el diorama activo, las columnas de tiles "de pie" proyectan la
+        // misma elipse solo en su BASE (el tile sin otro de pie debajo), para
+        // asentar la fachada completa en el suelo. Con s = 1 se dibujan
+        // planos y no necesitan sombra.
         if (squash < 1f) {
             val map = engine.currentMap
             val tileset = engine.tileset
@@ -476,6 +503,8 @@ class GameRenderer(
                 for (tx in minX..maxX) {
                     val tile = map.tileAt(1, tx, ty)
                     if (tile < 0 || tile !in tileset.standingTiles) continue
+                    val below = map.tileAt(1, tx, ty + 1)
+                    if (below >= 0 && below in tileset.standingTiles) continue // no es la base
                     batch.draw(
                         radial,
                         tx + 0.5f - 0.32f, ty + 1f - 0.13f, 0.64f, 0.26f,
