@@ -182,6 +182,11 @@ fun EventEditorDialog(
                     )
                     Text("  Se puede atravesar")
                 }
+                FloatField(
+                    "Luz que emite (radio en casillas, 0 = ninguna)",
+                    page.lightRadius,
+                    { updatePage(page.copy(lightRadius = it.coerceIn(0f, 10f))) },
+                )
 
                 HorizontalDivider()
 

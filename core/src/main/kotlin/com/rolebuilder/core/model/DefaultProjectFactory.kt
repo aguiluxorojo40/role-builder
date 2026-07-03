@@ -158,6 +158,8 @@ object DefaultProjectFactory {
                         EventCommand.ShowText("¡Bienvenido, viajero! Echa un vistazo a mis mercancías.", speaker = "Tendero"),
                         EventCommand.OpenShop(itemIds = listOf(3, 4, 1)),
                     ),
+                    // Farolillo del puesto: luz cálida de muestra del estilo HD-2D.
+                    lightRadius = 2.5f,
                 ),
             ),
         )

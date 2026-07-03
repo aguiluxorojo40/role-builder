@@ -42,6 +42,26 @@ class Texture(bitmap: Bitmap) {
             return Texture(bmp).also { bmp.recycle() }
         }
 
+        /**
+         * Degradado radial blanco (opaco en el centro, transparente en el
+         * borde) para luces aditivas y sombras suaves.
+         */
+        fun radial(size: Int = 64): Texture {
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val center = (size - 1) / 2f
+            for (py in 0 until size) {
+                for (px in 0 until size) {
+                    val dx = (px - center) / center
+                    val dy = (py - center) / center
+                    val d = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtMost(1f)
+                    // Caída suave (cuadrática) hacia el borde.
+                    val alpha = ((1f - d) * (1f - d) * 255f).toInt().coerceIn(0, 255)
+                    bmp.setPixel(px, py, android.graphics.Color.argb(alpha, 255, 255, 255))
+                }
+            }
+            return Texture(bmp).also { bmp.recycle() }
+        }
+
         /** Carga un PNG del disco; si falta, devuelve un tablero magenta. */
         fun fromFile(file: File): Texture {
             val bmp = BitmapFactory.decodeFile(file.absolutePath) ?: missingBitmap()

@@ -10,6 +10,7 @@ import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.player.gl.Camera2D
+import com.rolebuilder.player.gl.PostProcessor
 import com.rolebuilder.player.gl.SpriteBatch
 import com.rolebuilder.player.gl.Texture
 import java.io.File
@@ -31,18 +32,29 @@ class GameRenderer(
 
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
+    private lateinit var radial: Texture
+    private lateinit var post: PostProcessor
     private val textures = mutableMapOf<String, Texture>()
     private val camera = Camera2D()
     private var lastFrameNanos = 0L
     private var elapsed = 0f
 
+    /** Estilo HD-2D del proyecto: post-procesado, sombras y motas. */
+    private val hd2d = engine.data.project.hd2d
+
     /** Partículas de clima: x, y (relativas a la vista, en casillas), velocidad y fase. */
     private val particles = Array(WEATHER_PARTICLES) { FloatArray(4) }
     private var particlesSeeded = false
 
+    /** Motas de luz ambientales (solo HD-2D): x, y, velocidad y fase. */
+    private val motes = Array(MOTES) { FloatArray(4) }
+    private var motesSeeded = false
+
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
         white = Texture.white()
+        radial = Texture.radial()
+        post = PostProcessor()
         textures.clear()
         lastFrameNanos = 0L
     }
@@ -51,6 +63,7 @@ class GameRenderer(
         GLES30.glViewport(0, 0, width, height)
         camera.viewportWidth = width
         camera.viewportHeight = height
+        if (hd2d) post.resize(width, height)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -63,6 +76,8 @@ class GameRenderer(
         drainSounds()
         elapsed += dt
 
+        val usePost = hd2d && post.enabled
+        if (usePost) post.beginScene()
         GLES30.glClearColor(0.05f, 0.05f, 0.08f, 1f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
@@ -74,14 +89,18 @@ class GameRenderer(
 
         batch.begin(camera.mvp)
         drawTiles()
+        if (hd2d) drawShadows()
         drawDrops()
         drawCharacters()
         drawProjectiles()
         drawAttackFlash()
         drawEffects()
         drawWeather(dt)
-        drawScreenFx()
+        drawTint()
+        drawLights(dt)
+        drawFlash()
         batch.end()
+        if (usePost) post.compose()
     }
 
     private fun updateShake() {
@@ -304,25 +323,102 @@ class GameRenderer(
         }
     }
 
-    /** Overlays a pantalla completa: tinte gradual y destello. */
-    private fun drawScreenFx() {
+    /** Overlay de tinte gradual a pantalla completa. */
+    private fun drawTint() {
+        val tint = engine.tintCurrent
+        if (tint[3] <= 0.004f) return
         val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
         val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
-        val w = camera.viewTilesX + 2f
-        val h = camera.tilesVisibleY + 2f
+        batch.draw(
+            white, left, top, camera.viewTilesX + 2f, camera.tilesVisibleY + 2f,
+            r = tint[0], g = tint[1], b = tint[2], a = tint[3],
+        )
+    }
 
-        val tint = engine.tintCurrent
-        if (tint[3] > 0.004f) {
-            batch.draw(white, left, top, w, h, r = tint[0], g = tint[1], b = tint[2], a = tint[3])
+    /** Destello de pantalla, por encima de tinte y luces. */
+    private fun drawFlash() {
+        if (engine.flashIntensity <= 0.004f) return
+        val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
+        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val flash = engine.flashColor
+        batch.draw(
+            white, left, top, camera.viewTilesX + 2f, camera.tilesVisibleY + 2f,
+            r = flash[0], g = flash[1], b = flash[2], a = engine.flashIntensity,
+        )
+    }
+
+    // ------------------------------------------------------- luces y sombras
+
+    /** Sombras elípticas suaves bajo los personajes (solo HD-2D). */
+    private fun drawShadows() {
+        fun shadow(cx: Float, cy: Float) {
+            batch.draw(radial, cx - 0.32f, cy + 0.16f, 0.64f, 0.26f, r = 0f, g = 0f, b = 0f, a = 0.35f)
         }
-        if (engine.flashIntensity > 0.004f) {
-            val flash = engine.flashColor
-            batch.draw(white, left, top, w, h, r = flash[0], g = flash[1], b = flash[2], a = engine.flashIntensity)
+        for (event in engine.events) {
+            if (event.erased || event.page?.sprite == null) continue
+            shadow(event.x, event.y)
+        }
+        for (enemy in engine.enemies) {
+            if (enemy.alive) shadow(enemy.x, enemy.y)
+        }
+        if (!engine.gameOver) shadow(engine.player.x, engine.player.y)
+    }
+
+    /**
+     * Luces cálidas aditivas de los eventos con lightRadius > 0 (atraviesan
+     * el tinte de pantalla) y, en HD-2D, motas de luz ambientales.
+     */
+    private fun drawLights(dt: Float) {
+        batch.setAdditive(true)
+
+        for (event in engine.events) {
+            val radius = event.page?.lightRadius ?: 0f
+            if (radius <= 0f || event.erased) continue
+            val flicker = 0.85f + 0.15f * sin(elapsed * 9f + event.event.id * 1.7f)
+            batch.draw(
+                radial,
+                event.x - radius, event.y - radius, radius * 2f, radius * 2f,
+                r = 1f, g = 0.72f, b = 0.42f, a = 0.55f * flicker,
+            )
+        }
+
+        if (hd2d) drawMotes(dt)
+        batch.setAdditive(false)
+    }
+
+    /** Motas de polvo/luciérnagas flotando; se dibujan en modo aditivo. */
+    private fun drawMotes(dt: Float) {
+        val viewW = camera.viewTilesX + 2f
+        val viewH = camera.tilesVisibleY + 2f
+        if (!motesSeeded) {
+            for (m in motes) {
+                m[0] = Random.nextFloat() * viewW
+                m[1] = Random.nextFloat() * viewH
+                m[2] = 0.5f + Random.nextFloat()
+                m[3] = Random.nextFloat() * 6.28f
+            }
+            motesSeeded = true
+        }
+        val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
+        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        for (m in motes) {
+            m[1] -= dt * 0.12f * m[2]
+            m[0] += sin(elapsed * 0.8f + m[3]) * dt * 0.25f
+            if (m[1] < 0f) m[1] += viewH
+            if (m[0] > viewW) m[0] -= viewW
+            if (m[0] < 0f) m[0] += viewW
+            val pulse = 0.5f + 0.5f * sin(elapsed * 1.3f + m[3] * 2f)
+            batch.draw(
+                radial,
+                left + m[0], top + m[1], 0.12f, 0.12f,
+                r = 1f, g = 0.9f, b = 0.6f, a = 0.05f + 0.09f * pulse,
+            )
         }
     }
 
     companion object {
         private val WALK_CYCLE = intArrayOf(0, 1, 2, 1)
         private const val WEATHER_PARTICLES = 90
+        private const val MOTES = 40
     }
 }

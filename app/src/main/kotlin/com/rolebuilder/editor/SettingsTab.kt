@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -80,6 +82,23 @@ fun SettingsTab(state: EditorState) {
         Text(
             "Inicio: mapa ${state.project.startMapId} en (${state.project.startX}, ${state.project.startY}). " +
                 "Usa la herramienta \"Inicio\" del editor de mapas para cambiarlo.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        HorizontalDivider()
+
+        Text("Estilo visual", style = MaterialTheme.typography.titleSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(
+                checked = state.project.hd2d,
+                onCheckedChange = { state.updateProject(state.project.copy(hd2d = it)) },
+            )
+            Text("  Estilo HD-2D (tilt-shift, bloom, viñeta, sombras y motas de luz)")
+        }
+        Text(
+            "Efecto maqueta al estilo Octopath Traveler: la franja central se ve nítida " +
+                "y los bordes superior e inferior se desenfocan. Las luces de los eventos " +
+                "brillan con bloom.",
             style = MaterialTheme.typography.bodySmall,
         )
 
