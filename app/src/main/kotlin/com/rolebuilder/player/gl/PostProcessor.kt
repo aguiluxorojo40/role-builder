@@ -84,27 +84,33 @@ class PostProcessor {
         uniform sampler2D uScene;
         uniform sampler2D uBloom;
         uniform float uTexelY;
+        uniform float uStrength; // 0 = sin efecto, 1 = normal, 2 = exagerado
         out vec4 outColor;
         void main() {
+            float s = uStrength;
+            float s01 = clamp(s * 0.5, 0.0, 1.0);
+
             // Tilt-shift: nítido en la franja central, borroso arriba y abajo.
+            // Con más intensidad, la franja nítida se estrecha y el blur crece.
             float band = abs(vUv.y - 0.5) * 2.0;
-            float blur = smoothstep(0.30, 1.0, band);
-            float o = uTexelY * blur * 5.0;
+            float focus = mix(0.55, 0.12, s01);
+            float blur = smoothstep(focus, 1.0, band);
+            float o = uTexelY * blur * 5.0 * s;
             vec3 scene = texture(uScene, vUv).rgb * 0.294;
             scene += texture(uScene, vUv + vec2(0.0, o)).rgb * 0.235;
             scene += texture(uScene, vUv - vec2(0.0, o)).rgb * 0.235;
             scene += texture(uScene, vUv + vec2(0.0, o * 2.2)).rgb * 0.118;
             scene += texture(uScene, vUv - vec2(0.0, o * 2.2)).rgb * 0.118;
 
-            vec3 c = scene + texture(uBloom, vUv).rgb * 0.65;
+            vec3 c = scene + texture(uBloom, vUv).rgb * 0.65 * s;
 
-            // Etalonaje cálido con algo de contraste.
-            c *= vec3(1.05, 1.0, 0.94);
-            c = (c - 0.5) * 1.06 + 0.5;
+            // Etalonaje cálido con algo de contraste, proporcional.
+            c *= mix(vec3(1.0), vec3(1.06, 1.0, 0.92), s01);
+            c = (c - 0.5) * (1.0 + 0.08 * s) + 0.5;
 
-            // Viñeta suave.
+            // Viñeta.
             float d = distance(vUv, vec2(0.5));
-            c *= 1.0 - smoothstep(0.55, 0.95, d) * 0.35;
+            c *= 1.0 - smoothstep(0.55, 0.95, d) * 0.35 * s;
 
             outColor = vec4(clamp(c, 0.0, 1.0), 1.0);
         }
@@ -117,6 +123,10 @@ class PostProcessor {
     private val uScene = composeShader.uniform("uScene")
     private val uBloom = composeShader.uniform("uBloom")
     private val uTexelY = composeShader.uniform("uTexelY")
+    private val uStrength = composeShader.uniform("uStrength")
+
+    /** Intensidad global del efecto (0 = nada, 1 = normal, 2 = exagerado). */
+    var strength = 1f
 
     /** (Re)crea los FBOs al cambiar el tamaño de la superficie. */
     fun resize(w: Int, h: Int) {
@@ -194,6 +204,7 @@ class PostProcessor {
         GLES30.glUniform1i(uScene, 0)
         GLES30.glUniform1i(uBloom, 1)
         GLES30.glUniform1f(uTexelY, 1f / height)
+        GLES30.glUniform1f(uStrength, strength.coerceIn(0f, 2f))
         drawQuad()
 
         GLES30.glEnable(GLES30.GL_BLEND)
