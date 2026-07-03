@@ -25,6 +25,12 @@ data class EventPage(
     val passable: Boolean = false,
     val moveType: MoveType = MoveType.FIXED,
     val commands: List<EventCommand> = emptyList(),
+    /**
+     * Radio en casillas de la luz cálida que emite el evento con esta página
+     * activa (antorchas, ventanas...). 0 = no emite luz. La dibuja el
+     * renderer con mezcla aditiva, atravesando el tinte de pantalla.
+     */
+    val lightRadius: Float = 0f,
 )
 
 /** Todas las condiciones no nulas deben cumplirse para activar la página. */

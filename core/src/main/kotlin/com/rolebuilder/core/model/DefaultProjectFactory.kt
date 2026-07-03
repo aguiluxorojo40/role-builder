@@ -163,6 +163,8 @@ object DefaultProjectFactory {
                         EventCommand.PlaySound("select"),
                         EventCommand.TransferPlayer(mapId = 2, x = 4, y = 6, direction = Direction.UP),
                     ),
+                    // Farolillo del puesto: luz cálida de muestra del estilo HD-2D.
+                    lightRadius = 2.5f,
                 ),
             ),
         )
