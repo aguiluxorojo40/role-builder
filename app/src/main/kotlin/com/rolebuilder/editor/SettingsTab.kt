@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -102,15 +103,25 @@ fun SettingsTab(state: EditorState) {
                 "brillan con bloom.",
             style = MaterialTheme.typography.bodySmall,
         )
-        FloatField(
-            label = "Inclinación del diorama (grados, 0 = plano)",
+        Text("Intensidad del efecto · ${(state.project.hd2dStrength * 100).toInt()}%")
+        Slider(
+            value = state.project.hd2dStrength,
+            onValueChange = { state.updateProject(state.project.copy(hd2dStrength = it)) },
+            valueRange = 0f..2f,
+            enabled = state.project.hd2d,
+        )
+        Text("Inclinación del diorama 2.5D · ${state.project.dioramaTilt.toInt()}°")
+        Slider(
             value = state.project.dioramaTilt,
-            onChange = { state.updateProject(state.project.copy(dioramaTilt = it.coerceIn(0f, 25f))) },
-            modifier = Modifier.fillMaxWidth(),
+            onValueChange = { state.updateProject(state.project.copy(dioramaTilt = it)) },
+            valueRange = 0f..25f,
+            enabled = state.project.hd2d,
         )
         Text(
             "Inclina el plano del suelo como una maqueta 2.5D: los personajes y los " +
-                "tiles marcados \"De pie\" en el tileset se dibujan en vertical.",
+                "tiles marcados \"De pie\" en el tileset se dibujan en vertical. " +
+                "También puedes ajustar ambos potenciómetros EN VIVO desde el menú " +
+                "de pausa mientras pruebas el juego.",
             style = MaterialTheme.typography.bodySmall,
         )
 

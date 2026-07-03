@@ -43,6 +43,16 @@ class GameRenderer(
     /** Estilo HD-2D del proyecto: post-procesado, sombras, luces y motas. */
     private val hd2d = engine.data.project.hd2d
 
+    /**
+     * Potenciómetros en vivo: la UI (menú de pausa) los ajusta mientras se
+     * juega y el hilo GL los lee cada frame.
+     */
+    @Volatile
+    var liveStrength = engine.data.project.hd2dStrength
+
+    @Volatile
+    var liveTilt = engine.data.project.dioramaTilt
+
     /** Motas de luz ambientales (solo HD-2D): x, y, velocidad y fase. */
     private val motes = Array(MOTES) { FloatArray(4) }
     private var motesSeeded = false
@@ -85,7 +95,8 @@ class GameRenderer(
         val map = engine.currentMap
         camera.x = engine.player.x
         camera.y = engine.player.y
-        camera.tiltDegrees = if (hd2d) engine.data.project.dioramaTilt else 0f
+        camera.tiltDegrees = if (hd2d) liveTilt else 0f
+        post.strength = liveStrength
         camera.update(map.width, map.height)
 
         batch.begin(camera.mvp)
@@ -390,8 +401,11 @@ class GameRenderer(
 
     /** Sombras elípticas suaves bajo los personajes (solo HD-2D). */
     private fun drawShadows() {
+        val alpha = 0.35f * liveStrength.coerceIn(0f, 1.4f)
+        if (alpha <= 0.01f) return
+
         fun shadow(cx: Float, cy: Float) {
-            batch.draw(radial, cx - 0.32f, cy + 0.16f, 0.64f, 0.26f, r = 0f, g = 0f, b = 0f, a = 0.35f)
+            batch.draw(radial, cx - 0.32f, cy + 0.16f, 0.64f, 0.26f, r = 0f, g = 0f, b = 0f, a = alpha)
         }
         for (event in engine.events) {
             if (event.erased || event.currentSprite == null) continue
@@ -450,7 +464,8 @@ class GameRenderer(
             batch.draw(
                 radial,
                 left + m[0], top + m[1], 0.12f, 0.12f,
-                r = 1f, g = 0.9f, b = 0.6f, a = 0.05f + 0.09f * pulse,
+                r = 1f, g = 0.9f, b = 0.6f,
+                a = (0.05f + 0.09f * pulse) * liveStrength.coerceIn(0f, 2f),
             )
         }
     }

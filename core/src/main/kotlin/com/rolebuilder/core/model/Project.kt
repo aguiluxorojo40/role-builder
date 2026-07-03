@@ -25,6 +25,12 @@ data class Project(
      */
     val hd2d: Boolean = true,
     /**
+     * Intensidad del estilo HD-2D, de 0 (imperceptible) a 2 (exagerado);
+     * 1 = normal. Escala a la vez el tilt-shift, el bloom, la viñeta, el
+     * etalonaje, las sombras y las motas de luz.
+     */
+    val hd2dStrength: Float = 1f,
+    /**
      * Inclinación del diorama 2.5D en grados: el runtime inclina el plano
      * del suelo hacia atrás (efecto maqueta HD-2D estilo Octopath Traveler)
      * y dibuja de pie a los personajes y a los tiles marcados en

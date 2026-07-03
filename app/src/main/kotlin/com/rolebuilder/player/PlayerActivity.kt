@@ -25,12 +25,14 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -121,6 +123,12 @@ class PlayerActivity : ComponentActivity() {
                     SaveIo.save(slot.file, engine.state)
                     Toast.makeText(this, "Guardado en ranura ${slot.index}", Toast.LENGTH_SHORT).show()
                 },
+                onSaveVisual = { strength, tilt ->
+                    val updated = data.project.copy(hd2dStrength = strength, dioramaTilt = tilt)
+                    ProjectIo.saveProject(projectDir, updated)
+                    data = data.copy(project = updated)
+                    Toast.makeText(this, "Estilo visual guardado en el proyecto", Toast.LENGTH_SHORT).show()
+                },
                 onExit = { finish() },
             )
         }
@@ -176,6 +184,7 @@ private fun PlayerRoot(
     onBgm: (String?) -> Unit,
     soundFx: SoundFx,
     onSaveToSlot: (RpgEngine, SaveSlot) -> Unit,
+    onSaveVisual: (Float, Float) -> Unit,
     onExit: () -> Unit,
 ) {
     var engine by remember { mutableStateOf<RpgEngine?>(null) }
@@ -203,6 +212,7 @@ private fun PlayerRoot(
             onBgm = onBgm,
             slots = slots,
             onSaveToSlot = { slot -> onSaveToSlot(current, slot) },
+            onSaveVisual = onSaveVisual,
             onNewGame = {
                 engine = RpgEngine(data, GameState.newGame(data.project, data.database))
             },
@@ -333,6 +343,7 @@ private fun GameScreen(
     onBgm: (String?) -> Unit,
     slots: () -> List<SaveSlot>,
     onSaveToSlot: (SaveSlot) -> Unit,
+    onSaveVisual: (Float, Float) -> Unit,
     onNewGame: () -> Unit,
     onBackToTitle: () -> Unit,
     onExit: () -> Unit,
@@ -340,6 +351,9 @@ private fun GameScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     var menuOpen by remember { mutableStateOf(false) }
     var showSaveSlots by remember { mutableStateOf(false) }
+    val renderer = remember(engine) {
+        GameRenderer(engine, projectDir, onSound = { soundFx.play(it) }, onBgmChange = onBgm)
+    }
 
     // Re-lee el estado del motor una vez por frame de UI.
     var frame by remember { mutableLongStateOf(0L) }
@@ -357,7 +371,7 @@ private fun GameScreen(
             factory = { context ->
                 GLSurfaceView(context).apply {
                     setEGLContextClientVersion(3)
-                    setRenderer(GameRenderer(engine, projectDir, onSound = { soundFx.play(it) }, onBgmChange = onBgm))
+                    setRenderer(renderer)
                     renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
                     glView = this
                 }
@@ -426,7 +440,9 @@ private fun GameScreen(
         if (menuOpen) {
             PauseMenu(
                 engine = engine,
+                renderer = renderer,
                 onSave = { showSaveSlots = true },
+                onSaveVisual = onSaveVisual,
                 onBackToTitle = {
                     menuOpen = false
                     onBackToTitle()
@@ -461,11 +477,16 @@ private fun GameScreen(
 @Composable
 private fun PauseMenu(
     engine: RpgEngine,
+    renderer: GameRenderer,
     onSave: () -> Unit,
+    onSaveVisual: (Float, Float) -> Unit,
     onBackToTitle: () -> Unit,
     onExit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var strength by remember { mutableFloatStateOf(renderer.liveStrength) }
+    var tilt by remember { mutableFloatStateOf(renderer.liveTilt) }
+
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -475,6 +496,39 @@ private fun PauseMenu(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text("Menú", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            // Potenciómetros del estilo visual: se aplican en vivo tras el diálogo.
+            if (engine.data.project.hd2d) {
+                Text(
+                    "Efecto HD-2D · ${(strength * 100).toInt()}%",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                )
+                Slider(
+                    value = strength,
+                    onValueChange = {
+                        strength = it
+                        renderer.liveStrength = it
+                    },
+                    valueRange = 0f..2f,
+                )
+                Text(
+                    "Inclinación 2.5D · ${tilt.toInt()}°",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                )
+                Slider(
+                    value = tilt,
+                    onValueChange = {
+                        tilt = it
+                        renderer.liveTilt = it
+                    },
+                    valueRange = 0f..25f,
+                )
+                TextButton(onClick = { onSaveVisual(strength, tilt) }) {
+                    Text("Guardar estilo en el proyecto")
+                }
+            }
 
             val items = engine.state.items.toList()
             if (items.isEmpty()) {
