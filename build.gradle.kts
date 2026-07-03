@@ -1,7 +1,6 @@
-// Los plugins de Android (AGP, kotlin-android, compose) se declaran solo en :app,
-// que únicamente se incluye cuando hay un Android SDK disponible (ver settings.gradle.kts).
-// Así :core puede compilarse y testearse en entornos JVM puros sin acceso a Google Maven.
-plugins {
-    alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.kotlin.serialization) apply false
-}
+// Raíz intencionadamente sin plugins: cada módulo declara los suyos con la
+// versión del catálogo (gradle/libs.versions.toml). Si se declararan aquí
+// (aunque fuera con `apply false`), el plugin de Kotlin quedaría en el
+// classpath del proyecto raíz y chocaría con la petición de
+// `org.jetbrains.kotlin.android` de :app. Además, :app (y AGP) solo se
+// cargan cuando hay un Android SDK disponible (ver settings.gradle.kts).
