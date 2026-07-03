@@ -1,0 +1,46 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [claude/android-rpg-engine-phase-4-fymtw6]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests del motor
+        run: ./gradlew :core:test
+
+      - name: Compilar APK de depuración
+        run: ./gradlew :app:assembleDebug
+
+      - name: Preparar APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: role-builder-debug-apk
+          path: role-builder-debug.apk
+
+      - name: Publicar release rodante con la APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: APK más reciente (debug)
+          prerelease: true
+          body: APK de depuración compilada automáticamente a partir del último push de la rama.
+          files: role-builder-debug.apk
