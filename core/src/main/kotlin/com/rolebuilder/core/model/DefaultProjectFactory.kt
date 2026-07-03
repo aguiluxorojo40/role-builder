@@ -174,6 +174,7 @@ object DefaultProjectFactory {
                 EnemySpawn(enemyId = 1, x = 6, y = 3),
                 EnemySpawn(enemyId = 2, x = 12, y = 12),
             ),
+            bgm = MusicTracks.FIELD,
         )
     }
 
@@ -245,7 +246,7 @@ object DefaultProjectFactory {
             ),
         )
 
-        return map.copy(events = listOf(exit, cabinChest, sign))
+        return map.copy(events = listOf(exit, cabinChest, sign), bgm = MusicTracks.VILLAGE)
     }
 
     fun defaultProject(name: String): Project = Project(

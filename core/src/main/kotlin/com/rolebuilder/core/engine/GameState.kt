@@ -25,6 +25,8 @@ data class GameState(
     var y: Float = 0f,
     var dir: Direction = Direction.DOWN,
     var playTimeSeconds: Float = 0f,
+    /** Momento del último guardado (epoch ms); 0 = nunca guardada. */
+    var savedAtEpochMs: Long = 0,
 ) {
     fun switchOn(id: Int): Boolean = switches[id] == true
 

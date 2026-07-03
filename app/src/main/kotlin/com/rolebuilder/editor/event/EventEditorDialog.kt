@@ -354,6 +354,10 @@ private val COMMAND_OPTIONS = listOf(
     CommandOption("Dar/quitar objeto") { EventCommand.ChangeItems(1, 1) },
     CommandOption("Cambiar HP del jugador") { EventCommand.ChangeHp(-1) },
     CommandOption("Reproducir sonido") { EventCommand.PlaySound("chest") },
+    CommandOption("Reproducir música") { EventCommand.PlayMusic(com.rolebuilder.core.model.MusicTracks.FIELD) },
+    CommandOption("Detener música") { EventCommand.StopMusic },
+    CommandOption("Cambiar sprite del evento") { EventCommand.ChangeEventSprite() },
+    CommandOption("Variable aleatoria") { EventCommand.SetVariableRandom(1, 1, 6) },
     CommandOption("Borrar este evento") { EventCommand.EraseEvent },
 )
 
@@ -632,10 +636,71 @@ private fun CommandFields(
             )
         }
 
+        is EventCommand.PlayMusic -> {
+            DropdownField(
+                label = "Pista",
+                options = com.rolebuilder.core.model.MusicTracks.ALL,
+                selected = command.track,
+                optionLabel = { it.musicName() },
+                onSelect = { onChange(command.copy(track = it)) },
+            )
+        }
+
+        EventCommand.StopMusic -> {
+            Text("La música de fondo se detiene (silencio).")
+        }
+
+        is EventCommand.ChangeEventSprite -> {
+            DropdownField(
+                label = "Nuevo sprite",
+                options = listOf<String?>(null) + state.imageNames(),
+                selected = command.image,
+                optionLabel = { it ?: "(invisible)" },
+                onSelect = { onChange(command.copy(image = it)) },
+            )
+            if (command.image != null) {
+                DropdownField(
+                    label = "Mirando",
+                    options = Direction.entries,
+                    selected = command.direction,
+                    optionLabel = { it.spanish() },
+                    onSelect = { onChange(command.copy(direction = it)) },
+                )
+            }
+            Text(
+                "Cambia el sprite del evento que ejecuta el comando hasta que cambie su página activa.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        is EventCommand.SetVariableRandom -> {
+            DropdownField(
+                label = "Variable",
+                options = state.project.variableNames.indices.map { it + 1 },
+                selected = command.variableId,
+                optionLabel = { state.variableLabel(it) },
+                onSelect = { onChange(command.copy(variableId = it)) },
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("Mínimo", command.min, { onChange(command.copy(min = it)) }, Modifier.weight(1f))
+                IntField("Máximo", command.max, { onChange(command.copy(max = it)) }, Modifier.weight(1f))
+            }
+        }
+
         EventCommand.EraseEvent -> {
             Text("El evento desaparecerá hasta que se recargue el mapa.")
         }
     }
+}
+
+/** Nombre visible de una pista de música procedural. */
+fun String.musicName(): String = when (this) {
+    com.rolebuilder.core.model.MusicTracks.TITLE -> "Título"
+    com.rolebuilder.core.model.MusicTracks.FIELD -> "Campo"
+    com.rolebuilder.core.model.MusicTracks.VILLAGE -> "Aldea"
+    com.rolebuilder.core.model.MusicTracks.DUNGEON -> "Mazmorra"
+    com.rolebuilder.core.model.MusicTracks.BATTLE -> "Batalla"
+    else -> this
 }
 
 @Composable
@@ -765,6 +830,10 @@ private fun EventCommand.typeName(): String = when (this) {
     is EventCommand.ChangeItems -> "Dar/quitar objeto"
     is EventCommand.ChangeHp -> "Cambiar HP"
     is EventCommand.PlaySound -> "Reproducir sonido"
+    is EventCommand.PlayMusic -> "Reproducir música"
+    EventCommand.StopMusic -> "Detener música"
+    is EventCommand.ChangeEventSprite -> "Cambiar sprite del evento"
+    is EventCommand.SetVariableRandom -> "Variable aleatoria"
     EventCommand.EraseEvent -> "Borrar este evento"
 }
 
@@ -788,5 +857,9 @@ fun EventCommand.summary(state: EditorState): String = when (this) {
     is EventCommand.ChangeItems -> "🎒 ${state.database.item(itemId)?.name ?: "Objeto $itemId"} ${if (delta >= 0) "+$delta" else "$delta"}"
     is EventCommand.ChangeHp -> "❤ HP ${if (delta >= 0) "+$delta" else "$delta"}"
     is EventCommand.PlaySound -> "🔊 $name"
+    is EventCommand.PlayMusic -> "🎵 Música: ${track.musicName()}"
+    EventCommand.StopMusic -> "🔇 Detener música"
+    is EventCommand.ChangeEventSprite -> "🎭 Sprite → ${image ?: "(invisible)"}"
+    is EventCommand.SetVariableRandom -> "🎲 Variable ${state.variableLabel(variableId)} = azar $min..$max"
     EventCommand.EraseEvent -> "🗑 Borrar este evento"
 }

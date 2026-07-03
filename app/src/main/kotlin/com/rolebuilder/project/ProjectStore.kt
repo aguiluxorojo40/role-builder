@@ -20,6 +20,7 @@ data class ProjectSummary(
 object ProjectStore {
 
     private const val TEMPLATE_ASSET = "default_project"
+    private const val STANDALONE_ASSET = "standalone_game"
 
     fun root(context: Context): File =
         File(context.filesDir, "projects").apply { mkdirs() }
@@ -51,6 +52,23 @@ object ProjectStore {
 
     fun touch(dir: File) {
         dir.setLastModified(System.currentTimeMillis())
+    }
+
+    /**
+     * Modo "juego independiente": si el APK incluye un proyecto en
+     * assets/standalone_game, lo instala en filesDir y devuelve su carpeta;
+     * la app arranca entonces directamente en el juego, sin editor.
+     */
+    fun installStandaloneIfPresent(context: Context): File? {
+        val present = runCatching {
+            context.assets.list(STANDALONE_ASSET)?.contains(ProjectIo.PROJECT_FILE) == true
+        }.getOrDefault(false)
+        if (!present) return null
+        val dir = File(context.filesDir, STANDALONE_ASSET)
+        if (!File(dir, ProjectIo.PROJECT_FILE).exists()) {
+            copyAssetDir(context, STANDALONE_ASSET, dir)
+        }
+        return dir
     }
 
     /** Exporta un proyecto como .zip al destino elegido por el usuario (SAF). */

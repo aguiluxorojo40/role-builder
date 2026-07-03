@@ -95,6 +95,29 @@ sealed class EventCommand {
     @Serializable
     @SerialName("eraseEvent")
     data object EraseEvent : EventCommand()
+
+    /** Reproduce una pista de música de fondo en bucle (ver MusicTracks). */
+    @Serializable
+    @SerialName("playMusic")
+    data class PlayMusic(val track: String) : EventCommand()
+
+    /** Detiene la música de fondo actual (silencio). */
+    @Serializable
+    @SerialName("stopMusic")
+    data object StopMusic : EventCommand()
+
+    /**
+     * Cambia el sprite del evento que lo ejecuta hasta que cambie su página
+     * activa. [image] null = el evento se vuelve invisible.
+     */
+    @Serializable
+    @SerialName("changeEventSprite")
+    data class ChangeEventSprite(val image: String? = null, val direction: Direction = Direction.DOWN) : EventCommand()
+
+    /** Asigna a la variable un valor aleatorio entre [min] y [max], ambos incluidos. */
+    @Serializable
+    @SerialName("setVariableRandom")
+    data class SetVariableRandom(val variableId: Int, val min: Int = 0, val max: Int = 100) : EventCommand()
 }
 
 /** Condición evaluable por ConditionalBranch y por las páginas del editor. */
