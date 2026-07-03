@@ -482,7 +482,8 @@ class RpgEngine(
             SkillKind.MELEE -> {
                 if (p.attackCooldown > 0f) return
                 p.attackCooldown = skill.cooldownSeconds
-                p.attackFlash = 0.18f
+                p.attackFlash = ATTACK_SWING_SECONDS
+                p.attackDir = p.dir
                 soundQueue.add("attack")
                 val reach = skill.range
                 val cx = p.x + p.dir.dx * (0.5f + reach / 2f)

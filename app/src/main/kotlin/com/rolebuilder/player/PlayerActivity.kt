@@ -97,6 +97,10 @@ class PlayerActivity : ComponentActivity() {
         }
         projectDir = File(path)
 
+        // Proyectos creados con versiones anteriores: completa las imágenes
+        // de plantilla que falten (espada, haz de corte...).
+        runCatching { com.rolebuilder.project.ProjectStore.ensureDefaultImages(this, projectDir) }
+
         data = try {
             ProjectIo.loadFull(projectDir)
         } catch (e: Exception) {

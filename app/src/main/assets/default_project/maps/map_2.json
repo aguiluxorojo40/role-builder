@@ -298,5 +298,6 @@
             ]
         }
     ],
-    "spawns": []
+    "spawns": [],
+    "bgm": "village"
 }

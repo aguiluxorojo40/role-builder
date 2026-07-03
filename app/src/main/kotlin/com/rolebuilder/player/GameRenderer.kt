@@ -72,7 +72,7 @@ class GameRenderer(
         drawDrops()
         drawCharacters()
         drawProjectiles()
-        drawAttackFlash()
+        drawSwordSwing()
         drawEffects()
         batch.end()
     }
@@ -87,6 +87,19 @@ class GameRenderer(
     private fun texture(name: String): Texture = textures.getOrPut(name) {
         Texture.fromFile(ProjectIo.imageFile(projectDir, name))
     }
+
+    /** Como [texture] pero devuelve null si la imagen no existe (efectos opcionales). */
+    private fun textureOrNull(name: String): Texture? {
+        if (name in missingTextures) return null
+        textures[name]?.let { return it }
+        if (!ProjectIo.imageFile(projectDir, name).exists()) {
+            missingTextures.add(name)
+            return null
+        }
+        return texture(name)
+    }
+
+    private val missingTextures = mutableSetOf<String>()
 
     // ------------------------------------------------------------------ tiles
 
@@ -192,15 +205,65 @@ class GameRenderer(
         }
     }
 
-    private fun drawAttackFlash() {
+    /**
+     * Barrido de espada: la hoja gira 140° delante del jugador siguiendo el
+     * golpe y un haz de corte (3 frames) "rompe el aire" en la dirección del
+     * ataque. Si el proyecto no tiene los sprites, cae a un tajo blanco simple.
+     */
+    private fun drawSwordSwing() {
         val p = engine.player
         if (p.attackFlash <= 0f) return
-        val alpha = (p.attackFlash / 0.18f).coerceIn(0f, 1f)
-        val cx = p.x + p.dir.dx * 0.9f
-        val cy = p.y + p.dir.dy * 0.9f
-        val w = if (p.dir.dx != 0) 0.9f else 1.3f
-        val h = if (p.dir.dy != 0) 0.9f else 1.3f
-        batch.draw(white, cx - w / 2f, cy - h / 2f, w, h, r = 1f, g = 1f, b = 0.85f, a = 0.55f * alpha)
+        val progress = (1f - p.attackFlash / ATTACK_SWING_SECONDS).coerceIn(0f, 1f)
+
+        // Ángulo base según dirección (mundo con Y hacia abajo).
+        val baseAngle = when (p.attackDir) {
+            Direction.RIGHT -> 0f
+            Direction.DOWN -> (Math.PI / 2).toFloat()
+            Direction.LEFT -> Math.PI.toFloat()
+            Direction.UP -> (-Math.PI / 2).toFloat()
+        }
+        // La hoja barre de -70° a +70° respecto a la dirección del golpe.
+        val sweep = Math.toRadians(-70.0 + 140.0 * progress).toFloat()
+        val angle = baseAngle + sweep
+
+        val swordTex = textureOrNull(SWORD_IMAGE)
+        if (swordTex != null) {
+            // La espada apunta "arriba" en el sprite: girarla para que la hoja
+            // salga del puño del jugador a lo largo del ángulo del barrido.
+            val cx = p.x + kotlin.math.cos(angle) * 0.55f
+            val cy = p.y + kotlin.math.sin(angle) * 0.55f
+            batch.draw(
+                swordTex,
+                cx - 0.45f, cy - 0.45f, 0.9f, 0.9f,
+                rotation = angle + (Math.PI / 2).toFloat(),
+            )
+        } else {
+            // Sin sprite: tajo blanco alargado girando con el barrido.
+            val cx = p.x + kotlin.math.cos(angle) * 0.6f
+            val cy = p.y + kotlin.math.sin(angle) * 0.6f
+            batch.draw(
+                white,
+                cx - 0.45f, cy - 0.07f, 0.9f, 0.14f,
+                r = 1f, g = 1f, b = 0.9f, a = 0.8f * (1f - progress * 0.5f),
+                rotation = angle,
+            )
+        }
+
+        // Haz de corte: avanza y se desvanece delante del jugador.
+        val slashTex = textureOrNull(SLASH_IMAGE)
+        if (slashTex != null) {
+            val frame = (progress * 3f).toInt().coerceIn(0, 2)
+            val reach = 0.75f + 0.35f * progress
+            val cx = p.x + p.attackDir.dx * reach
+            val cy = p.y + p.attackDir.dy * reach
+            batch.draw(
+                slashTex,
+                cx - 0.7f, cy - 0.7f, 1.4f, 1.4f,
+                u0 = frame / 3f, u1 = (frame + 1) / 3f,
+                a = 0.95f - 0.45f * progress,
+                rotation = baseAngle,
+            )
+        }
     }
 
     private fun drawEffects() {
@@ -231,6 +294,9 @@ class GameRenderer(
         private val WALK_CYCLE = intArrayOf(0, 1, 2, 1)
 
         /** Centinela para forzar el primer aviso de BGM aunque sea null. */
-        private const val BGM_UNSET = " unset"
+        private const val BGM_UNSET = "__sin_bgm__"
+
+        private const val SWORD_IMAGE = "sword.png"
+        private const val SLASH_IMAGE = "slash.png"
     }
 }

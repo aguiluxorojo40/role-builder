@@ -37,7 +37,10 @@ import java.io.File
 @Composable
 fun EditorScreen(projectDir: File, onBack: () -> Unit) {
     val context = LocalContext.current
-    val state = remember(projectDir) { EditorState(projectDir) }
+    val state = remember(projectDir) {
+        runCatching { com.rolebuilder.project.ProjectStore.ensureDefaultImages(context, projectDir) }
+        EditorState(projectDir)
+    }
     var tab by remember { mutableIntStateOf(0) }
 
     // Guardado automático al salir del editor.
