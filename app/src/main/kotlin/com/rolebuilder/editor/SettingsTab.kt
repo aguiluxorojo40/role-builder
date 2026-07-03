@@ -35,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.rolebuilder.core.io.ProjectIo
+import com.rolebuilder.editor.widgets.FloatField
 import java.io.File
 
 /** Ajustes del proyecto: nombre, inicio, switches/variables e importación de imágenes. */
@@ -99,6 +100,17 @@ fun SettingsTab(state: EditorState) {
             "Efecto maqueta al estilo Octopath Traveler: la franja central se ve nítida " +
                 "y los bordes superior e inferior se desenfocan. Las luces de los eventos " +
                 "brillan con bloom.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        FloatField(
+            label = "Inclinación del diorama (grados, 0 = plano)",
+            value = state.project.dioramaTilt,
+            onChange = { state.updateProject(state.project.copy(dioramaTilt = it.coerceIn(0f, 25f))) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            "Inclina el plano del suelo como una maqueta 2.5D: los personajes y los " +
+                "tiles marcados \"De pie\" en el tileset se dibujan en vertical.",
             style = MaterialTheme.typography.bodySmall,
         )
 

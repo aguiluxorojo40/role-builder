@@ -200,6 +200,13 @@
                 true,
                 true,
                 true
+            ],
+            "standingTiles": [
+                5,
+                6,
+                7,
+                12,
+                13
             ]
         }
     ]

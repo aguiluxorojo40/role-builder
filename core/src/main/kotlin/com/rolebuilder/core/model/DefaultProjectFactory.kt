@@ -30,6 +30,9 @@ object Tiles {
     const val ROOF = 15
 
     val IMPASSABLE = setOf(WATER, TREE, BUSH, ROCK, WALL, DOOR_CLOSED, ROOF)
+
+    /** Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2. */
+    val STANDING = listOf(TREE, BUSH, ROCK, DOOR_CLOSED, DOOR_OPEN)
 }
 
 /**
@@ -51,6 +54,7 @@ object DefaultProjectFactory {
             columns = 8,
             rows = 8,
             passable = List(count) { it !in Tiles.IMPASSABLE },
+            standingTiles = Tiles.STANDING,
         )
     }
 
@@ -79,12 +83,13 @@ object DefaultProjectFactory {
     fun starterMap(): GameMap {
         var map = GameMap.empty(id = 1, name = "Pradera", width = 20, height = 15, tilesetId = 1, fillTile = Tiles.GRASS)
 
-        // Borde de árboles.
+        // Borde de árboles en la capa 2 (de pie en el diorama 2.5D);
+        // la capa 0 conserva la hierba de relleno debajo.
         for (x in 0 until map.width) {
-            map = map.withTile(0, x, 0, Tiles.TREE).withTile(0, x, map.height - 1, Tiles.TREE)
+            map = map.withTile(1, x, 0, Tiles.TREE).withTile(1, x, map.height - 1, Tiles.TREE)
         }
         for (y in 0 until map.height) {
-            map = map.withTile(0, 0, y, Tiles.TREE).withTile(0, map.width - 1, y, Tiles.TREE)
+            map = map.withTile(1, 0, y, Tiles.TREE).withTile(1, map.width - 1, y, Tiles.TREE)
         }
         // Estanque.
         for (y in 3..5) for (x in 13..17) map = map.withTile(0, x, y, Tiles.WATER)
@@ -94,7 +99,8 @@ object DefaultProjectFactory {
         listOf(3 to 3, 5 to 11, 9 to 4, 16 to 11).forEach { (x, y) ->
             map = map.withTile(1, x, y, Tiles.FLOWERS)
         }
-        map = map.withTile(0, 4, 5, Tiles.BUSH).withTile(0, 11, 11, Tiles.ROCK)
+        // Arbusto y roca también en la capa 2, de pie sobre la hierba.
+        map = map.withTile(1, 4, 5, Tiles.BUSH).withTile(1, 11, 11, Tiles.ROCK)
 
         val npc = MapEvent(
             id = 1,

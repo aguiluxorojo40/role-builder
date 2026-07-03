@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -428,7 +429,7 @@ private fun SkillList(state: EditorState) {
 }
 
 // =============================================================================
-// Tileset: paso (colisión)
+// Tileset: paso (colisión) y tiles de pie (2.5D)
 // =============================================================================
 
 @Composable
@@ -439,12 +440,37 @@ private fun TilesetEditor(state: EditorState) {
         return
     }
     val bitmap = remember(tileset.image) { loadImageBitmap(state.projectDir, tileset.image) }
+    // 0 = editar paso (colisión), 1 = editar tiles de pie (billboard 2.5D).
+    var mode by remember { mutableIntStateOf(0) }
+
+    fun updateTileset(new: Tileset) = state.updateDatabase(
+        state.database.copy(
+            tilesets = state.database.tilesets.map { if (it.id == tileset.id) new else it },
+        ),
+    )
 
     Column(Modifier.fillMaxSize().padding(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = mode == 0,
+                onClick = { mode = 0 },
+                label = { Text("Paso") },
+            )
+            FilterChip(
+                selected = mode == 1,
+                onClick = { mode = 1 },
+                label = { Text("De pie (2.5D)") },
+            )
+        }
         Text(
-            "Toca un tile para alternar si se puede caminar sobre él (verde = paso libre, rojo = bloqueado).",
+            if (mode == 0) {
+                "Toca un tile para alternar si se puede caminar sobre él (verde = paso libre, rojo = bloqueado)."
+            } else {
+                "Toca un tile para alternar si el diorama 2.5D lo dibuja de pie cuando está " +
+                    "en la capa 2 (azul = de pie, gris = plano). Ideal para árboles, arbustos, puertas o rocas."
+            },
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(bottom = 8.dp),
+            modifier = Modifier.padding(vertical = 8.dp),
         )
         LazyVerticalGrid(
             columns = GridCells.Fixed(tileset.columns),
@@ -453,23 +479,29 @@ private fun TilesetEditor(state: EditorState) {
         ) {
             items((0 until tileset.tileCount).toList()) { tile ->
                 val passable = tileset.isPassable(tile)
+                val standing = tile in tileset.standingTiles
                 TileCell(
                     bitmap = bitmap,
                     tileset = tileset,
                     tile = tile,
-                    borderColor = if (passable) Color(0xFF4CAF50) else Color(0xFFE53935),
+                    borderColor = if (mode == 0) {
+                        if (passable) Color(0xFF4CAF50) else Color(0xFFE53935)
+                    } else {
+                        if (standing) Color(0xFF42A5F5) else Color(0xFF616161)
+                    },
                     onClick = {
-                        val newPassable = tileset.passable.toMutableList().also {
-                            while (it.size < tileset.tileCount) it.add(true)
-                            it[tile] = !passable
+                        if (mode == 0) {
+                            val newPassable = tileset.passable.toMutableList().also {
+                                while (it.size < tileset.tileCount) it.add(true)
+                                it[tile] = !passable
+                            }
+                            updateTileset(tileset.copy(passable = newPassable))
+                        } else {
+                            val newStanding =
+                                if (standing) tileset.standingTiles - tile
+                                else (tileset.standingTiles + tile).sorted()
+                            updateTileset(tileset.copy(standingTiles = newStanding))
                         }
-                        state.updateDatabase(
-                            state.database.copy(
-                                tilesets = state.database.tilesets.map {
-                                    if (it.id == tileset.id) it.copy(passable = newPassable) else it
-                                },
-                            ),
-                        )
                     },
                 )
             }

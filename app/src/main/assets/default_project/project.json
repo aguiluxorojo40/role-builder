@@ -111,5 +111,6 @@
     "mapIds": [
         1
     ],
-    "hd2d": true
+    "hd2d": true,
+    "dioramaTilt": 12.0
 }
