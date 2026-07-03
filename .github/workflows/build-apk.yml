@@ -28,39 +28,39 @@ jobs:
       - name: Compilar APK de depuración
         run: ./gradlew :app:assembleDebug
 
+      - name: Leer versión del proyecto
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[0-9.]+' app/build.gradle.kts)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
       - name: Preparar APK
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            NOMBRE="role-builder-${{ github.ref_name }}-debug.apk"
-          else
-            NOMBRE="role-builder-debug.apk"
-          fi
-          cp app/build/outputs/apk/debug/app-debug.apk "$NOMBRE"
-          echo "APK=$NOMBRE" >> "$GITHUB_ENV"
+          cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk "role-builder-v${VERSION}-debug.apk"
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: role-builder-debug-apk
-          path: ${{ env.APK }}
+          path: role-builder-debug.apk
 
-      # Push a la rama: actualiza la release rodante con la última build.
+      # Release rodante: siempre la última build de la rama, mismo enlace.
       - name: Actualizar release rodante (apk-latest)
-        if: github.ref_type != 'tag'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
           name: APK más reciente (debug)
           prerelease: true
           body: APK de depuración compilada automáticamente a partir del último push de la rama.
-          files: ${{ env.APK }}
+          files: role-builder-debug.apk
 
-      # Push de etiqueta v*: release fija de esa versión (nombres en CHANGELOG.md).
+      # Release de la versión actual (crea la etiqueta si no existe). Al subir
+      # versionName en el Gradle, la release anterior queda congelada y nace
+      # una nueva. Nombres en clave de cada versión: CHANGELOG.md.
       - name: Publicar release de versión
-        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Role Builder ${{ github.ref_name }}
+          tag_name: v${{ env.VERSION }}
+          name: Role Builder v${{ env.VERSION }}
           body: Ver CHANGELOG.md para el detalle de esta versión.
-          files: ${{ env.APK }}
+          files: role-builder-v${{ env.VERSION }}-debug.apk
