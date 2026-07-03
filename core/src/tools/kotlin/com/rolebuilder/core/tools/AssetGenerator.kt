@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
 
     ProjectIo.saveProject(outDir, DefaultProjectFactory.defaultProject("Mi aventura"))
     ProjectIo.saveDatabase(outDir, DefaultProjectFactory.defaultDatabase())
-    ProjectIo.saveMap(outDir, DefaultProjectFactory.starterMap())
+    DefaultProjectFactory.maps().forEach { ProjectIo.saveMap(outDir, it) }
 
     println("Assets generados en ${outDir.absolutePath}")
 }

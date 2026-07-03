@@ -73,7 +73,10 @@ object DefaultProjectFactory {
         tilesets = listOf(defaultTileset()),
     )
 
-    /** Mapa inicial 20x15: pradera con estanque, camino, NPC, cofre y enemigos. */
+    /** Todos los mapas del proyecto plantilla. */
+    fun maps(): List<GameMap> = listOf(starterMap(), cabinMap())
+
+    /** Mapa inicial 20x15: pradera con estanque, camino, cabaña, NPC, cofre y enemigos. */
     fun starterMap(): GameMap {
         var map = GameMap.empty(id = 1, name = "Pradera", width = 20, height = 15, tilesetId = 1, fillTile = Tiles.GRASS)
 
@@ -88,8 +91,13 @@ object DefaultProjectFactory {
         for (y in 3..5) for (x in 13..17) map = map.withTile(0, x, y, Tiles.WATER)
         // Camino de tierra horizontal.
         for (x in 1..18) map = map.withTile(0, x, 8, Tiles.DIRT)
+        // Cabaña con puerta (evento de transferencia al mapa 2).
+        for (x in 14..17) {
+            map = map.withTile(0, x, 10, Tiles.ROOF).withTile(0, x, 11, Tiles.WALL)
+        }
+        map = map.withTile(0, 15, 11, Tiles.DOOR_CLOSED)
         // Decoración.
-        listOf(3 to 3, 5 to 11, 9 to 4, 16 to 11).forEach { (x, y) ->
+        listOf(3 to 3, 5 to 11, 9 to 4, 2 to 9).forEach { (x, y) ->
             map = map.withTile(1, x, y, Tiles.FLOWERS)
         }
         map = map.withTile(0, 4, 5, Tiles.BUSH).withTile(0, 11, 11, Tiles.ROCK)
@@ -143,14 +151,101 @@ object DefaultProjectFactory {
             ),
         )
 
+        val door = MapEvent(
+            id = 3,
+            name = "Puerta de la cabaña",
+            x = 15,
+            y = 11,
+            pages = listOf(
+                EventPage(
+                    trigger = EventTrigger.PLAYER_TOUCH,
+                    commands = listOf(
+                        EventCommand.PlaySound("select"),
+                        EventCommand.TransferPlayer(mapId = 2, x = 4, y = 6, direction = Direction.UP),
+                    ),
+                ),
+            ),
+        )
+
         return map.copy(
-            events = listOf(npc, chest),
+            events = listOf(npc, chest, door),
             spawns = listOf(
-                EnemySpawn(enemyId = 1, x = 15, y = 10),
+                EnemySpawn(enemyId = 1, x = 10, y = 5),
                 EnemySpawn(enemyId = 1, x = 6, y = 3),
                 EnemySpawn(enemyId = 2, x = 12, y = 12),
             ),
         )
+    }
+
+    /** Interior de la cabaña (mapa 2), con salida, cofre y cartel. */
+    fun cabinMap(): GameMap {
+        var map = GameMap.empty(id = 2, name = "Cabaña", width = 10, height = 8, tilesetId = 1, fillTile = Tiles.WOOD_FLOOR)
+
+        for (x in 0 until map.width) {
+            map = map.withTile(0, x, 0, Tiles.WALL).withTile(0, x, map.height - 1, Tiles.WALL)
+        }
+        for (y in 0 until map.height) {
+            map = map.withTile(0, 0, y, Tiles.WALL).withTile(0, map.width - 1, y, Tiles.WALL)
+        }
+        map = map.withTile(0, 4, map.height - 1, Tiles.DOOR_OPEN)
+
+        val exit = MapEvent(
+            id = 1,
+            name = "Salida",
+            x = 4,
+            y = 7,
+            pages = listOf(
+                EventPage(
+                    trigger = EventTrigger.PLAYER_TOUCH,
+                    passable = true,
+                    commands = listOf(
+                        EventCommand.TransferPlayer(mapId = 1, x = 15, y = 12, direction = Direction.DOWN),
+                    ),
+                ),
+            ),
+        )
+
+        val cabinChest = MapEvent(
+            id = 2,
+            name = "Cofre de la cabaña",
+            x = 8,
+            y = 1,
+            pages = listOf(
+                EventPage(
+                    sprite = SpriteRef("chest.png", Direction.DOWN),
+                    trigger = EventTrigger.ACTION_BUTTON,
+                    commands = listOf(
+                        EventCommand.PlaySound("chest"),
+                        EventCommand.ChangeItems(itemId = 1, delta = 1),
+                        EventCommand.ShowText("¡Has encontrado una Poción!"),
+                        EventCommand.SetSelfSwitch("A", true),
+                    ),
+                ),
+                EventPage(
+                    conditions = PageConditions(selfSwitch = "A"),
+                    sprite = SpriteRef("chest.png", Direction.UP),
+                    trigger = EventTrigger.ACTION_BUTTON,
+                    commands = listOf(EventCommand.ShowText("El cofre está vacío.")),
+                ),
+            ),
+        )
+
+        val sign = MapEvent(
+            id = 3,
+            name = "Cartel",
+            x = 1,
+            y = 1,
+            pages = listOf(
+                EventPage(
+                    trigger = EventTrigger.ACTION_BUTTON,
+                    commands = listOf(
+                        EventCommand.ShowText("Dulce hogar. Pisa la puerta para salir.", speaker = "Cartel"),
+                    ),
+                ),
+            ),
+        )
+
+        return map.copy(events = listOf(exit, cabinChest, sign))
     }
 
     fun defaultProject(name: String): Project = Project(
@@ -159,6 +254,6 @@ object DefaultProjectFactory {
         startX = 5,
         startY = 8,
         playerActorId = 1,
-        mapIds = listOf(1),
+        mapIds = listOf(1, 2),
     )
 }
