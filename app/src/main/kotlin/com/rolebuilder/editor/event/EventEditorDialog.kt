@@ -43,6 +43,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.rolebuilder.core.model.BgmTracks
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.Condition
 import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.core.model.event.EventCommand
@@ -358,8 +360,52 @@ private val COMMAND_OPTIONS = listOf(
     CommandOption("Dar experiencia") { EventCommand.ChangeExp(5) },
     CommandOption("Abrir tienda") { EventCommand.OpenShop(emptyList()) },
     CommandOption("Reproducir sonido") { EventCommand.PlaySound("chest") },
+    CommandOption("Reproducir música") { EventCommand.PlayMusic("pueblo") },
+    CommandOption("Parar música") { EventCommand.StopMusic },
+    CommandOption("Tinte de pantalla") { EventCommand.TintScreen(0f, 0f, 0.15f, 0.55f, 1f) },
+    CommandOption("Destello") { EventCommand.FlashScreen() },
+    CommandOption("Clima") { EventCommand.SetWeather(Weather.RAIN) },
+    CommandOption("Temblor de pantalla") { EventCommand.ShakeScreen() },
     CommandOption("Borrar este evento") { EventCommand.EraseEvent },
 )
+
+/** Preset de color con nombre para los editores de tinte y destello. */
+private data class ColorPreset(val name: String, val r: Float, val g: Float, val b: Float, val a: Float = 0f)
+
+private val TINT_PRESETS = listOf(
+    ColorPreset("Normal", 0f, 0f, 0f, 0f),
+    ColorPreset("Noche", 0f, 0f, 0.15f, 0.55f),
+    ColorPreset("Atardecer", 0.35f, 0.1f, 0f, 0.35f),
+    ColorPreset("Amanecer", 0.3f, 0.2f, 0.05f, 0.25f),
+    ColorPreset("Veneno", 0f, 0.25f, 0f, 0.35f),
+    ColorPreset("Sepia", 0.2f, 0.12f, 0f, 0.3f),
+)
+
+private val FLASH_PRESETS = listOf(
+    ColorPreset("Blanco", 1f, 1f, 1f),
+    ColorPreset("Rojo", 1f, 0.2f, 0.2f),
+    ColorPreset("Azul", 0.3f, 0.5f, 1f),
+)
+
+private fun tintPresetOf(c: EventCommand.TintScreen): ColorPreset? =
+    TINT_PRESETS.firstOrNull { it.r == c.r && it.g == c.g && it.b == c.b && it.a == c.a }
+
+private fun flashPresetOf(c: EventCommand.FlashScreen): ColorPreset? =
+    FLASH_PRESETS.firstOrNull { it.r == c.r && it.g == c.g && it.b == c.b }
+
+/** Nombre visible de una pista de música ("" = sin música). */
+private fun bgmLabel(name: String): String =
+    if (name.isEmpty()) "Sin música" else name.replaceFirstChar { it.uppercase() }
+
+private fun Weather.spanish(): String = when (this) {
+    Weather.NONE -> "Ninguno"
+    Weather.RAIN -> "Lluvia"
+    Weather.SNOW -> "Nieve"
+}
+
+/** Segundos con un decimal solo si hace falta ("1 s", "0.3 s"). */
+private fun secondsLabel(seconds: Float): String =
+    if (seconds == seconds.toInt().toFloat()) "${seconds.toInt()} s" else "%.1f s".format(seconds)
 
 @Composable
 private fun CommandPickerDialog(onPick: (EventCommand) -> Unit, onDismiss: () -> Unit) {
@@ -688,11 +734,77 @@ private fun CommandFields(
         is EventCommand.PlaySound -> {
             DropdownField(
                 label = "Sonido",
-                options = listOf("attack", "hit", "hurt", "defeat", "pickup", "select", "chest", "heal", "shoot"),
+                options = listOf(
+                    "attack", "hit", "hurt", "defeat", "pickup", "select", "chest", "heal", "shoot",
+                    "levelup", "coin",
+                ),
                 selected = command.name,
                 optionLabel = { it },
                 onSelect = { onChange(command.copy(name = it)) },
             )
+        }
+
+        is EventCommand.PlayMusic -> {
+            DropdownField(
+                label = "Pista",
+                options = listOf("") + BgmTracks.ALL,
+                selected = command.name,
+                optionLabel = { bgmLabel(it) },
+                onSelect = { onChange(command.copy(name = it)) },
+            )
+            Text(
+                "La pista suena en bucle hasta cambiar de mapa o de música.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        EventCommand.StopMusic -> {
+            Text("Detiene la música actual.")
+        }
+
+        is EventCommand.TintScreen -> {
+            DropdownField(
+                label = "Tinte",
+                options = TINT_PRESETS,
+                selected = tintPresetOf(command),
+                optionLabel = { it?.name ?: "Personalizado" },
+                onSelect = { preset ->
+                    preset?.let { onChange(command.copy(r = it.r, g = it.g, b = it.b, a = it.a)) }
+                },
+            )
+            FloatField("Transición (s)", command.seconds, { onChange(command.copy(seconds = it.coerceAtLeast(0f))) })
+            Text(
+                "No espera: combínalo con \"Esperar\" si el evento debe aguardar.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        is EventCommand.FlashScreen -> {
+            DropdownField(
+                label = "Color",
+                options = FLASH_PRESETS,
+                selected = flashPresetOf(command),
+                optionLabel = { it?.name ?: "Personalizado" },
+                onSelect = { preset ->
+                    preset?.let { onChange(command.copy(r = it.r, g = it.g, b = it.b)) }
+                },
+            )
+            FloatField("Duración (s)", command.seconds, { onChange(command.copy(seconds = it.coerceAtLeast(0.05f))) })
+        }
+
+        is EventCommand.SetWeather -> {
+            DropdownField(
+                label = "Clima",
+                options = Weather.entries,
+                selected = command.weather,
+                optionLabel = { it.spanish() },
+                onSelect = { onChange(command.copy(weather = it)) },
+            )
+            Text("Dura hasta el siguiente cambio de mapa.", style = MaterialTheme.typography.bodySmall)
+        }
+
+        is EventCommand.ShakeScreen -> {
+            FloatField("Duración (s)", command.seconds, { onChange(command.copy(seconds = it.coerceAtLeast(0.1f))) })
         }
 
         EventCommand.EraseEvent -> {
@@ -835,6 +947,12 @@ private fun EventCommand.typeName(): String = when (this) {
     is EventCommand.ChangeExp -> "Dar experiencia"
     is EventCommand.OpenShop -> "Abrir tienda"
     is EventCommand.PlaySound -> "Reproducir sonido"
+    is EventCommand.PlayMusic -> "Reproducir música"
+    EventCommand.StopMusic -> "Parar música"
+    is EventCommand.TintScreen -> "Tinte de pantalla"
+    is EventCommand.FlashScreen -> "Destello"
+    is EventCommand.SetWeather -> "Clima"
+    is EventCommand.ShakeScreen -> "Temblor de pantalla"
     EventCommand.EraseEvent -> "Borrar este evento"
 }
 
@@ -868,5 +986,17 @@ fun EventCommand.summary(state: EditorState): String = when (this) {
         }
     }
     is EventCommand.PlaySound -> "🔊 $name"
+    is EventCommand.PlayMusic -> if (name.isEmpty()) "🎵 (parar)" else "🎵 ${bgmLabel(name)}"
+    EventCommand.StopMusic -> "🎵 Parar música"
+    is EventCommand.TintScreen ->
+        "🎨 Tinte: ${tintPresetOf(this)?.name ?: "personalizado"} (${secondsLabel(seconds)})"
+    is EventCommand.FlashScreen ->
+        "✨ Destello ${flashPresetOf(this)?.name?.lowercase() ?: "personalizado"} (${secondsLabel(seconds)})"
+    is EventCommand.SetWeather -> when (weather) {
+        Weather.NONE -> "☀ Sin clima"
+        Weather.RAIN -> "🌧 Lluvia"
+        Weather.SNOW -> "❄ Nieve"
+    }
+    is EventCommand.ShakeScreen -> "📳 Temblor (${secondsLabel(seconds)})"
     EventCommand.EraseEvent -> "🗑 Borrar este evento"
 }

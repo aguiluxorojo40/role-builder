@@ -55,10 +55,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.rolebuilder.core.model.BgmTracks
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.EnemySpawn
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.EventPage
 import com.rolebuilder.core.model.event.MapEvent
 import com.rolebuilder.editor.EditorState
@@ -344,6 +346,8 @@ fun MapEditorTab(state: EditorState) {
         var name by remember(map.id) { mutableStateOf(map.name) }
         var width by remember(map.id) { mutableIntStateOf(map.width) }
         var height by remember(map.id) { mutableIntStateOf(map.height) }
+        var bgm by remember(map.id) { mutableStateOf(map.bgm) }
+        var weather by remember(map.id) { mutableStateOf(map.weather) }
         AlertDialog(
             onDismissRequest = { showMapSettings = false },
             title = { Text("Ajustes del mapa") },
@@ -354,6 +358,20 @@ fun MapEditorTab(state: EditorState) {
                         IntField("Ancho", width, { width = it.coerceIn(5, 200) }, Modifier.weight(1f))
                         IntField("Alto", height, { height = it.coerceIn(5, 200) }, Modifier.weight(1f))
                     }
+                    DropdownField(
+                        "Música",
+                        listOf("") + BgmTracks.ALL,
+                        bgm,
+                        { bgmLabel(it) },
+                        { bgm = it },
+                    )
+                    DropdownField(
+                        "Clima",
+                        Weather.entries,
+                        weather,
+                        { it.spanish() },
+                        { weather = it },
+                    )
                     if (state.mapList.size > 1) {
                         TextButton(onClick = {
                             state.deleteMap(map.id)
@@ -364,7 +382,7 @@ fun MapEditorTab(state: EditorState) {
             },
             confirmButton = {
                 Button(onClick = {
-                    var updated = map.copy(name = name)
+                    var updated = map.copy(name = name, bgm = bgm, weather = weather)
                     if (width != map.width || height != map.height) {
                         updated = updated.resized(width, height)
                     }
@@ -513,4 +531,14 @@ private fun DrawScope.drawMap(
         drawCircle(Color(0xCCFFC94D), radius = tilePx * 0.35f, center = center)
         drawCircle(Color(0xFF3A2E00), radius = tilePx * 0.15f, center = center)
     }
+}
+
+/** Nombre visible de una pista de música ("" = sin música). */
+private fun bgmLabel(name: String): String =
+    if (name.isEmpty()) "Sin música" else name.replaceFirstChar { it.uppercase() }
+
+private fun Weather.spanish(): String = when (this) {
+    Weather.NONE -> "Ninguno"
+    Weather.RAIN -> "Lluvia"
+    Weather.SNOW -> "Nieve"
 }

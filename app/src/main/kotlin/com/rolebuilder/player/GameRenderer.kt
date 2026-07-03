@@ -7,6 +7,7 @@ import com.rolebuilder.core.engine.EventEntity
 import com.rolebuilder.core.engine.HitEffect
 import com.rolebuilder.core.engine.RpgEngine
 import com.rolebuilder.core.io.ProjectIo
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.player.gl.Camera2D
 import com.rolebuilder.player.gl.SpriteBatch
@@ -14,6 +15,9 @@ import com.rolebuilder.player.gl.Texture
 import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * Renderer del juego: ejecuta el tick del motor y dibuja el estado con
@@ -30,6 +34,11 @@ class GameRenderer(
     private val textures = mutableMapOf<String, Texture>()
     private val camera = Camera2D()
     private var lastFrameNanos = 0L
+    private var elapsed = 0f
+
+    /** Partículas de clima: x, y (relativas a la vista, en casillas), velocidad y fase. */
+    private val particles = Array(WEATHER_PARTICLES) { FloatArray(4) }
+    private var particlesSeeded = false
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
@@ -52,6 +61,7 @@ class GameRenderer(
         engine.tick(dt)
         engine.mapChanged = false
         drainSounds()
+        elapsed += dt
 
         GLES30.glClearColor(0.05f, 0.05f, 0.08f, 1f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
@@ -59,6 +69,7 @@ class GameRenderer(
         val map = engine.currentMap
         camera.x = engine.player.x
         camera.y = engine.player.y
+        updateShake()
         camera.update(map.width, map.height)
 
         batch.begin(camera.mvp)
@@ -68,7 +79,20 @@ class GameRenderer(
         drawProjectiles()
         drawAttackFlash()
         drawEffects()
+        drawWeather(dt)
+        drawScreenFx()
         batch.end()
+    }
+
+    private fun updateShake() {
+        if (engine.shakeTimeLeft > 0f) {
+            val amp = 0.14f * minOf(1f, engine.shakeTimeLeft * 2f)
+            camera.shakeX = sin(elapsed * 55f) * amp
+            camera.shakeY = cos(elapsed * 41f) * amp * 0.6f
+        } else {
+            camera.shakeX = 0f
+            camera.shakeY = 0f
+        }
     }
 
     private fun drainSounds() {
@@ -221,7 +245,84 @@ class GameRenderer(
         }
     }
 
+    // ------------------------------------------------------ clima y pantalla
+
+    /** Lluvia o nieve como partículas en coordenadas relativas a la vista. */
+    private fun drawWeather(dt: Float) {
+        val weather = engine.state.weather
+        if (weather == Weather.NONE) {
+            particlesSeeded = false
+            return
+        }
+        val viewW = camera.viewTilesX + 2f
+        val viewH = camera.tilesVisibleY + 2f
+        if (!particlesSeeded) {
+            for (p in particles) {
+                p[0] = Random.nextFloat() * viewW
+                p[1] = Random.nextFloat() * viewH
+                p[2] = 0.7f + Random.nextFloat() * 0.6f // multiplicador de velocidad
+                p[3] = Random.nextFloat() * 6.28f // fase de oscilación
+            }
+            particlesSeeded = true
+        }
+
+        val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
+        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+
+        for (p in particles) {
+            when (weather) {
+                Weather.RAIN -> {
+                    p[1] += dt * 13f * p[2]
+                    p[0] += dt * 3.5f * p[2]
+                }
+                Weather.SNOW -> {
+                    p[1] += dt * 1.4f * p[2]
+                    p[0] += sin(elapsed * 1.7f + p[3]) * dt * 0.6f
+                }
+                Weather.NONE -> Unit
+            }
+            if (p[1] > viewH) {
+                p[1] -= viewH
+                p[0] = Random.nextFloat() * viewW
+            }
+            if (p[0] > viewW) p[0] -= viewW
+            if (p[0] < 0f) p[0] += viewW
+
+            val x = left + p[0]
+            val y = top + p[1]
+            when (weather) {
+                Weather.RAIN -> batch.draw(
+                    white, x, y, 0.04f, 0.35f * p[2],
+                    r = 0.6f, g = 0.7f, b = 1f, a = 0.45f,
+                )
+                Weather.SNOW -> batch.draw(
+                    white, x, y, 0.09f, 0.09f,
+                    r = 1f, g = 1f, b = 1f, a = 0.8f,
+                )
+                Weather.NONE -> Unit
+            }
+        }
+    }
+
+    /** Overlays a pantalla completa: tinte gradual y destello. */
+    private fun drawScreenFx() {
+        val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
+        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val w = camera.viewTilesX + 2f
+        val h = camera.tilesVisibleY + 2f
+
+        val tint = engine.tintCurrent
+        if (tint[3] > 0.004f) {
+            batch.draw(white, left, top, w, h, r = tint[0], g = tint[1], b = tint[2], a = tint[3])
+        }
+        if (engine.flashIntensity > 0.004f) {
+            val flash = engine.flashColor
+            batch.draw(white, left, top, w, h, r = flash[0], g = flash[1], b = flash[2], a = engine.flashIntensity)
+        }
+    }
+
     companion object {
         private val WALK_CYCLE = intArrayOf(0, 1, 2, 1)
+        private const val WEATHER_PARTICLES = 90
     }
 }

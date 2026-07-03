@@ -15,6 +15,10 @@ class Camera2D {
     /** Casillas visibles en vertical. */
     var tilesVisibleY = 9f
 
+    /** Desplazamiento de temblor (en casillas), aplicado tras encuadrar. */
+    var shakeX = 0f
+    var shakeY = 0f
+
     var viewportWidth = 1
     var viewportHeight = 1
 
@@ -31,6 +35,11 @@ class Camera2D {
         y = if (tilesVisibleY >= mapHeight) mapHeight / 2f else y.coerceIn(halfH, mapHeight - halfH)
 
         // y del mundo crece hacia abajo: se invierte bottom/top.
-        Matrix.orthoM(mvp, 0, x - halfW, x + halfW, y + halfH, y - halfH, -1f, 1f)
+        Matrix.orthoM(
+            mvp, 0,
+            x - halfW + shakeX, x + halfW + shakeX,
+            y + halfH + shakeY, y - halfH + shakeY,
+            -1f, 1f,
+        )
     }
 }

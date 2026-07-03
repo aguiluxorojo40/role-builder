@@ -66,15 +66,18 @@ import com.rolebuilder.player.ui.MessagePanel
 import com.rolebuilder.player.ui.NoticeBanner
 import com.rolebuilder.player.ui.VirtualJoystick
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.isActive
 
-/** Ejecuta un proyecto RPG a pantalla completa. */
+/** Ejecuta un proyecto RPG a pantalla completa, empezando por el título. */
 class PlayerActivity : ComponentActivity() {
 
-    private lateinit var engine: RpgEngine
     private lateinit var soundFx: SoundFx
+    private lateinit var bgm: BgmPlayer
     private lateinit var projectDir: File
-    private lateinit var saveFile: File
+    private lateinit var savesDir: File
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,7 +89,7 @@ class PlayerActivity : ComponentActivity() {
             return
         }
         projectDir = File(path)
-        saveFile = File(projectDir, "saves/slot1.json")
+        savesDir = File(projectDir, "saves")
 
         val data = try {
             ProjectIo.loadFull(projectDir)
@@ -96,27 +99,41 @@ class PlayerActivity : ComponentActivity() {
             return
         }
 
-        val state = if (intent.getBooleanExtra(EXTRA_CONTINUE, false) && saveFile.exists()) {
-            SaveIo.load(saveFile)
-        } else {
-            GameState.newGame(data.project, data.database)
-        }
-
-        engine = RpgEngine(data, state)
         soundFx = SoundFx(this)
+        bgm = BgmPlayer()
 
         setContent {
-            PlayerScreen(
-                engine = engine,
-                projectDir = projectDir,
-                soundFx = soundFx,
-                onSave = {
-                    SaveIo.save(saveFile, engine.state)
-                    Toast.makeText(this, "Partida guardada", Toast.LENGTH_SHORT).show()
-                },
-                onExit = { finish() },
-                onRetry = { recreate() },
-            )
+            var engine by remember { mutableStateOf<RpgEngine?>(null) }
+            val current = engine
+
+            if (current == null) {
+                LaunchedEffect(Unit) { bgm.stop() }
+                TitleScreen(
+                    gameName = data.project.name,
+                    savesDir = savesDir,
+                    onNewGame = {
+                        engine = RpgEngine(data, GameState.newGame(data.project, data.database))
+                    },
+                    onLoadSlot = { slot ->
+                        SaveIo.load(savesDir, slot)?.let { engine = RpgEngine(data, it) }
+                    },
+                    onExit = { finish() },
+                )
+            } else {
+                PlayerScreen(
+                    engine = current,
+                    projectDir = projectDir,
+                    soundFx = soundFx,
+                    bgm = bgm,
+                    savesDir = savesDir,
+                    onSave = { slot ->
+                        SaveIo.save(savesDir, slot, current.state)
+                        Toast.makeText(this, "Partida guardada en la ranura $slot", Toast.LENGTH_SHORT).show()
+                    },
+                    onExit = { finish() },
+                    onRetry = { engine = null }, // vuelta al título
+                )
+            }
         }
     }
 
@@ -131,6 +148,7 @@ class PlayerActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         if (::soundFx.isInitialized) soundFx.release()
+        if (::bgm.isInitialized) bgm.release()
     }
 
     companion object {
@@ -149,7 +167,9 @@ private fun PlayerScreen(
     engine: RpgEngine,
     projectDir: File,
     soundFx: SoundFx,
-    onSave: () -> Unit,
+    bgm: BgmPlayer,
+    savesDir: File,
+    onSave: (Int) -> Unit,
     onExit: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -157,7 +177,8 @@ private fun PlayerScreen(
     var menuOpen by remember { mutableStateOf(false) }
 
     // Re-lee el estado del motor una vez por frame de UI. En el mismo bucle
-    // se consume engine.notice y se oculta el aviso pasados ~2 s.
+    // se consume engine.notice (ocultándolo pasados ~2 s) y se sigue la
+    // pista de música que pida el motor (play es idempotente).
     var frame by remember { mutableLongStateOf(0L) }
     var noticeText by remember { mutableStateOf<String?>(null) }
     var noticeShownAt by remember { mutableLongStateOf(0L) }
@@ -170,6 +191,7 @@ private fun PlayerScreen(
                     noticeShownAt = now
                 }
                 if (noticeText != null && now - noticeShownAt > 2000L) noticeText = null
+                if (engine.gameOver) bgm.stop() else bgm.play(engine.state.currentBgm)
             }
             frame++
         }
@@ -193,8 +215,14 @@ private fun PlayerScreen(
         DisposableEffect(lifecycleOwner, glView) {
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
-                    Lifecycle.Event.ON_PAUSE -> glView?.onPause()
-                    Lifecycle.Event.ON_RESUME -> glView?.onResume()
+                    Lifecycle.Event.ON_PAUSE -> {
+                        glView?.onPause()
+                        bgm.pause()
+                    }
+                    Lifecycle.Event.ON_RESUME -> {
+                        glView?.onResume()
+                        bgm.resume()
+                    }
                     else -> Unit
                 }
             }
@@ -270,6 +298,7 @@ private fun PlayerScreen(
         if (menuOpen) {
             PauseMenu(
                 engine = engine,
+                savesDir = savesDir,
                 onSave = onSave,
                 onExit = onExit,
                 onDismiss = {
@@ -288,10 +317,19 @@ private fun PlayerScreen(
 @Composable
 private fun PauseMenu(
     engine: RpgEngine,
-    onSave: () -> Unit,
+    savesDir: File,
+    onSave: (Int) -> Unit,
     onExit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var savingOpen by remember { mutableStateOf(false) }
+    if (savingOpen) {
+        SaveSlotDialog(
+            savesDir = savesDir,
+            onSave = onSave,
+            onDismiss = { savingOpen = false },
+        )
+    }
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -369,7 +407,7 @@ private fun PauseMenu(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = onSave) { Text("Guardar") }
+                Button(onClick = { savingOpen = true }) { Text("Guardar") }
                 Button(onClick = onDismiss) { Text("Seguir") }
                 TextButton(onClick = onExit) { Text("Salir") }
             }
@@ -532,6 +570,134 @@ private fun ShopRow(
         TextButton(onClick = onAction, enabled = enabled) { Text(actionLabel) }
     }
 }
+
+/** Pantalla de título: nombre del juego, Nueva partida y Continuar. */
+@Composable
+private fun TitleScreen(
+    gameName: String,
+    savesDir: File,
+    onNewGame: () -> Unit,
+    onLoadSlot: (Int) -> Unit,
+    onExit: () -> Unit,
+) {
+    val slots = remember { SaveIo.listSlots(savesDir) }
+    var choosingSlot by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF0B1020)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            gameName,
+            color = Color(0xFFFFC94D),
+            fontSize = 34.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Column(
+            modifier = Modifier.padding(top = 32.dp).fillMaxWidth(0.7f),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (!choosingSlot) {
+                Button(onClick = onNewGame, modifier = Modifier.fillMaxWidth()) {
+                    Text("Nueva partida")
+                }
+                Button(
+                    onClick = { choosingSlot = true },
+                    enabled = slots.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Continuar")
+                }
+                TextButton(onClick = onExit) { Text("Salir", color = Color.White.copy(alpha = 0.7f)) }
+            } else {
+                Text("Elige una partida", color = Color.White, fontWeight = FontWeight.Bold)
+                slots.forEach { info ->
+                    SlotRow(info = info, emptyLabel = null) { onLoadSlot(info.slot) }
+                }
+                TextButton(onClick = { choosingSlot = false }) {
+                    Text("Volver", color = Color.White.copy(alpha = 0.7f))
+                }
+            }
+        }
+    }
+}
+
+/** Diálogo de guardado: una fila por ranura, guardar sobrescribe. */
+@Composable
+private fun SaveSlotDialog(
+    savesDir: File,
+    onSave: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var refresh by remember { mutableStateOf(0) }
+    val slots = remember(refresh) { SaveIo.listSlots(savesDir).associateBy { it.slot } }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .background(Color(0xF0121A30), RoundedCornerShape(16.dp))
+                .padding(20.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text("Guardar partida", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Guardar en una ranura ocupada la sobrescribe.",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 12.sp,
+            )
+            for (slot in 1..SaveIo.SLOT_COUNT) {
+                SlotRow(info = slots[slot], emptyLabel = "Ranura $slot — vacía") {
+                    onSave(slot)
+                    refresh++
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) { Text("Cerrar") }
+            }
+        }
+    }
+}
+
+/**
+ * Fila de ranura de guardado. Con [info] muestra sus metadatos; si es null
+ * usa [emptyLabel] (y si este también es null, no se dibuja nada).
+ */
+@Composable
+private fun SlotRow(info: SaveIo.SlotInfo?, emptyLabel: String?, onClick: () -> Unit) {
+    if (info == null && emptyLabel == null) return
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1B2745), RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        if (info == null) {
+            Text(emptyLabel ?: "", color = Color.White.copy(alpha = 0.6f))
+        } else {
+            Text("Ranura ${info.slot} · Nv ${info.level} · ${info.gold} oro", color = Color.White)
+            Text(
+                "${formatPlayTime(info.playTimeSeconds)} jugado · ${formatDate(info.modifiedAtMillis)}",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 12.sp,
+            )
+        }
+    }
+}
+
+private fun formatPlayTime(seconds: Float): String {
+    val total = seconds.toInt()
+    val h = total / 3600
+    val m = (total % 3600) / 60
+    val s = total % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+}
+
+private fun formatDate(millis: Long): String =
+    SimpleDateFormat("d/M/yyyy HH:mm", Locale.getDefault()).format(Date(millis))
 
 @Composable
 private fun GameOverOverlay(onRetry: () -> Unit, onExit: () -> Unit) {
