@@ -10,11 +10,14 @@ import com.rolebuilder.core.engine.RpgEngine
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.player.gl.Camera2D
+import com.rolebuilder.player.gl.PostProcessor
 import com.rolebuilder.player.gl.SpriteBatch
 import com.rolebuilder.player.gl.Texture
 import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * Renderer del juego: ejecuta el tick del motor y dibuja el estado con
@@ -29,14 +32,26 @@ class GameRenderer(
 
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
+    private lateinit var radial: Texture
+    private lateinit var post: PostProcessor
     private val textures = mutableMapOf<String, Texture>()
     private val camera = Camera2D()
     private var lastFrameNanos = 0L
     private var lastBgm: String? = BGM_UNSET
+    private var elapsed = 0f
+
+    /** Estilo HD-2D del proyecto: post-procesado, sombras, luces y motas. */
+    private val hd2d = engine.data.project.hd2d
+
+    /** Motas de luz ambientales (solo HD-2D): x, y, velocidad y fase. */
+    private val motes = Array(MOTES) { FloatArray(4) }
+    private var motesSeeded = false
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
         white = Texture.white()
+        radial = Texture.radial()
+        post = PostProcessor()
         textures.clear()
         lastFrameNanos = 0L
     }
@@ -45,6 +60,7 @@ class GameRenderer(
         GLES30.glViewport(0, 0, width, height)
         camera.viewportWidth = width
         camera.viewportHeight = height
+        if (hd2d) post.resize(width, height)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -54,12 +70,15 @@ class GameRenderer(
 
         engine.tick(dt)
         engine.mapChanged = false
+        elapsed += dt
         drainSounds()
         if (engine.currentBgm != lastBgm) {
             lastBgm = engine.currentBgm
             onBgmChange(lastBgm)
         }
 
+        val usePost = hd2d && post.enabled
+        if (usePost) post.beginScene()
         GLES30.glClearColor(0.05f, 0.05f, 0.08f, 1f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
@@ -70,12 +89,15 @@ class GameRenderer(
 
         batch.begin(camera.mvp)
         drawTiles()
+        if (hd2d) drawShadows()
         drawDrops()
         drawCharacters()
         drawProjectiles()
         drawSwordSwing()
         drawEffects()
+        drawLights(dt)
         batch.end()
+        if (usePost) post.compose()
     }
 
     private fun drainSounds() {
@@ -291,6 +313,75 @@ class GameRenderer(
         }
     }
 
+    // ------------------------------------------------------- luces y sombras
+
+    /** Sombras elípticas suaves bajo los personajes (solo HD-2D). */
+    private fun drawShadows() {
+        fun shadow(cx: Float, cy: Float) {
+            batch.draw(radial, cx - 0.32f, cy + 0.16f, 0.64f, 0.26f, r = 0f, g = 0f, b = 0f, a = 0.35f)
+        }
+        for (event in engine.events) {
+            if (event.erased || event.currentSprite == null) continue
+            shadow(event.x, event.y)
+        }
+        for (enemy in engine.enemies) {
+            if (enemy.alive) shadow(enemy.x, enemy.y)
+        }
+        if (!engine.gameOver) shadow(engine.player.x, engine.player.y)
+    }
+
+    /**
+     * Luces cálidas aditivas de los eventos con lightRadius > 0 y, en HD-2D,
+     * motas de luz ambientales.
+     */
+    private fun drawLights(dt: Float) {
+        batch.setAdditive(true)
+
+        for (event in engine.events) {
+            val radius = event.page?.lightRadius ?: 0f
+            if (radius <= 0f || event.erased) continue
+            val flicker = 0.85f + 0.15f * sin(elapsed * 9f + event.event.id * 1.7f)
+            batch.draw(
+                radial,
+                event.x - radius, event.y - radius, radius * 2f, radius * 2f,
+                r = 1f, g = 0.72f, b = 0.42f, a = 0.55f * flicker,
+            )
+        }
+
+        if (hd2d) drawMotes(dt)
+        batch.setAdditive(false)
+    }
+
+    /** Motas de polvo/luciérnagas flotando; se dibujan en modo aditivo. */
+    private fun drawMotes(dt: Float) {
+        val viewW = camera.viewTilesX + 2f
+        val viewH = camera.tilesVisibleY + 2f
+        if (!motesSeeded) {
+            for (m in motes) {
+                m[0] = Random.nextFloat() * viewW
+                m[1] = Random.nextFloat() * viewH
+                m[2] = 0.5f + Random.nextFloat()
+                m[3] = Random.nextFloat() * 6.28f
+            }
+            motesSeeded = true
+        }
+        val left = camera.x - camera.viewTilesX / 2f - 1f
+        val top = camera.y - camera.tilesVisibleY / 2f - 1f
+        for (m in motes) {
+            m[1] -= dt * 0.12f * m[2]
+            m[0] += sin(elapsed * 0.8f + m[3]) * dt * 0.25f
+            if (m[1] < 0f) m[1] += viewH
+            if (m[0] > viewW) m[0] -= viewW
+            if (m[0] < 0f) m[0] += viewW
+            val pulse = 0.5f + 0.5f * sin(elapsed * 1.3f + m[3] * 2f)
+            batch.draw(
+                radial,
+                left + m[0], top + m[1], 0.12f, 0.12f,
+                r = 1f, g = 0.9f, b = 0.6f, a = 0.05f + 0.09f * pulse,
+            )
+        }
+    }
+
     companion object {
         private val WALK_CYCLE = intArrayOf(0, 1, 2, 1)
 
@@ -299,5 +390,6 @@ class GameRenderer(
 
         private const val SWORD_IMAGE = "sword.png"
         private const val SLASH_IMAGE = "slash.png"
+        private const val MOTES = 40
     }
 }

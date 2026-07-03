@@ -18,6 +18,12 @@ data class Project(
     val variableNames: List<String> = List(DEFAULT_VARIABLE_COUNT) { "" },
     /** Mapas del proyecto en el orden que muestra el editor. */
     val mapIds: List<Int> = listOf(1),
+    /**
+     * Estilo visual "HD-2D": post-procesado con desenfoque tilt-shift
+     * (efecto maqueta), bloom, viñeta y etalonaje cálido, más sombras
+     * suaves y motas de luz ambientales en el runtime.
+     */
+    val hd2d: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_SWITCH_COUNT = 50

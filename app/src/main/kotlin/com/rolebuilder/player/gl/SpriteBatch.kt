@@ -53,6 +53,7 @@ class SpriteBatch(private val maxQuads: Int = 4096) {
     private var quadCount = 0
     private var texture: Texture? = null
     private var mvp: FloatArray = FloatArray(16)
+    private var additive = false
 
     init {
         val indices = ShortArray(maxQuads * 6)
@@ -78,6 +79,14 @@ class SpriteBatch(private val maxQuads: Int = 4096) {
         mvp = mvpMatrix
         quadCount = 0
         texture = null
+        additive = false
+    }
+
+    /** Cambia entre mezcla alfa normal y aditiva (luces). Vacía lo pendiente. */
+    fun setAdditive(value: Boolean) {
+        if (additive == value) return
+        flush()
+        additive = value
     }
 
     /**
@@ -150,7 +159,10 @@ class SpriteBatch(private val maxQuads: Int = 4096) {
         GLES30.glUniform1i(uTex, 0)
 
         GLES30.glEnable(GLES30.GL_BLEND)
-        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
+        GLES30.glBlendFunc(
+            GLES30.GL_SRC_ALPHA,
+            if (additive) GLES30.GL_ONE else GLES30.GL_ONE_MINUS_SRC_ALPHA,
+        )
 
         vertexBuffer.position(0)
         vertexBuffer.put(vertices, 0, quadCount * 4 * FLOATS_PER_VERTEX)

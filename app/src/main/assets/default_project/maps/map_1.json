@@ -643,7 +643,8 @@
                             "text": "Toca una casilla en el editor para crear eventos como yo.",
                             "speaker": "Aldeano"
                         }
-                    ]
+                    ],
+                    "lightRadius": 0.0
                 }
             ]
         },
@@ -688,7 +689,8 @@
                             "key": "A",
                             "value": true
                         }
-                    ]
+                    ],
+                    "lightRadius": 0.0
                 },
                 {
                     "conditions": {
@@ -730,7 +732,8 @@
                                 }
                             ]
                         }
-                    ]
+                    ],
+                    "lightRadius": 0.0
                 }
             ]
         },
@@ -764,7 +767,8 @@
                             "y": 6,
                             "direction": "UP"
                         }
-                    ]
+                    ],
+                    "lightRadius": 2.5
                 }
             ]
         }
