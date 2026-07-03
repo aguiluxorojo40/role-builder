@@ -220,10 +220,10 @@
             0,
             0,
             0,
-            0,
-            0,
-            0,
-            0,
+            15,
+            15,
+            15,
+            15,
             0,
             5,
             5,
@@ -240,10 +240,10 @@
             7,
             0,
             0,
-            0,
-            0,
-            0,
-            0,
+            8,
+            12,
+            8,
+            8,
             0,
             5,
             5,
@@ -490,7 +490,7 @@
             -1,
             -1,
             -1,
-            -1,
+            1,
             -1,
             -1,
             -1,
@@ -544,7 +544,7 @@
             -1,
             -1,
             -1,
-            1,
+            -1,
             -1,
             -1,
             -1,
@@ -733,13 +733,47 @@
                     ]
                 }
             ]
+        },
+        {
+            "id": 3,
+            "name": "Puerta de la cabaña",
+            "x": 15,
+            "y": 11,
+            "pages": [
+                {
+                    "conditions": {
+                        "switchId": null,
+                        "selfSwitch": null,
+                        "variableId": null,
+                        "variableAtLeast": 0,
+                        "itemId": null
+                    },
+                    "sprite": null,
+                    "trigger": "PLAYER_TOUCH",
+                    "passable": false,
+                    "moveType": "FIXED",
+                    "commands": [
+                        {
+                            "type": "playSound",
+                            "name": "select"
+                        },
+                        {
+                            "type": "transfer",
+                            "mapId": 2,
+                            "x": 4,
+                            "y": 6,
+                            "direction": "UP"
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "spawns": [
         {
             "enemyId": 1,
-            "x": 15,
-            "y": 10
+            "x": 10,
+            "y": 5
         },
         {
             "enemyId": 1,

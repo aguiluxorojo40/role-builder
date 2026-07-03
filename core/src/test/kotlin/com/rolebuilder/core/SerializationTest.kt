@@ -70,12 +70,12 @@ class SerializationTest {
         try {
             ProjectIo.saveProject(dir, DefaultProjectFactory.defaultProject("Disco"))
             ProjectIo.saveDatabase(dir, DefaultProjectFactory.defaultDatabase())
-            ProjectIo.saveMap(dir, DefaultProjectFactory.starterMap())
+            DefaultProjectFactory.maps().forEach { ProjectIo.saveMap(dir, it) }
 
             val loaded = ProjectIo.loadFull(dir)
             assertEquals("Disco", loaded.project.name)
-            assertEquals(1, loaded.maps.size)
-            assertEquals(2, loaded.maps.getValue(1).events.size)
+            assertEquals(2, loaded.maps.size)
+            assertEquals(3, loaded.maps.getValue(1).events.size)
         } finally {
             dir.deleteRecursively()
         }
