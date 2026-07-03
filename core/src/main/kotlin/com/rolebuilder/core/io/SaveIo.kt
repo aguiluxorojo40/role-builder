@@ -7,6 +7,7 @@ import java.io.File
 object SaveIo {
 
     fun save(file: File, state: GameState) {
+        state.savedAtEpochMs = System.currentTimeMillis()
         file.parentFile?.mkdirs()
         file.writeText(ProjectIo.json.encodeToString(GameState.serializer(), state))
     }

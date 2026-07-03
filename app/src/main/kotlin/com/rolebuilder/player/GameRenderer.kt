@@ -23,6 +23,7 @@ class GameRenderer(
     private val engine: RpgEngine,
     private val projectDir: File,
     private val onSound: (String) -> Unit,
+    private val onBgmChange: (String?) -> Unit = {},
 ) : GLSurfaceView.Renderer {
 
     private lateinit var batch: SpriteBatch
@@ -30,6 +31,7 @@ class GameRenderer(
     private val textures = mutableMapOf<String, Texture>()
     private val camera = Camera2D()
     private var lastFrameNanos = 0L
+    private var lastBgm: String? = BGM_UNSET
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
@@ -52,6 +54,10 @@ class GameRenderer(
         engine.tick(dt)
         engine.mapChanged = false
         drainSounds()
+        if (engine.currentBgm != lastBgm) {
+            lastBgm = engine.currentBgm
+            onBgmChange(lastBgm)
+        }
 
         GLES30.glClearColor(0.05f, 0.05f, 0.08f, 1f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
@@ -122,8 +128,8 @@ class GameRenderer(
         val list = mutableListOf<Sortable>()
 
         for (event in engine.events) {
-            val sprite = event.page?.sprite ?: continue
-            if (event.erased) continue
+            val sprite = event.currentSprite ?: continue
+            if (event.erased || event.page == null) continue
             list.add(Sortable(event.y) { drawSheet(sprite.image, event.x, event.y, event.dir, event.animTime, event.moving) })
         }
         for (enemy in engine.enemies) {
@@ -223,5 +229,8 @@ class GameRenderer(
 
     companion object {
         private val WALK_CYCLE = intArrayOf(0, 1, 2, 1)
+
+        /** Centinela para forzar el primer aviso de BGM aunque sea null. */
+        private const val BGM_UNSET = " unset"
     }
 }

@@ -53,6 +53,11 @@ class RpgEngine(
     /** Se pone a true al cambiar de mapa para que el renderer se reconstruya. */
     var mapChanged = true
 
+    /** Pista de música de fondo actual (null = silencio). La app la observa
+     *  cada frame y reproduce/detiene el audio correspondiente. */
+    var currentBgm: String? = null
+        private set
+
     var gameOver = false
         private set
 
@@ -128,6 +133,7 @@ class RpgEngine(
         effects.clear()
         parallelInterpreters.clear()
         refreshEventPages()
+        currentBgm = map.bgm
         mapChanged = true
     }
 
@@ -135,6 +141,15 @@ class RpgEngine(
         val dir = direction ?: player.dir
         loadMap(mapId, x + 0.5f, y + 0.5f, dir)
     }
+
+    /** Cambia la música de fondo (PlayMusic/StopMusic; null = silencio). */
+    internal fun setBgm(track: String?) {
+        currentBgm = track
+    }
+
+    /** Entero aleatorio en el rango [min], [max] con el Random inyectado (si min > max, devuelve min). */
+    internal fun randomInt(min: Int, max: Int): Int =
+        if (min >= max) min else random.nextInt(min, max + 1)
 
     // =========================================================================
     // Tick principal
@@ -194,6 +209,8 @@ class RpgEngine(
                 entity.page = entity.event.pages.getOrNull(index)
                 entity.moveQueue.clear()
                 entity.hasMoveTarget = false
+                entity.spriteOverride = null
+                entity.spriteOverridden = false
                 entity.page?.sprite?.let { entity.dir = it.direction }
             }
         }

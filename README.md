@@ -23,6 +23,9 @@ externos: editor y motor son la misma app.
 - Botón ▶ para probar el juego al instante.
 
 **Motor (runtime)**
+- Pantalla de título (Nueva partida / Continuar) y **3 ranuras de guardado** con fecha.
+- **Música de fondo procedural**: 5 pistas chiptune (título, campo, aldea, mazmorra,
+  batalla) sintetizadas en tiempo real; se asignan por mapa o con comandos de evento.
 - Renderizado OpenGL ES 3.0 con batch de sprites propio, cámara que sigue al
   jugador, orden de dibujado por profundidad y filtrado pixel-art.
 - Movimiento libre de 8 direcciones con colisión por casillas y deslizamiento.
@@ -87,6 +90,19 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 - El juego se ejecuta en apaisado; el editor en cualquier orientación.
 - CI en GitHub Actions: ejecuta los tests de `core` y compila el APK de
   depuración (descargable como artefacto del workflow).
+
+## Publica tu juego como app independiente
+
+El mismo APK puede convertirse en *tu* juego, sin editor:
+
+1. Exporta tu proyecto como .zip desde la app.
+2. Descomprímelo en `app/src/main/assets/standalone_game/` (debe quedar
+   `standalone_game/project.json`).
+3. Cambia si quieres el `applicationId` y el nombre en `app/build.gradle.kts` y
+   `strings.xml`, y compila (`./gradlew :app:assembleRelease`).
+
+Al detectar un juego embebido, la app arranca directamente en su pantalla de
+título: el APK resultante es un juego instalable e independiente.
 
 ## Cómo se usa
 

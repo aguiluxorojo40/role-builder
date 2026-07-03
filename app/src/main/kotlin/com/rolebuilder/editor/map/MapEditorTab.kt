@@ -59,10 +59,12 @@ import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.EnemySpawn
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.model.MusicTracks
 import com.rolebuilder.core.model.event.EventPage
 import com.rolebuilder.core.model.event.MapEvent
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.event.EventEditorDialog
+import com.rolebuilder.editor.event.musicName
 import com.rolebuilder.editor.loadImageBitmap
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
@@ -344,6 +346,7 @@ fun MapEditorTab(state: EditorState) {
         var name by remember(map.id) { mutableStateOf(map.name) }
         var width by remember(map.id) { mutableIntStateOf(map.width) }
         var height by remember(map.id) { mutableIntStateOf(map.height) }
+        var bgm by remember(map.id) { mutableStateOf(map.bgm) }
         AlertDialog(
             onDismissRequest = { showMapSettings = false },
             title = { Text("Ajustes del mapa") },
@@ -354,6 +357,13 @@ fun MapEditorTab(state: EditorState) {
                         IntField("Ancho", width, { width = it.coerceIn(5, 200) }, Modifier.weight(1f))
                         IntField("Alto", height, { height = it.coerceIn(5, 200) }, Modifier.weight(1f))
                     }
+                    DropdownField(
+                        label = "Música de fondo",
+                        options = listOf<String?>(null) + MusicTracks.ALL,
+                        selected = bgm,
+                        optionLabel = { it?.musicName() ?: "(silencio)" },
+                        onSelect = { bgm = it },
+                    )
                     if (state.mapList.size > 1) {
                         TextButton(onClick = {
                             state.deleteMap(map.id)
@@ -364,7 +374,7 @@ fun MapEditorTab(state: EditorState) {
             },
             confirmButton = {
                 Button(onClick = {
-                    var updated = map.copy(name = name)
+                    var updated = map.copy(name = name, bgm = bgm)
                     if (width != map.width || height != map.height) {
                         updated = updated.resized(width, height)
                     }

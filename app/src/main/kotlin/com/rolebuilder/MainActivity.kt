@@ -17,11 +17,21 @@ import java.io.File
 import java.net.URLDecoder
 import java.net.URLEncoder
 
-/** Punto de entrada: gestor de proyectos y editor. */
+/** Punto de entrada: gestor de proyectos y editor (o juego independiente). */
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Si el APK lleva un juego embebido (assets/standalone_game), esta
+        // build ES ese juego: arranca directo a su pantalla de título.
+        val standalone = ProjectStore.installStandaloneIfPresent(this)
+        if (standalone != null) {
+            startActivity(com.rolebuilder.player.PlayerActivity.intent(this, standalone))
+            finish()
+            return
+        }
+
         setContent {
             RoleBuilderTheme {
                 AppNavigation()

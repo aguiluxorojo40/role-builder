@@ -6,6 +6,7 @@ import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.core.model.event.EventPage
 import com.rolebuilder.core.model.event.MapEvent
 import com.rolebuilder.core.model.event.MoveStep
+import com.rolebuilder.core.model.event.SpriteRef
 
 /** Semi-lado de la caja de colisión de personajes, en casillas. */
 const val CHAR_HALF_BOX = 0.35f
@@ -86,6 +87,15 @@ class EventEntity(val event: MapEvent) {
     /** Página activa según las condiciones; null = inactivo/invisible. */
     var page: EventPage? = null
     var pageIndex = -1
+
+    /** Sprite forzado por ChangeEventSprite; se limpia al cambiar de página. */
+    var spriteOverride: SpriteRef? = null
+
+    /** true si hay override activo: distingue "sin override" de "override a invisible" (override null). */
+    var spriteOverridden = false
+
+    /** Sprite visible actual: el override si está activo, si no el de la página. */
+    val currentSprite: SpriteRef? get() = if (spriteOverridden) spriteOverride else page?.sprite
 
     /** Pasos pendientes de un MoveRoute o del movimiento aleatorio. */
     val moveQueue = ArrayDeque<MoveStep>()

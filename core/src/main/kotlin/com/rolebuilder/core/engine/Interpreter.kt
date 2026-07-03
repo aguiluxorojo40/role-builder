@@ -2,6 +2,7 @@ package com.rolebuilder.core.engine
 
 import com.rolebuilder.core.model.event.Condition
 import com.rolebuilder.core.model.event.EventCommand
+import com.rolebuilder.core.model.event.SpriteRef
 
 /**
  * Ejecuta listas de [EventCommand] paso a paso. No usa hilos: el motor llama
@@ -171,6 +172,29 @@ class Interpreter(private val engine: RpgEngine) {
 
             EventCommand.EraseEvent -> {
                 source?.erased = true
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.PlayMusic -> {
+                engine.setBgm(cmd.track)
+                StepResult.CONTINUE
+            }
+
+            EventCommand.StopMusic -> {
+                engine.setBgm(null)
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.ChangeEventSprite -> {
+                source?.let { entity ->
+                    entity.spriteOverridden = true
+                    entity.spriteOverride = cmd.image?.let { SpriteRef(it, cmd.direction) }
+                }
+                StepResult.CONTINUE
+            }
+
+            is EventCommand.SetVariableRandom -> {
+                state.variables[cmd.variableId] = engine.randomInt(cmd.min, cmd.max)
                 StepResult.CONTINUE
             }
         }

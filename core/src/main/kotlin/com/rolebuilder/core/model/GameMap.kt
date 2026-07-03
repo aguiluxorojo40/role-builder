@@ -21,6 +21,8 @@ data class GameMap(
     val layers: List<List<Int>>,
     val events: List<MapEvent> = emptyList(),
     val spawns: List<EnemySpawn> = emptyList(),
+    /** Pista de música de fondo del mapa (ver MusicTracks); null = silencio. */
+    val bgm: String? = null,
 ) {
     fun inBounds(x: Int, y: Int): Boolean = x in 0 until width && y in 0 until height
 
