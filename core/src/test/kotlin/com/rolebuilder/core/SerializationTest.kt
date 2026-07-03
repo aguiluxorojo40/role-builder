@@ -110,6 +110,48 @@ class SerializationTest {
     }
 
     @Test
+    fun `project round trip with diorama tilt`() {
+        val project = DefaultProjectFactory.defaultProject("Test").copy(dioramaTilt = 18.5f)
+        val restored = json.decodeFromString(Project.serializer(), json.encodeToString(Project.serializer(), project))
+        assertEquals(project, restored)
+        assertEquals(18.5f, restored.dioramaTilt)
+    }
+
+    @Test
+    fun `legacy project without diorama tilt loads with default`() {
+        val legacy = """{"name":"Vieja aventura"}"""
+        val project = json.decodeFromString(Project.serializer(), legacy)
+        assertEquals(12f, project.dioramaTilt)
+    }
+
+    @Test
+    fun `tileset round trip with standing tiles`() {
+        val ts = DefaultProjectFactory.defaultTileset().copy(standingTiles = listOf(5, 6, 7))
+        val restored = json.decodeFromString(
+            com.rolebuilder.core.model.Tileset.serializer(),
+            json.encodeToString(com.rolebuilder.core.model.Tileset.serializer(), ts),
+        )
+        assertEquals(ts, restored)
+        assertEquals(listOf(5, 6, 7), restored.standingTiles)
+    }
+
+    @Test
+    fun `legacy tileset without standing tiles loads with default`() {
+        val legacy = """{"id":1,"name":"Campo","image":"tileset.png"}"""
+        val ts = json.decodeFromString(com.rolebuilder.core.model.Tileset.serializer(), legacy)
+        assertEquals(emptyList(), ts.standingTiles)
+    }
+
+    @Test
+    fun `default tileset marks expected standing tiles`() {
+        val ts = DefaultProjectFactory.defaultTileset()
+        assertEquals(
+            listOf(Tiles.TREE, Tiles.BUSH, Tiles.ROCK, Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN),
+            ts.standingTiles,
+        )
+    }
+
+    @Test
     fun `tileset passability defaults`() {
         val ts = DefaultProjectFactory.defaultTileset()
         assertTrue(ts.isPassable(Tiles.GRASS))

@@ -16,6 +16,14 @@ data class Tileset(
     val rows: Int = 8,
     /** true = se puede caminar sobre el tile. Indexado por índice de tile. */
     val passable: List<Boolean> = List(columns * rows) { true },
+    /**
+     * Índices de tile que el renderer 2.5D dibuja DE PIE (billboard vertical,
+     * como los personajes) cuando aparecen en la capa 2 del mapa (índice de
+     * capa 1): árboles, arbustos, puertas, rocas... Solo afecta al dibujado
+     * con el diorama activo ([Project.dioramaTilt] > 0); no cambia colisiones
+     * ni lógica de juego.
+     */
+    val standingTiles: List<Int> = emptyList(),
 ) {
     val tileCount: Int get() = columns * rows
 
