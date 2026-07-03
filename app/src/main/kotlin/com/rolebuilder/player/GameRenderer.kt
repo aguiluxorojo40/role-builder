@@ -2,6 +2,7 @@ package com.rolebuilder.player
 
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
+import com.rolebuilder.core.engine.ATTACK_SWING_SECONDS
 import com.rolebuilder.core.engine.EnemyEntity
 import com.rolebuilder.core.engine.EventEntity
 import com.rolebuilder.core.engine.HitEffect
