@@ -16,6 +16,7 @@ import com.rolebuilder.player.gl.Texture
 import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
@@ -41,6 +42,19 @@ class GameRenderer(
 
     /** Estilo HD-2D del proyecto: post-procesado, sombras y motas. */
     private val hd2d = engine.data.project.hd2d
+
+    /**
+     * Factor de compresión del diorama 2.5D: s = cos(dioramaTilt). Geometría:
+     * al tumbar el plano del suelo un ángulo t hacia atrás, cada fila de
+     * casillas proyecta en pantalla cos(t) veces su alto, así que el ortho
+     * vertical se expande a tilesVisibleY/s filas de mundo (más filas, cada
+     * una más chata). Lo ERGUIDO no debe comprimirse: un billboard que en
+     * pantalla debe seguir midiendo 1 casilla de alto necesita 1/s unidades
+     * de mundo, y se ancla por los PIES (el punto que sí está apoyado en el
+     * suelo comprimido) creciendo hacia arriba. Con s = 1 todo es idéntico
+     * al render plano clásico.
+     */
+    private var squash = 1f
 
     /** Partículas de clima: x, y (relativas a la vista, en casillas), velocidad y fase. */
     private val particles = Array(WEATHER_PARTICLES) { FloatArray(4) }
@@ -82,6 +96,8 @@ class GameRenderer(
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
         val map = engine.currentMap
+        squash = cos(engine.data.project.dioramaTilt.coerceIn(0f, 25f) * (PI.toFloat() / 180f))
+        camera.squashY = squash
         camera.x = engine.player.x
         camera.y = engine.player.y
         updateShake()
@@ -115,9 +131,9 @@ class GameRenderer(
         val map = engine.currentMap
         if (map.parallaxLayers.isEmpty()) return
         val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val top = camera.y - camera.viewTilesYWorld / 2f - 1f + camera.shakeY
         val viewW = camera.viewTilesX + 2f
-        val viewH = camera.tilesVisibleY + 2f
+        val viewH = camera.viewTilesYWorld + 2f
 
         for (layer in map.parallaxLayers) {
             if (layer.above != above || layer.alpha <= 0f) continue
@@ -170,14 +186,17 @@ class GameRenderer(
 
         val minX = (camera.x - camera.viewTilesX / 2f - 1f).toInt().coerceAtLeast(0)
         val maxX = (camera.x + camera.viewTilesX / 2f + 1f).toInt().coerceAtMost(map.width - 1)
-        val minY = (camera.y - camera.tilesVisibleY / 2f - 1f).toInt().coerceAtLeast(0)
-        val maxY = (camera.y + camera.tilesVisibleY / 2f + 1f).toInt().coerceAtMost(map.height - 1)
+        val minY = (camera.y - camera.viewTilesYWorld / 2f - 1f).toInt().coerceAtLeast(0)
+        val maxY = (camera.y + camera.viewTilesYWorld / 2f + 1f).toInt().coerceAtMost(map.height - 1)
 
         for (layer in map.layers.indices) {
             for (ty in minY..maxY) {
                 for (tx in minX..maxX) {
                     val tile = map.tileAt(layer, tx, ty)
                     if (tile < 0) continue
+                    // Los tiles "de pie" de la segunda capa se dibujan como
+                    // billboards ordenados por Y en drawCharacters, no aquí.
+                    if (layer == 1 && tile in tileset.standingTiles) continue
                     val col = tile % tileset.columns
                     val row = tile / tileset.columns
                     batch.draw(
@@ -199,6 +218,42 @@ class GameRenderer(
         data class Sortable(val y: Float, val draw: () -> Unit)
 
         val list = mutableListOf<Sortable>()
+
+        // Tiles "de pie": billboards verticales con la base en la parte
+        // inferior de su casilla (ty + 1) y alto 1/s; compiten por Y con los
+        // personajes (clave ty + 0.5, comparable con los centros de entidad)
+        // para que un árbol tape al héroe que pasa por detrás y viceversa.
+        // Con s = 1 el quad es exactamente el 1x1 de su casilla.
+        val map = engine.currentMap
+        val tileset = engine.tileset
+        if (tileset.standingTiles.isNotEmpty() && map.layers.size > 1) {
+            val tex = texture(tileset.image)
+            val minX = (camera.x - camera.viewTilesX / 2f - 1f).toInt().coerceAtLeast(0)
+            val maxX = (camera.x + camera.viewTilesX / 2f + 1f).toInt().coerceAtMost(map.width - 1)
+            val minY = (camera.y - camera.viewTilesYWorld / 2f - 1f).toInt().coerceAtLeast(0)
+            val maxY = (camera.y + camera.viewTilesYWorld / 2f + 1f).toInt().coerceAtMost(map.height - 1)
+            for (ty in minY..maxY) {
+                for (tx in minX..maxX) {
+                    val tile = map.tileAt(1, tx, ty)
+                    if (tile < 0 || tile !in tileset.standingTiles) continue
+                    val col = tile % tileset.columns
+                    val row = tile / tileset.columns
+                    list.add(
+                        Sortable(ty + 0.5f) {
+                            val h = 1f / squash
+                            batch.draw(
+                                tex,
+                                tx.toFloat(), ty + 1f - h, 1f, h,
+                                u0 = col / tileset.columns.toFloat(),
+                                v0 = row / tileset.rows.toFloat(),
+                                u1 = (col + 1) / tileset.columns.toFloat(),
+                                v1 = (row + 1) / tileset.rows.toFloat(),
+                            )
+                        },
+                    )
+                }
+            }
+        }
 
         for (event in engine.events) {
             val sprite = event.page?.sprite ?: continue
@@ -223,7 +278,12 @@ class GameRenderer(
         list.forEach { it.draw() }
     }
 
-    /** Dibuja un frame de una hoja 3x4 centrado en (cx, cy), tamaño 1 casilla. */
+    /**
+     * Dibuja un frame de una hoja 3x4 en (cx, cy), 1 casilla de ancho. Los
+     * pies quedan anclados en cy + 0.4 y el alto es 1/s hacia arriba para
+     * que el billboard no se comprima con el suelo del diorama (con s = 1
+     * es el quad clásico de 1x1 en cy - 0.6 .. cy + 0.4).
+     */
     private fun drawSheet(
         image: String,
         cx: Float,
@@ -242,9 +302,10 @@ class GameRenderer(
             Direction.UP -> 3
         }
         val tint = if (flashWhite) 4f else 1f
+        val h = 1f / squash
         batch.draw(
             tex,
-            cx - 0.5f, cy - 0.6f, 1f, 1f,
+            cx - 0.5f, cy + 0.4f - h, 1f, h,
             u0 = frame / 3f, v0 = row / 4f, u1 = (frame + 1) / 3f, v1 = (row + 1) / 4f,
             r = tint, g = tint, b = tint,
         )
@@ -310,7 +371,7 @@ class GameRenderer(
             return
         }
         val viewW = camera.viewTilesX + 2f
-        val viewH = camera.tilesVisibleY + 2f
+        val viewH = camera.viewTilesYWorld + 2f
         if (!particlesSeeded) {
             for (p in particles) {
                 p[0] = Random.nextFloat() * viewW
@@ -322,7 +383,7 @@ class GameRenderer(
         }
 
         val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val top = camera.y - camera.viewTilesYWorld / 2f - 1f + camera.shakeY
 
         for (p in particles) {
             when (weather) {
@@ -364,9 +425,9 @@ class GameRenderer(
         val tint = engine.tintCurrent
         if (tint[3] <= 0.004f) return
         val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val top = camera.y - camera.viewTilesYWorld / 2f - 1f + camera.shakeY
         batch.draw(
-            white, left, top, camera.viewTilesX + 2f, camera.tilesVisibleY + 2f,
+            white, left, top, camera.viewTilesX + 2f, camera.viewTilesYWorld + 2f,
             r = tint[0], g = tint[1], b = tint[2], a = tint[3],
         )
     }
@@ -375,10 +436,10 @@ class GameRenderer(
     private fun drawFlash() {
         if (engine.flashIntensity <= 0.004f) return
         val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val top = camera.y - camera.viewTilesYWorld / 2f - 1f + camera.shakeY
         val flash = engine.flashColor
         batch.draw(
-            white, left, top, camera.viewTilesX + 2f, camera.tilesVisibleY + 2f,
+            white, left, top, camera.viewTilesX + 2f, camera.viewTilesYWorld + 2f,
             r = flash[0], g = flash[1], b = flash[2], a = engine.flashIntensity,
         )
     }
@@ -398,6 +459,30 @@ class GameRenderer(
             if (enemy.alive) shadow(enemy.x, enemy.y)
         }
         if (!engine.gameOver) shadow(engine.player.x, engine.player.y)
+
+        // Con el diorama activo, los tiles "de pie" también proyectan la
+        // misma elipse, centrada en la base de su casilla, para asentarlos
+        // en el suelo. Con s = 1 se dibujan planos y no necesitan sombra.
+        if (squash < 1f) {
+            val map = engine.currentMap
+            val tileset = engine.tileset
+            if (tileset.standingTiles.isEmpty() || map.layers.size < 2) return
+            val minX = (camera.x - camera.viewTilesX / 2f - 1f).toInt().coerceAtLeast(0)
+            val maxX = (camera.x + camera.viewTilesX / 2f + 1f).toInt().coerceAtMost(map.width - 1)
+            val minY = (camera.y - camera.viewTilesYWorld / 2f - 1f).toInt().coerceAtLeast(0)
+            val maxY = (camera.y + camera.viewTilesYWorld / 2f + 1f).toInt().coerceAtMost(map.height - 1)
+            for (ty in minY..maxY) {
+                for (tx in minX..maxX) {
+                    val tile = map.tileAt(1, tx, ty)
+                    if (tile < 0 || tile !in tileset.standingTiles) continue
+                    batch.draw(
+                        radial,
+                        tx + 0.5f - 0.32f, ty + 1f - 0.13f, 0.64f, 0.26f,
+                        r = 0f, g = 0f, b = 0f, a = 0.35f,
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -425,7 +510,7 @@ class GameRenderer(
     /** Motas de polvo/luciérnagas flotando; se dibujan en modo aditivo. */
     private fun drawMotes(dt: Float) {
         val viewW = camera.viewTilesX + 2f
-        val viewH = camera.tilesVisibleY + 2f
+        val viewH = camera.viewTilesYWorld + 2f
         if (!motesSeeded) {
             for (m in motes) {
                 m[0] = Random.nextFloat() * viewW
@@ -436,7 +521,7 @@ class GameRenderer(
             motesSeeded = true
         }
         val left = camera.x - camera.viewTilesX / 2f - 1f + camera.shakeX
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f + camera.shakeY
+        val top = camera.y - camera.viewTilesYWorld / 2f - 1f + camera.shakeY
         for (m in motes) {
             m[1] -= dt * 0.12f * m[2]
             m[0] += sin(elapsed * 0.8f + m[3]) * dt * 0.25f
