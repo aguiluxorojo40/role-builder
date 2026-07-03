@@ -13,8 +13,10 @@ android {
         applicationId = "com.rolebuilder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        // Esquema: 0.<fase>.<parche>; versionCode = fase*100 + parche.
+        // Los nombres en clave de cada versión están en CHANGELOG.md.
+        versionCode = 900
+        versionName = "0.9.0"
     }
 
     buildTypes {

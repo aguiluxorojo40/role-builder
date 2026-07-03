@@ -3,6 +3,7 @@ name: Compilar APK
 on:
   push:
     branches: [claude/android-rpg-engine-phase-4-fymtw6]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -28,19 +29,38 @@ jobs:
         run: ./gradlew :app:assembleDebug
 
       - name: Preparar APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            NOMBRE="role-builder-${{ github.ref_name }}-debug.apk"
+          else
+            NOMBRE="role-builder-debug.apk"
+          fi
+          cp app/build/outputs/apk/debug/app-debug.apk "$NOMBRE"
+          echo "APK=$NOMBRE" >> "$GITHUB_ENV"
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: role-builder-debug-apk
-          path: role-builder-debug.apk
+          path: ${{ env.APK }}
 
-      - name: Publicar release rodante con la APK
+      # Push a la rama: actualiza la release rodante con la última build.
+      - name: Actualizar release rodante (apk-latest)
+        if: github.ref_type != 'tag'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
           name: APK más reciente (debug)
           prerelease: true
           body: APK de depuración compilada automáticamente a partir del último push de la rama.
-          files: role-builder-debug.apk
+          files: ${{ env.APK }}
+
+      # Push de etiqueta v*: release fija de esa versión (nombres en CHANGELOG.md).
+      - name: Publicar release de versión
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Role Builder ${{ github.ref_name }}
+          body: Ver CHANGELOG.md para el detalle de esta versión.
+          files: ${{ env.APK }}
