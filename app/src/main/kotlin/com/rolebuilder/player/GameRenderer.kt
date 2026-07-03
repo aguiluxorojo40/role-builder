@@ -96,7 +96,8 @@ class GameRenderer(
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
         val map = engine.currentMap
-        squash = cos(engine.data.project.dioramaTilt.coerceIn(0f, 25f) * (PI.toFloat() / 180f))
+        // El motor resuelve la inclinación (comando > mapa > proyecto) y su transición.
+        squash = cos(engine.tiltCurrent * (PI.toFloat() / 180f))
         camera.squashY = squash
         camera.x = engine.player.x
         camera.y = engine.player.y

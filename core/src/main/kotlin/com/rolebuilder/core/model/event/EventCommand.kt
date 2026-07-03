@@ -152,6 +152,15 @@ sealed class EventCommand {
     @SerialName("shakeScreen")
     data class ShakeScreen(val seconds: Float = 0.5f) : EventCommand()
 
+    /**
+     * Inclina el diorama 2.5D gradualmente hasta [degrees] (0 = plano) en
+     * [seconds]. No bloquea. El valor persiste hasta otro comando o hasta
+     * cambiar de mapa (donde vuelve a regir el mapa/proyecto).
+     */
+    @Serializable
+    @SerialName("setDioramaTilt")
+    data class SetDioramaTilt(val degrees: Float, val seconds: Float = 1f) : EventCommand()
+
     /** Borra el evento que lo ejecuta hasta que se recargue el mapa. */
     @Serializable
     @SerialName("eraseEvent")

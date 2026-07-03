@@ -371,6 +371,7 @@ private val COMMAND_OPTIONS = listOf(
     CommandOption("Destello") { EventCommand.FlashScreen() },
     CommandOption("Clima") { EventCommand.SetWeather(Weather.RAIN) },
     CommandOption("Temblor de pantalla") { EventCommand.ShakeScreen() },
+    CommandOption("Inclinación del diorama") { EventCommand.SetDioramaTilt(0f) },
     CommandOption("Borrar este evento") { EventCommand.EraseEvent },
 )
 
@@ -812,6 +813,15 @@ private fun CommandFields(
             FloatField("Duración (s)", command.seconds, { onChange(command.copy(seconds = it.coerceAtLeast(0.1f))) })
         }
 
+        is EventCommand.SetDioramaTilt -> {
+            FloatField("Grados (0 = plano)", command.degrees, { onChange(command.copy(degrees = it.coerceIn(0f, 25f))) })
+            FloatField("Transición (s)", command.seconds, { onChange(command.copy(seconds = it.coerceAtLeast(0f))) })
+            Text(
+                "Persiste hasta otro comando o hasta cambiar de mapa (donde vuelve a regir el mapa/proyecto).",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
         EventCommand.EraseEvent -> {
             Text("El evento desaparecerá hasta que se recargue el mapa.")
         }
@@ -958,6 +968,7 @@ private fun EventCommand.typeName(): String = when (this) {
     is EventCommand.FlashScreen -> "Destello"
     is EventCommand.SetWeather -> "Clima"
     is EventCommand.ShakeScreen -> "Temblor de pantalla"
+    is EventCommand.SetDioramaTilt -> "Inclinación del diorama"
     EventCommand.EraseEvent -> "Borrar este evento"
 }
 
@@ -1003,5 +1014,10 @@ fun EventCommand.summary(state: EditorState): String = when (this) {
         Weather.SNOW -> "❄ Nieve"
     }
     is EventCommand.ShakeScreen -> "📳 Temblor (${secondsLabel(seconds)})"
+    is EventCommand.SetDioramaTilt -> "🎥 Diorama a ${degreesLabel(degrees)} (${secondsLabel(seconds)})"
     EventCommand.EraseEvent -> "🗑 Borrar este evento"
 }
+
+/** Grados con un decimal solo si hace falta ("12°", "7.5°"). */
+private fun degreesLabel(degrees: Float): String =
+    if (degrees == degrees.toInt().toFloat()) "${degrees.toInt()}°" else "%.1f°".format(degrees)

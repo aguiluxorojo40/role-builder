@@ -193,4 +193,47 @@ class PresentationTest {
         engine.run(0.2f)
         assertEquals(0.1f, engine.tintCurrent[0], 0.001f, "sin transición pendiente al cargar")
     }
+
+    @Test
+    fun `set diorama tilt transitions and persists in state`() {
+        val event = actionEvent(
+            6, 5,
+            EventCommand.SetDioramaTilt(degrees = 22f, seconds = 1f),
+            EventCommand.SetSwitch(1, true),
+        )
+        val engine = engine(listOf(map(event)), startX = 5, startY = 5)
+        assertEquals(12f, engine.tiltCurrent, "arranca con la inclinación del proyecto")
+
+        engine.triggerEvent()
+        assertTrue(engine.state.switchOn(1), "SetDioramaTilt no bloquea")
+        assertEquals(22f, engine.state.dioramaTilt)
+        assertEquals(22f, engine.tiltTarget)
+
+        engine.tick(0.5f)
+        assertEquals(17f, engine.tiltCurrent, 0.5f, "valor intermedio a mitad de camino")
+
+        engine.tick(0.6f) // sobrepasa el final: se clava en el destino
+        assertEquals(22f, engine.tiltCurrent)
+    }
+
+    @Test
+    fun `map tilt override applies on transfer and clears the command tilt`() {
+        val exterior = map(
+            actionEvent(
+                6, 5,
+                EventCommand.SetDioramaTilt(degrees = 20f, seconds = 0f),
+                EventCommand.TransferPlayer(mapId = 2, x = 3, y = 3),
+            ),
+        )
+        val interior = GameMap.empty(2, "interior", 12, 12, fillTile = Tiles.GRASS)
+            .copy(dioramaTilt = 0f)
+        val engine = engine(listOf(exterior, interior), startX = 5, startY = 5)
+
+        engine.triggerEvent()
+        engine.run(0.2f)
+        assertEquals(2, engine.state.mapId, "la transferencia se completó")
+        assertEquals(null, engine.state.dioramaTilt, "el cambio de mapa limpia el comando")
+        assertEquals(0f, engine.tiltTarget, "rige la inclinación propia del mapa")
+        assertEquals(0f, engine.tiltCurrent, "sin transición al cargar mapa")
+    }
 }

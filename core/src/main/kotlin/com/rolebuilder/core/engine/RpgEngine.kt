@@ -104,6 +104,22 @@ class RpgEngine(
     /** Segundos restantes de temblor de cámara (el renderer decide la amplitud). */
     var shakeTimeLeft: Float = 0f
 
+    /**
+     * Inclinación 2.5D del frame actual, en grados (el renderer la lee).
+     * El destino se resuelve como comando > mapa > proyecto (ver
+     * [tiltTarget]); la transición avanza en tick como la del tinte.
+     */
+    var tiltCurrent: Float = 0f
+        private set
+    private var tiltStart = 0f
+    private var tiltElapsed = 0f
+    private var tiltDuration = 0f
+
+    /** Inclinación 2.5D destino: comando persistente > mapa > proyecto, en 0..25. */
+    val tiltTarget: Float
+        get() = (state.dioramaTilt ?: currentMap.dioramaTilt ?: data.project.dioramaTilt)
+            .coerceIn(0f, 25f)
+
     // ---- input (lo escribe la capa de UI) -----------------------------------
 
     /** Ejes del joystick virtual, en [-1, 1]. */
@@ -149,6 +165,8 @@ class RpgEngine(
         // El mapa impone su presentación; los comandos pueden sobreescribirla después.
         state.currentBgm = map.bgm
         state.weather = map.weather
+        state.dioramaTilt = null
+        snapTiltToTarget()
         player.x = x
         player.y = y
         player.dir = dir
@@ -979,6 +997,27 @@ class RpgEngine(
         shakeTimeLeft = maxOf(shakeTimeLeft, seconds)
     }
 
+    /**
+     * Inclina el diorama 2.5D gradualmente hasta [degrees] en [seconds];
+     * con seconds <= 0 el cambio es inmediato. Persiste en el estado hasta
+     * otro comando o hasta el siguiente cambio de mapa.
+     */
+    fun startTiltTransition(degrees: Float, seconds: Float) {
+        state.dioramaTilt = degrees.coerceIn(0f, 25f)
+        if (seconds <= 0f) {
+            snapTiltToTarget()
+            return
+        }
+        tiltStart = tiltCurrent
+        tiltElapsed = 0f
+        tiltDuration = seconds
+    }
+
+    private fun snapTiltToTarget() {
+        tiltCurrent = tiltTarget
+        tiltDuration = 0f
+    }
+
     private fun snapTintToTarget() {
         tintCurrent[0] = state.tintR
         tintCurrent[1] = state.tintG
@@ -988,6 +1027,14 @@ class RpgEngine(
     }
 
     private fun updateScreenEffects(dt: Float) {
+        if (tiltDuration > 0f) {
+            tiltElapsed += dt
+            if (tiltElapsed >= tiltDuration) {
+                snapTiltToTarget()
+            } else {
+                tiltCurrent = tiltStart + (tiltTarget - tiltStart) * (tiltElapsed / tiltDuration)
+            }
+        }
         if (tintDuration > 0f) {
             tintElapsed += dt
             if (tintElapsed >= tintDuration) {

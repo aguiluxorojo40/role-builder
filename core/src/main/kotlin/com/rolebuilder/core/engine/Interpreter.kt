@@ -223,6 +223,11 @@ class Interpreter(private val engine: RpgEngine) {
                 StepResult.CONTINUE
             }
 
+            is EventCommand.SetDioramaTilt -> {
+                engine.startTiltTransition(cmd.degrees, cmd.seconds)
+                StepResult.CONTINUE
+            }
+
             EventCommand.EraseEvent -> {
                 source?.erased = true
                 StepResult.CONTINUE

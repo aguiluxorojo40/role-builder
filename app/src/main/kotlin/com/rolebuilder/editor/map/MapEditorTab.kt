@@ -353,6 +353,7 @@ fun MapEditorTab(state: EditorState) {
         var bgm by remember(map.id) { mutableStateOf(map.bgm) }
         var weather by remember(map.id) { mutableStateOf(map.weather) }
         var parallax by remember(map.id) { mutableStateOf(map.parallaxLayers) }
+        var tiltOverride by remember(map.id) { mutableStateOf(map.dioramaTilt) }
         AlertDialog(
             onDismissRequest = { showMapSettings = false },
             title = { Text("Ajustes del mapa") },
@@ -380,6 +381,21 @@ fun MapEditorTab(state: EditorState) {
                         { it.spanish() },
                         { weather = it },
                     )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = tiltOverride != null,
+                            onCheckedChange = { tiltOverride = if (it) 12f else null },
+                        )
+                        Text("  Inclinación 2.5D propia (si no, la del proyecto)")
+                    }
+                    tiltOverride?.let { tilt ->
+                        FloatField(
+                            "Inclinación (grados, 0 = plano)",
+                            tilt,
+                            { tiltOverride = it.coerceIn(0f, 25f) },
+                        )
+                    }
 
                     Text("Parallax (profundidad de diorama)", style = MaterialTheme.typography.titleSmall)
                     parallax.forEachIndexed { index, layer ->
@@ -461,6 +477,7 @@ fun MapEditorTab(state: EditorState) {
                         bgm = bgm,
                         weather = weather,
                         parallaxLayers = parallax.filter { it.image.isNotBlank() },
+                        dioramaTilt = tiltOverride,
                     )
                     if (width != map.width || height != map.height) {
                         updated = updated.resized(width, height)

@@ -118,6 +118,7 @@ class SerializationTest {
             tintG = 0.2f,
             tintB = 0.3f,
             tintA = 0.4f,
+            dioramaTilt = 7.5f,
         )
         val restored = json.decodeFromString(GameState.serializer(), json.encodeToString(GameState.serializer(), state))
         assertEquals(state, restored)
@@ -137,6 +138,14 @@ class SerializationTest {
         assertEquals("", map.bgm)
         assertEquals(Weather.NONE, map.weather)
         assertEquals(emptyList(), map.parallaxLayers)
+        assertNull(map.dioramaTilt)
+    }
+
+    @Test
+    fun `map round trip with diorama tilt override`() {
+        val map = GameMap.empty(1, "m", 4, 4).copy(dioramaTilt = 5f)
+        val restored = json.decodeFromString(GameMap.serializer(), json.encodeToString(GameMap.serializer(), map))
+        assertEquals(map, restored)
     }
 
     @Test

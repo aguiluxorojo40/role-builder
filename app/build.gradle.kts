@@ -15,8 +15,8 @@ android {
         targetSdk = 34
         // Esquema: 0.<fase>.<parche>; versionCode = fase*100 + parche.
         // Los nombres en clave de cada versión están en CHANGELOG.md.
-        versionCode = 900
-        versionName = "0.9.0"
+        versionCode = 901
+        versionName = "0.9.1"
     }
 
     buildTypes {

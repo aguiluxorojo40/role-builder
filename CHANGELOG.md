@@ -6,6 +6,14 @@ Cada versión etiquetada (`v0.X.Y`) tiene release propia en GitHub con su
 APK; la release rodante `apk-latest` siempre apunta a la última build de
 la rama de desarrollo.
 
+## v0.9.1 — «Diorama» (control en juego)
+El 2.5D pasa a ser dirigible desde el juego: comando de evento
+«Inclinación del diorama» (grados + transición suave; combinable con
+switches y condiciones como cualquier comando) e inclinación propia por
+mapa (interiores planos en un mundo inclinado). El valor del comando
+persiste en la partida guardada y se limpia al cambiar de mapa, donde
+vuelve a regir el mapa/proyecto.
+
 ## v0.9.0 — «Diorama» (Fase 9)
 Proyección 2.5D de las entrañas de Square Enix: el suelo se tumba hacia
 atrás con foreshortening real y los personajes, enemigos y tiles «De pie»

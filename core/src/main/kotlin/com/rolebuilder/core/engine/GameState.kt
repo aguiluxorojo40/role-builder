@@ -45,6 +45,11 @@ data class GameState(
     var tintG: Float = 0f,
     var tintB: Float = 0f,
     var tintA: Float = 0f,
+    /**
+     * Inclinación 2.5D impuesta por comando, en grados; null = usar la del
+     * mapa o, en su defecto, la del proyecto. Cambiar de mapa la limpia.
+     */
+    var dioramaTilt: Float? = null,
 ) {
     fun switchOn(id: Int): Boolean = switches[id] == true
 

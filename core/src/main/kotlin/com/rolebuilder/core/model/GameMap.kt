@@ -27,6 +27,11 @@ data class GameMap(
     val weather: Weather = Weather.NONE,
     /** Capas de parallax (cielo lejano, niebla...) que dibuja el runtime. */
     val parallaxLayers: List<ParallaxLayer> = emptyList(),
+    /**
+     * Inclinación 2.5D propia del mapa, en grados; null = usar la del
+     * proyecto. Útil para interiores planos en un mundo inclinado.
+     */
+    val dioramaTilt: Float? = null,
 ) {
     fun inBounds(x: Int, y: Int): Boolean = x in 0 until width && y in 0 until height
 
