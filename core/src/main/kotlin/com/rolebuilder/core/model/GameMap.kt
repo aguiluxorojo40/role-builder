@@ -25,6 +25,8 @@ data class GameMap(
     val bgm: String = "",
     /** Clima ambiental al entrar al mapa. */
     val weather: Weather = Weather.NONE,
+    /** Capas de parallax (cielo lejano, niebla...) que dibuja el runtime. */
+    val parallaxLayers: List<ParallaxLayer> = emptyList(),
 ) {
     fun inBounds(x: Int, y: Int): Boolean = x in 0 until width && y in 0 until height
 
@@ -78,6 +80,29 @@ data class GameMap(
             )
     }
 }
+
+/**
+ * Capa de parallax: una imagen del proyecto repetida en mosaico que se
+ * desplaza a distinta velocidad que el mapa, para dar profundidad de
+ * diorama al estilo HD-2D.
+ */
+@Serializable
+data class ParallaxLayer(
+    /** Imagen PNG del proyecto (se repite en mosaico; 16 px = 1 casilla). */
+    val image: String,
+    /**
+     * Cuánto acompaña a la cámara: 0 = pegada a la pantalla (cielo muy
+     * lejano), 1 = pegada al mapa (se mueve como los tiles).
+     */
+    val factor: Float = 0.5f,
+    /** Desplazamiento automático en casillas/segundo. */
+    val autoX: Float = 0f,
+    val autoY: Float = 0f,
+    /** true = se dibuja por encima de la escena (niebla); false = fondo. */
+    val above: Boolean = false,
+    /** Opacidad 0..1. */
+    val alpha: Float = 1f,
+)
 
 /** Punto de aparición de un enemigo colocado en el editor. */
 @Serializable

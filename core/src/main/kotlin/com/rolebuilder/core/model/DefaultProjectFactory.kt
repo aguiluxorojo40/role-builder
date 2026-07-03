@@ -166,6 +166,10 @@ object DefaultProjectFactory {
 
         return map.copy(
             bgm = "pueblo",
+            // Sombras de nubes a la deriva: profundidad de diorama de muestra.
+            parallaxLayers = listOf(
+                ParallaxLayer("clouds.png", factor = 0.35f, autoX = 0.25f, above = true, alpha = 0.5f),
+            ),
             events = listOf(npc, chest, shopkeeper),
             spawns = listOf(
                 EnemySpawn(enemyId = 1, x = 15, y = 10),

@@ -27,6 +27,7 @@ fun main(args: Array<String>) {
     ImageIO.write(generateSlime(), "png", File(imagesDir, "slime.png"))
     ImageIO.write(generateBat(), "png", File(imagesDir, "bat.png"))
     ImageIO.write(generateChest(), "png", File(imagesDir, "chest.png"))
+    ImageIO.write(generateClouds(), "png", File(imagesDir, "clouds.png"))
 
     ProjectIo.saveProject(outDir, DefaultProjectFactory.defaultProject("Mi aventura"))
     ProjectIo.saveDatabase(outDir, DefaultProjectFactory.defaultDatabase())
@@ -177,6 +178,39 @@ fun generateTileset(): BufferedImage {
             cell(i).let { (x, y) ->
                 color = if ((i / 8 + i) % 2 == 0) Color(58, 58, 66) else Color(66, 66, 74)
                 fillRect(x, y, T, T)
+            }
+        }
+    }
+    return img
+}
+
+// ----------------------------------------------------------------- clouds ---
+
+/**
+ * Nubes suaves y repetibles en mosaico (256x256, blanco con alfa) para la
+ * capa de parallax de niebla de la plantilla. Cada nube es un cúmulo de
+ * óvalos translúcidos; se dibuja también desplazada en los 4 bordes para
+ * que el patrón enlace sin costuras.
+ */
+fun generateClouds(): BufferedImage {
+    val size = 256
+    val img = image(size, size)
+    img.draw {
+        val rnd = Random(21)
+        repeat(9) {
+            val cx = rnd.nextInt(size)
+            val cy = rnd.nextInt(size)
+            val blobs = 4 + rnd.nextInt(4)
+            repeat(blobs) {
+                val w = 30 + rnd.nextInt(50)
+                val h = 12 + rnd.nextInt(18)
+                val ox = cx + rnd.nextInt(41) - 20
+                val oy = cy + rnd.nextInt(17) - 8
+                color = Color(255, 255, 255, 14 + rnd.nextInt(14))
+                // Réplicas desplazadas para que el mosaico no tenga costuras.
+                for (sx in -1..1) for (sy in -1..1) {
+                    fillOval(ox + sx * size - w / 2, oy + sy * size - h / 2, w, h)
+                }
             }
         }
     }

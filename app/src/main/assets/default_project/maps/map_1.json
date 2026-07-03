@@ -796,5 +796,15 @@
         }
     ],
     "bgm": "pueblo",
-    "weather": "NONE"
+    "weather": "NONE",
+    "parallaxLayers": [
+        {
+            "image": "clouds.png",
+            "factor": 0.35,
+            "autoX": 0.25,
+            "autoY": 0.0,
+            "above": true,
+            "alpha": 0.5
+        }
+    ]
 }
