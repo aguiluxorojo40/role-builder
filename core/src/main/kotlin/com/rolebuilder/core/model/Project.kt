@@ -24,6 +24,14 @@ data class Project(
      * suaves y motas de luz ambientales en el runtime.
      */
     val hd2d: Boolean = true,
+    /**
+     * Inclinación del diorama 2.5D en grados: el runtime inclina el plano
+     * del suelo hacia atrás (efecto maqueta HD-2D estilo Octopath Traveler)
+     * y dibuja de pie a los personajes y a los tiles marcados en
+     * [Tileset.standingTiles]. 0 = desactivado (plano cenital clásico);
+     * rango razonable 0..25.
+     */
+    val dioramaTilt: Float = 12f,
 ) {
     companion object {
         const val DEFAULT_SWITCH_COUNT = 50
