@@ -80,13 +80,17 @@ class SpriteBatch(private val maxQuads: Int = 4096) {
         texture = null
     }
 
-    /** Dibuja un rectángulo (x, y) - (x+w, y+h) con las UV dadas y tinte. */
+    /**
+     * Dibuja un rectángulo (x, y) - (x+w, y+h) con las UV dadas y tinte.
+     * [rotation] gira el quad alrededor de su centro, en radianes.
+     */
     fun draw(
         tex: Texture,
         x: Float, y: Float, w: Float, h: Float,
         u0: Float = 0f, v0: Float = 0f, u1: Float = 1f, v1: Float = 1f,
         r: Float = 1f, g: Float = 1f, b: Float = 1f, a: Float = 1f,
         flipX: Boolean = false,
+        rotation: Float = 0f,
     ) {
         if (texture !== tex) {
             flush()
@@ -97,11 +101,28 @@ class SpriteBatch(private val maxQuads: Int = 4096) {
         val uA = if (flipX) u1 else u0
         val uB = if (flipX) u0 else u1
         var i = quadCount * 4 * FLOATS_PER_VERTEX
-        // 0: arriba-izquierda, 1: arriba-derecha, 2: abajo-derecha, 3: abajo-izquierda
-        i = putVertex(i, x, y, uA, v0, r, g, b, a)
-        i = putVertex(i, x + w, y, uB, v0, r, g, b, a)
-        i = putVertex(i, x + w, y + h, uB, v1, r, g, b, a)
-        putVertex(i, x, y + h, uA, v1, r, g, b, a)
+        if (rotation == 0f) {
+            // 0: arriba-izquierda, 1: arriba-derecha, 2: abajo-derecha, 3: abajo-izquierda
+            i = putVertex(i, x, y, uA, v0, r, g, b, a)
+            i = putVertex(i, x + w, y, uB, v0, r, g, b, a)
+            i = putVertex(i, x + w, y + h, uB, v1, r, g, b, a)
+            putVertex(i, x, y + h, uA, v1, r, g, b, a)
+        } else {
+            val cx = x + w / 2f
+            val cy = y + h / 2f
+            val cos = kotlin.math.cos(rotation)
+            val sin = kotlin.math.sin(rotation)
+            val hw = w / 2f
+            val hh = h / 2f
+
+            fun rx(dx: Float, dy: Float) = cx + dx * cos - dy * sin
+            fun ry(dx: Float, dy: Float) = cy + dx * sin + dy * cos
+
+            i = putVertex(i, rx(-hw, -hh), ry(-hw, -hh), uA, v0, r, g, b, a)
+            i = putVertex(i, rx(hw, -hh), ry(hw, -hh), uB, v0, r, g, b, a)
+            i = putVertex(i, rx(hw, hh), ry(hw, hh), uB, v1, r, g, b, a)
+            putVertex(i, rx(-hw, hh), ry(-hw, hh), uA, v1, r, g, b, a)
+        }
         quadCount++
     }
 

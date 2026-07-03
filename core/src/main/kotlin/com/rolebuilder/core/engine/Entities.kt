@@ -14,6 +14,9 @@ const val CHAR_HALF_BOX = 0.35f
 /** Velocidad de los movimientos por casillas de eventos, en casillas/segundo. */
 const val GRID_MOVE_SPEED = 3f
 
+/** Duración del barrido de espada (animación y destello), en segundos. */
+const val ATTACK_SWING_SECONDS = 0.18f
+
 /**
  * Estado en tiempo de ejecución del jugador. Posición = centro, en
  * coordenadas de casilla (5.5 = centro de la casilla 5).
@@ -28,8 +31,11 @@ class PlayerState {
     var attackCooldown = 0f
     var secondaryCooldown = 0f
 
-    /** Tiempo restante del destello de ataque (para el renderer). */
+    /** Tiempo restante del barrido de ataque (para el renderer). */
     var attackFlash = 0f
+
+    /** Dirección en la que se lanzó el último ataque (fija durante el barrido). */
+    var attackDir = Direction.DOWN
     var invulnTime = 0f
     var knockbackTime = 0f
     var knockbackVx = 0f

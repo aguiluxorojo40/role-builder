@@ -55,6 +55,23 @@ object ProjectStore {
     }
 
     /**
+     * Copia al proyecto las imágenes de la plantilla que le falten (p. ej.
+     * sprites añadidos en versiones nuevas, como la espada). No sobreescribe.
+     */
+    fun ensureDefaultImages(context: Context, projectDir: File) {
+        val imagesAsset = "$TEMPLATE_ASSET/${ProjectIo.IMAGES_DIR}"
+        val imagesDir = File(projectDir, ProjectIo.IMAGES_DIR).apply { mkdirs() }
+        context.assets.list(imagesAsset).orEmpty().forEach { name ->
+            val dest = File(imagesDir, name)
+            if (!dest.exists()) {
+                context.assets.open("$imagesAsset/$name").use { input ->
+                    dest.outputStream().use { output -> input.copyTo(output) }
+                }
+            }
+        }
+    }
+
+    /**
      * Modo "juego independiente": si el APK incluye un proyecto en
      * assets/standalone_game, lo instala en filesDir y devuelve su carpeta;
      * la app arranca entonces directamente en el juego, sin editor.

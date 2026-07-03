@@ -27,6 +27,8 @@ fun main(args: Array<String>) {
     ImageIO.write(generateSlime(), "png", File(imagesDir, "slime.png"))
     ImageIO.write(generateBat(), "png", File(imagesDir, "bat.png"))
     ImageIO.write(generateChest(), "png", File(imagesDir, "chest.png"))
+    ImageIO.write(generateSword(), "png", File(imagesDir, "sword.png"))
+    ImageIO.write(generateSlash(), "png", File(imagesDir, "slash.png"))
 
     ProjectIo.saveProject(outDir, DefaultProjectFactory.defaultProject("Mi aventura"))
     ProjectIo.saveDatabase(outDir, DefaultProjectFactory.defaultDatabase())
@@ -285,6 +287,83 @@ fun generateBat(): BufferedImage =
         color = Color(230, 70, 70)
         fillRect(x0 + 6, y0 + 7, 1, 1); fillRect(x0 + 9, y0 + 7, 1, 1)
     }
+
+/** Espada de 16x16 apuntando hacia arriba (el renderer la rota al atacar). */
+fun generateSword(): BufferedImage {
+    val img = image(T, T)
+    img.draw {
+        val steel = Color(214, 222, 234)
+        val steelDark = Color(150, 160, 178)
+        val gold = Color(226, 186, 76)
+        val wood = Color(122, 82, 44)
+
+        // Hoja con filo iluminado.
+        color = steelDark
+        fillRect(6, 1, 4, 9)
+        color = steel
+        fillRect(7, 1, 2, 9)
+        color = Color.WHITE
+        fillRect(7, 1, 1, 8)
+        // Punta.
+        color = steel
+        fillRect(7, 0, 2, 1)
+        // Guarda.
+        color = gold
+        fillRect(4, 10, 8, 2)
+        // Empuñadura y pomo.
+        color = wood
+        fillRect(7, 12, 2, 3)
+        color = gold
+        fillRect(6, 15, 4, 1)
+    }
+    return img
+}
+
+/**
+ * Haz de corte ("rompe-aire"): 3 frames de 24x24 en horizontal, con la
+ * media luna barriendo hacia la DERECHA; el renderer lo rota por dirección
+ * y lo funde con el avance del golpe.
+ */
+fun generateSlash(): BufferedImage {
+    val size = 24
+    val img = image(3 * size, size)
+    img.draw {
+        setRenderingHint(
+            java.awt.RenderingHints.KEY_ANTIALIASING,
+            java.awt.RenderingHints.VALUE_ANTIALIAS_OFF,
+        )
+        val core = Color(255, 255, 255)
+        val edge = Color(150, 220, 255)
+        val trail = Color(90, 170, 240)
+
+        fun arc(x0: Int, radius: Int, thickness: Int, from: Int, extent: Int, color: Color) {
+            this.color = color
+            stroke = java.awt.BasicStroke(thickness.toFloat())
+            drawArc(
+                x0 + size / 2 - radius,
+                size / 2 - radius,
+                radius * 2,
+                radius * 2,
+                from,
+                extent,
+            )
+        }
+
+        // Frame 0: arranque del corte, arco corto y grueso arriba-derecha.
+        arc(0, 8, 3, 20, 70, core)
+        arc(0, 8, 1, 20, 70, edge)
+
+        // Frame 1: barrido completo, doble arco brillante.
+        arc(size, 9, 3, -55, 110, core)
+        arc(size, 7, 2, -50, 100, edge)
+        arc(size, 10, 1, -60, 120, edge)
+
+        // Frame 2: estela desvaneciéndose abajo-derecha.
+        arc(2 * size, 9, 2, -70, 60, edge)
+        arc(2 * size, 10, 1, -75, 70, trail)
+    }
+    return img
+}
 
 /** Cofre: fila "abajo" = cerrado, fila "arriba" = abierto (se elige con SpriteRef.direction). */
 fun generateChest(): BufferedImage =
