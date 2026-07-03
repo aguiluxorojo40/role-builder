@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // Sin versión: el jar del plugin de Kotlin ya está en el classpath raíz
+    // (lo carga :core vía kotlin-jvm) y Gradle no admite repetirla aquí.
+    id("org.jetbrains.kotlin.android")
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
