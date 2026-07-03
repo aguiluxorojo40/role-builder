@@ -85,6 +85,7 @@ class GameRenderer(
         val map = engine.currentMap
         camera.x = engine.player.x
         camera.y = engine.player.y
+        camera.tiltDegrees = if (hd2d) engine.data.project.dioramaTilt else 0f
         camera.update(map.width, map.height)
 
         batch.begin(camera.mvp)
@@ -111,10 +112,10 @@ class GameRenderer(
     private fun drawParallax(above: Boolean) {
         val map = engine.currentMap
         if (map.parallaxLayers.isEmpty()) return
-        val left = camera.x - camera.viewTilesX / 2f - 1f
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f
-        val viewW = camera.viewTilesX + 2f
-        val viewH = camera.tilesVisibleY + 2f
+        val left = camera.x - camera.viewTilesX / 2f - cullX
+        val top = camera.y - camera.tilesVisibleY / 2f - cullY
+        val viewW = camera.viewTilesX + 2f * cullX
+        val viewH = camera.tilesVisibleY + 2f * cullY
 
         for (layer in map.parallaxLayers) {
             if (layer.above != above || layer.alpha <= 0f) continue
@@ -162,34 +163,47 @@ class GameRenderer(
 
     // ------------------------------------------------------------------ tiles
 
+    /** Margen extra de culling: con keystone la parte lejana muestra más mundo. */
+    private val cullX: Float get() = 1f + camera.keystoneK * camera.viewTilesX / 2f
+    private val cullY: Float get() = 1f + camera.keystoneK * camera.tilesVisibleY / 2f
+
     private fun drawTiles() {
         val map = engine.currentMap
         val tileset = engine.tileset
         val tex = texture(tileset.image)
 
-        val minX = (camera.x - camera.viewTilesX / 2f - 1f).toInt().coerceAtLeast(0)
-        val maxX = (camera.x + camera.viewTilesX / 2f + 1f).toInt().coerceAtMost(map.width - 1)
-        val minY = (camera.y - camera.tilesVisibleY / 2f - 1f).toInt().coerceAtLeast(0)
-        val maxY = (camera.y + camera.tilesVisibleY / 2f + 1f).toInt().coerceAtMost(map.height - 1)
+        val minX = (camera.x - camera.viewTilesX / 2f - cullX).toInt().coerceAtLeast(0)
+        val maxX = (camera.x + camera.viewTilesX / 2f + cullX).toInt().coerceAtMost(map.width - 1)
+        val minY = (camera.y - camera.tilesVisibleY / 2f - cullY).toInt().coerceAtLeast(0)
+        val maxY = (camera.y + camera.tilesVisibleY / 2f + cullY).toInt().coerceAtMost(map.height - 1)
+
+        // Con diorama activo, los tiles "de pie" de la capa 2 no se pintan
+        // aquí: se dibujan ordenados por profundidad junto a los personajes.
+        val standing = if (hd2d) engine.tileset.standingTiles else emptyList()
 
         for (layer in map.layers.indices) {
             for (ty in minY..maxY) {
                 for (tx in minX..maxX) {
                     val tile = map.tileAt(layer, tx, ty)
                     if (tile < 0) continue
-                    val col = tile % tileset.columns
-                    val row = tile / tileset.columns
-                    batch.draw(
-                        tex,
-                        tx.toFloat(), ty.toFloat(), 1f, 1f,
-                        u0 = col / tileset.columns.toFloat(),
-                        v0 = row / tileset.rows.toFloat(),
-                        u1 = (col + 1) / tileset.columns.toFloat(),
-                        v1 = (row + 1) / tileset.rows.toFloat(),
-                    )
+                    if (layer == 1 && tile in standing) continue
+                    drawTileQuad(tex, tileset, tile, tx, ty)
                 }
             }
         }
+    }
+
+    private fun drawTileQuad(tex: Texture, tileset: com.rolebuilder.core.model.Tileset, tile: Int, tx: Int, ty: Int) {
+        val col = tile % tileset.columns
+        val row = tile / tileset.columns
+        batch.draw(
+            tex,
+            tx.toFloat(), ty.toFloat(), 1f, 1f,
+            u0 = col / tileset.columns.toFloat(),
+            v0 = row / tileset.rows.toFloat(),
+            u1 = (col + 1) / tileset.columns.toFloat(),
+            v1 = (row + 1) / tileset.rows.toFloat(),
+        )
     }
 
     // ------------------------------------------------------------- characters
@@ -198,6 +212,29 @@ class GameRenderer(
         data class Sortable(val y: Float, val draw: () -> Unit)
 
         val list = mutableListOf<Sortable>()
+
+        // Tiles "de pie" (árboles, puertas...): billboards ordenados por
+        // profundidad para que los personajes pasen por delante y por detrás.
+        if (hd2d) {
+            val map = engine.currentMap
+            val tileset = engine.tileset
+            val standing = tileset.standingTiles
+            if (standing.isNotEmpty()) {
+                val tex = texture(tileset.image)
+                val minX = (camera.x - camera.viewTilesX / 2f - cullX).toInt().coerceAtLeast(0)
+                val maxX = (camera.x + camera.viewTilesX / 2f + cullX).toInt().coerceAtMost(map.width - 1)
+                val minY = (camera.y - camera.tilesVisibleY / 2f - cullY).toInt().coerceAtLeast(0)
+                val maxY = (camera.y + camera.tilesVisibleY / 2f + cullY).toInt().coerceAtMost(map.height - 1)
+                for (ty in minY..maxY) {
+                    for (tx in minX..maxX) {
+                        val tile = map.tileAt(1, tx, ty)
+                        if (tile >= 0 && tile in standing) {
+                            list.add(Sortable(ty + 0.85f) { drawTileQuad(tex, tileset, tile, tx, ty) })
+                        }
+                    }
+                }
+            }
+        }
 
         for (event in engine.events) {
             val sprite = event.currentSprite ?: continue
@@ -390,8 +427,8 @@ class GameRenderer(
 
     /** Motas de polvo/luciérnagas flotando; se dibujan en modo aditivo. */
     private fun drawMotes(dt: Float) {
-        val viewW = camera.viewTilesX + 2f
-        val viewH = camera.tilesVisibleY + 2f
+        val viewW = camera.viewTilesX + 2f * cullX
+        val viewH = camera.tilesVisibleY + 2f * cullY
         if (!motesSeeded) {
             for (m in motes) {
                 m[0] = Random.nextFloat() * viewW
