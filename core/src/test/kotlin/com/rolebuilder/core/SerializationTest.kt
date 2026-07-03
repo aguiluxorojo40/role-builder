@@ -4,6 +4,7 @@ import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.Database
 import com.rolebuilder.core.model.DefaultProjectFactory
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.ParallaxLayer
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tiles
 import com.rolebuilder.core.model.event.EventCommand
@@ -79,6 +80,18 @@ class SerializationTest {
         } finally {
             dir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun `map round trip with parallax layers`() {
+        val map = GameMap.empty(1, "m", 4, 4).copy(
+            parallaxLayers = listOf(
+                ParallaxLayer("clouds.png", factor = 0.35f, autoX = 0.25f, above = true, alpha = 0.5f),
+                ParallaxLayer("sky.png", factor = 0f),
+            ),
+        )
+        val restored = json.decodeFromString(GameMap.serializer(), json.encodeToString(GameMap.serializer(), map))
+        assertEquals(map, restored)
     }
 
     @Test

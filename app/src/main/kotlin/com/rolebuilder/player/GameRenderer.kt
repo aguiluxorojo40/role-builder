@@ -88,6 +88,7 @@ class GameRenderer(
         camera.update(map.width, map.height)
 
         batch.begin(camera.mvp)
+        drawParallax(above = false)
         drawTiles()
         if (hd2d) drawShadows()
         drawDrops()
@@ -95,9 +96,44 @@ class GameRenderer(
         drawProjectiles()
         drawSwordSwing()
         drawEffects()
+        drawParallax(above = true)
         drawLights(dt)
         batch.end()
         if (usePost) post.compose()
+    }
+
+    /**
+     * Capas de parallax del mapa: la imagen se repite en mosaico (16 px =
+     * 1 casilla) y acompaña a la cámara según su factor (0 = pegada a la
+     * pantalla, 1 = pegada al mapa), con deriva automática opcional.
+     * [above] elige entre las capas de fondo y las de niebla.
+     */
+    private fun drawParallax(above: Boolean) {
+        val map = engine.currentMap
+        if (map.parallaxLayers.isEmpty()) return
+        val left = camera.x - camera.viewTilesX / 2f - 1f
+        val top = camera.y - camera.tilesVisibleY / 2f - 1f
+        val viewW = camera.viewTilesX + 2f
+        val viewH = camera.tilesVisibleY + 2f
+
+        for (layer in map.parallaxLayers) {
+            if (layer.above != above || layer.alpha <= 0f) continue
+            val tex = texture(layer.image)
+            val imgW = tex.width / 16f
+            val imgH = tex.height / 16f
+            if (imgW <= 0f || imgH <= 0f) continue
+            val phaseX = (left * layer.factor + layer.autoX * elapsed).mod(imgW)
+            val phaseY = (top * layer.factor + layer.autoY * elapsed).mod(imgH)
+            var y = top - phaseY
+            while (y < top + viewH) {
+                var x = left - phaseX
+                while (x < left + viewW) {
+                    batch.draw(tex, x, y, imgW, imgH, a = layer.alpha)
+                    x += imgW
+                }
+                y += imgH
+            }
+        }
     }
 
     private fun drainSounds() {

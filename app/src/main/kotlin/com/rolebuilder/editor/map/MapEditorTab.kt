@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.EnemySpawn
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.ParallaxLayer
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.model.MusicTracks
 import com.rolebuilder.core.model.event.EventPage
@@ -67,6 +69,7 @@ import com.rolebuilder.editor.event.EventEditorDialog
 import com.rolebuilder.editor.event.musicName
 import com.rolebuilder.editor.loadImageBitmap
 import com.rolebuilder.editor.widgets.DropdownField
+import com.rolebuilder.editor.widgets.FloatField
 import com.rolebuilder.editor.widgets.IntField
 import kotlin.math.floor
 
@@ -347,11 +350,15 @@ fun MapEditorTab(state: EditorState) {
         var width by remember(map.id) { mutableIntStateOf(map.width) }
         var height by remember(map.id) { mutableIntStateOf(map.height) }
         var bgm by remember(map.id) { mutableStateOf(map.bgm) }
+        var parallax by remember(map.id) { mutableStateOf(map.parallaxLayers) }
         AlertDialog(
             onDismissRequest = { showMapSettings = false },
             title = { Text("Ajustes del mapa") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         IntField("Ancho", width, { width = it.coerceIn(5, 200) }, Modifier.weight(1f))
@@ -364,6 +371,72 @@ fun MapEditorTab(state: EditorState) {
                         optionLabel = { it?.musicName() ?: "(silencio)" },
                         onSelect = { bgm = it },
                     )
+
+                    Text("Parallax (profundidad de diorama)", style = MaterialTheme.typography.titleSmall)
+                    parallax.forEachIndexed { index, layer ->
+                        fun change(updated: ParallaxLayer) {
+                            parallax = parallax.mapIndexed { i, l -> if (i == index) updated else l }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            DropdownField(
+                                "Imagen",
+                                state.imageNames(),
+                                layer.image,
+                                { it },
+                                { change(layer.copy(image = it)) },
+                                Modifier.weight(1f),
+                            )
+                            TextButton(onClick = {
+                                parallax = parallax.filterIndexed { i, _ -> i != index }
+                            }) { Text("Quitar") }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FloatField(
+                                "Anclaje (0 cielo, 1 mapa)",
+                                layer.factor,
+                                { change(layer.copy(factor = it.coerceIn(0f, 1f))) },
+                                Modifier.weight(1f),
+                            )
+                            FloatField(
+                                "Opacidad (0-1)",
+                                layer.alpha,
+                                { change(layer.copy(alpha = it.coerceIn(0f, 1f))) },
+                                Modifier.weight(1f),
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FloatField(
+                                "Deriva X (cas/s)",
+                                layer.autoX,
+                                { change(layer.copy(autoX = it)) },
+                                Modifier.weight(1f),
+                            )
+                            FloatField(
+                                "Deriva Y (cas/s)",
+                                layer.autoY,
+                                { change(layer.copy(autoY = it)) },
+                                Modifier.weight(1f),
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Switch(layer.above, { change(layer.copy(above = it)) })
+                            Text("  Por encima de la escena (niebla)")
+                        }
+                    }
+                    TextButton(onClick = {
+                        parallax = parallax + ParallaxLayer(
+                            image = state.imageNames().firstOrNull { it.startsWith("clouds") }
+                                ?: state.imageNames().firstOrNull().orEmpty(),
+                            factor = 0.35f,
+                            autoX = 0.25f,
+                            above = true,
+                            alpha = 0.5f,
+                        )
+                    }) { Text("Añadir capa de parallax") }
+
                     if (state.mapList.size > 1) {
                         TextButton(onClick = {
                             state.deleteMap(map.id)
@@ -374,7 +447,11 @@ fun MapEditorTab(state: EditorState) {
             },
             confirmButton = {
                 Button(onClick = {
-                    var updated = map.copy(name = name, bgm = bgm)
+                    var updated = map.copy(
+                        name = name,
+                        bgm = bgm,
+                        parallaxLayers = parallax.filter { it.image.isNotBlank() },
+                    )
                     if (width != map.width || height != map.height) {
                         updated = updated.resized(width, height)
                     }

@@ -303,5 +303,6 @@
         }
     ],
     "spawns": [],
-    "bgm": "village"
+    "bgm": "village",
+    "parallaxLayers": []
 }
