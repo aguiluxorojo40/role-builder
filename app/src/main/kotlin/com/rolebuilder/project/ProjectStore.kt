@@ -1,7 +1,9 @@
 package com.rolebuilder.project
 
 import android.content.Context
+import android.net.Uri
 import com.rolebuilder.core.io.ProjectIo
+import com.rolebuilder.core.io.ZipIo
 import java.io.File
 
 /** Resumen de un proyecto guardado en el dispositivo. */
@@ -49,6 +51,20 @@ object ProjectStore {
 
     fun touch(dir: File) {
         dir.setLastModified(System.currentTimeMillis())
+    }
+
+    /** Exporta un proyecto como .zip al destino elegido por el usuario (SAF). */
+    fun export(context: Context, projectDir: File, target: Uri) {
+        context.contentResolver.openOutputStream(target)?.use { output ->
+            ZipIo.exportProject(projectDir, output)
+        } ?: error("No se pudo abrir el destino")
+    }
+
+    /** Importa un .zip como proyecto nuevo y devuelve su nombre. */
+    fun import(context: Context, source: Uri): String {
+        val dest = File(root(context), "p${System.currentTimeMillis()}")
+        val input = context.contentResolver.openInputStream(source) ?: error("No se pudo leer el archivo")
+        return input.use { ZipIo.importProject(it, dest) }
     }
 
     private fun copyAssetDir(context: Context, assetPath: String, dest: File) {

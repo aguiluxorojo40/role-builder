@@ -10,11 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -50,9 +55,41 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
     var projects by remember { mutableStateOf(ProjectStore.list(context)) }
     var showCreate by remember { mutableStateOf(false) }
     var toDelete by remember { mutableStateOf<ProjectSummary?>(null) }
+    var exportingDir by remember { mutableStateOf<File?>(null) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        val dir = exportingDir
+        exportingDir = null
+        if (uri != null && dir != null) {
+            runCatching { ProjectStore.export(context, dir, uri) }
+                .onSuccess { Toast.makeText(context, "Proyecto exportado", Toast.LENGTH_SHORT).show() }
+                .onFailure { Toast.makeText(context, "Error al exportar: ${it.message}", Toast.LENGTH_LONG).show() }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            runCatching { ProjectStore.import(context, uri) }
+                .onSuccess { name ->
+                    projects = ProjectStore.list(context)
+                    Toast.makeText(context, "Importado: $name", Toast.LENGTH_SHORT).show()
+                }
+                .onFailure { Toast.makeText(context, "Error al importar: ${it.message}", Toast.LENGTH_LONG).show() }
+        }
+    }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Role Builder — Mis proyectos") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Role Builder — Mis proyectos") },
+                actions = {
+                    IconButton(onClick = { importLauncher.launch("application/zip") }) {
+                        Icon(Icons.Filled.FileDownload, contentDescription = "Importar proyecto (.zip)")
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreate = true }) {
                 Icon(Icons.Filled.Add, contentDescription = "Nuevo proyecto")
@@ -98,6 +135,12 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
                             }
                             IconButton(onClick = { onOpenProject(summary.dir) }) {
                                 Icon(Icons.Filled.Edit, contentDescription = "Editar")
+                            }
+                            IconButton(onClick = {
+                                exportingDir = summary.dir
+                                exportLauncher.launch("${summary.name}.zip")
+                            }) {
+                                Icon(Icons.Filled.Share, contentDescription = "Exportar (.zip)")
                             }
                             IconButton(onClick = { toDelete = summary }) {
                                 Icon(Icons.Filled.Delete, contentDescription = "Borrar")

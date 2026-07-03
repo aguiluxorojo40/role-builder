@@ -19,6 +19,7 @@ externos: editor y motor son la misma app.
 - Base de datos: actores, enemigos (comportamiento, visión, drops), objetos,
   habilidades (melee/proyectil) y colisión del tileset.
 - Importación de imágenes PNG propias (tilesets y hojas de personaje 3×4).
+- Exporta tu juego como .zip para compartirlo e importa los de otros.
 - Botón ▶ para probar el juego al instante.
 
 **Motor (runtime)**
@@ -84,6 +85,8 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 
 - minSdk 26 (Android 8.0), target 34, OpenGL ES 3.0.
 - El juego se ejecuta en apaisado; el editor en cualquier orientación.
+- CI en GitHub Actions: ejecuta los tests de `core` y compila el APK de
+  depuración (descargable como artefacto del workflow).
 
 ## Cómo se usa
 
