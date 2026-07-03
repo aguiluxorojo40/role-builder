@@ -1,6 +1,7 @@
 package com.rolebuilder.player.gl
 
 import android.opengl.Matrix
+import kotlin.math.cos
 import kotlin.math.tan
 
 /**
@@ -35,15 +36,37 @@ class Camera2D {
     var keystoneK = 0f
         private set
 
+    /**
+     * Compresión vertical del plano del suelo por la inclinación (1 = sin
+     * inclinar). El terreno se dibuja "tumbado" (cada fila más chata y se ven
+     * más filas), y el renderer compensa los sprites de pie dibujándolos más
+     * altos (1/groundSquash) anclados por la base, para que se levanten del
+     * suelo en su propio eje en lugar de quedar pegados a él (efecto modo 7).
+     */
+    var groundSquash = 1f
+        private set
+
     val viewTilesX: Float
         get() = tilesVisibleY * viewportWidth / viewportHeight.coerceAtLeast(1)
 
+    /** Media altura visible del mundo en casillas (crece al inclinar). */
+    val halfViewY: Float
+        get() = (tilesVisibleY / groundSquash) / 2f
+
     fun update(mapWidth: Int, mapHeight: Int) {
-        val halfH = tilesVisibleY / 2f
+        groundSquash = if (tiltDegrees > 0.5f) {
+            // El mando 0..25° se amplifica a un cabeceo de cámara efectivo
+            // 0..~55° para que el tumbado del suelo sea bien visible.
+            cos(Math.toRadians((tiltDegrees * 2.2f).toDouble())).toFloat().coerceIn(0.45f, 1f)
+        } else {
+            1f
+        }
+
+        val halfH = halfViewY
         val halfW = viewTilesX / 2f
 
         x = if (viewTilesX >= mapWidth) mapWidth / 2f else x.coerceIn(halfW, mapWidth - halfW)
-        y = if (tilesVisibleY >= mapHeight) mapHeight / 2f else y.coerceIn(halfH, mapHeight - halfH)
+        y = if (halfH * 2f >= mapHeight) mapHeight / 2f else y.coerceIn(halfH, mapHeight - halfH)
 
         // y del mundo crece hacia abajo: se invierte bottom/top.
         Matrix.orthoM(ortho, 0, x - halfW, x + halfW, y + halfH, y - halfH, -1f, 1f)

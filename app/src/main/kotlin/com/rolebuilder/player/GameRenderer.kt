@@ -124,9 +124,9 @@ class GameRenderer(
         val map = engine.currentMap
         if (map.parallaxLayers.isEmpty()) return
         val left = camera.x - camera.viewTilesX / 2f - cullX
-        val top = camera.y - camera.tilesVisibleY / 2f - cullY
+        val top = camera.y - camera.halfViewY - cullY
         val viewW = camera.viewTilesX + 2f * cullX
-        val viewH = camera.tilesVisibleY + 2f * cullY
+        val viewH = camera.halfViewY * 2f + 2f * cullY
 
         for (layer in map.parallaxLayers) {
             if (layer.above != above || layer.alpha <= 0f) continue
@@ -176,7 +176,14 @@ class GameRenderer(
 
     /** Margen extra de culling: con keystone la parte lejana muestra más mundo. */
     private val cullX: Float get() = 1f + camera.keystoneK * camera.viewTilesX / 2f
-    private val cullY: Float get() = 1f + camera.keystoneK * camera.tilesVisibleY / 2f
+    private val cullY: Float get() = 1f + camera.keystoneK * camera.halfViewY
+
+    /**
+     * Altura de dibujo de los sprites de pie: compensa la compresión del
+     * suelo para que personajes y objetos se levanten del plano inclinado
+     * (anclados por la base) en lugar de quedar tumbados con él.
+     */
+    private val standFactor: Float get() = 1f / camera.groundSquash
 
     private fun drawTiles() {
         val map = engine.currentMap
@@ -185,8 +192,8 @@ class GameRenderer(
 
         val minX = (camera.x - camera.viewTilesX / 2f - cullX).toInt().coerceAtLeast(0)
         val maxX = (camera.x + camera.viewTilesX / 2f + cullX).toInt().coerceAtMost(map.width - 1)
-        val minY = (camera.y - camera.tilesVisibleY / 2f - cullY).toInt().coerceAtLeast(0)
-        val maxY = (camera.y + camera.tilesVisibleY / 2f + cullY).toInt().coerceAtMost(map.height - 1)
+        val minY = (camera.y - camera.halfViewY - cullY).toInt().coerceAtLeast(0)
+        val maxY = (camera.y + camera.halfViewY + cullY).toInt().coerceAtMost(map.height - 1)
 
         // Con diorama activo, los tiles "de pie" de la capa 2 no se pintan
         // aquí: se dibujan ordenados por profundidad junto a los personajes.
@@ -217,6 +224,21 @@ class GameRenderer(
         )
     }
 
+    /** Tile "de pie": altura completa anclada a la base de su casilla. */
+    private fun drawTileBillboard(tex: Texture, tileset: com.rolebuilder.core.model.Tileset, tile: Int, tx: Int, ty: Int) {
+        val col = tile % tileset.columns
+        val row = tile / tileset.columns
+        val h = standFactor
+        batch.draw(
+            tex,
+            tx.toFloat(), ty + 1f - h, 1f, h,
+            u0 = col / tileset.columns.toFloat(),
+            v0 = row / tileset.rows.toFloat(),
+            u1 = (col + 1) / tileset.columns.toFloat(),
+            v1 = (row + 1) / tileset.rows.toFloat(),
+        )
+    }
+
     // ------------------------------------------------------------- characters
 
     private fun drawCharacters() {
@@ -234,13 +256,13 @@ class GameRenderer(
                 val tex = texture(tileset.image)
                 val minX = (camera.x - camera.viewTilesX / 2f - cullX).toInt().coerceAtLeast(0)
                 val maxX = (camera.x + camera.viewTilesX / 2f + cullX).toInt().coerceAtMost(map.width - 1)
-                val minY = (camera.y - camera.tilesVisibleY / 2f - cullY).toInt().coerceAtLeast(0)
-                val maxY = (camera.y + camera.tilesVisibleY / 2f + cullY).toInt().coerceAtMost(map.height - 1)
+                val minY = (camera.y - camera.halfViewY - cullY).toInt().coerceAtLeast(0)
+                val maxY = (camera.y + camera.halfViewY + cullY).toInt().coerceAtMost(map.height - 1)
                 for (ty in minY..maxY) {
                     for (tx in minX..maxX) {
                         val tile = map.tileAt(1, tx, ty)
                         if (tile >= 0 && tile in standing) {
-                            list.add(Sortable(ty + 0.85f) { drawTileQuad(tex, tileset, tile, tx, ty) })
+                            list.add(Sortable(ty + 0.85f) { drawTileBillboard(tex, tileset, tile, tx, ty) })
                         }
                     }
                 }
@@ -289,9 +311,12 @@ class GameRenderer(
             Direction.UP -> 3
         }
         val tint = if (flashWhite) 4f else 1f
+        // De pie sobre el suelo inclinado: altura completa anclada a los pies
+        // (con el suelo comprimido, el sprite se levanta en su propio eje).
+        val h = standFactor
         batch.draw(
             tex,
-            cx - 0.5f, cy - 0.6f, 1f, 1f,
+            cx - 0.5f, cy + 0.4f - h, 1f, h,
             u0 = frame / 3f, v0 = row / 4f, u1 = (frame + 1) / 3f, v1 = (row + 1) / 4f,
             r = tint, g = tint, b = tint,
         )
@@ -321,6 +346,8 @@ class GameRenderer(
         val p = engine.player
         if (p.attackFlash <= 0f) return
         val progress = (1f - p.attackFlash / ATTACK_SWING_SECONDS).coerceIn(0f, 1f)
+        // Centro visual del cuerpo levantado (los pies quedan en p.y + 0.4).
+        val bodyY = p.y + 0.4f - standFactor / 2f
 
         // Ángulo base según dirección (mundo con Y hacia abajo).
         val baseAngle = when (p.attackDir) {
@@ -338,7 +365,7 @@ class GameRenderer(
             // La espada apunta "arriba" en el sprite: girarla para que la hoja
             // salga del puño del jugador a lo largo del ángulo del barrido.
             val cx = p.x + kotlin.math.cos(angle) * 0.55f
-            val cy = p.y + kotlin.math.sin(angle) * 0.55f
+            val cy = bodyY + kotlin.math.sin(angle) * 0.55f
             batch.draw(
                 swordTex,
                 cx - 0.45f, cy - 0.45f, 0.9f, 0.9f,
@@ -347,7 +374,7 @@ class GameRenderer(
         } else {
             // Sin sprite: tajo blanco alargado girando con el barrido.
             val cx = p.x + kotlin.math.cos(angle) * 0.6f
-            val cy = p.y + kotlin.math.sin(angle) * 0.6f
+            val cy = bodyY + kotlin.math.sin(angle) * 0.6f
             batch.draw(
                 white,
                 cx - 0.45f, cy - 0.07f, 0.9f, 0.14f,
@@ -362,7 +389,7 @@ class GameRenderer(
             val frame = (progress * 3f).toInt().coerceIn(0, 2)
             val reach = 0.75f + 0.35f * progress
             val cx = p.x + p.attackDir.dx * reach
-            val cy = p.y + p.attackDir.dy * reach
+            val cy = bodyY + p.attackDir.dy * reach
             batch.draw(
                 slashTex,
                 cx - 0.7f, cy - 0.7f, 1.4f, 1.4f,
@@ -390,7 +417,7 @@ class GameRenderer(
                 val dx = (i - (count - 1) / 2f) * 0.22f
                 batch.draw(
                     white,
-                    effect.x + dx - 0.06f, effect.y - 0.5f - yOffset - 0.06f,
+                    effect.x + dx - 0.06f, effect.y + 0.4f - standFactor - 0.1f - yOffset - 0.06f,
                     0.12f, 0.12f, r = r, g = g, b = b, a = alpha,
                 )
             }
@@ -442,7 +469,7 @@ class GameRenderer(
     /** Motas de polvo/luciérnagas flotando; se dibujan en modo aditivo. */
     private fun drawMotes(dt: Float) {
         val viewW = camera.viewTilesX + 2f * cullX
-        val viewH = camera.tilesVisibleY + 2f * cullY
+        val viewH = camera.halfViewY * 2f + 2f * cullY
         if (!motesSeeded) {
             for (m in motes) {
                 m[0] = Random.nextFloat() * viewW
@@ -453,7 +480,7 @@ class GameRenderer(
             motesSeeded = true
         }
         val left = camera.x - camera.viewTilesX / 2f - 1f
-        val top = camera.y - camera.tilesVisibleY / 2f - 1f
+        val top = camera.y - camera.halfViewY - 1f
         for (m in motes) {
             m[1] -= dt * 0.12f * m[2]
             m[0] += sin(elapsed * 0.8f + m[3]) * dt * 0.25f
