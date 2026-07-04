@@ -39,6 +39,14 @@ data class Project(
      * 40-50°; 45 es el valor por defecto del "teatrillo".
      */
     val dioramaTilt: Float = 45f,
+    /**
+     * Altura extra de los sprites de pie (personajes, enemigos y tiles
+     * "de pie") en el diorama 2.5D: multiplica su alto de dibujo sobre la
+     * proporción natural del arte. 1 = tal cual el arte; >1 los estira
+     * hacia arriba para exagerar cuánto se levantan del suelo. Rango
+     * razonable 0.5..2.5.
+     */
+    val spriteStand: Float = 1f,
 ) {
     companion object {
         const val DEFAULT_SWITCH_COUNT = 50

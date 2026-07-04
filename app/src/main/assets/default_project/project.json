@@ -114,5 +114,6 @@
     ],
     "hd2d": true,
     "hd2dStrength": 1.0,
-    "dioramaTilt": 45.0
+    "dioramaTilt": 45.0,
+    "spriteStand": 1.0
 }

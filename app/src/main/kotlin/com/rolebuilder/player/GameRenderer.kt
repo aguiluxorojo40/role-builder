@@ -54,6 +54,10 @@ class GameRenderer(
     @Volatile
     var liveTilt = engine.data.project.dioramaTilt
 
+    /** Altura de los sprites de pie (multiplicador del alto de dibujo). */
+    @Volatile
+    var liveSpriteStand = engine.data.project.spriteStand
+
     /** Motas de luz ambientales (solo HD-2D): x, y, velocidad y fase. */
     private val motes = Array(MOTES) { FloatArray(4) }
     private var motesSeeded = false
@@ -206,16 +210,20 @@ class GameRenderer(
      */
     private val standFactor: Float get() = 1f / camera.groundSquash
 
+    /** Multiplicador de altura de los sprites de pie (mando en vivo). */
+    private val spriteStand: Float get() = liveSpriteStand.coerceIn(0.5f, 2.5f)
+
     /**
      * Altura en casillas de un billboard con esta textura, anclado por los
      * pies: el ANCHO es siempre 1 casilla y el alto lo dicta la proporción
      * del arte (una hoja 3x4 con celdas 16x24 rinde 1.5 casillas), por el
-     * standFactor para que sobresalga del suelo inclinado. Así los personajes
-     * y objetos "de pie" se levantan de verdad, estilo Octopath/Paper Mario.
+     * standFactor para que sobresalga del suelo inclinado y por el mando
+     * [spriteStand]. Así los personajes y objetos "de pie" se levantan de
+     * verdad, estilo Octopath/Paper Mario.
      */
     private fun billboardHeight(tex: Texture, cols: Int = 3, rows: Int = 4): Float {
         val cellAspect = (tex.height.toFloat() / rows) / (tex.width.toFloat() / cols)
-        return cellAspect * standFactor
+        return cellAspect * standFactor * spriteStand
     }
 
     /** Altura del sprite del jugador (para anclar espada y números de daño). */
@@ -264,8 +272,9 @@ class GameRenderer(
     private fun drawTileBillboard(tex: Texture, tileset: com.rolebuilder.core.model.Tileset, tile: Int, tx: Int, ty: Int) {
         val col = tile % tileset.columns
         val row = tile / tileset.columns
-        // Los tiles del set son cuadrados: alto = 1 casilla por el standFactor.
-        val h = standFactor
+        // Los tiles del set son cuadrados: alto = 1 casilla por el standFactor
+        // y el mando de altura de sprites.
+        val h = standFactor * spriteStand
         batch.draw(
             tex,
             tx.toFloat(), ty + 1f - h, 1f, h,
