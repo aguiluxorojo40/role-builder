@@ -5,6 +5,9 @@ on:
     branches: ["**"]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   core-tests:
     name: Tests del motor (:core)
@@ -56,3 +59,18 @@ jobs:
         with:
           name: role-builder-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      # Release rodante con enlace de descarga estable (solo en esta rama).
+      - name: Preparar APK con nombre
+        if: github.ref_name == 'claude/android-rpg-engine-jsrssr'
+        run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
+
+      - name: Actualizar release rodante (apk-latest)
+        if: github.ref_name == 'claude/android-rpg-engine-jsrssr'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: APK más reciente (debug)
+          prerelease: true
+          body: APK de depuración compilada automáticamente a partir del último push de la rama.
+          files: role-builder-debug.apk

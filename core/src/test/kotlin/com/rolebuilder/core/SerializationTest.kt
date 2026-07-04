@@ -219,7 +219,7 @@ class SerializationTest {
     fun `legacy project without diorama tilt loads with default`() {
         val legacy = """{"name":"Vieja aventura"}"""
         val project = json.decodeFromString(Project.serializer(), legacy)
-        assertEquals(12f, project.dioramaTilt)
+        assertEquals(20f, project.dioramaTilt)
     }
 
     @Test
@@ -244,7 +244,7 @@ class SerializationTest {
     fun `default tileset marks expected standing tiles`() {
         val ts = DefaultProjectFactory.defaultTileset()
         assertEquals(
-            listOf(Tiles.TREE, Tiles.BUSH, Tiles.ROCK, Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN),
+            listOf(Tiles.TREE, Tiles.TREE_TOP, Tiles.BUSH, Tiles.ROCK, Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN),
             ts.standingTiles,
         )
     }

@@ -29,10 +29,16 @@ object Tiles {
     const val STAIRS = 14
     const val ROOF = 15
 
+    /** Copa de árbol (fondo transparente): sobre [TREE] forma un árbol alto. */
+    const val TREE_TOP = 16
+
     val IMPASSABLE = setOf(WATER, TREE, BUSH, ROCK, WALL, DOOR_CLOSED, ROOF)
 
-    /** Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2. */
-    val STANDING = listOf(TREE, BUSH, ROCK, DOOR_CLOSED, DOOR_OPEN)
+    /**
+     * Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2.
+     * La copa (transitable) se apila sobre el tronco para árboles altos.
+     */
+    val STANDING = listOf(TREE, TREE_TOP, BUSH, ROCK, DOOR_CLOSED, DOOR_OPEN)
 }
 
 /**
@@ -109,6 +115,11 @@ object DefaultProjectFactory {
         }
         // Arbusto y roca también en la capa 2, de pie sobre la hierba.
         map = map.withTile(1, 4, 5, Tiles.BUSH).withTile(1, 11, 11, Tiles.ROCK)
+        // Árboles altos (copa transitable sobre tronco): el jugador pasa por
+        // detrás y la copa lo tapa, muestra del eje vertical del diorama.
+        map = map
+            .withTile(1, 3, 9, Tiles.TREE_TOP).withTile(1, 3, 10, Tiles.TREE)
+            .withTile(1, 16, 6, Tiles.TREE_TOP).withTile(1, 16, 7, Tiles.TREE)
 
         val npc = MapEvent(
             id = 1,

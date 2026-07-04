@@ -175,8 +175,15 @@ fun generateTileset(): BufferedImage {
             for (i in 0 until 4) fillRect(x, y + i * 4 + 3, T, 1)
             for (i in 0 until 2) fillRect(x + i * 8 + 3, y, 1, T)
         }
+        // 16 TREE_TOP: copa con fondo transparente, para árboles altos de
+        // dos tiles (copa sobre tronco) que el diorama levanta como columna.
+        cell(16).let { (x, y) ->
+            color = Color(34, 88, 38); fillOval(x + 0, y + 3, 16, 13)
+            color = Color(52, 116, 52); fillOval(x + 2, y + 4, 11, 9)
+            color = Color(76, 148, 72); fillOval(x + 4, y + 5, 5, 4)
+        }
         // Resto: cuadros grises numerables para que el usuario vea huecos libres.
-        for (i in 16 until 64) {
+        for (i in 17 until 64) {
             cell(i).let { (x, y) ->
                 color = if ((i / 8 + i) % 2 == 0) Color(58, 58, 66) else Color(66, 66, 74)
                 fillRect(x, y, T, T)
@@ -223,13 +230,15 @@ fun generateClouds(): BufferedImage {
 
 /**
  * Hoja de personaje estilo RPG Maker: 3 columnas (animación) x 4 filas
- * (mirando abajo, izquierda, derecha, arriba). Cada frame 16x16.
+ * (mirando abajo, izquierda, derecha, arriba). El ancho de celda es T
+ * (1 casilla); [cellH] mayor que T produce personajes que sobresalen del
+ * suelo en el diorama 2.5D (el runtime lee la proporción del arte).
  */
-private fun characterSheet(drawFrame: Graphics2D.(x0: Int, y0: Int, dir: Int, frame: Int) -> Unit): BufferedImage {
-    val img = image(3 * T, 4 * T)
+private fun characterSheet(cellH: Int = T, drawFrame: Graphics2D.(x0: Int, y0: Int, dir: Int, frame: Int) -> Unit): BufferedImage {
+    val img = image(3 * T, 4 * cellH)
     img.draw {
         for (dir in 0 until 4) for (frame in 0 until 3) {
-            drawFrame(frame * T, dir * T, dir, frame)
+            drawFrame(frame * T, dir * cellH, dir, frame)
         }
     }
     return img
@@ -240,51 +249,59 @@ private const val DIR_LEFT = 1
 private const val DIR_RIGHT = 2
 private const val DIR_UP = 3
 
-/** Humanoide sencillo: pelo/casco, cara, túnica y pies que alternan al andar. */
+/**
+ * Humanoide de proporción alta (celda 16x24 = 1.5 casillas): pelo/casco,
+ * cara, túnica, piernas y pies que alternan al andar. En el diorama 2.5D
+ * sobresale claramente del suelo, estilo Octopath/Paper Mario.
+ */
 private fun humanoid(hair: Color, skin: Color, tunic: Color, tunicDark: Color): BufferedImage =
-    characterSheet { x0, y0, dir, frame ->
+    characterSheet(cellH = 24) { x0, y0, dir, frame ->
         val step = frame - 1 // -1, 0, 1: desplazamiento de pies
 
         // pies
         color = Color(60, 44, 30)
         when (dir) {
             DIR_LEFT, DIR_RIGHT -> {
-                fillRect(x0 + 5 + step, y0 + 14, 3, 2)
-                fillRect(x0 + 9 - step, y0 + 14, 3, 2)
+                fillRect(x0 + 5 + step, y0 + 22, 3, 2)
+                fillRect(x0 + 9 - step, y0 + 22, 3, 2)
             }
             else -> {
-                fillRect(x0 + 4, y0 + 14 + (if (step == -1) -1 else 0), 3, 2)
-                fillRect(x0 + 9, y0 + 14 + (if (step == 1) -1 else 0), 3, 2)
+                fillRect(x0 + 4, y0 + 22 + (if (step == -1) -1 else 0), 3, 2)
+                fillRect(x0 + 9, y0 + 22 + (if (step == 1) -1 else 0), 3, 2)
             }
         }
+        // piernas
+        color = tunicDark
+        fillRect(x0 + 5, y0 + 17, 2, 5)
+        fillRect(x0 + 9, y0 + 17, 2, 5)
         // cuerpo
         color = tunic
-        fillRect(x0 + 4, y0 + 8, 8, 6)
+        fillRect(x0 + 4, y0 + 10, 8, 8)
         color = tunicDark
-        fillRect(x0 + 4, y0 + 12, 8, 2)
+        fillRect(x0 + 4, y0 + 16, 8, 2)
         // brazos
         color = if (dir == DIR_UP) tunicDark else skin
-        fillRect(x0 + 3, y0 + 9, 1, 3)
-        fillRect(x0 + 12, y0 + 9, 1, 3)
+        fillRect(x0 + 3, y0 + 11, 1, 4)
+        fillRect(x0 + 12, y0 + 11, 1, 4)
         // cabeza
         color = skin
-        fillRect(x0 + 4, y0 + 2, 8, 7)
+        fillRect(x0 + 4, y0 + 3, 8, 8)
         // pelo según dirección
         color = hair
-        fillRect(x0 + 3, y0 + 1, 10, 3)
+        fillRect(x0 + 3, y0 + 2, 10, 3)
         when (dir) {
-            DIR_DOWN -> { fillRect(x0 + 3, y0 + 3, 2, 3); fillRect(x0 + 11, y0 + 3, 2, 3) }
-            DIR_UP -> fillRect(x0 + 3, y0 + 3, 10, 5)
-            DIR_LEFT -> fillRect(x0 + 9, y0 + 3, 4, 5)
-            DIR_RIGHT -> fillRect(x0 + 3, y0 + 3, 4, 5)
+            DIR_DOWN -> { fillRect(x0 + 3, y0 + 4, 2, 3); fillRect(x0 + 11, y0 + 4, 2, 3) }
+            DIR_UP -> fillRect(x0 + 3, y0 + 4, 10, 5)
+            DIR_LEFT -> fillRect(x0 + 9, y0 + 4, 4, 5)
+            DIR_RIGHT -> fillRect(x0 + 3, y0 + 4, 4, 5)
         }
         // ojos
         if (dir != DIR_UP) {
             color = Color(24, 24, 40)
             when (dir) {
-                DIR_DOWN -> { fillRect(x0 + 6, y0 + 5, 1, 2); fillRect(x0 + 9, y0 + 5, 1, 2) }
-                DIR_LEFT -> fillRect(x0 + 5, y0 + 5, 1, 2)
-                DIR_RIGHT -> fillRect(x0 + 10, y0 + 5, 1, 2)
+                DIR_DOWN -> { fillRect(x0 + 6, y0 + 7, 1, 2); fillRect(x0 + 9, y0 + 7, 1, 2) }
+                DIR_LEFT -> fillRect(x0 + 5, y0 + 7, 1, 2)
+                DIR_RIGHT -> fillRect(x0 + 10, y0 + 7, 1, 2)
             }
         }
     }
