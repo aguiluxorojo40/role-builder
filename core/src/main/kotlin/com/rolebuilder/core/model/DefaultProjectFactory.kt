@@ -32,14 +32,28 @@ object Tiles {
     /** Copa de árbol (fondo transparente): sobre [TREE] forma un árbol alto. */
     const val TREE_TOP = 16
 
-    val IMPASSABLE = setOf(WATER, TREE, BUSH, ROCK, WALL, DOOR_CLOSED, ROOF)
+    /** Cumbrera del tejado (transparente): remata la casa por arriba. */
+    const val ROOF_PEAK = 17
+
+    /** Muro con ventana (transparente): planta alta de la casa. */
+    const val WALL_WINDOW = 18
+
+    /**
+     * Bloquean el paso. Las piezas ALTAS de un edificio (tejado, cumbrera,
+     * planta con ventana) NO bloquean: son la fachada que se levanta detrás;
+     * solo el muro/puerta de la planta baja (donde chocas) es impasable.
+     */
+    val IMPASSABLE = setOf(WATER, TREE, BUSH, ROCK, WALL, DOOR_CLOSED)
 
     /**
      * Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2.
-     * Las cadenas verticales (copa sobre tronco, tejado sobre muro) forman
-     * columnas erguidas de una pieza: árboles y edificios con volumen.
+     * Las cadenas verticales (copa sobre tronco, cumbrera+tejado+ventana
+     * sobre muro) forman columnas erguidas: árboles y casas con volumen.
      */
-    val STANDING = listOf(TREE, TREE_TOP, BUSH, ROCK, WALL, ROOF, DOOR_CLOSED, DOOR_OPEN)
+    val STANDING = listOf(
+        TREE, TREE_TOP, BUSH, ROCK,
+        WALL, WALL_WINDOW, ROOF, ROOF_PEAK, DOOR_CLOSED, DOOR_OPEN,
+    )
 }
 
 /**
@@ -107,14 +121,22 @@ object DefaultProjectFactory {
         }
         // Estanque.
         for (y in 3..5) for (x in 13..17) map = map.withTile(0, x, y, Tiles.WATER)
-        // Camino de tierra horizontal.
-        for (x in 1..18) map = map.withTile(0, x, 8, Tiles.DIRT)
-        // Cabaña de pie en la capa 2 (tejado sobre muro = fachada erguida);
-        // la puerta es el evento de transferencia al mapa 2.
+        // Camino de tierra horizontal que lleva hasta la casa.
+        for (x in 1..13) map = map.withTile(0, x, 8, Tiles.DIRT)
+        // Casa de 4 tiles de alto (≈2.7× el héroe): cumbrera + tejado +
+        // planta con ventana + planta baja con la puerta. Solo la planta
+        // baja (muro/puerta) bloquea; las piezas altas son la fachada que
+        // se levanta detrás. La puerta transfiere al mapa 2.
         for (x in 14..17) {
-            map = map.withTile(1, x, 10, Tiles.ROOF).withTile(1, x, 11, Tiles.WALL)
+            map = map
+                .withTile(1, x, 8, Tiles.ROOF_PEAK)
+                .withTile(1, x, 9, Tiles.ROOF)
+                .withTile(1, x, 10, Tiles.WALL_WINDOW)
+                .withTile(1, x, 11, Tiles.WALL)
         }
         map = map.withTile(1, 15, 11, Tiles.DOOR_CLOSED)
+        // Escalón de piedra de acceso a la puerta (en el suelo, se pisa).
+        map = map.withTile(0, 15, 12, Tiles.STAIRS)
         // Decoración.
         listOf(3 to 3, 5 to 12, 9 to 4, 2 to 9).forEach { (x, y) ->
             map = map.withTile(1, x, y, Tiles.FLOWERS)

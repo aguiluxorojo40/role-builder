@@ -255,7 +255,8 @@ class SerializationTest {
         assertEquals(
             listOf(
                 Tiles.TREE, Tiles.TREE_TOP, Tiles.BUSH, Tiles.ROCK,
-                Tiles.WALL, Tiles.ROOF, Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN,
+                Tiles.WALL, Tiles.WALL_WINDOW, Tiles.ROOF, Tiles.ROOF_PEAK,
+                Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN,
             ),
             ts.standingTiles,
         )
