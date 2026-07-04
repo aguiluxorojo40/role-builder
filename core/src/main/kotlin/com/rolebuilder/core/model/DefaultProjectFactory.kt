@@ -36,9 +36,10 @@ object Tiles {
 
     /**
      * Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2.
-     * La copa (transitable) se apila sobre el tronco para árboles altos.
+     * Las cadenas verticales (copa sobre tronco, tejado sobre muro) forman
+     * columnas erguidas de una pieza: árboles y edificios con volumen.
      */
-    val STANDING = listOf(TREE, TREE_TOP, BUSH, ROCK, DOOR_CLOSED, DOOR_OPEN)
+    val STANDING = listOf(TREE, TREE_TOP, BUSH, ROCK, WALL, ROOF, DOOR_CLOSED, DOOR_OPEN)
 }
 
 /**
@@ -92,34 +93,39 @@ object DefaultProjectFactory {
     fun starterMap(): GameMap {
         var map = GameMap.empty(id = 1, name = "Pradera", width = 20, height = 15, tilesetId = 1, fillTile = Tiles.GRASS)
 
-        // Borde de árboles en la capa 2 (de pie en el diorama 2.5D);
-        // la capa 0 conserva la hierba de relleno debajo.
+        // Muro de árboles de 2 tiles (copa TREE_TOP sobre tronco TREE) en las
+        // franjas superior e inferior: el "horizonte" se levanta con volumen.
+        // La capa 0 conserva la hierba de relleno debajo (fondo transparente).
         for (x in 0 until map.width) {
-            map = map.withTile(1, x, 0, Tiles.TREE).withTile(1, x, map.height - 1, Tiles.TREE)
+            map = map
+                .withTile(1, x, 0, Tiles.TREE_TOP).withTile(1, x, 1, Tiles.TREE)
+                .withTile(1, x, map.height - 2, Tiles.TREE_TOP).withTile(1, x, map.height - 1, Tiles.TREE)
         }
-        for (y in 0 until map.height) {
+        // Laterales: una columna de árboles a cada lado, entre las franjas.
+        for (y in 2 until map.height - 2) {
             map = map.withTile(1, 0, y, Tiles.TREE).withTile(1, map.width - 1, y, Tiles.TREE)
         }
         // Estanque.
         for (y in 3..5) for (x in 13..17) map = map.withTile(0, x, y, Tiles.WATER)
         // Camino de tierra horizontal.
         for (x in 1..18) map = map.withTile(0, x, 8, Tiles.DIRT)
-        // Cabaña con puerta (evento de transferencia al mapa 2).
+        // Cabaña de pie en la capa 2 (tejado sobre muro = fachada erguida);
+        // la puerta es el evento de transferencia al mapa 2.
         for (x in 14..17) {
-            map = map.withTile(0, x, 10, Tiles.ROOF).withTile(0, x, 11, Tiles.WALL)
+            map = map.withTile(1, x, 10, Tiles.ROOF).withTile(1, x, 11, Tiles.WALL)
         }
-        map = map.withTile(0, 15, 11, Tiles.DOOR_CLOSED)
+        map = map.withTile(1, 15, 11, Tiles.DOOR_CLOSED)
         // Decoración.
-        listOf(3 to 3, 5 to 11, 9 to 4, 2 to 9).forEach { (x, y) ->
+        listOf(3 to 3, 5 to 12, 9 to 4, 2 to 9).forEach { (x, y) ->
             map = map.withTile(1, x, y, Tiles.FLOWERS)
         }
-        // Arbusto y roca también en la capa 2, de pie sobre la hierba.
-        map = map.withTile(1, 4, 5, Tiles.BUSH).withTile(1, 11, 11, Tiles.ROCK)
-        // Árboles altos (copa transitable sobre tronco): el jugador pasa por
-        // detrás y la copa lo tapa, muestra del eje vertical del diorama.
+        // Arbusto y roca de pie sobre la hierba.
+        map = map.withTile(1, 4, 5, Tiles.BUSH).withTile(1, 10, 12, Tiles.ROCK)
+        // Árboles altos sueltos (copa transitable sobre tronco): el jugador
+        // pasa por detrás y la copa lo tapa, muestra del eje vertical.
         map = map
             .withTile(1, 3, 9, Tiles.TREE_TOP).withTile(1, 3, 10, Tiles.TREE)
-            .withTile(1, 16, 6, Tiles.TREE_TOP).withTile(1, 16, 7, Tiles.TREE)
+            .withTile(1, 11, 5, Tiles.TREE_TOP).withTile(1, 11, 6, Tiles.TREE)
 
         val npc = MapEvent(
             id = 1,

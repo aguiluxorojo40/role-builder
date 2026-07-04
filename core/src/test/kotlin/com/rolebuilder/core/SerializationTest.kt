@@ -253,7 +253,10 @@ class SerializationTest {
     fun `default tileset marks expected standing tiles`() {
         val ts = DefaultProjectFactory.defaultTileset()
         assertEquals(
-            listOf(Tiles.TREE, Tiles.TREE_TOP, Tiles.BUSH, Tiles.ROCK, Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN),
+            listOf(
+                Tiles.TREE, Tiles.TREE_TOP, Tiles.BUSH, Tiles.ROCK,
+                Tiles.WALL, Tiles.ROOF, Tiles.DOOR_CLOSED, Tiles.DOOR_OPEN,
+            ),
             ts.standingTiles,
         )
     }
