@@ -58,6 +58,8 @@ import com.rolebuilder.core.engine.RpgEngine
 import com.rolebuilder.core.io.LoadedProject
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.io.SaveIo
+import com.rolebuilder.core.engine.ShopSession
+import com.rolebuilder.core.model.EquipSlot
 import com.rolebuilder.core.model.MusicTracks
 import com.rolebuilder.player.ui.ActionButton
 import com.rolebuilder.player.ui.ChoicesPanel
@@ -67,6 +69,7 @@ import com.rolebuilder.player.ui.VirtualJoystick
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
 /** Información de una ranura de guardado. */
@@ -357,10 +360,21 @@ private fun GameScreen(
 
     // Re-lee el estado del motor una vez por frame de UI.
     var frame by remember { mutableLongStateOf(0L) }
+    var notice by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(engine) {
         while (isActive) {
             androidx.compose.runtime.withFrameMillis { }
             frame++
+            engine.notice?.let {
+                notice = it
+                engine.notice = null
+            }
+        }
+    }
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            delay(2500)
+            notice = null
         }
     }
 
@@ -395,11 +409,14 @@ private fun GameScreen(
         frame // fuerza la recomposición del HUD cada frame
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            HeartsRow(
-                hp = engine.state.hp,
-                maxHp = engine.state.maxHp,
-                modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
-            )
+            Column(modifier = Modifier.align(Alignment.TopStart).padding(12.dp)) {
+                HeartsRow(hp = engine.state.hp, maxHp = engine.state.maxHp)
+                Text(
+                    "Nv ${engine.state.level} · \uD83E\uDE99 ${engine.state.gold}",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 13.sp,
+                )
+            }
 
             IconButton(
                 onClick = {
@@ -427,6 +444,24 @@ private fun GameScreen(
                 ActionButton("B", Color(0xFF4D79FF)) { engine.pressSecondary() }
                 ActionButton("A", Color(0xFFFF5D5D)) { engine.pressAction() }
             }
+        }
+
+        notice?.let { text ->
+            Text(
+                text,
+                color = Color(0xFFFFE082),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 40.dp)
+                    .background(Color(0xB0101426), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+            )
+        }
+
+        engine.shop?.let { session ->
+            ShopDialog(engine = engine, session = session)
         }
 
         engine.choices?.let { choices ->
@@ -530,14 +565,34 @@ private fun PauseMenu(
                 }
             }
 
+            Text(
+                "Nv ${engine.state.level} · ATQ ${engine.effectiveAttack} · DEF ${engine.effectiveDefense} · \uD83E\uDE99 ${engine.state.gold}",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 13.sp,
+            )
+
             val items = engine.state.items.toList()
-            if (items.isEmpty()) {
+            val equippedIds = listOfNotNull(engine.state.weaponItemId, engine.state.armorItemId)
+            if (items.isEmpty() && equippedIds.isEmpty()) {
                 Text("No llevas objetos.", color = Color.White.copy(alpha = 0.7f))
             } else {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()).weight(1f, fill = false),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
+                    // Equipado actualmente (se puede quitar).
+                    equippedIds.forEach { itemId ->
+                        val item = engine.data.database.item(itemId) ?: return@forEach
+                        val slot = item.equipSlot ?: return@forEach
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("⚔ ${item.name} (equipado)", color = Color(0xFFB9D0FF))
+                            TextButton(onClick = { engine.equip(slot, null) }) { Text("Quitar") }
+                        }
+                    }
                     items.forEach { (itemId, count) ->
                         val item = engine.data.database.item(itemId)
                         Row(
@@ -546,8 +601,11 @@ private fun PauseMenu(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text("${item?.name ?: "Objeto $itemId"} ×$count", color = Color.White)
-                            TextButton(onClick = { engine.useItem(itemId) }) {
-                                Text("Usar")
+                            when {
+                                item?.equipSlot != null -> TextButton(onClick = {
+                                    engine.equip(item.equipSlot!!, itemId)
+                                }) { Text("Equipar") }
+                                else -> TextButton(onClick = { engine.useItem(itemId) }) { Text("Usar") }
                             }
                         }
                     }
@@ -580,6 +638,72 @@ private fun GameOverOverlay(onRetry: () -> Unit, onBackToTitle: () -> Unit) {
         ) {
             Button(onClick = onRetry) { Text("Reintentar") }
             TextButton(onClick = onBackToTitle) { Text("Volver al título", color = Color.White) }
+        }
+    }
+}
+
+// =============================================================================
+// Tienda
+// =============================================================================
+
+@Composable
+private fun ShopDialog(engine: RpgEngine, session: ShopSession) {
+    Dialog(onDismissRequest = { engine.closeShop() }) {
+        Column(
+            modifier = Modifier
+                .background(Color(0xF0121A30), RoundedCornerShape(16.dp))
+                .padding(18.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Tienda", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Tu oro: \uD83E\uDE99 ${engine.state.gold}",
+                color = Color(0xFFFFE082),
+                fontSize = 14.sp,
+            )
+
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).weight(1f, fill = false),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text("Comprar:", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                session.itemIds.forEach { itemId ->
+                    val item = engine.data.database.item(itemId) ?: return@forEach
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("${item.name} · ${item.price} oro", color = Color.White)
+                        TextButton(
+                            onClick = { engine.buyItem(itemId) },
+                            enabled = engine.state.gold >= item.price,
+                        ) { Text("Comprar") }
+                    }
+                }
+
+                val sellable = engine.state.items.keys.mapNotNull { engine.data.database.item(it) }
+                    .filter { it.price > 0 }
+                if (sellable.isNotEmpty()) {
+                    Text("Vender (a mitad de precio):", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                    sellable.forEach { item ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "${item.name} ×${engine.state.itemCount(item.id)} · ${item.price / 2} oro",
+                                color = Color.White,
+                            )
+                            TextButton(onClick = { engine.sellItem(item.id) }) { Text("Vender") }
+                        }
+                    }
+                }
+            }
+
+            Button(onClick = { engine.closeShop() }) { Text("Cerrar") }
         }
     }
 }

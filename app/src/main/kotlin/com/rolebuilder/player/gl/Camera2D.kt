@@ -24,6 +24,10 @@ class Camera2D {
     /** Inclinación del diorama, en grados (0 = vista cenital plana). */
     var tiltDegrees = 0f
 
+    /** Vibración de pantalla (ShakeScreen): desplazamiento del centro, en casillas. */
+    var shakeX = 0f
+    var shakeY = 0f
+
     var viewportWidth = 1
     var viewportHeight = 1
 
@@ -69,7 +73,9 @@ class Camera2D {
         y = if (halfH * 2f >= mapHeight) mapHeight / 2f else y.coerceIn(halfH, mapHeight - halfH)
 
         // y del mundo crece hacia abajo: se invierte bottom/top.
-        Matrix.orthoM(ortho, 0, x - halfW, x + halfW, y + halfH, y - halfH, -1f, 1f)
+        val cx = x + shakeX
+        val cy = y + shakeY
+        Matrix.orthoM(ortho, 0, cx - halfW, cx + halfW, cy + halfH, cy - halfH, -1f, 1f)
 
         keystoneK = if (tiltDegrees > 0.5f) {
             tan(Math.toRadians(tiltDegrees.toDouble())).toFloat().coerceIn(0f, 0.45f)
