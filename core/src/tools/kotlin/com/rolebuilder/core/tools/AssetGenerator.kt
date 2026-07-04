@@ -183,8 +183,31 @@ fun generateTileset(): BufferedImage {
             color = Color(58, 124, 56); fillOval(x + 3, y + 3, 9, 9)
             color = Color(80, 152, 74); fillOval(x + 4, y + 4, 5, 4)
         }
+        // 17 ROOF_PEAK: cumbrera triangular (fondo transparente) que remata
+        // la casa por arriba, apilada sobre el tejado.
+        cell(17).let { (x, y) ->
+            color = Color(150, 62, 54)
+            fillPolygon(intArrayOf(x, x + T, x + T / 2), intArrayOf(y + T, y + T, y), 3)
+            color = Color(178, 82, 72) // reflejo del alero
+            fillPolygon(intArrayOf(x + 2, x + T / 2, x + T / 2), intArrayOf(y + T - 1, y + 3, y + T - 1), 3)
+            color = Color(120, 48, 42)
+            fillRect(x, y + T - 2, T, 2) // línea del alero
+        }
+        // 18 WALL_WINDOW: planta con ventana (opaco) para casas de varias
+        // alturas; se apila sobre el muro de la planta baja.
+        cell(18).let { (x, y) ->
+            color = stone; fillRect(x, y, T, T)
+            color = stoneDark
+            for (row in 0 until 4) fillRect(x, y + row * 4 + 3, T, 1)
+            color = Color(60, 84, 120); fillRect(x + 4, y + 4, 8, 8) // cristal
+            color = Color(150, 190, 230); fillRect(x + 5, y + 5, 3, 3) // brillo
+            color = woodDark
+            fillRect(x + 3, y + 3, 10, 1); fillRect(x + 3, y + 12, 10, 1) // marco
+            fillRect(x + 3, y + 3, 1, 10); fillRect(x + 12, y + 3, 1, 10)
+            fillRect(x + 7, y + 4, 1, 8); fillRect(x + 4, y + 7, 8, 1) // cruceta
+        }
         // Resto: cuadros grises numerables para que el usuario vea huecos libres.
-        for (i in 17 until 64) {
+        for (i in 19 until 64) {
             cell(i).let { (x, y) ->
                 color = if ((i / 8 + i) % 2 == 0) Color(58, 58, 66) else Color(66, 66, 74)
                 fillRect(x, y, T, T)
