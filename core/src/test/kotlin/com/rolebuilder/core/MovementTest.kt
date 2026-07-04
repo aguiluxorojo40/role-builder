@@ -62,23 +62,27 @@ class MovementTest {
     fun `starter map keeps tree bush and rock tiles blocked from layer 2`() {
         val map = DefaultProjectFactory.starterMap()
         // Los tiles de pie viven en la capa 2 (índice 1) con hierba debajo.
-        assertEquals(Tiles.TREE, map.tileAt(1, 0, 0))
+        // El borde son árboles de 2 tiles: copa (transitable) sobre tronco.
+        assertEquals(Tiles.TREE_TOP, map.tileAt(1, 0, 0))
+        assertEquals(Tiles.TREE, map.tileAt(1, 0, 1))
         assertEquals(Tiles.GRASS, map.tileAt(0, 0, 0))
         assertEquals(Tiles.BUSH, map.tileAt(1, 4, 5))
-        assertEquals(Tiles.ROCK, map.tileAt(1, 11, 11))
+        assertEquals(Tiles.ROCK, map.tileAt(1, 10, 12))
 
         val engine = engine(listOf(map), startX = 5, startY = 8)
-        // Borde de árboles, arbusto y roca siguen bloqueando desde la capa 2.
+        // El tronco del borde bloquea (filas y = 1 arriba, y = height-1 abajo;
+        // columnas x = 0 y x = width-1). La copa es transitable a propósito.
         for (x in 0 until map.width) {
-            assertFalse(engine.isTilePassable(x, 0), "árbol del borde en ($x, 0)")
-            assertFalse(engine.isTilePassable(x, map.height - 1), "árbol del borde en ($x, ${map.height - 1})")
+            assertFalse(engine.isTilePassable(x, 1), "tronco del borde superior en ($x, 1)")
+            assertFalse(engine.isTilePassable(x, map.height - 1), "tronco del borde inferior en ($x, ${map.height - 1})")
         }
-        for (y in 0 until map.height) {
-            assertFalse(engine.isTilePassable(0, y), "árbol del borde en (0, $y)")
-            assertFalse(engine.isTilePassable(map.width - 1, y), "árbol del borde en (${map.width - 1}, $y)")
+        for (y in 2 until map.height - 2) {
+            assertFalse(engine.isTilePassable(0, y), "árbol lateral en (0, $y)")
+            assertFalse(engine.isTilePassable(map.width - 1, y), "árbol lateral en (${map.width - 1}, $y)")
         }
+        assertTrue(engine.isTilePassable(5, 0), "la copa del borde es transitable")
         assertFalse(engine.isTilePassable(4, 5), "arbusto")
-        assertFalse(engine.isTilePassable(11, 11), "roca")
+        assertFalse(engine.isTilePassable(10, 12), "roca")
         // El mapa sigue siendo jugable: inicio y camino transitables.
         assertTrue(engine.isTilePassable(5, 8), "casilla de inicio")
         assertTrue(engine.isTilePassable(10, 8), "camino de tierra")

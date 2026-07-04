@@ -100,24 +100,23 @@ fun generateTileset(): BufferedImage {
             color = waterLight
             fillRect(x + 2, y + 3, 5, 1); fillRect(x + 9, y + 7, 5, 1); fillRect(x + 4, y + 12, 5, 1)
         }
-        // 5 TREE (sobre hierba)
+        // 5 TREE (tronco + copa baja, FONDO TRANSPARENTE): de pie en el
+        // diorama muestra la hierba del suelo detrás y se apila con TREE_TOP.
         cell(5).let { (x, y) ->
-            speckledTile(x, y, grass, grassDark, 5)
-            color = Color(96, 64, 32); fillRect(x + 6, y + 10, 4, 5) // tronco
-            color = Color(34, 88, 38); fillOval(x + 1, y + 0, 14, 12) // copa
-            color = Color(52, 116, 52); fillOval(x + 3, y + 1, 8, 7)
+            color = Color(96, 64, 32); fillRect(x + 6, y + 6, 4, 10) // tronco hasta la base
+            color = Color(78, 50, 26); fillRect(x + 6, y + 6, 1, 10) // sombra del tronco
+            color = Color(34, 88, 38); fillOval(x + 1, y + 0, 14, 11) // copa baja
+            color = Color(52, 116, 52); fillOval(x + 3, y + 1, 8, 6)
         }
-        // 6 BUSH
+        // 6 BUSH (fondo transparente)
         cell(6).let { (x, y) ->
-            speckledTile(x, y, grass, grassDark, 6)
-            color = Color(40, 100, 44); fillOval(x + 2, y + 5, 12, 10)
+            color = Color(40, 100, 44); fillOval(x + 2, y + 5, 12, 11)
             color = Color(60, 128, 60); fillOval(x + 4, y + 6, 6, 5)
         }
-        // 7 ROCK
+        // 7 ROCK (fondo transparente)
         cell(7).let { (x, y) ->
-            speckledTile(x, y, grass, grassDark, 8)
-            color = stoneDark; fillOval(x + 2, y + 5, 12, 10)
-            color = stone; fillOval(x + 3, y + 5, 9, 7)
+            color = stoneDark; fillOval(x + 2, y + 6, 12, 10)
+            color = stone; fillOval(x + 3, y + 6, 9, 6)
         }
         // 8 WALL (ladrillo)
         cell(8).let { (x, y) ->
@@ -175,12 +174,14 @@ fun generateTileset(): BufferedImage {
             for (i in 0 until 4) fillRect(x, y + i * 4 + 3, T, 1)
             for (i in 0 until 2) fillRect(x + i * 8 + 3, y, 1, T)
         }
-        // 16 TREE_TOP: copa con fondo transparente, para árboles altos de
-        // dos tiles (copa sobre tronco) que el diorama levanta como columna.
+        // 16 TREE_TOP: copa frondosa con fondo transparente, para árboles
+        // altos de dos tiles (copa sobre tronco) que el diorama levanta.
+        // Llena todo el tile y baja hasta la base para enganchar con el tronco.
         cell(16).let { (x, y) ->
-            color = Color(34, 88, 38); fillOval(x + 0, y + 3, 16, 13)
-            color = Color(52, 116, 52); fillOval(x + 2, y + 4, 11, 9)
-            color = Color(76, 148, 72); fillOval(x + 4, y + 5, 5, 4)
+            color = Color(30, 80, 34); fillOval(x + 0, y + 1, 16, 15)
+            color = Color(42, 100, 44); fillOval(x + 1, y + 2, 13, 12)
+            color = Color(58, 124, 56); fillOval(x + 3, y + 3, 9, 9)
+            color = Color(80, 152, 74); fillOval(x + 4, y + 4, 5, 4)
         }
         // Resto: cuadros grises numerables para que el usuario vea huecos libres.
         for (i in 17 until 64) {
