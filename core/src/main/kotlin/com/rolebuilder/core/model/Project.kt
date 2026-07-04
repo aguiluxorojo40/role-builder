@@ -35,9 +35,10 @@ data class Project(
      * del suelo hacia atrás (efecto maqueta HD-2D estilo Octopath Traveler)
      * y dibuja de pie a los personajes y a los tiles marcados en
      * [Tileset.standingTiles]. 0 = desactivado (plano cenital clásico);
-     * rango razonable 0..25.
+     * rango 0..25 del mando (el runtime lo amplifica a un cabeceo de
+     * cámara mayor). 20 da el "teatrillo" claramente inclinado.
      */
-    val dioramaTilt: Float = 12f,
+    val dioramaTilt: Float = 20f,
 ) {
     companion object {
         const val DEFAULT_SWITCH_COUNT = 50

@@ -206,6 +206,21 @@ class GameRenderer(
      */
     private val standFactor: Float get() = 1f / camera.groundSquash
 
+    /**
+     * Altura en casillas de un billboard con esta textura, anclado por los
+     * pies: el ANCHO es siempre 1 casilla y el alto lo dicta la proporción
+     * del arte (una hoja 3x4 con celdas 16x24 rinde 1.5 casillas), por el
+     * standFactor para que sobresalga del suelo inclinado. Así los personajes
+     * y objetos "de pie" se levantan de verdad, estilo Octopath/Paper Mario.
+     */
+    private fun billboardHeight(tex: Texture, cols: Int = 3, rows: Int = 4): Float {
+        val cellAspect = (tex.height.toFloat() / rows) / (tex.width.toFloat() / cols)
+        return cellAspect * standFactor
+    }
+
+    /** Altura del sprite del jugador (para anclar espada y números de daño). */
+    private val heroHeight: Float get() = billboardHeight(texture(engine.actor.sprite))
+
     private fun drawTiles() {
         val map = engine.currentMap
         val tileset = engine.tileset
@@ -249,6 +264,7 @@ class GameRenderer(
     private fun drawTileBillboard(tex: Texture, tileset: com.rolebuilder.core.model.Tileset, tile: Int, tx: Int, ty: Int) {
         val col = tile % tileset.columns
         val row = tile / tileset.columns
+        // Los tiles del set son cuadrados: alto = 1 casilla por el standFactor.
         val h = standFactor
         batch.draw(
             tex,
@@ -332,9 +348,9 @@ class GameRenderer(
             Direction.UP -> 3
         }
         val tint = if (flashWhite) 4f else 1f
-        // De pie sobre el suelo inclinado: altura completa anclada a los pies
-        // (con el suelo comprimido, el sprite se levanta en su propio eje).
-        val h = standFactor
+        // De pie sobre el suelo inclinado: la altura la dicta la proporción
+        // del arte (celda alta = personaje que sobresale) anclada a los pies.
+        val h = billboardHeight(tex)
         batch.draw(
             tex,
             cx - 0.5f, cy + 0.4f - h, 1f, h,
@@ -368,7 +384,7 @@ class GameRenderer(
         if (p.attackFlash <= 0f) return
         val progress = (1f - p.attackFlash / ATTACK_SWING_SECONDS).coerceIn(0f, 1f)
         // Centro visual del cuerpo levantado (los pies quedan en p.y + 0.4).
-        val bodyY = p.y + 0.4f - standFactor / 2f
+        val bodyY = p.y + 0.4f - heroHeight / 2f
 
         // Ángulo base según dirección (mundo con Y hacia abajo).
         val baseAngle = when (p.attackDir) {
@@ -438,7 +454,7 @@ class GameRenderer(
                 val dx = (i - (count - 1) / 2f) * 0.22f
                 batch.draw(
                     white,
-                    effect.x + dx - 0.06f, effect.y + 0.4f - standFactor - 0.1f - yOffset - 0.06f,
+                    effect.x + dx - 0.06f, effect.y + 0.4f - heroHeight - 0.1f - yOffset - 0.06f,
                     0.12f, 0.12f, r = r, g = g, b = b, a = alpha,
                 )
             }
