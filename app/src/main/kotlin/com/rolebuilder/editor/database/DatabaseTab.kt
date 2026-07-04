@@ -51,9 +51,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.rolebuilder.core.model.Actor
 import com.rolebuilder.core.model.Enemy
+import com.rolebuilder.core.model.EnemyBehavior
 import com.rolebuilder.core.model.EquipSlot
-import com.rolebuilder.core.model.Enemy
-import com.rolebuilder.core.model.EquipSlotBehavior
 import com.rolebuilder.core.model.Item
 import com.rolebuilder.core.model.ItemEffect
 import com.rolebuilder.core.model.Skill
