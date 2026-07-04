@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.Condition
 import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.core.model.event.EventCommand
@@ -363,6 +365,13 @@ private val COMMAND_OPTIONS = listOf(
     CommandOption("Detener música") { EventCommand.StopMusic },
     CommandOption("Cambiar sprite del evento") { EventCommand.ChangeEventSprite() },
     CommandOption("Variable aleatoria") { EventCommand.SetVariableRandom(1, 1, 6) },
+    CommandOption("Dar/quitar oro") { EventCommand.ChangeGold(10) },
+    CommandOption("Dar experiencia") { EventCommand.ChangeExp(5) },
+    CommandOption("Abrir tienda") { EventCommand.OpenShop(itemIds = emptyList()) },
+    CommandOption("Tinte de pantalla") { EventCommand.TintScreen(0f, 0f, 0.15f, 0.35f, 1f) },
+    CommandOption("Destello de pantalla") { EventCommand.FlashScreen() },
+    CommandOption("Cambiar clima") { EventCommand.SetWeather(Weather.RAIN) },
+    CommandOption("Vibrar pantalla") { EventCommand.ShakeScreen() },
     CommandOption("Borrar este evento") { EventCommand.EraseEvent },
 )
 
@@ -692,10 +701,87 @@ private fun CommandFields(
             }
         }
 
+        is EventCommand.ChangeGold -> {
+            IntField("Oro (+ dar, − quitar)", command.delta, { onChange(command.copy(delta = it)) })
+        }
+
+        is EventCommand.ChangeExp -> {
+            IntField("Experiencia (+)", command.delta, { onChange(command.copy(delta = it)) })
+        }
+
+        is EventCommand.OpenShop -> {
+            Text("Artículos a la venta:", style = MaterialTheme.typography.labelLarge)
+            command.itemIds.forEachIndexed { index, itemId ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "· ${state.database.item(itemId)?.name ?: "Objeto $itemId"}",
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = {
+                        onChange(command.copy(itemIds = command.itemIds.filterIndexed { i, _ -> i != index }))
+                    }) { Icon(Icons.Filled.Delete, contentDescription = "Quitar") }
+                }
+            }
+            DropdownField(
+                label = "Añadir artículo",
+                options = state.database.items.map { it.id },
+                selected = null,
+                optionLabel = { id -> state.database.item(id)?.let { "${it.name} (${it.price} oro)" } ?: "Objeto $id" },
+                onSelect = { onChange(command.copy(itemIds = command.itemIds + it)) },
+            )
+            Text(
+                "Los precios se definen en la base de datos (Objetos). La venta es a mitad de precio.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        is EventCommand.TintScreen -> {
+            ColorSlider("Rojo", command.r) { onChange(command.copy(r = it)) }
+            ColorSlider("Verde", command.g) { onChange(command.copy(g = it)) }
+            ColorSlider("Azul", command.b) { onChange(command.copy(b = it)) }
+            ColorSlider("Opacidad", command.a) { onChange(command.copy(a = it)) }
+            FloatField("Duración de la transición (s)", command.seconds, { onChange(command.copy(seconds = it)) })
+            Text("Opacidad 0 quita el tinte gradualmente.", style = MaterialTheme.typography.bodySmall)
+        }
+
+        is EventCommand.FlashScreen -> {
+            ColorSlider("Rojo", command.r) { onChange(command.copy(r = it)) }
+            ColorSlider("Verde", command.g) { onChange(command.copy(g = it)) }
+            ColorSlider("Azul", command.b) { onChange(command.copy(b = it)) }
+            FloatField("Duración (s)", command.seconds, { onChange(command.copy(seconds = it)) })
+        }
+
+        is EventCommand.SetWeather -> {
+            DropdownField(
+                label = "Clima",
+                options = Weather.entries,
+                selected = command.weather,
+                optionLabel = { it.spanish() },
+                onSelect = { onChange(command.copy(weather = it)) },
+            )
+        }
+
+        is EventCommand.ShakeScreen -> {
+            FloatField("Duración (s)", command.seconds, { onChange(command.copy(seconds = it)) })
+        }
+
         EventCommand.EraseEvent -> {
             Text("El evento desaparecerá hasta que se recargue el mapa.")
         }
     }
+}
+
+@Composable
+private fun ColorSlider(label: String, value: Float, onChange: (Float) -> Unit) {
+    Text("$label · ${(value * 100).toInt()}%", style = MaterialTheme.typography.labelMedium)
+    Slider(value = value, onValueChange = onChange, valueRange = 0f..1f)
+}
+
+/** Nombre visible de un clima. */
+fun Weather.spanish(): String = when (this) {
+    Weather.NONE -> "Despejado"
+    Weather.RAIN -> "Lluvia"
+    Weather.SNOW -> "Nieve"
 }
 
 /** Nombre visible de una pista de música procedural. */
@@ -725,6 +811,7 @@ private fun ConditionEditor(
                     Condition.Kind.SELF_SWITCH -> "Self-switch"
                     Condition.Kind.VARIABLE_AT_LEAST -> "Variable ≥ valor"
                     Condition.Kind.HAS_ITEM -> "Tiene objeto"
+                    Condition.Kind.GOLD_AT_LEAST -> "Oro ≥ valor"
                 }
             },
             onSelect = { onChange(condition.copy(kind = it)) },
@@ -759,6 +846,9 @@ private fun ConditionEditor(
                     onSelect = { onChange(condition.copy(id = it)) },
                 )
                 IntField("Valor mínimo", condition.value, { onChange(condition.copy(value = it)) })
+            }
+            Condition.Kind.GOLD_AT_LEAST -> {
+                IntField("Oro mínimo", condition.value, { onChange(condition.copy(value = it)) })
             }
             Condition.Kind.HAS_ITEM -> {
                 DropdownField(
@@ -839,6 +929,13 @@ private fun EventCommand.typeName(): String = when (this) {
     EventCommand.StopMusic -> "Detener música"
     is EventCommand.ChangeEventSprite -> "Cambiar sprite del evento"
     is EventCommand.SetVariableRandom -> "Variable aleatoria"
+    is EventCommand.ChangeGold -> "Dar/quitar oro"
+    is EventCommand.ChangeExp -> "Dar experiencia"
+    is EventCommand.OpenShop -> "Abrir tienda"
+    is EventCommand.TintScreen -> "Tinte de pantalla"
+    is EventCommand.FlashScreen -> "Destello de pantalla"
+    is EventCommand.SetWeather -> "Cambiar clima"
+    is EventCommand.ShakeScreen -> "Vibrar pantalla"
     EventCommand.EraseEvent -> "Borrar este evento"
 }
 
@@ -866,5 +963,12 @@ fun EventCommand.summary(state: EditorState): String = when (this) {
     EventCommand.StopMusic -> "🔇 Detener música"
     is EventCommand.ChangeEventSprite -> "🎭 Sprite → ${image ?: "(invisible)"}"
     is EventCommand.SetVariableRandom -> "🎲 Variable ${state.variableLabel(variableId)} = azar $min..$max"
+    is EventCommand.ChangeGold -> "🪙 Oro ${if (delta >= 0) "+$delta" else "$delta"}"
+    is EventCommand.ChangeExp -> "⭐ Exp +$delta"
+    is EventCommand.OpenShop -> "🏪 Tienda (${itemIds.size} artículos)"
+    is EventCommand.TintScreen -> "🎨 Tinte ${(a * 100).toInt()}% en ${seconds}s"
+    is EventCommand.FlashScreen -> "⚡ Destello ${seconds}s"
+    is EventCommand.SetWeather -> "🌦 Clima: ${weather.spanish()}"
+    is EventCommand.ShakeScreen -> "📳 Vibrar ${seconds}s"
     EventCommand.EraseEvent -> "🗑 Borrar este evento"
 }

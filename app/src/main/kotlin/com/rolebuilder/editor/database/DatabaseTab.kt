@@ -51,7 +51,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.rolebuilder.core.model.Actor
 import com.rolebuilder.core.model.Enemy
-import com.rolebuilder.core.model.EnemyBehavior
+import com.rolebuilder.core.model.EquipSlot
+import com.rolebuilder.core.model.Enemy
+import com.rolebuilder.core.model.EquipSlotBehavior
 import com.rolebuilder.core.model.Item
 import com.rolebuilder.core.model.ItemEffect
 import com.rolebuilder.core.model.Skill
@@ -199,6 +201,16 @@ private fun ActorList(state: EditorState) {
                 { state.database.skill(it)?.name ?: "Habilidad $it" },
                 { update(actor.copy(attackSkillId = it)) },
             )
+            Text("Progresión por nivel", style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("PV/nivel", actor.hpPerLevel, { update(actor.copy(hpPerLevel = it)) }, Modifier.weight(1f))
+                IntField("ATQ/nivel", actor.attackPerLevel, { update(actor.copy(attackPerLevel = it)) }, Modifier.weight(1f))
+                IntField("DEF/nivel", actor.defensePerLevel, { update(actor.copy(defensePerLevel = it)) }, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("Exp base", actor.expBase, { update(actor.copy(expBase = it.coerceAtLeast(1))) }, Modifier.weight(1f))
+                IntField("Nivel máximo", actor.maxLevel, { update(actor.copy(maxLevel = it.coerceIn(1, 99))) }, Modifier.weight(1f))
+            }
             DropdownField(
                 "Habilidad secundaria (botón B)",
                 listOf<Int?>(null) + state.database.skills.map { it.id },
@@ -255,6 +267,10 @@ private fun EnemyList(state: EditorState) {
                 Switch(enemy.touchDamage, { update(enemy.copy(touchDamage = it)) })
                 Text("  Daña al tocar al jugador")
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                IntField("Exp que da", enemy.expReward, { update(enemy.copy(expReward = it)) }, Modifier.weight(1f))
+                IntField("Oro que da", enemy.goldReward, { update(enemy.copy(goldReward = it)) }, Modifier.weight(1f))
+            }
             DropdownField(
                 "Objeto que suelta",
                 listOf<Int?>(null) + state.database.items.map { it.id },
@@ -309,6 +325,21 @@ private fun ItemList(state: EditorState) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Switch(item.consumable, { update(item.copy(consumable = it)) })
                 Text("  Se consume al usarlo")
+            }
+            IntField("Precio en tienda (0 = no se vende)", item.price, { update(item.copy(price = it.coerceAtLeast(0))) })
+            DropdownField(
+                "Ranura de equipo",
+                listOf<EquipSlot?>(null) + EquipSlot.entries,
+                item.equipSlot,
+                { slot -> when (slot) { EquipSlot.WEAPON -> "Arma"; EquipSlot.ARMOR -> "Armadura"; null -> "(no equipable)" } },
+                { update(item.copy(equipSlot = it)) },
+            )
+            if (item.equipSlot != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    IntField("+ATQ", item.attackBonus, { update(item.copy(attackBonus = it)) }, Modifier.weight(1f))
+                    IntField("+DEF", item.defenseBonus, { update(item.copy(defenseBonus = it)) }, Modifier.weight(1f))
+                    IntField("+PV máx", item.maxHpBonus, { update(item.copy(maxHpBonus = it)) }, Modifier.weight(1f))
+                }
             }
         }
     }

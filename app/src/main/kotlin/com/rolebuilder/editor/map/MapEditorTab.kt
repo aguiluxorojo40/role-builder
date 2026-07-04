@@ -63,11 +63,13 @@ import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.ParallaxLayer
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.model.MusicTracks
+import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.EventPage
 import com.rolebuilder.core.model.event.MapEvent
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.event.EventEditorDialog
 import com.rolebuilder.editor.event.musicName
+import com.rolebuilder.editor.event.spanish
 import com.rolebuilder.editor.loadImageBitmap
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.FloatField
@@ -351,6 +353,7 @@ fun MapEditorTab(state: EditorState) {
         var width by remember(map.id) { mutableIntStateOf(map.width) }
         var height by remember(map.id) { mutableIntStateOf(map.height) }
         var bgm by remember(map.id) { mutableStateOf(map.bgm) }
+        var weather by remember(map.id) { mutableStateOf(map.weather) }
         var parallax by remember(map.id) { mutableStateOf(map.parallaxLayers) }
         AlertDialog(
             onDismissRequest = { showMapSettings = false },
@@ -371,6 +374,13 @@ fun MapEditorTab(state: EditorState) {
                         selected = bgm,
                         optionLabel = { it?.musicName() ?: "(silencio)" },
                         onSelect = { bgm = it },
+                    )
+                    DropdownField(
+                        label = "Clima",
+                        options = Weather.entries,
+                        selected = weather,
+                        optionLabel = { it.spanish() },
+                        onSelect = { weather = it },
                     )
 
                     Text("Parallax (profundidad de diorama)", style = MaterialTheme.typography.titleSmall)
@@ -451,6 +461,7 @@ fun MapEditorTab(state: EditorState) {
                     var updated = map.copy(
                         name = name,
                         bgm = bgm,
+                        weather = weather,
                         parallaxLayers = parallax.filter { it.image.isNotBlank() },
                     )
                     if (width != map.width || height != map.height) {
