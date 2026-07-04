@@ -220,6 +220,15 @@ class SerializationTest {
         val legacy = """{"name":"Vieja aventura"}"""
         val project = json.decodeFromString(Project.serializer(), legacy)
         assertEquals(45f, project.dioramaTilt)
+        assertEquals(1f, project.spriteStand)
+    }
+
+    @Test
+    fun `project round trip with sprite stand`() {
+        val project = DefaultProjectFactory.defaultProject("Test").copy(spriteStand = 1.8f)
+        val restored = json.decodeFromString(Project.serializer(), json.encodeToString(Project.serializer(), project))
+        assertEquals(project, restored)
+        assertEquals(1.8f, restored.spriteStand)
     }
 
     @Test

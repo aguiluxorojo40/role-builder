@@ -117,11 +117,18 @@ fun SettingsTab(state: EditorState) {
             valueRange = 0f..60f,
             enabled = state.project.hd2d,
         )
+        Text("Altura de los sprites 2.5D · ${(state.project.spriteStand * 100).toInt()}%")
+        Slider(
+            value = state.project.spriteStand,
+            onValueChange = { state.updateProject(state.project.copy(spriteStand = it)) },
+            valueRange = 0.5f..2.5f,
+            enabled = state.project.hd2d,
+        )
         Text(
-            "Inclina el plano del suelo como una maqueta 2.5D: los personajes y los " +
-                "tiles marcados \"De pie\" en el tileset se dibujan en vertical. " +
-                "También puedes ajustar ambos potenciómetros EN VIVO desde el menú " +
-                "de pausa mientras pruebas el juego.",
+            "La inclinación tumba el plano del suelo como una maqueta 2.5D; la altura " +
+                "estira a los personajes y a los tiles marcados \"De pie\" para exagerar " +
+                "cuánto se levantan del terreno. Puedes ajustar los tres potenciómetros " +
+                "EN VIVO desde el menú de pausa mientras pruebas el juego.",
             style = MaterialTheme.typography.bodySmall,
         )
 

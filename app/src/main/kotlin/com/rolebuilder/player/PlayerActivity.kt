@@ -126,8 +126,12 @@ class PlayerActivity : ComponentActivity() {
                     SaveIo.save(slot.file, engine.state)
                     Toast.makeText(this, "Guardado en ranura ${slot.index}", Toast.LENGTH_SHORT).show()
                 },
-                onSaveVisual = { strength, tilt ->
-                    val updated = data.project.copy(hd2dStrength = strength, dioramaTilt = tilt)
+                onSaveVisual = { strength, tilt, spriteStand ->
+                    val updated = data.project.copy(
+                        hd2dStrength = strength,
+                        dioramaTilt = tilt,
+                        spriteStand = spriteStand,
+                    )
                     ProjectIo.saveProject(projectDir, updated)
                     data = data.copy(project = updated)
                     Toast.makeText(this, "Estilo visual guardado en el proyecto", Toast.LENGTH_SHORT).show()
@@ -187,7 +191,7 @@ private fun PlayerRoot(
     onBgm: (String?) -> Unit,
     soundFx: SoundFx,
     onSaveToSlot: (RpgEngine, SaveSlot) -> Unit,
-    onSaveVisual: (Float, Float) -> Unit,
+    onSaveVisual: (Float, Float, Float) -> Unit,
     onExit: () -> Unit,
 ) {
     var engine by remember { mutableStateOf<RpgEngine?>(null) }
@@ -346,7 +350,7 @@ private fun GameScreen(
     onBgm: (String?) -> Unit,
     slots: () -> List<SaveSlot>,
     onSaveToSlot: (SaveSlot) -> Unit,
-    onSaveVisual: (Float, Float) -> Unit,
+    onSaveVisual: (Float, Float, Float) -> Unit,
     onNewGame: () -> Unit,
     onBackToTitle: () -> Unit,
     onExit: () -> Unit,
@@ -514,13 +518,14 @@ private fun PauseMenu(
     engine: RpgEngine,
     renderer: GameRenderer,
     onSave: () -> Unit,
-    onSaveVisual: (Float, Float) -> Unit,
+    onSaveVisual: (Float, Float, Float) -> Unit,
     onBackToTitle: () -> Unit,
     onExit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var strength by remember { mutableFloatStateOf(renderer.liveStrength) }
     var tilt by remember { mutableFloatStateOf(renderer.liveTilt) }
+    var spriteStand by remember { mutableFloatStateOf(renderer.liveSpriteStand) }
 
     Dialog(onDismissRequest = onDismiss) {
         Column(
@@ -560,7 +565,20 @@ private fun PauseMenu(
                     },
                     valueRange = 0f..60f,
                 )
-                TextButton(onClick = { onSaveVisual(strength, tilt) }) {
+                Text(
+                    "Altura de sprites · ${(spriteStand * 100).toInt()}%",
+                    color = Color.White.copy(alpha = 0.85f),
+                    fontSize = 13.sp,
+                )
+                Slider(
+                    value = spriteStand,
+                    onValueChange = {
+                        spriteStand = it
+                        renderer.liveSpriteStand = it
+                    },
+                    valueRange = 0.5f..2.5f,
+                )
+                TextButton(onClick = { onSaveVisual(strength, tilt, spriteStand) }) {
                     Text("Guardar estilo en el proyecto")
                 }
             }
