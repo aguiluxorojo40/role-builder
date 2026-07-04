@@ -558,7 +558,7 @@ private fun PauseMenu(
                         tilt = it
                         renderer.liveTilt = it
                     },
-                    valueRange = 0f..25f,
+                    valueRange = 0f..60f,
                 )
                 TextButton(onClick = { onSaveVisual(strength, tilt) }) {
                     Text("Guardar estilo en el proyecto")

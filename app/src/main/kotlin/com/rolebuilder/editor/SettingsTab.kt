@@ -114,7 +114,7 @@ fun SettingsTab(state: EditorState) {
         Slider(
             value = state.project.dioramaTilt,
             onValueChange = { state.updateProject(state.project.copy(dioramaTilt = it)) },
-            valueRange = 0f..25f,
+            valueRange = 0f..60f,
             enabled = state.project.hd2d,
         )
         Text(

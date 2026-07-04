@@ -219,7 +219,7 @@ class SerializationTest {
     fun `legacy project without diorama tilt loads with default`() {
         val legacy = """{"name":"Vieja aventura"}"""
         val project = json.decodeFromString(Project.serializer(), legacy)
-        assertEquals(20f, project.dioramaTilt)
+        assertEquals(45f, project.dioramaTilt)
     }
 
     @Test

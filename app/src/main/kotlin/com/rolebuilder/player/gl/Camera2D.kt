@@ -59,9 +59,10 @@ class Camera2D {
 
     fun update(mapWidth: Int, mapHeight: Int) {
         groundSquash = if (tiltDegrees > 0.5f) {
-            // El mando 0..25° se amplifica a un cabeceo de cámara efectivo
-            // 0..~55° para que el tumbado del suelo sea bien visible.
-            cos(Math.toRadians((tiltDegrees * 2.2f).toDouble())).toFloat().coerceIn(0.45f, 1f)
+            // [tiltDegrees] es la inclinación REAL del plano del suelo: a 45°
+            // el terreno proyecta cos(45°) ≈ 0.71 de su alto, a 60° la mitad.
+            // Octopath ronda 40-50°. Se acota para no degenerar más allá de ~70°.
+            cos(Math.toRadians(tiltDegrees.toDouble())).toFloat().coerceIn(0.34f, 1f)
         } else {
             1f
         }
@@ -78,7 +79,9 @@ class Camera2D {
         Matrix.orthoM(ortho, 0, cx - halfW, cx + halfW, cy + halfH, cy - halfH, -1f, 1f)
 
         keystoneK = if (tiltDegrees > 0.5f) {
-            tan(Math.toRadians(tiltDegrees.toDouble())).toFloat().coerceIn(0f, 0.45f)
+            // Perspectiva del trapecio: crece con el ángulo pero de forma
+            // suave (media pendiente) para no saturar antes de tiempo.
+            tan(Math.toRadians((tiltDegrees * 0.5f).toDouble())).toFloat().coerceIn(0f, 0.6f)
         } else {
             0f
         }
