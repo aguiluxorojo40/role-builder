@@ -202,7 +202,7 @@ class PresentationTest {
             EventCommand.SetSwitch(1, true),
         )
         val engine = engine(listOf(map(event)), startX = 5, startY = 5)
-        assertEquals(12f, engine.tiltCurrent, "arranca con la inclinación del proyecto")
+        assertEquals(45f, engine.tiltCurrent, "arranca con la inclinación del proyecto")
 
         engine.triggerEvent()
         assertTrue(engine.state.switchOn(1), "SetDioramaTilt no bloquea")
@@ -210,7 +210,7 @@ class PresentationTest {
         assertEquals(22f, engine.tiltTarget)
 
         engine.tick(0.5f)
-        assertEquals(17f, engine.tiltCurrent, 0.5f, "valor intermedio a mitad de camino")
+        assertEquals(33.5f, engine.tiltCurrent, 0.7f, "valor intermedio a mitad de camino")
 
         engine.tick(0.6f) // sobrepasa el final: se clava en el destino
         assertEquals(22f, engine.tiltCurrent)

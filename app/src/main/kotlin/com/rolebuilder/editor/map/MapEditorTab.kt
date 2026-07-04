@@ -385,7 +385,7 @@ fun MapEditorTab(state: EditorState) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(
                             checked = tiltOverride != null,
-                            onCheckedChange = { tiltOverride = if (it) 12f else null },
+                            onCheckedChange = { tiltOverride = if (it) state.project.dioramaTilt else null },
                         )
                         Text("  Inclinación 2.5D propia (si no, la del proyecto)")
                     }
@@ -393,7 +393,7 @@ fun MapEditorTab(state: EditorState) {
                         FloatField(
                             "Inclinación (grados, 0 = plano)",
                             tilt,
-                            { tiltOverride = it.coerceIn(0f, 25f) },
+                            { tiltOverride = it.coerceIn(0f, 60f) },
                         )
                     }
 

@@ -29,9 +29,10 @@ data class Project(
      * del suelo hacia atrás (efecto maqueta HD-2D estilo Octopath Traveler)
      * y dibuja de pie a los personajes y a los tiles marcados en
      * [Tileset.standingTiles]. 0 = desactivado (plano cenital clásico);
-     * rango razonable 0..25.
+     * rango 0..60. Con 45 el suelo proyecta al ~70% de su alto y los
+     * billboards sobresalen claramente, el "teatrillo" de Octopath.
      */
-    val dioramaTilt: Float = 12f,
+    val dioramaTilt: Float = 45f,
 ) {
     companion object {
         const val DEFAULT_SWITCH_COUNT = 50

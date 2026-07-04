@@ -814,7 +814,7 @@ private fun CommandFields(
         }
 
         is EventCommand.SetDioramaTilt -> {
-            FloatField("Grados (0 = plano)", command.degrees, { onChange(command.copy(degrees = it.coerceIn(0f, 25f))) })
+            FloatField("Grados (0 = plano, 45 = teatrillo, máx 60)", command.degrees, { onChange(command.copy(degrees = it.coerceIn(0f, 60f))) })
             FloatField("Transición (s)", command.seconds, { onChange(command.copy(seconds = it.coerceAtLeast(0f))) })
             Text(
                 "Persiste hasta otro comando o hasta cambiar de mapa (donde vuelve a regir el mapa/proyecto).",

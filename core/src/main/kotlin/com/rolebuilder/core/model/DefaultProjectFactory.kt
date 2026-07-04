@@ -29,13 +29,18 @@ object Tiles {
     const val STAIRS = 14
     const val ROOF = 15
 
+    /** Copa de árbol (fondo transparente): sobre [TREE] forma un árbol alto. */
+    const val TREE_TOP = 16
+
     val IMPASSABLE = setOf(WATER, TREE, BUSH, ROCK, WALL, DOOR_CLOSED, ROOF)
 
     /**
      * Tiles que el renderer 2.5D dibuja de pie (billboard) en la capa 2.
-     * Las cadenas verticales (muro + tejado) forman una fachada de una pieza.
+     * Las cadenas verticales (copa + tronco, tejado + muro) forman una
+     * columna erguida de una pieza. La copa es transitable: el jugador
+     * pasa por detrás del árbol y queda ocluido.
      */
-    val STANDING = listOf(TREE, BUSH, ROCK, WALL, DOOR_CLOSED, DOOR_OPEN, ROOF)
+    val STANDING = listOf(TREE, TREE_TOP, BUSH, ROCK, WALL, DOOR_CLOSED, DOOR_OPEN, ROOF)
 }
 
 /**
@@ -109,6 +114,11 @@ object DefaultProjectFactory {
         for (x in 5..6) {
             map = map.withTile(1, x, 3, Tiles.ROOF).withTile(1, x, 4, Tiles.WALL)
         }
+        // Árboles altos (copa transitable sobre tronco): el jugador pasa
+        // por detrás y la copa lo tapa.
+        map = map
+            .withTile(1, 2, 9, Tiles.TREE_TOP).withTile(1, 2, 10, Tiles.TREE)
+            .withTile(1, 16, 6, Tiles.TREE_TOP).withTile(1, 16, 7, Tiles.TREE)
 
         val npc = MapEvent(
             id = 1,

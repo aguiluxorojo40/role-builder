@@ -115,10 +115,10 @@ class RpgEngine(
     private var tiltElapsed = 0f
     private var tiltDuration = 0f
 
-    /** Inclinación 2.5D destino: comando persistente > mapa > proyecto, en 0..25. */
+    /** Inclinación 2.5D destino: comando persistente > mapa > proyecto, en 0..60. */
     val tiltTarget: Float
         get() = (state.dioramaTilt ?: currentMap.dioramaTilt ?: data.project.dioramaTilt)
-            .coerceIn(0f, 25f)
+            .coerceIn(0f, 60f)
 
     // ---- input (lo escribe la capa de UI) -----------------------------------
 
@@ -1003,7 +1003,7 @@ class RpgEngine(
      * otro comando o hasta el siguiente cambio de mapa.
      */
     fun startTiltTransition(degrees: Float, seconds: Float) {
-        state.dioramaTilt = degrees.coerceIn(0f, 25f)
+        state.dioramaTilt = degrees.coerceIn(0f, 60f)
         if (seconds <= 0f) {
             snapTiltToTarget()
             return

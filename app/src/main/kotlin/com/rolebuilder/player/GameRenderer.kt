@@ -322,7 +322,11 @@ class GameRenderer(
             Direction.UP -> 3
         }
         val tint = if (flashWhite) 4f else 1f
-        val h = 1f / squash
+        // La altura del billboard la dicta el propio arte: el ancho de celda
+        // es siempre 1 casilla, y una hoja con celdas 16x24 rinde un
+        // personaje de 1.5 casillas que sobresale del suelo (Paper Mario).
+        val cellAspect = (tex.height / 4f) / (tex.width / 3f)
+        val h = cellAspect / squash
         batch.draw(
             tex,
             cx - 0.5f, cy + 0.4f - h, 1f, h,

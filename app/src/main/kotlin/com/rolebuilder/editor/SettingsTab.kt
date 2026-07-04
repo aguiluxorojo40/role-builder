@@ -103,9 +103,9 @@ fun SettingsTab(state: EditorState) {
             style = MaterialTheme.typography.bodySmall,
         )
         FloatField(
-            label = "Inclinación del diorama (grados, 0 = plano)",
+            label = "Inclinación del diorama (0 = plano, 45 = teatrillo, máx 60)",
             value = state.project.dioramaTilt,
-            onChange = { state.updateProject(state.project.copy(dioramaTilt = it.coerceIn(0f, 25f))) },
+            onChange = { state.updateProject(state.project.copy(dioramaTilt = it.coerceIn(0f, 60f))) },
             modifier = Modifier.fillMaxWidth(),
         )
         Text(

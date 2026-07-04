@@ -6,6 +6,16 @@ Cada versión etiquetada (`v0.X.Y`) tiene release propia en GitHub con su
 APK; la release rodante `apk-latest` siempre apunta a la última build de
 la rama de desarrollo.
 
+## v0.10.0 — «Teatrillo»
+El diorama por fin se SIENTE: la inclinación pasa a 0..60° con 45° por
+defecto (el suelo proyecta al ~70%, antes el efecto era de un 2% y todo
+parecía pegado al suelo). Los sprites de personaje admiten proporción
+libre — el runtime lee el aspecto de la celda de la hoja 3x4, así que
+un arte de 16x24 rinde un personaje de 1.5 casillas que sobresale del
+terreno, estilo Paper Mario. El héroe y el NPC de plantilla se redibujan
+altos, y llegan los árboles de dos tiles (copa transitable sobre tronco:
+pasas por detrás y te ocultan).
+
 ## v0.9.2 — «Diorama» (eje Z)
 El eje perpendicular al suelo se formaliza: las cadenas verticales de
 tiles «De pie» (muro + tejado) se levantan como UNA fachada de edificio
