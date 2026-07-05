@@ -1,0 +1,282 @@
+package com.rolebuilder.editor.snes
+
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Canvas
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.rolebuilder.core.snes.SnesAssetExtractor
+import com.rolebuilder.core.snes.SnesDecoder
+import com.rolebuilder.core.snes.SnesGraphicFormat
+import com.rolebuilder.core.snes.SnesPalette
+import com.rolebuilder.editor.EditorState
+import com.rolebuilder.editor.widgets.DropdownField
+import com.rolebuilder.editor.widgets.IntField
+import kotlin.math.floor
+
+/** Opción de paleta: la escala de grises por defecto (índice -1) o una CGRAM detectada. */
+private data class PaletteOption(val index: Int, val label: String)
+
+private val FORMAT_LABELS = mapOf(
+    SnesGraphicFormat.SNES_2BPP to "SNES 2bpp (4 colores)",
+    SnesGraphicFormat.SNES_4BPP to "SNES 4bpp (16 colores)",
+    SnesGraphicFormat.SNES_8BPP to "SNES 8bpp (256 colores)",
+    SnesGraphicFormat.GB_2BPP to "Game Boy 2bpp",
+    SnesGraphicFormat.NES_2BPP to "NES 2bpp",
+)
+
+private fun grayscalePalette(colorCount: Int): IntArray = IntArray(colorCount) { i ->
+    if (i == 0) 0x00000000 else {
+        val t = i * 255 / maxOf(1, colorCount - 1)
+        (0xFF shl 24) or (t shl 16) or (t shl 8) or t
+    }
+}
+
+private fun parseOffset(text: String): Int {
+    val s = text.trim()
+    val value = if (s.startsWith("0x", true)) s.substring(2).toIntOrNull(16) else s.toIntOrNull()
+    return (value ?: 0).coerceAtLeast(0)
+}
+
+/**
+ * Diálogo para importar una hoja de tiles desde una ROM de Super Nintendo. Deja
+ * elegir el archivo, ajustar offset/formato/paleta/rejilla con vista previa en
+ * vivo y guardar el resultado como un tileset PNG + entrada en la base de datos.
+ */
+@Composable
+fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+
+    var romBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var romName by remember { mutableStateOf("") }
+    var format by remember { mutableStateOf(SnesGraphicFormat.SNES_4BPP) }
+    var offsetText by remember { mutableStateOf("0x0") }
+    var columns by remember { mutableStateOf(16) }
+    var tiles by remember { mutableStateOf(64) }
+    var paletteIndex by remember { mutableStateOf(-1) }
+    var name by remember { mutableStateOf("snes_rip") }
+
+    val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
+    val detected: List<SnesPalette> = remember(romBytes) {
+        romBytes?.let { SnesDecoder.scanRomForPalettes(it) } ?: emptyList()
+    }
+    val paletteOptions = remember(detected) {
+        listOf(PaletteOption(-1, "Escala de grises")) +
+            detected.mapIndexed { i, p -> PaletteOption(i, p.name) }
+    }
+
+    val romLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            val bytes = SnesImport.readRomBytes(context, uri)
+                ?: error("No se pudo leer el archivo")
+            romBytes = bytes
+            romName = (context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst() && idx >= 0) cursor.getString(idx) else null
+            } ?: "rom.sfc")
+            paletteIndex = -1
+        }.onFailure {
+            Toast.makeText(context, "No se pudo abrir la ROM: ${it.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // Vista previa reactiva: recalcula la hoja de tiles al cambiar cualquier parámetro.
+    val preview: Pair<ImageBitmap, SnesAssetExtractor.TileSheet>? =
+        remember(romBytes, format, offsetText, columns, tiles, paletteIndex) {
+            val rom = romBytes ?: return@remember null
+            runCatching {
+                val offset = parseOffset(offsetText)
+                val available = SnesAssetExtractor.availableTiles(rom.size, offset, format)
+                if (available <= 0) return@runCatching null
+                val count = tiles.coerceIn(1, minOf(available, 1024))
+                val palette = detected.getOrNull(paletteIndex)?.colors
+                    ?: grayscalePalette(format.colorCount)
+                val sheet = SnesAssetExtractor.extractTileSheet(
+                    rom, offset, format, palette, count, columns.coerceAtLeast(1),
+                )
+                SnesImport.toBitmap(sheet.image).asImageBitmap() to sheet
+            }.getOrNull()
+        }
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+                .padding(14.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Importar assets desde ROM de SNES", style = MaterialTheme.typography.titleMedium)
+
+            Button(onClick = { romLauncher.launch("*/*") }) { Text("Elegir ROM (.smc/.sfc)") }
+
+            if (header != null) {
+                Text(romName, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "\"${header.title}\" · ${header.mapping} · ${header.romTypeDescription}\n" +
+                        "${header.country} · ${header.licensee} · " +
+                        "${header.romSizeBytes / 1024} KiB · checksum " +
+                        if (header.isChecksumValid) "válido" else "no válido",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                Text(
+                    "Carga una ROM para empezar. Todo se decodifica en el dispositivo; " +
+                        "la ROM no se copia al proyecto, solo los tiles que extraigas.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            if (romBytes != null) {
+                HorizontalDivider()
+
+                DropdownField(
+                    label = "Formato gráfico",
+                    options = SnesGraphicFormat.entries.toList(),
+                    selected = format,
+                    optionLabel = { FORMAT_LABELS[it] ?: it.name },
+                    onSelect = { format = it },
+                )
+
+                OutlinedTextField(
+                    value = offsetText,
+                    onValueChange = { offsetText = it },
+                    label = { Text("Offset de los gráficos (dec o 0x…)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    IntField("Columnas", columns, { columns = it.coerceIn(1, 64) }, Modifier.weight(1f))
+                    IntField("Nº de tiles", tiles, { tiles = it.coerceIn(1, 1024) }, Modifier.weight(1f))
+                }
+
+                DropdownField(
+                    label = "Paleta",
+                    options = paletteOptions,
+                    selected = paletteOptions.firstOrNull { it.index == paletteIndex } ?: paletteOptions.first(),
+                    optionLabel = { it.label },
+                    onSelect = { paletteIndex = it.index },
+                )
+                Text(
+                    "Se detectaron ${detected.size} paletas CGRAM en la ROM. El índice de " +
+                        "color 0 se guarda transparente (fondo de los sprites).",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+
+                HorizontalDivider()
+                Text("Vista previa", style = MaterialTheme.typography.titleSmall)
+                if (preview != null) {
+                    val img = preview.first
+                    val sheet = preview.second
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .background(Color(0xFF202024), RoundedCornerShape(8.dp)),
+                    ) {
+                        // Escala entera para mantener el pixel-art nítido y encajar el ancho/alto.
+                        val scale = floor(
+                            minOf(size.width / img.width, size.height / img.height),
+                        ).coerceAtLeast(1f)
+                        drawImage(
+                            image = img,
+                            srcOffset = IntOffset.Zero,
+                            srcSize = IntSize(img.width, img.height),
+                            dstOffset = IntOffset(
+                                ((size.width - img.width * scale) / 2f).toInt().coerceAtLeast(0),
+                                ((size.height - img.height * scale) / 2f).toInt().coerceAtLeast(0),
+                            ),
+                            dstSize = IntSize((img.width * scale).toInt(), (img.height * scale).toInt()),
+                            filterQuality = FilterQuality.None,
+                        )
+                    }
+                    Text(
+                        "${sheet.columns}×${sheet.rows} tiles · ${img.width}×${img.height} px · tile ${sheet.tileSize}px",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                } else {
+                    Text(
+                        "Sin datos válidos en este offset/formato. Prueba otro offset " +
+                            "(muchos gráficos SNES empiezan en múltiplos de 0x1000).",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                HorizontalDivider()
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre del tileset") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = onDismiss) { Text("Cancelar") }
+                Button(
+                    enabled = preview != null,
+                    onClick = {
+                        val sheet = preview?.second ?: return@Button
+                        runCatching {
+                            val fileName = SnesImport.sanitizeFileName(name)
+                            val bmp = SnesImport.toBitmap(sheet.image)
+                            SnesImport.saveTilesetPng(state.projectDir, fileName, bmp)
+                            val tileset = SnesAssetExtractor.toTileset(
+                                sheet, id = state.nextTilesetId(),
+                                name = name.ifBlank { "SNES" }, imageFileName = fileName,
+                            )
+                            state.addTileset(tileset)
+                            Toast.makeText(context, "Tileset importado: $fileName", Toast.LENGTH_SHORT).show()
+                            onDismiss()
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo guardar: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
+                    },
+                ) { Text("Guardar tileset") }
+            }
+        }
+    }
+}
