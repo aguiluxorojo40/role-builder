@@ -62,11 +62,11 @@ jobs:
 
       # Release rodante con enlace de descarga estable (solo en esta rama).
       - name: Preparar APK con nombre
-        if: github.ref_name == 'claude/android-rpg-engine-jsrssr'
+        if: (github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/hd2d-3d-fase10')
         run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
 
       - name: Actualizar release rodante (apk-latest)
-        if: github.ref_name == 'claude/android-rpg-engine-jsrssr'
+        if: (github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/hd2d-3d-fase10')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest

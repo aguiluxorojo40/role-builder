@@ -3,14 +3,11 @@ package com.rolebuilder.player
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import com.rolebuilder.core.engine.ATTACK_SWING_SECONDS
-import com.rolebuilder.core.engine.EnemyEntity
-import com.rolebuilder.core.engine.EventEntity
 import com.rolebuilder.core.engine.HitEffect
 import com.rolebuilder.core.engine.RpgEngine
 import com.rolebuilder.core.io.ProjectIo
-import com.rolebuilder.core.model.Weather
 import com.rolebuilder.core.model.event.Direction
-import com.rolebuilder.player.gl.Camera2D
+import com.rolebuilder.player.gl.Camera3D
 import com.rolebuilder.player.gl.PostProcessor
 import com.rolebuilder.player.gl.SpriteBatch
 import com.rolebuilder.player.gl.Texture
@@ -21,8 +18,10 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * Renderer del juego: ejecuta el tick del motor y dibuja el estado con
- * el SpriteBatch. Todo ocurre en el hilo GL.
+ * Renderer del juego en 3D real (HD-2D): el suelo es un plano de casillas
+ * visto en perspectiva y los personajes, árboles y casas son BILLBOARDS que
+ * se levantan del suelo mirando a la cámara — no se estiran, la perspectiva
+ * hace el trabajo. El z-buffer resuelve la oclusión. Todo ocurre en el hilo GL.
  */
 class GameRenderer(
     private val engine: RpgEngine,
@@ -36,18 +35,13 @@ class GameRenderer(
     private lateinit var radial: Texture
     private lateinit var post: PostProcessor
     private val textures = mutableMapOf<String, Texture>()
-    private val camera = Camera2D()
+    private val camera = Camera3D()
     private var lastFrameNanos = 0L
     private var lastBgm: String? = BGM_UNSET
     private var elapsed = 0f
 
-    /** Estilo HD-2D del proyecto: post-procesado, sombras, luces y motas. */
     private val hd2d = engine.data.project.hd2d
 
-    /**
-     * Potenciómetros en vivo: la UI (menú de pausa) los ajusta mientras se
-     * juega y el hilo GL los lee cada frame.
-     */
     @Volatile
     var liveStrength = engine.data.project.hd2dStrength
 
@@ -58,13 +52,7 @@ class GameRenderer(
     @Volatile
     var liveSpriteStand = engine.data.project.spriteStand
 
-    /** Motas de luz ambientales (solo HD-2D): x, y, velocidad y fase. */
-    private val motes = Array(MOTES) { FloatArray(4) }
-    private var motesSeeded = false
-
-    /** Partículas de clima (lluvia/nieve): x, y relativas a la vista, velocidad y fase. */
-    private val particles = Array(WEATHER_PARTICLES) { FloatArray(4) }
-    private var particlesSeeded = false
+    private val missingTextures = mutableSetOf<String>()
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
@@ -72,7 +60,9 @@ class GameRenderer(
         radial = Texture.radial()
         post = PostProcessor()
         textures.clear()
+        missingTextures.clear()
         lastFrameNanos = 0L
+        GLES30.glDepthFunc(GLES30.GL_LEQUAL)
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -98,36 +88,51 @@ class GameRenderer(
 
         val usePost = hd2d && post.enabled
         if (usePost) post.beginScene()
-        GLES30.glClearColor(0.05f, 0.05f, 0.08f, 1f)
-        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
+
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
+        GLES30.glDepthMask(true)
+        GLES30.glClearColor(0.04f, 0.05f, 0.09f, 1f)
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT or GLES30.GL_DEPTH_BUFFER_BIT)
 
         val map = engine.currentMap
         camera.x = engine.player.x
         camera.y = engine.player.y
-        camera.tiltDegrees = if (hd2d) liveTilt else 0f
+        camera.pitchDegrees = if (hd2d) liveTilt.coerceIn(0f, 75f) else 8f
         post.strength = liveStrength
         updateShake()
         camera.update(map.width, map.height)
 
-        batch.begin(camera.mvp)
-        drawParallax(above = false)
-        drawTiles()
+        batch.begin(camera.vp, camera.right, camera.up)
+
+        // --- Suelo (escribe profundidad) ---
+        drawGround()
+        batch.flush()
+
+        // --- Decoración de suelo sin profundidad: sombras, drops, tajo ---
+        GLES30.glDisable(GLES30.GL_DEPTH_TEST)
         if (hd2d) drawShadows()
         drawDrops()
-        drawCharacters()
         drawProjectiles()
         drawSwordSwing()
+        batch.flush()
+
+        // --- Billboards de pie (con profundidad) ---
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
+        drawBillboards()
+        batch.flush()
+
+        // --- Overlays sin profundidad: números de daño, luces, tinte, destello ---
+        GLES30.glDisable(GLES30.GL_DEPTH_TEST)
         drawEffects()
-        drawWeather(dt)
-        drawParallax(above = true)
+        drawLights()
         drawTint()
-        drawLights(dt)
         drawFlash()
         batch.end()
+
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
         if (usePost) post.compose()
     }
 
-    /** Vibración de pantalla mientras engine.shakeTimeLeft > 0. */
     private fun updateShake() {
         if (engine.shakeTimeLeft > 0f) {
             val amp = 0.14f * minOf(1f, engine.shakeTimeLeft * 2f)
@@ -136,40 +141,6 @@ class GameRenderer(
         } else {
             camera.shakeX = 0f
             camera.shakeY = 0f
-        }
-    }
-
-    /**
-     * Capas de parallax del mapa: la imagen se repite en mosaico (16 px =
-     * 1 casilla) y acompaña a la cámara según su factor (0 = pegada a la
-     * pantalla, 1 = pegada al mapa), con deriva automática opcional.
-     * [above] elige entre las capas de fondo y las de niebla.
-     */
-    private fun drawParallax(above: Boolean) {
-        val map = engine.currentMap
-        if (map.parallaxLayers.isEmpty()) return
-        val left = camera.x - camera.viewTilesX / 2f - cullX
-        val top = camera.y - camera.halfViewY - cullY
-        val viewW = camera.viewTilesX + 2f * cullX
-        val viewH = camera.halfViewY * 2f + 2f * cullY
-
-        for (layer in map.parallaxLayers) {
-            if (layer.above != above || layer.alpha <= 0f) continue
-            val tex = texture(layer.image)
-            val imgW = tex.width / 16f
-            val imgH = tex.height / 16f
-            if (imgW <= 0f || imgH <= 0f) continue
-            val phaseX = (left * layer.factor + layer.autoX * elapsed).mod(imgW)
-            val phaseY = (top * layer.factor + layer.autoY * elapsed).mod(imgH)
-            var y = top - phaseY
-            while (y < top + viewH) {
-                var x = left - phaseX
-                while (x < left + viewW) {
-                    batch.draw(tex, x, y, imgW, imgH, a = layer.alpha)
-                    x += imgW
-                }
-                y += imgH
-            }
         }
     }
 
@@ -184,7 +155,6 @@ class GameRenderer(
         Texture.fromFile(ProjectIo.imageFile(projectDir, name))
     }
 
-    /** Como [texture] pero devuelve null si la imagen no existe (efectos opcionales). */
     private fun textureOrNull(name: String): Texture? {
         if (name in missingTextures) return null
         textures[name]?.let { return it }
@@ -195,134 +165,66 @@ class GameRenderer(
         return texture(name)
     }
 
-    private val missingTextures = mutableSetOf<String>()
+    // ---- ventana de casillas visibles (generosa, la perspectiva recorta) ----
 
-    // ------------------------------------------------------------------ tiles
+    private val viewRadius get() = (camera.tilesVisibleY + 4f).toInt()
+    private val minX get() = (camera.x - viewRadius).toInt().coerceAtLeast(0)
+    private val maxX get() = (camera.x + viewRadius).toInt().coerceAtMost(engine.currentMap.width - 1)
+    private val minY get() = (camera.y - viewRadius).toInt().coerceAtLeast(0)
+    private val maxY get() = (camera.y + viewRadius).toInt().coerceAtMost(engine.currentMap.height - 1)
 
-    /** Margen extra de culling: con keystone la parte lejana muestra más mundo. */
-    private val cullX: Float get() = 1f + camera.keystoneK * camera.viewTilesX / 2f
-    private val cullY: Float get() = 1f + camera.keystoneK * camera.halfViewY
-
-    /**
-     * Altura de dibujo de los sprites de pie: compensa la compresión del
-     * suelo para que personajes y objetos se levanten del plano inclinado
-     * (anclados por la base) en lugar de quedar tumbados con él.
-     */
-    private val standFactor: Float get() = 1f / camera.groundSquash
-
-    /** Multiplicador de altura de los sprites de pie (mando en vivo). */
     private val spriteStand: Float get() = liveSpriteStand.coerceIn(0.5f, 2.5f)
 
-    /**
-     * Altura en casillas de un billboard con esta textura, anclado por los
-     * pies: el ANCHO es siempre 1 casilla y el alto lo dicta la proporción
-     * del arte (una hoja 3x4 con celdas 16x24 rinde 1.5 casillas), por el
-     * standFactor para que sobresalga del suelo inclinado y por el mando
-     * [spriteStand]. Así los personajes y objetos "de pie" se levantan de
-     * verdad, estilo Octopath/Paper Mario.
-     */
+    /** Alto en casillas del billboard: ancho 1, alto = proporción del arte. */
     private fun billboardHeight(tex: Texture, cols: Int = 3, rows: Int = 4): Float {
         val cellAspect = (tex.height.toFloat() / rows) / (tex.width.toFloat() / cols)
-        return cellAspect * standFactor * spriteStand
+        return cellAspect * spriteStand
     }
 
-    /** Altura del sprite del jugador (para anclar espada y números de daño). */
-    private val heroHeight: Float get() = billboardHeight(texture(engine.actor.sprite))
+    // --------------------------------------------------------------- suelo
 
-    private fun drawTiles() {
+    private fun drawGround() {
         val map = engine.currentMap
         val tileset = engine.tileset
         val tex = texture(tileset.image)
-
-        val minX = (camera.x - camera.viewTilesX / 2f - cullX).toInt().coerceAtLeast(0)
-        val maxX = (camera.x + camera.viewTilesX / 2f + cullX).toInt().coerceAtMost(map.width - 1)
-        val minY = (camera.y - camera.halfViewY - cullY).toInt().coerceAtLeast(0)
-        val maxY = (camera.y + camera.halfViewY + cullY).toInt().coerceAtMost(map.height - 1)
-
-        // Con diorama activo, los tiles "de pie" de la capa 2 no se pintan
-        // aquí: se dibujan ordenados por profundidad junto a los personajes.
-        val standing = if (hd2d) engine.tileset.standingTiles else emptyList()
-
+        val standing = if (hd2d) tileset.standingTiles else emptyList()
         for (layer in map.layers.indices) {
             for (ty in minY..maxY) {
                 for (tx in minX..maxX) {
                     val tile = map.tileAt(layer, tx, ty)
                     if (tile < 0) continue
-                    if (layer == 1 && tile in standing) continue
-                    drawTileQuad(tex, tileset, tile, tx, ty)
+                    if (layer == 1 && tile in standing) continue // se dibuja como billboard
+                    val col = tile % tileset.columns
+                    val row = tile / tileset.columns
+                    batch.draw(
+                        tex,
+                        tx.toFloat(), ty.toFloat(), 1f, 1f,
+                        u0 = col / tileset.columns.toFloat(),
+                        v0 = row / tileset.rows.toFloat(),
+                        u1 = (col + 1) / tileset.columns.toFloat(),
+                        v1 = (row + 1) / tileset.rows.toFloat(),
+                    )
                 }
             }
         }
     }
 
-    private fun drawTileQuad(tex: Texture, tileset: com.rolebuilder.core.model.Tileset, tile: Int, tx: Int, ty: Int) {
-        val col = tile % tileset.columns
-        val row = tile / tileset.columns
-        batch.draw(
-            tex,
-            tx.toFloat(), ty.toFloat(), 1f, 1f,
-            u0 = col / tileset.columns.toFloat(),
-            v0 = row / tileset.rows.toFloat(),
-            u1 = (col + 1) / tileset.columns.toFloat(),
-            v1 = (row + 1) / tileset.rows.toFloat(),
-        )
-    }
+    // ---------------------------------------------------------- billboards
 
-    /** Tile "de pie": altura completa anclada a la base de su casilla. */
-    private fun drawTileBillboard(tex: Texture, tileset: com.rolebuilder.core.model.Tileset, tile: Int, tx: Int, ty: Int) {
-        val col = tile % tileset.columns
-        val row = tile / tileset.columns
-        // Los tiles del set son cuadrados: alto = 1 casilla por el standFactor
-        // y el mando de altura de sprites.
-        val h = standFactor * spriteStand
-        batch.draw(
-            tex,
-            tx.toFloat(), ty + 1f - h, 1f, h,
-            u0 = col / tileset.columns.toFloat(),
-            v0 = row / tileset.rows.toFloat(),
-            u1 = (col + 1) / tileset.columns.toFloat(),
-            v1 = (row + 1) / tileset.rows.toFloat(),
-        )
-    }
+    private class Standee(val z: Float, val draw: () -> Unit)
 
-    // ------------------------------------------------------------- characters
-
-    private fun drawCharacters() {
-        data class Sortable(val y: Float, val draw: () -> Unit)
-
-        val list = mutableListOf<Sortable>()
-
-        // Tiles "de pie" (árboles, puertas...): billboards ordenados por
-        // profundidad para que los personajes pasen por delante y por detrás.
-        if (hd2d) {
-            val map = engine.currentMap
-            val tileset = engine.tileset
-            val standing = tileset.standingTiles
-            if (standing.isNotEmpty()) {
-                val tex = texture(tileset.image)
-                val minX = (camera.x - camera.viewTilesX / 2f - cullX).toInt().coerceAtLeast(0)
-                val maxX = (camera.x + camera.viewTilesX / 2f + cullX).toInt().coerceAtMost(map.width - 1)
-                val minY = (camera.y - camera.halfViewY - cullY).toInt().coerceAtLeast(0)
-                val maxY = (camera.y + camera.halfViewY + cullY).toInt().coerceAtMost(map.height - 1)
-                for (ty in minY..maxY) {
-                    for (tx in minX..maxX) {
-                        val tile = map.tileAt(1, tx, ty)
-                        if (tile >= 0 && tile in standing) {
-                            list.add(Sortable(ty + 0.85f) { drawTileBillboard(tex, tileset, tile, tx, ty) })
-                        }
-                    }
-                }
-            }
-        }
+    private fun drawBillboards() {
+        val list = ArrayList<Standee>(64)
+        collectStandingTiles(list)
 
         for (event in engine.events) {
             val sprite = event.currentSprite ?: continue
             if (event.erased || event.page == null) continue
-            list.add(Sortable(event.y) { drawSheet(sprite.image, event.x, event.y, event.dir, event.animTime, event.moving) })
+            list.add(Standee(event.y) { drawSheet(sprite.image, event.x, event.y, event.dir, event.animTime, event.moving) })
         }
         for (enemy in engine.enemies) {
             list.add(
-                Sortable(enemy.y) {
+                Standee(enemy.y) {
                     val flash = !enemy.alive || enemy.invulnTime > 0.15f
                     drawSheet(enemy.def.sprite, enemy.x, enemy.y, enemy.dir, enemy.animTime, enemy.moving, flash)
                 },
@@ -331,14 +233,66 @@ class GameRenderer(
         val p = engine.player
         val blink = p.invulnTime > 0f && ((p.invulnTime * 10f).toInt() % 2 == 0)
         if (!blink && !engine.gameOver) {
-            list.add(Sortable(p.y) { drawSheet(engine.actor.sprite, p.x, p.y, p.dir, p.animTime, p.moving) })
+            list.add(Standee(p.y) { drawSheet(engine.actor.sprite, p.x, p.y, p.dir, p.animTime, p.moving) })
         }
 
-        list.sortBy { it.y }
+        // Lejos (z pequeño) primero para la mezcla alfa correcta.
+        list.sortBy { it.z }
         list.forEach { it.draw() }
     }
 
-    /** Dibuja un frame de una hoja 3x4 centrado en (cx, cy), tamaño 1 casilla. */
+    /**
+     * Tiles "de pie" agrupados en columnas verticales: una cadena contigua
+     * (copa+tronco, tejado+muro) se apila en el eje Y como una sola torre en
+     * la casilla base (la más al sur), en vez de tumbarse. Cada tramo se
+     * ordena por profundidad con los personajes.
+     */
+    private fun collectStandingTiles(out: MutableList<Standee>) {
+        if (!hd2d) return
+        val map = engine.currentMap
+        val tileset = engine.tileset
+        val standing = tileset.standingTiles
+        if (standing.isEmpty() || map.layers.size < 2) return
+        val tex = texture(tileset.image)
+        val tileH = spriteStand
+
+        for (tx in minX..maxX) {
+            for (ty in minY..maxY) {
+                val tile = map.tileAt(1, tx, ty)
+                if (tile < 0 || tile !in standing) continue
+                // Solo la BASE de la columna (la de más al sur) genera la torre.
+                val south = map.tileAt(1, tx, ty + 1)
+                if (south >= 0 && south in standing) continue
+                // Reúne la cadena hacia el norte.
+                val stack = ArrayList<Int>(4)
+                var yy = ty
+                while (yy >= 0) {
+                    val t = map.tileAt(1, tx, yy)
+                    if (t < 0 || t !in standing) break
+                    stack.add(t)
+                    yy--
+                }
+                val baseX = tx + 0.5f
+                val baseZ = ty + 0.5f
+                out.add(
+                    Standee(baseZ) {
+                        stack.forEachIndexed { level, t ->
+                            val col = t % tileset.columns
+                            val row = t / tileset.columns
+                            batch.drawBillboard(
+                                tex, baseX, baseZ, 1f, tileH, baseY = level * tileH,
+                                u0 = col / tileset.columns.toFloat(),
+                                v0 = row / tileset.rows.toFloat(),
+                                u1 = (col + 1) / tileset.columns.toFloat(),
+                                v1 = (row + 1) / tileset.rows.toFloat(),
+                            )
+                        }
+                    },
+                )
+            }
+        }
+    }
+
     private fun drawSheet(
         image: String,
         cx: Float,
@@ -357,18 +311,18 @@ class GameRenderer(
             Direction.UP -> 3
         }
         val tint = if (flashWhite) 4f else 1f
-        // De pie sobre el suelo inclinado: la altura la dicta la proporción
-        // del arte (celda alta = personaje que sobresale) anclada a los pies.
         val h = billboardHeight(tex)
-        batch.draw(
-            tex,
-            cx - 0.5f, cy + 0.4f - h, 1f, h,
+        batch.drawBillboard(
+            tex, cx, cy, 1f, h, baseY = 0f,
             u0 = frame / 3f, v0 = row / 4f, u1 = (frame + 1) / 3f, v1 = (row + 1) / 4f,
             r = tint, g = tint, b = tint,
         )
     }
 
-    // ----------------------------------------------------------------- extras
+    /** Altura del héroe (para anclar la espada y los números de daño). */
+    private val heroHeight: Float get() = billboardHeight(texture(engine.actor.sprite))
+
+    // ------------------------------------------------------------- extras
 
     private fun drawDrops() {
         for (drop in engine.drops) {
@@ -383,59 +337,24 @@ class GameRenderer(
         }
     }
 
-    /**
-     * Barrido de espada: la hoja gira 140° delante del jugador siguiendo el
-     * golpe y un haz de corte (3 frames) "rompe el aire" en la dirección del
-     * ataque. Si el proyecto no tiene los sprites, cae a un tajo blanco simple.
-     */
     private fun drawSwordSwing() {
         val p = engine.player
         if (p.attackFlash <= 0f) return
         val progress = (1f - p.attackFlash / ATTACK_SWING_SECONDS).coerceIn(0f, 1f)
-        // Centro visual del cuerpo levantado (los pies quedan en p.y + 0.4).
-        val bodyY = p.y + 0.4f - heroHeight / 2f
-
-        // Ángulo base según dirección (mundo con Y hacia abajo).
         val baseAngle = when (p.attackDir) {
             Direction.RIGHT -> 0f
             Direction.DOWN -> (Math.PI / 2).toFloat()
             Direction.LEFT -> Math.PI.toFloat()
             Direction.UP -> (-Math.PI / 2).toFloat()
         }
-        // La hoja barre de -70° a +70° respecto a la dirección del golpe.
         val sweep = Math.toRadians(-70.0 + 140.0 * progress).toFloat()
         val angle = baseAngle + sweep
-
-        val swordTex = textureOrNull(SWORD_IMAGE)
-        if (swordTex != null) {
-            // La espada apunta "arriba" en el sprite: girarla para que la hoja
-            // salga del puño del jugador a lo largo del ángulo del barrido.
-            val cx = p.x + kotlin.math.cos(angle) * 0.55f
-            val cy = bodyY + kotlin.math.sin(angle) * 0.55f
-            batch.draw(
-                swordTex,
-                cx - 0.45f, cy - 0.45f, 0.9f, 0.9f,
-                rotation = angle + (Math.PI / 2).toFloat(),
-            )
-        } else {
-            // Sin sprite: tajo blanco alargado girando con el barrido.
-            val cx = p.x + kotlin.math.cos(angle) * 0.6f
-            val cy = bodyY + kotlin.math.sin(angle) * 0.6f
-            batch.draw(
-                white,
-                cx - 0.45f, cy - 0.07f, 0.9f, 0.14f,
-                r = 1f, g = 1f, b = 0.9f, a = 0.8f * (1f - progress * 0.5f),
-                rotation = angle,
-            )
-        }
-
-        // Haz de corte: avanza y se desvanece delante del jugador.
         val slashTex = textureOrNull(SLASH_IMAGE)
         if (slashTex != null) {
             val frame = (progress * 3f).toInt().coerceIn(0, 2)
             val reach = 0.75f + 0.35f * progress
             val cx = p.x + p.attackDir.dx * reach
-            val cy = bodyY + p.attackDir.dy * reach
+            val cy = p.y + p.attackDir.dy * reach
             batch.draw(
                 slashTex,
                 cx - 0.7f, cy - 0.7f, 1.4f, 1.4f,
@@ -443,13 +362,23 @@ class GameRenderer(
                 a = 0.95f - 0.45f * progress,
                 rotation = baseAngle,
             )
+        } else {
+            val cx = p.x + kotlin.math.cos(angle) * 0.6f
+            val cy = p.y + kotlin.math.sin(angle) * 0.6f
+            batch.draw(
+                white,
+                cx - 0.45f, cy - 0.07f, 0.9f, 0.14f,
+                r = 1f, g = 1f, b = 0.9f, a = 0.8f * (1f - progress * 0.5f),
+                rotation = angle,
+            )
         }
     }
 
+    /** Números de daño: billboards que flotan sobre la cabeza. */
     private fun drawEffects() {
         for (effect in engine.effects) {
             val progress = 1f - (effect.timer / 0.8f)
-            val yOffset = progress * 0.8f
+            val rise = progress * 0.8f
             val alpha = (1f - progress).coerceIn(0f, 1f)
             val (r, g, b) = when (effect.kind) {
                 HitEffect.Kind.DAMAGE_ENEMY -> Triple(1f, 1f, 1f)
@@ -457,74 +386,15 @@ class GameRenderer(
                 HitEffect.Kind.HEAL -> Triple(0.4f, 1f, 0.5f)
                 HitEffect.Kind.ITEM -> Triple(1f, 0.95f, 0.4f)
             }
-            // Una marca por punto de daño, en abanico.
             val count = effect.amount.coerceIn(1, 6)
             for (i in 0 until count) {
                 val dx = (i - (count - 1) / 2f) * 0.22f
-                batch.draw(
+                batch.drawBillboard(
                     white,
-                    effect.x + dx - 0.06f, effect.y + 0.4f - heroHeight - 0.1f - yOffset - 0.06f,
-                    0.12f, 0.12f, r = r, g = g, b = b, a = alpha,
+                    effect.x + dx, effect.y, 0.12f, 0.12f,
+                    baseY = heroHeight + 0.2f + rise,
+                    r = r, g = g, b = b, a = alpha,
                 )
-            }
-        }
-    }
-
-    // ------------------------------------------------------ clima y pantalla
-
-    /** Lluvia o nieve como partículas en coordenadas relativas a la vista. */
-    private fun drawWeather(dt: Float) {
-        val weather = engine.state.weather
-        if (weather == Weather.NONE) {
-            particlesSeeded = false
-            return
-        }
-        val viewW = camera.viewTilesX + 2f * cullX
-        val viewH = camera.halfViewY * 2f + 2f * cullY
-        if (!particlesSeeded) {
-            for (p in particles) {
-                p[0] = Random.nextFloat() * viewW
-                p[1] = Random.nextFloat() * viewH
-                p[2] = 0.7f + Random.nextFloat() * 0.6f // multiplicador de velocidad
-                p[3] = Random.nextFloat() * 6.28f // fase de oscilación
-            }
-            particlesSeeded = true
-        }
-
-        val left = camera.x - camera.viewTilesX / 2f - cullX + camera.shakeX
-        val top = camera.y - camera.halfViewY - cullY + camera.shakeY
-
-        for (p in particles) {
-            when (weather) {
-                Weather.RAIN -> {
-                    p[1] += dt * 13f * p[2]
-                    p[0] += dt * 3.5f * p[2]
-                }
-                Weather.SNOW -> {
-                    p[1] += dt * 1.4f * p[2]
-                    p[0] += sin(elapsed * 1.7f + p[3]) * dt * 0.6f
-                }
-                Weather.NONE -> Unit
-            }
-            if (p[1] > viewH) {
-                p[1] -= viewH
-                p[0] = Random.nextFloat() * viewW
-            }
-            if (p[0] > viewW) p[0] -= viewW
-            if (p[0] < 0f) p[0] += viewW
-
-            val x = left + p[0]
-            val y = top + p[1]
-            when (weather) {
-                Weather.RAIN -> batch.draw(
-                    white, x, y, 0.04f, 0.35f * p[2],
-                    r = 0.6f, g = 0.7f, b = 1f, a = 0.45f,
-                )
-                Weather.SNOW -> batch.draw(
-                    white, x, y, 0.09f, 0.09f,
-                    r = 1f, g = 1f, b = 1f, a = 0.8f,
-                )
-                Weather.NONE -> Unit
             }
         }
     }
@@ -533,37 +403,24 @@ class GameRenderer(
     private fun drawTint() {
         val tint = engine.tintCurrent
         if (tint[3] <= 0.004f) return
-        val left = camera.x - camera.viewTilesX / 2f - cullX + camera.shakeX
-        val top = camera.y - camera.halfViewY - cullY + camera.shakeY
-        batch.draw(
-            white, left, top,
-            camera.viewTilesX + 2f * cullX, camera.halfViewY * 2f + 2f * cullY,
-            r = tint[0], g = tint[1], b = tint[2], a = tint[3],
-        )
+        batch.screenOverlay(white, tint[0], tint[1], tint[2], tint[3])
     }
 
-    /** Destello de pantalla, por encima de tinte y luces. */
+    /** Destello de pantalla. */
     private fun drawFlash() {
         if (engine.flashIntensity <= 0.004f) return
-        val left = camera.x - camera.viewTilesX / 2f - cullX + camera.shakeX
-        val top = camera.y - camera.halfViewY - cullY + camera.shakeY
         val flash = engine.flashColor
-        batch.draw(
-            white, left, top,
-            camera.viewTilesX + 2f * cullX, camera.halfViewY * 2f + 2f * cullY,
-            r = flash[0], g = flash[1], b = flash[2], a = engine.flashIntensity,
-        )
+        batch.screenOverlay(white, flash[0], flash[1], flash[2], engine.flashIntensity)
     }
 
-    // ------------------------------------------------------- luces y sombras
+    // -------------------------------------------------------- luces y sombras
 
-    /** Sombras elípticas suaves bajo los personajes (solo HD-2D). */
+    /** Sombras elípticas suaves en el suelo bajo cada billboard. */
     private fun drawShadows() {
         val alpha = 0.35f * liveStrength.coerceIn(0f, 1.4f)
         if (alpha <= 0.01f) return
-
         fun shadow(cx: Float, cy: Float) {
-            batch.draw(radial, cx - 0.32f, cy + 0.16f, 0.64f, 0.26f, r = 0f, g = 0f, b = 0f, a = alpha)
+            batch.draw(radial, cx - 0.34f, cy - 0.14f, 0.68f, 0.28f, r = 0f, g = 0f, b = 0f, a = alpha)
         }
         for (event in engine.events) {
             if (event.erased || event.currentSprite == null) continue
@@ -575,68 +432,29 @@ class GameRenderer(
         if (!engine.gameOver) shadow(engine.player.x, engine.player.y)
     }
 
-    /**
-     * Luces cálidas aditivas de los eventos con lightRadius > 0 y, en HD-2D,
-     * motas de luz ambientales.
-     */
-    private fun drawLights(dt: Float) {
-        batch.setAdditive(true)
-
+    /** Charcos de luz cálida (aditivos) de los eventos con lightRadius > 0. */
+    private fun drawLights() {
+        var any = false
         for (event in engine.events) {
             val radius = event.page?.lightRadius ?: 0f
             if (radius <= 0f || event.erased) continue
+            if (!any) { batch.setAdditive(true); any = true }
             val flicker = 0.85f + 0.15f * sin(elapsed * 9f + event.event.id * 1.7f)
             batch.draw(
                 radial,
                 event.x - radius, event.y - radius, radius * 2f, radius * 2f,
-                r = 1f, g = 0.72f, b = 0.42f, a = 0.55f * flicker,
+                r = 1f, g = 0.72f, b = 0.42f, a = 0.5f * flicker,
             )
         }
-
-        if (hd2d) drawMotes(dt)
-        batch.setAdditive(false)
-    }
-
-    /** Motas de polvo/luciérnagas flotando; se dibujan en modo aditivo. */
-    private fun drawMotes(dt: Float) {
-        val viewW = camera.viewTilesX + 2f * cullX
-        val viewH = camera.halfViewY * 2f + 2f * cullY
-        if (!motesSeeded) {
-            for (m in motes) {
-                m[0] = Random.nextFloat() * viewW
-                m[1] = Random.nextFloat() * viewH
-                m[2] = 0.5f + Random.nextFloat()
-                m[3] = Random.nextFloat() * 6.28f
-            }
-            motesSeeded = true
-        }
-        val left = camera.x - camera.viewTilesX / 2f - 1f
-        val top = camera.y - camera.halfViewY - 1f
-        for (m in motes) {
-            m[1] -= dt * 0.12f * m[2]
-            m[0] += sin(elapsed * 0.8f + m[3]) * dt * 0.25f
-            if (m[1] < 0f) m[1] += viewH
-            if (m[0] > viewW) m[0] -= viewW
-            if (m[0] < 0f) m[0] += viewW
-            val pulse = 0.5f + 0.5f * sin(elapsed * 1.3f + m[3] * 2f)
-            batch.draw(
-                radial,
-                left + m[0], top + m[1], 0.12f, 0.12f,
-                r = 1f, g = 0.9f, b = 0.6f,
-                a = (0.05f + 0.09f * pulse) * liveStrength.coerceIn(0f, 2f),
-            )
+        if (any) {
+            batch.flush()
+            batch.setAdditive(false)
         }
     }
 
     companion object {
         private val WALK_CYCLE = intArrayOf(0, 1, 2, 1)
-
-        /** Centinela para forzar el primer aviso de BGM aunque sea null. */
         private const val BGM_UNSET = "__sin_bgm__"
-
-        private const val SWORD_IMAGE = "sword.png"
         private const val SLASH_IMAGE = "slash.png"
-        private const val MOTES = 40
-        private const val WEATHER_PARTICLES = 90
     }
 }

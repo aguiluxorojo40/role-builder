@@ -22,6 +22,8 @@ class PostProcessor {
     // FBO de escena a resolución completa y par de FBOs de bloom a 1/4.
     private val fbos = IntArray(3)
     private val texs = IntArray(3)
+    // Renderbuffer de profundidad del FBO de escena (para el z-buffer 3D).
+    private val depthRbo = IntArray(1)
     private var bloomW = 1
     private var bloomH = 1
 
@@ -140,6 +142,15 @@ class PostProcessor {
         GLES30.glGenFramebuffers(3, fbos, 0)
         GLES30.glGenTextures(3, texs, 0)
         createTarget(0, width, height)
+        // Profundidad para el FBO de escena (fbos[0]): sin ella el z-buffer
+        // no funciona al dibujar la escena 3D a textura.
+        GLES30.glGenRenderbuffers(1, depthRbo, 0)
+        GLES30.glBindRenderbuffer(GLES30.GL_RENDERBUFFER, depthRbo[0])
+        GLES30.glRenderbufferStorage(GLES30.GL_RENDERBUFFER, GLES30.GL_DEPTH_COMPONENT16, width, height)
+        GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, fbos[0])
+        GLES30.glFramebufferRenderbuffer(
+            GLES30.GL_FRAMEBUFFER, GLES30.GL_DEPTH_ATTACHMENT, GLES30.GL_RENDERBUFFER, depthRbo[0],
+        )
         createTarget(1, bloomW, bloomH)
         createTarget(2, bloomW, bloomH)
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
@@ -231,6 +242,7 @@ class PostProcessor {
         if (!ready) return
         GLES30.glDeleteFramebuffers(3, fbos, 0)
         GLES30.glDeleteTextures(3, texs, 0)
+        GLES30.glDeleteRenderbuffers(1, depthRbo, 0)
         ready = false
     }
 
