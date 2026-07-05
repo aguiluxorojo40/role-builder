@@ -115,6 +115,14 @@ class EditorState(val projectDir: File) {
         dirty = true
     }
 
+    /** Id libre para un nuevo tileset (mayor existente + 1). */
+    fun nextTilesetId(): Int = (database.tilesets.maxOfOrNull { it.id } ?: 0) + 1
+
+    /** Registra un tileset nuevo en la base de datos (p. ej. extraído de una ROM). */
+    fun addTileset(tileset: com.rolebuilder.core.model.Tileset) {
+        updateDatabase(database.copy(tilesets = database.tilesets + tileset))
+    }
+
     fun save() {
         ProjectIo.saveProject(projectDir, project)
         ProjectIo.saveDatabase(projectDir, database)

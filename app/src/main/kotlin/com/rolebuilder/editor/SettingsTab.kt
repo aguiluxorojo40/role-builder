@@ -45,6 +45,7 @@ fun SettingsTab(state: EditorState) {
     val context = LocalContext.current
     var showSwitches by remember { mutableStateOf(false) }
     var showVariables by remember { mutableStateOf(false) }
+    var showSnesImport by remember { mutableStateOf(false) }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -153,6 +154,17 @@ fun SettingsTab(state: EditorState) {
             "Disponibles: " + state.imageNames().joinToString(", "),
             style = MaterialTheme.typography.bodySmall,
         )
+
+        HorizontalDivider()
+
+        Text("Assets de ROM de SNES", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Carga una ROM de Super Nintendo (.smc/.sfc) y extrae sus gráficos como " +
+                "un tileset del proyecto. La decodificación ocurre en el dispositivo; " +
+                "la ROM no se guarda, solo los tiles que elijas.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Button(onClick = { showSnesImport = true }) { Text("Importar desde ROM de SNES") }
     }
 
     if (showSwitches) {
@@ -169,6 +181,12 @@ fun SettingsTab(state: EditorState) {
             names = state.project.variableNames,
             onChange = { state.updateProject(state.project.copy(variableNames = it)) },
             onDismiss = { showVariables = false },
+        )
+    }
+    if (showSnesImport) {
+        com.rolebuilder.editor.snes.SnesImportDialog(
+            state = state,
+            onDismiss = { showSnesImport = false },
         )
     }
 }
