@@ -109,10 +109,20 @@ detecta sola; no tienes que hacer nada.
   objetivo para practicar.
 - **La imagen "cortada" se arregla con el offset.** Si cada tile parece partido
   por la mitad, mueve el offset unos pocos bytes hasta que se alinee.
-- **Si todo es ruido**, ese juego comprime sus gráficos: cambia de juego. Los
-  homebrew y las demos suelen tener gráficos sin comprimir.
-- **La paleta correcta suele estar en la ROM.** Ve probando las entradas
-  "CGRAM @ 0x…" del desplegable de paletas hasta acertar.
+- **¿Ruido de colores o gráficos de verdad? Usa "Escala de grises".** Con la
+  paleta equivocada, unos gráficos perfectamente decodificados **parecen ruido de
+  colores** (cada índice recibe un color al azar). Pon la paleta en **"Escala de
+  grises (ver formas)"**: traduce cada índice a un nivel de brillo ordenado, así
+  que **verás la forma** aunque no sepas el color real. Si en gris distingues
+  dibujos, has dado con gráficos auténticos: solo te falta elegir la paleta CGRAM
+  para el color. Si en gris sigue siendo ruido aleatorio, ahí no hay gráficos (o
+  están comprimidos).
+- **La paleta correcta suele estar en la ROM.** Una vez confirmes la forma en
+  gris, ve probando las entradas "CGRAM @ 0x…" del desplegable de paletas hasta
+  que los colores cuadren.
+- **Si ni en gris se ve nada**, ese juego comprime sus gráficos: prueba la
+  descompresión (sección 6.5) o cambia de juego. Los homebrew y las demos suelen
+  tener gráficos sin comprimir.
 
 ---
 

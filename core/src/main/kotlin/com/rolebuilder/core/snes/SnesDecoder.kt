@@ -280,6 +280,23 @@ object SnesDecoder {
     }
 
     /**
+     * Paleta en escala de grises: una rampa del índice 0 (negro) al máximo
+     * (blanco). Sirve para VER LA FORMA de unos gráficos cuando todavía no se
+     * conoce su paleta real. Con una paleta de color equivocada, unos tiles de
+     * 4/8bpp parecen ruido de colores aunque el dibujo esté perfectamente
+     * decodificado; en gris, cada índice se traduce a un nivel de brillo
+     * ordenado, así que las formas se distinguen con claridad. El índice 0 se
+     * sigue tratando como transparente al componer la hoja de tiles.
+     */
+    fun grayscalePalette(colorCount: Int): IntArray {
+        val steps = (colorCount - 1).coerceAtLeast(1)
+        return IntArray(colorCount) { i ->
+            val level = i * 255 / steps
+            (0xFF shl 24) or (level shl 16) or (level shl 8) or level
+        }
+    }
+
+    /**
      * Recorre el inicio de la ROM buscando bloques densos de 16 colores CGRAM
      * válidos (bit 15 a 0) para autodetectar paletas. Devuelve como mucho 12.
      */

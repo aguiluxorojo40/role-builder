@@ -31,6 +31,7 @@ import javax.imageio.ImageIO
  *   --tiles <n>            Nº de tiles a extraer (por defecto: los que quepan, máx. 256).
  *   --columns <n>          Columnas de la rejilla (por defecto 16).
  *   --palette-offset <n>  Offset de la paleta CGRAM en la ROM (si se omite, se usa una por defecto).
+ *   --grayscale           Colorea en escala de grises para ver la FORMA sin conocer la paleta real.
  *   --name <texto>        Nombre del tileset y base del archivo (por defecto "snes").
  *   --demo <dir>          Genera una ROM de prueba procedural en <dir>/demo.sfc y la extrae.
  */
@@ -144,12 +145,18 @@ fun main(args: Array<String>) {
     val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
     val tileCount = (opts["tiles"]?.let { parseInt(it) } ?: available).coerceIn(1, minOf(available, 256))
 
-    // Paleta: offset explícito > primera paleta detectada en la ROM > colores vivos.
-    val palette: IntArray = opts["palette-offset"]?.let {
-        SnesDecoder.parsePalette(rom, parseInt(it), format.colorCount)
-    } ?: SnesDecoder.scanRomForPalettes(rom).firstOrNull()?.also {
-        println("Paleta autodetectada: ${it.name}")
-    }?.colors ?: defaultPalette(format.colorCount)
+    // Paleta: --grayscale (vista de formas) > offset explícito > primera paleta
+    // detectada en la ROM > colores vivos de respaldo.
+    val palette: IntArray = when {
+        opts.containsKey("grayscale") -> SnesDecoder.grayscalePalette(format.colorCount).also {
+            println("Paleta en escala de grises (vista de formas: ignora el color real)")
+        }
+        opts["palette-offset"] != null ->
+            SnesDecoder.parsePalette(rom, parseInt(opts["palette-offset"]!!), format.colorCount)
+        else -> SnesDecoder.scanRomForPalettes(rom).firstOrNull()?.also {
+            println("Paleta autodetectada: ${it.name}")
+        }?.colors ?: defaultPalette(format.colorCount)
+    }
 
     val name = opts["name"] ?: "snes"
     val sheet = SnesAssetExtractor.extractTileSheet(tileRom, tileOffset, format, palette, tileCount, columns)
@@ -354,7 +361,8 @@ private fun printUsage() {
         """
         Extractor de assets de ROM de SNES
           --rom <ruta> --out <dir> [--offset 0x2000] --format 4bpp [--tiles N] [--columns 16]
-          [--palette-offset 0x100] [--name terreno]
+          [--palette-offset 0x100] [--grayscale] [--name terreno]
+          --grayscale                         (vista en escala de grises: ver la FORMA sin la paleta real)
           --rom <ruta> --format 4bpp --scan   (autodetecta offsets con gráficos)
           [--decompress auto|lc_lz2]          (descomprime el bloque antes de extraer)
           --demo-compressed <dir>             (ROM de prueba con gráficos LC_LZ2)
