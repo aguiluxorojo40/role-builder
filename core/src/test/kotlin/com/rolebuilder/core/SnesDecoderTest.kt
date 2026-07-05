@@ -132,6 +132,25 @@ class SnesDecoderTest {
     }
 
     @Test
+    fun `grayscalePalette es una rampa monotona de negro a blanco`() {
+        val pal = SnesDecoder.grayscalePalette(16)
+        assertEquals(16, pal.size)
+        // Extremos: índice 0 negro opaco, índice 15 blanco opaco.
+        assertEquals(0xFF000000.toInt(), pal[0])
+        assertEquals(0xFFFFFFFF.toInt(), pal[15])
+        // Cada entrada es un gris (R=G=B) y el brillo crece con el índice.
+        var prev = -1
+        for (argb in pal) {
+            val r = (argb shr 16) and 0xFF
+            val g = (argb shr 8) and 0xFF
+            val b = argb and 0xFF
+            assertEquals(0xFF, (argb ushr 24) and 0xFF, "debe ser opaco")
+            assertEquals(r, g); assertEquals(g, b)
+            assertTrue(r > prev, "el brillo debe crecer de forma estricta"); prev = r
+        }
+    }
+
+    @Test
     fun `scanRomForPalettes encuentra un bloque CGRAM de 16 colores`() {
         val rom = ByteArray(0x400)
         // Escribe 16 colores unicos con bit 15 = 0 en el offset 0.

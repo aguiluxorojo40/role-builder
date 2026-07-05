@@ -52,8 +52,15 @@ import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import kotlin.math.floor
 
-/** Opción de paleta: la escala de grises por defecto (índice -1) o una CGRAM detectada. */
+/**
+ * Opción de paleta en el desplegable. Índices especiales negativos:
+ *   -1 = colores vivos por defecto, -2 = escala de grises (ver formas).
+ * Índices >= 0 apuntan a una paleta CGRAM detectada en la ROM.
+ */
 private data class PaletteOption(val index: Int, val label: String)
+
+private const val PALETTE_DEFAULT = -1
+private const val PALETTE_GRAYSCALE = -2
 
 private val FORMAT_LABELS = mapOf(
     SnesGraphicFormat.SNES_2BPP to "SNES 2bpp (4 colores)",
@@ -106,8 +113,10 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         romBytes?.let { SnesDecoder.scanRomForPalettes(it) } ?: emptyList()
     }
     val paletteOptions = remember(detected) {
-        listOf(PaletteOption(-1, "Colores por defecto")) +
-            detected.mapIndexed { i, p -> PaletteOption(i, p.name) }
+        listOf(
+            PaletteOption(PALETTE_DEFAULT, "Colores por defecto"),
+            PaletteOption(PALETTE_GRAYSCALE, "Escala de grises (ver formas)"),
+        ) + detected.mapIndexed { i, p -> PaletteOption(i, p.name) }
     }
     // Al detectar paletas en la ROM, selecciona la primera (color real) por defecto.
     LaunchedEffect(detected) {
@@ -168,8 +177,12 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
                 if (available <= 0) return@runCatching null
                 val count = tiles.coerceIn(1, minOf(available, 1024))
-                val palette = detected.getOrNull(paletteIndex)?.colors
-                    ?: defaultColorPalette(format.colorCount)
+                val palette = when {
+                    paletteIndex == PALETTE_GRAYSCALE -> SnesDecoder.grayscalePalette(format.colorCount)
+                    paletteIndex >= 0 -> detected.getOrNull(paletteIndex)?.colors
+                        ?: defaultColorPalette(format.colorCount)
+                    else -> defaultColorPalette(format.colorCount)
+                }
                 val sheet = SnesAssetExtractor.extractTileSheet(
                     tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
                 )
@@ -291,6 +304,15 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         "color 0 se guarda transparente (fondo de los sprites).",
                     style = MaterialTheme.typography.bodySmall,
                 )
+                if (paletteIndex == PALETTE_GRAYSCALE) {
+                    Text(
+                        "En escala de grises ves la FORMA de los tiles aunque no sepas su paleta " +
+                            "real: si aquí distingues dibujos, has dado con gráficos de verdad " +
+                            "(luego elige una paleta CGRAM para el color). Con la paleta equivocada, " +
+                            "unos gráficos correctos parecen ruido de colores.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
 
                 HorizontalDivider()
                 Text("Vista previa", style = MaterialTheme.typography.titleSmall)

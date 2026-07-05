@@ -23,8 +23,11 @@ externos: editor y motor son la misma app.
   y decodifica sus gráficos (2bpp/4bpp/8bpp) y paletas CGRAM directamente en el
   dispositivo para convertirlos en tilesets del proyecto, con **autodetección de
   zonas gráficas** para no adivinar offsets y **descompresión conectable**
-  (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. Guía paso a
-  paso para principiantes en [`docs/GUIA_EXTRACTOR_SNES.md`](docs/GUIA_EXTRACTOR_SNES.md).
+  (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. Incluye una
+  **vista en escala de grises** para reconocer la *forma* de los tiles aunque aún
+  no conozcas la paleta (con la paleta equivocada, unos gráficos correctos parecen
+  ruido de colores). Guía paso a paso para principiantes en
+  [`docs/GUIA_EXTRACTOR_SNES.md`](docs/GUIA_EXTRACTOR_SNES.md).
 - Exporta tu juego como .zip para compartirlo e importa los de otros.
 - Botón ▶ para probar el juego al instante.
 
@@ -63,7 +66,7 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (123 tests: serialización, movimiento, intérprete, combate, extracción
+JVM rápidos (124 tests: serialización, movimiento, intérprete, combate, extracción
 de assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del
 motor y le pasa el input.
 
@@ -98,6 +101,8 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 
 # Extraer una hoja de tiles desde una ROM de SNES (PNG + Tileset JSON)
 ./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --palette-offset 0x100"
+# Vista en escala de grises: reconoce la FORMA de los tiles sin conocer la paleta
+./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --grayscale"
 # o probar con una ROM de ejemplo generada al vuelo (sin material con copyright):
 ./gradlew :core:extractSnesTileset --args="--demo out"
 ```
