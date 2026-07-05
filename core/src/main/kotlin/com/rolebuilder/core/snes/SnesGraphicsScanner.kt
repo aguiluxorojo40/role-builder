@@ -1,27 +1,29 @@
 package com.rolebuilder.core.snes
 
-import kotlin.math.abs
-import kotlin.math.ln
-
 /**
  * Autodetector de zonas con gráficos SIN COMPRIMIR dentro de una ROM.
  *
  * Muchos juegos de SNES comprimen sus gráficos (LZ77/LZSS y variantes propias);
  * un visor de datos crudos como este solo puede mostrar los que están sin
  * comprimir. Este scanner no descomprime nada: recorre la ROM en ventanas y
- * puntúa cuáles "parecen" tiles sin comprimir, para que el usuario salte entre
+ * puntúa cuáles "parecen" un dibujo real, para que el usuario salte entre
  * candidatos en vez de teclear offsets en hexadecimal a ciegas.
  *
- * Heurística (deliberadamente sencilla y permisiva, pensada para navegar):
- *  - Se descarta una ventana casi uniforme (relleno de 0x00/0xFF): no hay dibujo.
- *  - Se descarta una ventana de entropía casi máxima (~8 bits/byte): suele ser
- *    código o datos comprimidos, que se ven como "nieve".
- *  - Se favorece la entropía media, típica de gráficos indexados sin comprimir.
+ * Clave del método: en vez de fiarse solo de la entropía de los bytes (que no
+ * distingue bien los datos comprimidos de los gráficos), **decodifica** cada
+ * ventana como tiles y mide la **coherencia espacial**: qué fracción de píxeles
+ * contiguos comparten color. Una imagen real tiene grandes zonas planas (alta
+ * coherencia); el ruido de datos comprimidos o de código apenas la tiene. Así,
+ * en un juego que comprime todo su arte, el scanner devuelve pocos o ningún
+ * candidato —la respuesta honesta— en lugar de mandar al usuario a ruido.
  */
 object SnesGraphicsScanner {
 
     /** Un offset candidato con su puntuación (0..1); mayor = más "gráfico". */
     data class Candidate(val offset: Int, val score: Double)
+
+    /** Coherencia mínima para considerar que una ventana "parece" un dibujo. */
+    private const val MIN_SCORE = 0.30
 
     /**
      * Devuelve hasta [maxResults] offsets candidatos, ordenados por posición en
@@ -40,51 +42,56 @@ object SnesGraphicsScanner {
         val scored = ArrayList<Candidate>()
         var offset = 0
         while (offset + windowBytes <= rom.size) {
-            val s = scoreWindow(rom, offset, windowBytes)
-            if (s > 0.0) scored.add(Candidate(offset, s))
+            val s = scoreWindow(rom, offset, format, windowTiles)
+            if (s >= MIN_SCORE) scored.add(Candidate(offset, s))
             offset += windowBytes // ventanas sin solapamiento: barrido rápido
         }
-        // Nos quedamos con las mejores y las devolvemos ordenadas por offset.
         return scored.sortedByDescending { it.score }
             .take(maxResults)
             .sortedBy { it.offset }
     }
 
     /**
-     * Puntúa una ventana [offset, offset+length) como "gráfico sin comprimir".
-     * Devuelve 0 si parece relleno o datos comprimidos/código.
+     * Puntúa la ventana de [windowTiles] tiles que empieza en [offset] como
+     * "gráfico sin comprimir". Devuelve 0 si parece relleno vacío o ruido
+     * (datos comprimidos / código). La puntuación combina:
+     *  - coherencia: fracción de píxeles contiguos (horizontal y vertical) con
+     *    el mismo índice de color; alta en dibujos, baja en ruido;
+     *  - diversidad: penaliza las ventanas de un solo color (relleno).
      */
-    fun scoreWindow(rom: ByteArray, offset: Int, length: Int): Double {
-        if (offset < 0 || offset + length > rom.size || length <= 0) return 0.0
+    fun scoreWindow(rom: ByteArray, offset: Int, format: SnesGraphicFormat, windowTiles: Int): Double {
+        val windowBytes = format.bytesPerTile * windowTiles
+        if (offset < 0 || offset + windowBytes > rom.size) return 0.0
 
-        val hist = IntArray(256)
-        var maxCount = 0
-        for (i in offset until offset + length) {
-            val b = rom[i].toInt() and 0xFF
-            val c = ++hist[b]
-            if (c > maxCount) maxCount = c
-        }
+        var equalAdjacent = 0L
+        var totalAdjacent = 0L
+        val globalHist = IntArray(256)
+        var globalPixels = 0L
+        var maxGlobal = 0
 
-        val n = length.toDouble()
-        val topFraction = maxCount / n
-        if (topFraction > 0.92) return 0.0 // casi todo el mismo byte: relleno vacío
-
-        var entropy = 0.0
-        for (c in hist) {
-            if (c > 0) {
-                val p = c / n
-                entropy -= p * (ln(p) / LN2)
+        for (t in 0 until windowTiles) {
+            val tile = SnesDecoder.decodeTile(rom, offset + t * format.bytesPerTile, format, t)
+            val px = tile.pixelIndices
+            // Coherencia horizontal y vertical dentro del tile 8x8.
+            for (y in 0 until 8) {
+                for (x in 0 until 8) {
+                    val v = px[y * 8 + x]
+                    if (x < 7) { totalAdjacent++; if (px[y * 8 + x + 1] == v) equalAdjacent++ }
+                    if (y < 7) { totalAdjacent++; if (px[(y + 1) * 8 + x] == v) equalAdjacent++ }
+                    val c = ++globalHist[v]
+                    if (c > maxGlobal) maxGlobal = c
+                    globalPixels++
+                }
             }
         }
-        if (entropy > 7.3) return 0.0 // casi aleatorio: código o datos comprimidos
 
-        // La entropía de gráficos indexados sin comprimir suele rondar 2..6.5.
-        // Puntuamos con un pico suave alrededor de un valor ideal y penalizamos
-        // las ventanas dominadas por un único byte.
-        val ideal = 4.5
-        val entropyScore = (1.0 - abs(entropy - ideal) / 4.5).coerceIn(0.0, 1.0)
-        return entropyScore * (1.0 - topFraction)
+        if (totalAdjacent == 0L || globalPixels == 0L) return 0.0
+
+        val dominant = maxGlobal / globalPixels.toDouble()
+        if (dominant > 0.97) return 0.0 // ventana de un solo color: relleno vacío
+
+        val coherence = equalAdjacent / totalAdjacent.toDouble()
+        // Penaliza el relleno casi uniforme conservando el premio a las zonas planas.
+        return coherence * (1.0 - dominant)
     }
-
-    private val LN2 = ln(2.0)
 }
