@@ -20,8 +20,10 @@ externos: editor y motor son la misma app.
   habilidades (melee/proyectil) y colisión del tileset.
 - Importación de imágenes PNG propias (tilesets y hojas de personaje 3×4).
 - **Extracción de assets de ROMs de Super Nintendo**: carga una ROM (.smc/.sfc)
-  y decodifica sus gráficos planares (2bpp/4bpp/8bpp) y paletas CGRAM
-  directamente en el dispositivo para convertirlos en tilesets del proyecto.
+  y decodifica sus gráficos (2bpp/4bpp/8bpp) y paletas CGRAM directamente en el
+  dispositivo para convertirlos en tilesets del proyecto, con **autodetección de
+  zonas gráficas** para no adivinar offsets. Guía paso a paso para principiantes
+  en [`docs/GUIA_EXTRACTOR_SNES.md`](docs/GUIA_EXTRACTOR_SNES.md).
 - Exporta tu juego como .zip para compartirlo e importa los de otros.
 - Botón ▶ para probar el juego al instante.
 
@@ -59,7 +61,7 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (110 tests: serialización, movimiento, intérprete, combate, extracción
+JVM rápidos (112 tests: serialización, movimiento, intérprete, combate, extracción
 de assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del
 motor y le pasa el input.
 

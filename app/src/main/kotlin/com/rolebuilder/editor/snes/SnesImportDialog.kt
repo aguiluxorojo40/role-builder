@@ -42,6 +42,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
+import com.rolebuilder.core.snes.SnesGraphicsScanner
 import com.rolebuilder.core.snes.SnesPalette
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.widgets.DropdownField
@@ -97,6 +98,18 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     val paletteOptions = remember(detected) {
         listOf(PaletteOption(-1, "Escala de grises")) +
             detected.mapIndexed { i, p -> PaletteOption(i, p.name) }
+    }
+
+    // Autodetección de zonas con gráficos sin comprimir para el offset elegido.
+    val candidates: List<Int> = remember(romBytes, format) {
+        romBytes?.let { rom -> SnesGraphicsScanner.findCandidates(rom, format).map { it.offset } } ?: emptyList()
+    }
+    var candidateIndex by remember { mutableStateOf(0) }
+    fun jumpToCandidate(i: Int) {
+        if (candidates.isEmpty()) return
+        val idx = ((i % candidates.size) + candidates.size) % candidates.size
+        candidateIndex = idx
+        offsetText = "0x" + candidates[idx].toString(16).uppercase()
     }
 
     val romLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -182,6 +195,30 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                if (candidates.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Button(onClick = { jumpToCandidate(0) }) { Text("Auto-buscar gráficos") }
+                        TextButton(onClick = { jumpToCandidate(candidateIndex - 1) }) { Text("◀") }
+                        Text("${candidateIndex + 1}/${candidates.size}", style = MaterialTheme.typography.bodySmall)
+                        TextButton(onClick = { jumpToCandidate(candidateIndex + 1) }) { Text("▶") }
+                    }
+                    Text(
+                        "Se detectaron ${candidates.size} zonas que parecen gráficos sin comprimir. " +
+                            "Salta entre ellas con ◀ ▶ y mira la vista previa.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                } else if (romBytes != null) {
+                    Text(
+                        "No se detectaron zonas de gráficos claras: puede que los gráficos de " +
+                            "este juego estén comprimidos (frecuente en SNES). Prueba otro formato " +
+                            "o desplaza el offset manualmente.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     IntField("Columnas", columns, { columns = it.coerceIn(1, 64) }, Modifier.weight(1f))
