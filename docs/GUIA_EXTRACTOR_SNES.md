@@ -116,6 +116,36 @@ detecta sola; no tienes que hacer nada.
 
 ---
 
+## 6.5 Gráficos comprimidos (descompresión)
+
+Aquí está la clave de por qué antes solo se veía ruido en muchos juegos. La app
+incluye un **framework de descompresión**: un motor común más un códec por
+formato. Ahora mismo soporta **LC_LZ2** (el formato de Lunar Compress que usa
+**Super Mario World** y muchos otros juegos para sus gráficos).
+
+Cómo funciona en la pantalla de importación:
+
+1. En **Descompresión** elige **Auto-detectar** (o **LC_LZ2** directamente).
+2. En **Offset** pon dónde **empieza** el bloque comprimido. El truco: los bloques
+   no están alineados a números redondos, así que hay que dar con el byte exacto.
+   Desde el modo avanzado (abajo) puedes listar los offsets de bloques comprimidos.
+3. Mira la vista previa: si aparece un dibujo, ¡acertaste! Guarda el tileset.
+
+**Cómo se valida que un códec es el correcto:** la app decodifica la salida y mide
+su *coherencia* (si "parece un dibujo"). El modo **Auto-detectar** prueba cada
+códec y se queda con el que produce gráficos reales. Es el mismo juez que usa el
+buscador de zonas, reutilizado para validar una descompresión.
+
+> **Verificado con Super Mario World:** su fichero de gráficos GFX00 (0x1000 bytes
+> descomprimidos) se extrae correctamente con LC_LZ2 desde el offset `0x4DDC6`;
+> la fuente/HUD aparece hacia `0x5C6A3`. Prueba estos con `--decompress` para ver
+> gráficos reales de Mario.
+
+**Límite honesto:** cada juego puede usar un formato distinto. Si el tuyo no es
+LC_LZ2 (p. ej. Secret of Mana usa un formato propio de Square), la descompresión
+dará ruido hasta que se añada ese códec al framework. La arquitectura está
+preparada para incorporar códecs nuevos uno a uno.
+
 ## 7. Para quien quiera el modo avanzado (línea de comandos)
 
 Si algún día usas un ordenador, el mismo motor de extracción está disponible como
@@ -130,6 +160,15 @@ herramienta de escritorio (no necesita el editor):
 
 # Probar sin ninguna ROM (genera una de ejemplo):
 ./gradlew :core:extractSnesTileset --args="--demo salida"
+
+# Localizar bloques COMPRIMIDOS (LC_LZ2) dentro de una ROM:
+./gradlew :core:extractSnesTileset --args="--rom smw.sfc --format 4bpp --scan --decompress lc_lz2"
+
+# Descomprimir y extraer un bloque (auto-detecta el códec):
+./gradlew :core:extractSnesTileset --args="--rom smw.sfc --out out --offset 0x4DDC6 --decompress auto --format 4bpp"
+
+# Demo de descompresión sin ROMs con copyright:
+./gradlew :core:extractSnesTileset --args="--demo-compressed out"
 ```
 
 Genera un PNG en `salida/images/` y un `*.tileset.json` que describe la rejilla.

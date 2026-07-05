@@ -22,8 +22,9 @@ externos: editor y motor son la misma app.
 - **Extracción de assets de ROMs de Super Nintendo**: carga una ROM (.smc/.sfc)
   y decodifica sus gráficos (2bpp/4bpp/8bpp) y paletas CGRAM directamente en el
   dispositivo para convertirlos en tilesets del proyecto, con **autodetección de
-  zonas gráficas** para no adivinar offsets. Guía paso a paso para principiantes
-  en [`docs/GUIA_EXTRACTOR_SNES.md`](docs/GUIA_EXTRACTOR_SNES.md).
+  zonas gráficas** para no adivinar offsets y **descompresión conectable**
+  (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. Guía paso a
+  paso para principiantes en [`docs/GUIA_EXTRACTOR_SNES.md`](docs/GUIA_EXTRACTOR_SNES.md).
 - Exporta tu juego como .zip para compartirlo e importa los de otros.
 - Botón ▶ para probar el juego al instante.
 
@@ -51,8 +52,9 @@ core/   Kotlin JVM puro, sin dependencias de Android
   engine/   RpgEngine.tick(dt): movimiento, colisiones, combate, intérprete
   io/       Carga/guardado de proyectos y partidas (kotlinx.serialization)
   snes/     Extracción de assets de ROMs de SNES: decodificador planar
-            (2/4/8bpp), lectura de cabecera y paletas, y composición de hojas
-            de tiles ARGB que se convierten en un Tileset del proyecto
+            (2/4/8bpp), lectura de cabecera y paletas, composición de hojas de
+            tiles ARGB, autodetección de gráficos por coherencia y framework de
+            descompresión conectable (compression/: LC_LZ2 + autodetección)
 
 app/    Aplicación Android (solo UI y render)
   editor/   Editor Compose: mapas, eventos, base de datos, ajustes
@@ -61,7 +63,7 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (112 tests: serialización, movimiento, intérprete, combate, extracción
+JVM rápidos (123 tests: serialización, movimiento, intérprete, combate, extracción
 de assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del
 motor y le pasa el input.
 

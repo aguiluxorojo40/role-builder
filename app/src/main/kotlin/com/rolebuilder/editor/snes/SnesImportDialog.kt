@@ -44,6 +44,8 @@ import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
 import com.rolebuilder.core.snes.SnesPalette
+import com.rolebuilder.core.snes.compression.CompressionCodecs
+import com.rolebuilder.core.snes.compression.LcLz2
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
@@ -90,6 +92,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     var tiles by remember { mutableStateOf(64) }
     var paletteIndex by remember { mutableStateOf(-1) }
     var name by remember { mutableStateOf("snes_rip") }
+    // 0 = sin descompresión (datos crudos), 1 = autodetectar códec, 2 = LC_LZ2.
+    var decompressMode by remember { mutableStateOf(0) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     val detected: List<SnesPalette> = remember(romBytes) {
@@ -130,17 +134,34 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
     // Vista previa reactiva: recalcula la hoja de tiles al cambiar cualquier parámetro.
     val preview: Pair<ImageBitmap, SnesAssetExtractor.TileSheet>? =
-        remember(romBytes, format, offsetText, columns, tiles, paletteIndex) {
+        remember(romBytes, format, offsetText, columns, tiles, paletteIndex, decompressMode) {
             val rom = romBytes ?: return@remember null
             runCatching {
                 val offset = parseOffset(offsetText)
-                val available = SnesAssetExtractor.availableTiles(rom.size, offset, format)
+                // Descompresión opcional: los tiles salen del bloque descomprimido,
+                // pero la paleta se sigue leyendo de la ROM original.
+                val tileRom: ByteArray
+                val tileOffset: Int
+                when (decompressMode) {
+                    1 -> {
+                        val auto = CompressionCodecs.autoDecompress(rom, offset, format)
+                            ?: return@runCatching null
+                        tileRom = auto.result.data; tileOffset = 0
+                    }
+                    2 -> {
+                        val res = runCatching { LcLz2.decompress(rom, offset) }.getOrNull()
+                            ?: return@runCatching null
+                        tileRom = res.data; tileOffset = 0
+                    }
+                    else -> { tileRom = rom; tileOffset = offset }
+                }
+                val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
                 if (available <= 0) return@runCatching null
                 val count = tiles.coerceIn(1, minOf(available, 1024))
                 val palette = detected.getOrNull(paletteIndex)?.colors
                     ?: grayscalePalette(format.colorCount)
                 val sheet = SnesAssetExtractor.extractTileSheet(
-                    rom, offset, format, palette, count, columns.coerceAtLeast(1),
+                    tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
                 )
                 SnesImport.toBitmap(sheet.image).asImageBitmap() to sheet
             }.getOrNull()
@@ -187,6 +208,29 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     optionLabel = { FORMAT_LABELS[it] ?: it.name },
                     onSelect = { format = it },
                 )
+
+                val decompressOptions = remember {
+                    listOf(
+                        0 to "Ninguna (datos crudos)",
+                        1 to "Auto-detectar códec",
+                        2 to LcLz2.name,
+                    )
+                }
+                DropdownField(
+                    label = "Descompresión (experimental)",
+                    options = decompressOptions,
+                    selected = decompressOptions.first { it.first == decompressMode },
+                    optionLabel = { it.second },
+                    onSelect = { decompressMode = it.first },
+                )
+                if (decompressMode != 0) {
+                    Text(
+                        "Si el juego comprime sus gráficos, indica el offset donde EMPIEZA el " +
+                            "bloque comprimido y elige el códec (o Auto). Si la vista previa sigue " +
+                            "en ruido, ese juego usa un formato aún no soportado.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
 
                 OutlinedTextField(
                     value = offsetText,
