@@ -297,41 +297,105 @@ object SnesDecoder {
     }
 
     /**
-     * Recorre el inicio de la ROM buscando bloques densos de 16 colores CGRAM
-     * válidos (bit 15 a 0) para autodetectar paletas. Devuelve como mucho 12.
+     * Puntúa una ventana de 16 colores en [offset] según cuánto "parece una
+     * paleta real" de SNES, o devuelve null si no es válida (algún bit 15 a 1, o
+     * menos de [minUniqueColors] colores distintos). Las paletas reales tienden a
+     * tener **rampas de brillo suaves** (para el sombreado), un color oscuro de
+     * fondo, buen contraste y algo de saturación; los datos aleatorios o de
+     * código casi no cumplen nada de esto. Se prueba en offsets pares porque cada
+     * color CGRAM ocupa 2 bytes (los offsets impares serían lecturas desalineadas).
      */
-    fun scanRomForPalettes(rom: ByteArray, minUniqueColors: Int = 10): List<SnesPalette> {
-        val detected = mutableListOf<SnesPalette>()
-        val limit = minOf(rom.size - 32, 0x10000)
-        var offset = 0
-        while (offset < limit) {
-            val colors = IntArray(16)
-            val raw = IntArray(16)
-            val unique = HashSet<Int>()
-            var valid = true
-            for (i in 0 until 16) {
-                val idx = offset + 2 * i
-                val bgr = byte(rom, idx) or (byte(rom, idx + 1) shl 8)
-                if (bgr and 0x8000 != 0) { valid = false; break } // bit 15 debe ser 0 en CGRAM
-                val argb = bgr15ToArgb(bgr)
-                colors[i] = argb
-                raw[i] = bgr
-                unique.add(argb)
-            }
-            if (valid && unique.size >= minUniqueColors) {
-                detected.add(
-                    SnesPalette(
-                        id = "detected_$offset",
-                        name = "CGRAM @ 0x${offset.toString(16).uppercase()}",
-                        colors = colors,
-                        rawBgr15 = raw,
-                        offset = offset,
-                    )
-                )
-                if (detected.size >= 12) break
-            }
-            offset += 256
+    private fun scorePaletteWindow(rom: ByteArray, offset: Int, minUniqueColors: Int): Double? {
+        val lum = IntArray(16)               // luminancia 0..255
+        val unique = HashSet<Int>()
+        var satSum = 0                        // saturación acumulada 0..255 por color
+        for (i in 0 until 16) {
+            val idx = offset + 2 * i
+            val bgr = byte(rom, idx) or (byte(rom, idx + 1) shl 8)
+            if (bgr and 0x8000 != 0) return null // bit 15 debe ser 0 en CGRAM
+            // Escala 5->8 bits idéntica a bgr15ToArgb para puntuar en el mismo espacio.
+            val r = ((bgr and 0x1F) * 255 + 15) / 31
+            val g = (((bgr shr 5) and 0x1F) * 255 + 15) / 31
+            val b = (((bgr shr 10) and 0x1F) * 255 + 15) / 31
+            unique.add(bgr)
+            lum[i] = (r * 30 + g * 59 + b * 11) / 100
+            satSum += maxOf(r, g, b) - minOf(r, g, b)
         }
-        return detected
+        if (unique.size < minUniqueColors) return null
+
+        var jumpSum = 0
+        var ramps = 0
+        var minL = lum[0]; var maxL = lum[0]
+        for (i in 0 until 15) {
+            val d = kotlin.math.abs(lum[i + 1] - lum[i])
+            jumpSum += d
+            if (d <= 24) ramps++                                // paso suave -> rampa de sombreado
+            if (lum[i + 1] < minL) minL = lum[i + 1]
+            if (lum[i + 1] > maxL) maxL = lum[i + 1]
+        }
+        val avgJump = jumpSum / 15.0
+        val span = (maxL - minL).toDouble()
+        val sat = satSum / 16.0
+        val darkBonus = if (minL < 40) 20.0 else 0.0            // un color oscuro/fondo
+        return ramps * 6.0 + span * 0.25 + sat * 0.6 + darkBonus - avgJump * 0.8
+    }
+
+    /**
+     * Recorre TODA la ROM (en offsets pares) buscando bloques de 16 colores que
+     * parezcan paletas CGRAM reales, los puntúa por calidad (ver
+     * [scorePaletteWindow]), descarta casi-duplicados (ventanas a menos de 32
+     * bytes) y devuelve los mejores primero, hasta [maxResults]. Así la primera
+     * opción ya es una paleta con pinta de real, no el primer bloque cualquiera.
+     *
+     * Nota honesta: qué paleta corresponde EXACTAMENTE a unos gráficos concretos
+     * lo decide el juego con sus tablas internas de punteros, así que ningún
+     * escaneo puede garantizar el color exacto; esto ofrece una lista limpia y
+     * ordenada para elegir/cambiar (como hacen YY-CHR y demás).
+     */
+    fun scanRomForPalettes(
+        rom: ByteArray,
+        minUniqueColors: Int = 10,
+        maxResults: Int = 16,
+    ): List<SnesPalette> {
+        val limit = rom.size - 32
+        if (limit < 0) return emptyList()
+
+        // Pass 1: puntúa cada ventana válida (barato: solo offset + score).
+        val scored = ArrayList<LongArray>() // [score*1000 como Long empaquetado, offset]
+        var offset = 0
+        while (offset <= limit) {
+            val s = scorePaletteWindow(rom, offset, minUniqueColors)
+            if (s != null) scored.add(longArrayOf((s * 1000).toLong(), offset.toLong()))
+            offset += 2
+        }
+        // Mejor score primero; a igualdad, el offset más bajo (alineación más limpia).
+        scored.sortWith(compareByDescending<LongArray> { it[0] }.thenBy { it[1] })
+
+        // Pass 2: dedup por cercanía (>= 32 bytes) y materializa las mejores.
+        val keptOffsets = ArrayList<Int>()
+        val result = ArrayList<SnesPalette>()
+        for (entry in scored) {
+            val off = entry[1].toInt()
+            if (keptOffsets.any { kotlin.math.abs(it - off) < 32 }) continue
+            keptOffsets.add(off)
+            val raw = IntArray(16)
+            val colors = IntArray(16)
+            for (i in 0 until 16) {
+                val bgr = byte(rom, off + 2 * i) or (byte(rom, off + 2 * i + 1) shl 8)
+                raw[i] = bgr
+                colors[i] = bgr15ToArgb(bgr)
+            }
+            result.add(
+                SnesPalette(
+                    id = "detected_$off",
+                    name = "CGRAM @ 0x${off.toString(16).uppercase()}",
+                    colors = colors,
+                    rawBgr15 = raw,
+                    offset = off,
+                )
+            )
+            if (result.size >= maxResults) break
+        }
+        return result
     }
 }

@@ -117,9 +117,12 @@ detecta sola; no tienes que hacer nada.
   dibujos, has dado con gráficos auténticos: solo te falta elegir la paleta CGRAM
   para el color. Si en gris sigue siendo ruido aleatorio, ahí no hay gráficos (o
   están comprimidos).
-- **La paleta correcta suele estar en la ROM.** Una vez confirmes la forma en
-  gris, ve probando las entradas "CGRAM @ 0x…" del desplegable de paletas hasta
-  que los colores cuadren.
+- **La paleta correcta suele estar en la ROM.** La app escanea **toda** la ROM y
+  ordena las paletas detectadas **de mayor a menor calidad** (rampas de sombreado,
+  un color oscuro de fondo, buen contraste), así que la primera "CGRAM @ 0x…" ya
+  suele ser una paleta real. Una vez confirmes la forma en gris, ve probando esas
+  entradas hasta que los colores cuadren: qué paleta va con qué gráfico lo decide
+  cada juego por dentro, así que a veces hay que cambiar entre unas cuantas.
 - **Si ni en gris se ve nada**, ese juego comprime sus gráficos: prueba la
   descompresión (sección 6.5) o cambia de juego. Los homebrew y las demos suelen
   tener gráficos sin comprimir.
