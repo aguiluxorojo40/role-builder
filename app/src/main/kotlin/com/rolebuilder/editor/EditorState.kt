@@ -69,6 +69,33 @@ class EditorState(val projectDir: File) {
         if (id in maps) currentMapId = id
     }
 
+    /**
+     * Conecta (o desconecta) el borde [edge] del mapa [mapId] con [neighborId].
+     * Mantiene el enlace recíproco: el vecino apunta de vuelta por el lado
+     * opuesto, y se limpia cualquier conexión anterior que quedara colgando.
+     */
+    fun setEdge(mapId: Int, edge: Edge, neighborId: Int?) {
+        val map = maps[mapId] ?: return
+        val previous = edge.get(map)
+
+        // Limpia el recíproco anterior si apuntaba de vuelta a este mapa.
+        if (previous != null && previous != neighborId) {
+            maps[previous]?.let { old ->
+                if (edge.opposite.get(old) == mapId) {
+                    maps[previous] = edge.opposite.set(old, null)
+                }
+            }
+        }
+
+        maps[mapId] = edge.set(map, neighborId)
+        if (neighborId != null && neighborId != mapId) {
+            maps[neighborId]?.let { nb ->
+                maps[neighborId] = edge.opposite.set(nb, mapId)
+            }
+        }
+        dirty = true
+    }
+
     fun addMap(name: String, width: Int, height: Int): GameMap {
         val id = (project.mapIds.maxOrNull() ?: 0) + 1
         val map = GameMap.empty(id, name.ifBlank { "Mapa $id" }, width, height, fillTile = Tiles.GRASS)
@@ -94,5 +121,35 @@ class EditorState(val projectDir: File) {
         maps.values.forEach { ProjectIo.saveMap(projectDir, it) }
         projectDir.setLastModified(System.currentTimeMillis())
         dirty = false
+    }
+}
+
+/** Los cuatro bordes de un mapa, con acceso al campo correspondiente de [GameMap]. */
+enum class Edge(val label: String) {
+    NORTH("Norte ↑"),
+    SOUTH("Sur ↓"),
+    WEST("Oeste ←"),
+    EAST("Este →");
+
+    val opposite: Edge
+        get() = when (this) {
+            NORTH -> SOUTH
+            SOUTH -> NORTH
+            WEST -> EAST
+            EAST -> WEST
+        }
+
+    fun get(map: GameMap): Int? = when (this) {
+        NORTH -> map.edgeNorth
+        SOUTH -> map.edgeSouth
+        WEST -> map.edgeWest
+        EAST -> map.edgeEast
+    }
+
+    fun set(map: GameMap, neighborId: Int?): GameMap = when (this) {
+        NORTH -> map.copy(edgeNorth = neighborId)
+        SOUTH -> map.copy(edgeSouth = neighborId)
+        WEST -> map.copy(edgeWest = neighborId)
+        EAST -> map.copy(edgeEast = neighborId)
     }
 }

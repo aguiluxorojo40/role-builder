@@ -193,6 +193,17 @@ class SerializationTest {
     }
 
     @Test
+    fun `map round trip with edge connections`() {
+        val map = GameMap.empty(1, "m", 4, 4).copy(edgeEast = 2, edgeNorth = 3)
+        val restored = json.decodeFromString(GameMap.serializer(), json.encodeToString(GameMap.serializer(), map))
+        assertEquals(map, restored)
+        assertEquals(2, restored.edgeEast)
+        assertEquals(3, restored.edgeNorth)
+        assertNull(restored.edgeWest)
+        assertNull(restored.edgeSouth)
+    }
+
+    @Test
     fun `map editing helpers`() {
         var map = GameMap.empty(1, "m", 10, 8)
         map = map.withTile(0, 3, 2, Tiles.WATER)
