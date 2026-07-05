@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,12 +63,17 @@ private val FORMAT_LABELS = mapOf(
     SnesGraphicFormat.NES_2BPP to "NES 2bpp",
 )
 
-private fun grayscalePalette(colorCount: Int): IntArray = IntArray(colorCount) { i ->
-    if (i == 0) 0x00000000 else {
-        val t = i * 255 / maxOf(1, colorCount - 1)
-        (0xFF shl 24) or (t shl 16) or (t shl 8) or t
-    }
-}
+// Colores vivos de respaldo (índice 0 transparente) para cuando no hay una paleta
+// de la ROM: así los gráficos SIEMPRE salen en color, no en gris.
+private val VIVID_16 = intArrayOf(
+    0x00000000, 0xFFE53935.toInt(), 0xFF43A047.toInt(), 0xFF1E88E5.toInt(),
+    0xFFFDD835.toInt(), 0xFF8E24AA.toInt(), 0xFF00ACC1.toInt(), 0xFFF5F5F5.toInt(),
+    0xFF6D4C41.toInt(), 0xFFFF7043.toInt(), 0xFF9CCC65.toInt(), 0xFF5C6BC0.toInt(),
+    0xFFFFB300.toInt(), 0xFFEC407A.toInt(), 0xFF26A69A.toInt(), 0xFF212121.toInt(),
+)
+
+private fun defaultColorPalette(colorCount: Int): IntArray =
+    IntArray(colorCount) { i -> if (i < VIVID_16.size) VIVID_16[i] else 0xFF000000.toInt() }
 
 private fun parseOffset(text: String): Int {
     val s = text.trim()
@@ -100,8 +106,12 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         romBytes?.let { SnesDecoder.scanRomForPalettes(it) } ?: emptyList()
     }
     val paletteOptions = remember(detected) {
-        listOf(PaletteOption(-1, "Escala de grises")) +
+        listOf(PaletteOption(-1, "Colores por defecto")) +
             detected.mapIndexed { i, p -> PaletteOption(i, p.name) }
+    }
+    // Al detectar paletas en la ROM, selecciona la primera (color real) por defecto.
+    LaunchedEffect(detected) {
+        paletteIndex = if (detected.isNotEmpty()) 0 else -1
     }
 
     // Autodetección de zonas con gráficos sin comprimir para el offset elegido.
@@ -159,7 +169,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 if (available <= 0) return@runCatching null
                 val count = tiles.coerceIn(1, minOf(available, 1024))
                 val palette = detected.getOrNull(paletteIndex)?.colors
-                    ?: grayscalePalette(format.colorCount)
+                    ?: defaultColorPalette(format.colorCount)
                 val sheet = SnesAssetExtractor.extractTileSheet(
                     tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
                 )

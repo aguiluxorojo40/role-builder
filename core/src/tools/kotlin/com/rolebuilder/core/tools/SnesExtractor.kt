@@ -144,9 +144,12 @@ fun main(args: Array<String>) {
     val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
     val tileCount = (opts["tiles"]?.let { parseInt(it) } ?: available).coerceIn(1, minOf(available, 256))
 
+    // Paleta: offset explícito > primera paleta detectada en la ROM > colores vivos.
     val palette: IntArray = opts["palette-offset"]?.let {
         SnesDecoder.parsePalette(rom, parseInt(it), format.colorCount)
-    } ?: defaultPalette(format.colorCount)
+    } ?: SnesDecoder.scanRomForPalettes(rom).firstOrNull()?.also {
+        println("Paleta autodetectada: ${it.name}")
+    }?.colors ?: defaultPalette(format.colorCount)
 
     val name = opts["name"] ?: "snes"
     val sheet = SnesAssetExtractor.extractTileSheet(tileRom, tileOffset, format, palette, tileCount, columns)
@@ -199,16 +202,16 @@ private fun parseFormat(s: String): SnesGraphicFormat = when (s.lowercase()) {
     else -> error("Formato desconocido: $s (usa 2bpp|4bpp|8bpp|gb2bpp|nes2bpp)")
 }
 
-/** Paleta por defecto (degradado + acentos) cuando no se indica un offset CGRAM. */
-private fun defaultPalette(colorCount: Int): IntArray = IntArray(colorCount) { i ->
-    when (i) {
-        0 -> 0x00000000 // transparente
-        else -> {
-            val t = i * 255 / maxOf(1, colorCount - 1)
-            (0xFF shl 24) or (t shl 16) or (t shl 8) or t
-        }
-    }
-}
+/** Colores vivos de respaldo (índice 0 transparente): la salida siempre en color. */
+private val VIVID_16 = intArrayOf(
+    0x00000000, 0xFFE53935.toInt(), 0xFF43A047.toInt(), 0xFF1E88E5.toInt(),
+    0xFFFDD835.toInt(), 0xFF8E24AA.toInt(), 0xFF00ACC1.toInt(), 0xFFF5F5F5.toInt(),
+    0xFF6D4C41.toInt(), 0xFFFF7043.toInt(), 0xFF9CCC65.toInt(), 0xFF5C6BC0.toInt(),
+    0xFFFFB300.toInt(), 0xFFEC407A.toInt(), 0xFF26A69A.toInt(), 0xFF212121.toInt(),
+)
+
+private fun defaultPalette(colorCount: Int): IntArray =
+    IntArray(colorCount) { i -> if (i < VIVID_16.size) VIVID_16[i] else 0xFF000000.toInt() }
 
 private fun toBufferedImage(img: ArgbImage): BufferedImage {
     val out = BufferedImage(img.width, img.height, BufferedImage.TYPE_INT_ARGB)
