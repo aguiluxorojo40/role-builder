@@ -172,6 +172,13 @@ class RpgEngine(
         effects.clear()
         parallelInterpreters.clear()
         refreshEventPages()
+        // Los eventos bajo el punto de llegada no se re-disparan al aparecer
+        // (permite puertas de ida y vuelta en la misma casilla sin bucles).
+        for (entity in events) {
+            if (entity.tileX == player.tileX && entity.tileY == player.tileY) {
+                entity.touchLatch = true
+            }
+        }
         currentBgm = map.bgm
         mapChanged = true
     }
@@ -433,6 +440,9 @@ class RpgEngine(
             else -> Direction.DOWN
         }
 
+        // Zonas conectadas: cruzar el borde pasa al mapa vecino.
+        if (crossEdgeIfConnected(nx, ny)) return
+
         // Disparadores por contacto: al entrar en la casilla del evento...
         if (p.tileX != beforeTileX || p.tileY != beforeTileY) {
             triggerTouchIfAny(p.tileX, p.tileY)
@@ -449,6 +459,35 @@ class RpgEngine(
                 if (!adjacent) e.touchLatch = false
             }
         }
+    }
+
+    /**
+     * Si el jugador empuja contra un borde con mapa vecino conectado, lo
+     * transfiere al lado opuesto conservando su fila/columna. Devuelve true
+     * si hubo transferencia.
+     */
+    private fun crossEdgeIfConnected(ix: Float, iy: Float): Boolean {
+        val p = player
+        val map = currentMap
+        val margin = CHAR_HALF_BOX + 0.1f
+
+        fun goTo(targetId: Int, dir: Direction): Boolean {
+            val target = data.maps[targetId] ?: return false
+            val (tx, ty) = when (dir) {
+                Direction.LEFT -> (target.width - 1) to p.tileY.coerceIn(0, target.height - 1)
+                Direction.RIGHT -> 0 to p.tileY.coerceIn(0, target.height - 1)
+                Direction.UP -> p.tileX.coerceIn(0, target.width - 1) to (target.height - 1)
+                Direction.DOWN -> p.tileX.coerceIn(0, target.width - 1) to 0
+            }
+            transferPlayer(targetId, tx, ty, dir)
+            return true
+        }
+
+        map.edgeWest?.let { if (ix < -0.3f && p.x <= margin) return goTo(it, Direction.LEFT) }
+        map.edgeEast?.let { if (ix > 0.3f && p.x >= map.width - margin) return goTo(it, Direction.RIGHT) }
+        map.edgeNorth?.let { if (iy < -0.3f && p.y <= margin) return goTo(it, Direction.UP) }
+        map.edgeSouth?.let { if (iy > 0.3f && p.y >= map.height - margin) return goTo(it, Direction.DOWN) }
+        return false
     }
 
     private fun updatePlayerRoute(dt: Float) {

@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -64,8 +66,12 @@ import com.rolebuilder.core.model.ParallaxLayer
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.model.MusicTracks
 import com.rolebuilder.core.model.Weather
+import com.rolebuilder.core.model.event.Direction
+import com.rolebuilder.core.model.event.EventCommand
 import com.rolebuilder.core.model.event.EventPage
+import com.rolebuilder.core.model.event.EventTrigger
 import com.rolebuilder.core.model.event.MapEvent
+import com.rolebuilder.editor.Edge
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.event.EventEditorDialog
 import com.rolebuilder.editor.event.musicName
@@ -81,6 +87,7 @@ private enum class Tool(val label: String) {
     ERASE("Borrar"),
     EVENT("Evento"),
     SPAWN("Enemigo"),
+    DOOR("Puerta"),
     START("Inicio"),
 }
 
@@ -110,6 +117,10 @@ fun MapEditorTab(state: EditorState) {
     var editingEventId by remember { mutableStateOf<Int?>(null) }
     var showMapSettings by remember { mutableStateOf(false) }
     var showNewMap by remember { mutableStateOf(false) }
+    // Casilla tocada por última vez (indicador de coordenadas del tablero).
+    var hoverTile by remember(map.id) { mutableStateOf<Pair<Int, Int>?>(null) }
+    // Casilla de origen de una puerta en construcción (abre el selector de destino).
+    var doorOrigin by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     Column(Modifier.fillMaxSize()) {
         // ---------- barra superior: mapa + herramientas ----------
@@ -180,6 +191,7 @@ fun MapEditorTab(state: EditorState) {
                                 lastTile = tx to ty
                                 val current = state.currentMap ?: return
                                 if (!current.inBounds(tx, ty)) return
+                                hoverTile = tx to ty
                                 when (tool) {
                                     Tool.PAINT -> state.updateMap(current.withTile(layer, tx, ty, selectedTile))
                                     Tool.ERASE -> state.updateMap(
@@ -211,6 +223,7 @@ fun MapEditorTab(state: EditorState) {
                                             },
                                         )
                                     }
+                                    Tool.DOOR -> doorOrigin = tx to ty
                                     Tool.START -> state.updateProject(
                                         state.project.copy(startMapId = current.id, startX = tx, startY = ty),
                                     )
@@ -264,6 +277,28 @@ fun MapEditorTab(state: EditorState) {
                     },
                 )
             }
+
+            // Indicador de coordenadas del tablero (la casilla tocada).
+            hoverTile?.let { (hx, hy) ->
+                Text(
+                    "x: $hx  y: $hy",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(Color(0xCC101426), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
+            Text(
+                "${map.width} × ${map.height} casillas",
+                color = Color.White.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp),
+            )
         }
 
         // ---------- paleta ----------
@@ -290,12 +325,24 @@ fun MapEditorTab(state: EditorState) {
                 }
             }
             Tool.EVENT -> HintBar("Toca una casilla para crear o editar un evento.")
+            Tool.DOOR -> HintBar("Toca la casilla de la puerta/entrada; luego elige el mapa y la casilla de destino.")
             Tool.START -> HintBar("Toca una casilla para fijar el punto de inicio del jugador.")
             Tool.ERASE -> HintBar("Arrastra para borrar tiles de la capa activa.")
         }
     }
 
     // ---------- diálogos ----------
+    doorOrigin?.let { (ox, oy) ->
+        DoorDialog(
+            state = state,
+            originMap = map,
+            originX = ox,
+            originY = oy,
+            onDismiss = { doorOrigin = null },
+            onDone = { doorOrigin = null },
+        )
+    }
+
     editingEventId?.let { eventId ->
         val current = state.currentMap
         val event = current?.events?.firstOrNull { it.id == eventId }
@@ -383,6 +430,21 @@ fun MapEditorTab(state: EditorState) {
                         onSelect = { weather = it },
                     )
 
+                    Text("Zonas conectadas por los bordes", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Al cruzar un borde caminando, el jugador pasa al mapa vecino por el lado opuesto. Se conecta en ambos sentidos automáticamente.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Edge.entries.forEach { edge ->
+                        DropdownField(
+                            label = edge.label,
+                            options = listOf<Int?>(null) + state.mapList.map { it.id }.filter { it != map.id },
+                            selected = edge.get(state.map(map.id) ?: map),
+                            optionLabel = { id -> id?.let { state.map(it)?.name ?: "Mapa $it" } ?: "(borde cerrado)" },
+                            onSelect = { state.setEdge(map.id, edge, it) },
+                        )
+                    }
+
                     Text("Parallax (profundidad de diorama)", style = MaterialTheme.typography.titleSmall)
                     parallax.forEachIndexed { index, layer ->
                         fun change(updated: ParallaxLayer) {
@@ -458,13 +520,15 @@ fun MapEditorTab(state: EditorState) {
             },
             confirmButton = {
                 Button(onClick = {
-                    var updated = map.copy(
+                    // Parte del mapa VIVO para no pisar los bordes ya conectados.
+                    val base = state.map(map.id) ?: map
+                    var updated = base.copy(
                         name = name,
                         bgm = bgm,
                         weather = weather,
                         parallaxLayers = parallax.filter { it.image.isNotBlank() },
                     )
-                    if (width != map.width || height != map.height) {
+                    if (width != base.width || height != base.height) {
                         updated = updated.resized(width, height)
                     }
                     state.updateMap(updated)
@@ -611,5 +675,179 @@ private fun DrawScope.drawMap(
         val center = Offset(pan.x + (sx + 0.5f) * tilePx, pan.y + (sy + 0.5f) * tilePx)
         drawCircle(Color(0xCCFFC94D), radius = tilePx * 0.35f, center = center)
         drawCircle(Color(0xFF3A2E00), radius = tilePx * 0.15f, center = center)
+    }
+}
+
+// =============================================================================
+// Herramienta Puerta: conecta dos casillas con transferencia (y vuelta)
+// =============================================================================
+
+/**
+ * Crea una puerta desde ([originX], [originY]) del [originMap]: se elige el
+ * mapa destino y la casilla de llegada TOCÁNDOLA en una miniatura, sin
+ * escribir coordenadas. Opcionalmente crea la puerta de vuelta.
+ */
+@Composable
+private fun DoorDialog(
+    state: EditorState,
+    originMap: GameMap,
+    originX: Int,
+    originY: Int,
+    onDismiss: () -> Unit,
+    onDone: () -> Unit,
+) {
+    val others = state.mapList.filter { it.id != originMap.id }
+    if (others.isEmpty()) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Puerta") },
+            text = { Text("Crea otro mapa primero para poder conectar la puerta con él.") },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("Entendido") } },
+        )
+        return
+    }
+
+    var destId by remember { mutableIntStateOf(others.first().id) }
+    val destMap = state.map(destId) ?: others.first()
+    var arrival by remember(destId) { mutableStateOf<Pair<Int, Int>?>(null) }
+    var returnDoor by remember { mutableStateOf(true) }
+
+    val destTileset = state.database.tileset(destMap.tilesetId) ?: state.database.tilesets.firstOrNull()
+    val destBitmap = remember(destMap.tilesetId) {
+        destTileset?.let { loadImageBitmap(state.projectDir, it.image) }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Puerta desde ($originX, $originY)") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                DropdownField(
+                    label = "Mapa de destino",
+                    options = others.map { it.id },
+                    selected = destId,
+                    optionLabel = { id -> state.map(id)?.let { "${it.id}: ${it.name}" } ?: "Mapa $id" },
+                    onSelect = { destId = it },
+                )
+                Text(
+                    "Toca la casilla de llegada en el mapa de destino:",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                MiniMapPicker(
+                    map = destMap,
+                    tileset = destTileset,
+                    bitmap = destBitmap,
+                    selected = arrival,
+                    onPick = { arrival = it },
+                )
+                arrival?.let { (ax, ay) ->
+                    Text("Llegada: ($ax, $ay)", style = MaterialTheme.typography.labelLarge)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = returnDoor, onCheckedChange = { returnDoor = it })
+                    Text("Crear también la puerta de vuelta")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = arrival != null,
+                onClick = {
+                    val (ax, ay) = arrival ?: return@TextButton
+                    // Puerta de ida en el mapa de origen.
+                    val origin = state.map(originMap.id) ?: originMap
+                    val door = doorEvent(origin.nextEventId(), originX, originY, destId, ax, ay)
+                    state.updateMap(origin.copy(events = origin.events + door))
+                    // Puerta de vuelta en el mapa de destino.
+                    if (returnDoor) {
+                        val dest = state.map(destId) ?: destMap
+                        val back = doorEvent(dest.nextEventId(), ax, ay, originMap.id, originX, originY)
+                        state.updateMap(dest.copy(events = dest.events + back))
+                    }
+                    onDone()
+                },
+            ) { Text("Crear puerta") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+/** Evento de puerta invisible: al pisarlo, transfiere al jugador al destino. */
+private fun doorEvent(id: Int, x: Int, y: Int, destMapId: Int, destX: Int, destY: Int): MapEvent =
+    MapEvent(
+        id = id,
+        name = "Puerta → mapa $destMapId",
+        x = x,
+        y = y,
+        pages = listOf(
+            EventPage(
+                trigger = EventTrigger.PLAYER_TOUCH,
+                passable = true,
+                commands = listOf(
+                    EventCommand.PlaySound("select"),
+                    EventCommand.TransferPlayer(mapId = destMapId, x = destX, y = destY, direction = Direction.DOWN),
+                ),
+            ),
+        ),
+    )
+
+/** Miniatura del mapa destino; un toque elige la casilla de llegada. */
+@Composable
+private fun MiniMapPicker(
+    map: GameMap,
+    tileset: Tileset?,
+    bitmap: ImageBitmap?,
+    selected: Pair<Int, Int>?,
+    onPick: (Pair<Int, Int>) -> Unit,
+) {
+    // Escala para caber en ~280 dp de ancho, con un mínimo legible por casilla.
+    val cell = (280f / map.width).coerceIn(6f, 22f)
+    val heightDp = (cell * map.height).dp
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(heightDp)
+            .background(Color(0xFF0A0E1A))
+            .pointerInput(map.id) {
+                detectTapGestures { offset ->
+                    val tilePx = size.width / map.width
+                    val tx = (offset.x / tilePx).toInt().coerceIn(0, map.width - 1)
+                    val ty = (offset.y / tilePx).toInt().coerceIn(0, map.height - 1)
+                    onPick(tx to ty)
+                }
+            },
+    ) {
+        val tilePx = size.width / map.width
+        if (tileset != null && bitmap != null) {
+            for (layer in map.layers.indices) {
+                for (ty in 0 until map.height) {
+                    for (tx in 0 until map.width) {
+                        val tile = map.tileAt(layer, tx, ty)
+                        if (tile < 0) continue
+                        val col = tile % tileset.columns
+                        val row = tile / tileset.columns
+                        drawImage(
+                            image = bitmap,
+                            srcOffset = IntOffset(col * tileset.tileSize, row * tileset.tileSize),
+                            srcSize = IntSize(tileset.tileSize, tileset.tileSize),
+                            dstOffset = IntOffset((tx * tilePx).toInt(), (ty * tilePx).toInt()),
+                            dstSize = IntSize(tilePx.toInt() + 1, tilePx.toInt() + 1),
+                        )
+                    }
+                }
+            }
+        }
+        selected?.let { (sx, sy) ->
+            drawRect(
+                Color(0xFFFFC94D),
+                topLeft = Offset(sx * tilePx, sy * tilePx),
+                size = Size(tilePx, tilePx),
+                style = Stroke(width = 3f),
+            )
+        }
     }
 }

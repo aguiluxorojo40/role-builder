@@ -27,6 +27,15 @@ data class GameMap(
     val weather: Weather = Weather.NONE,
     /** Capas de parallax (cielo lejano, niebla...) que dibuja el runtime. */
     val parallaxLayers: List<ParallaxLayer> = emptyList(),
+    /**
+     * Zonas conectadas por los bordes: id del mapa vecino en cada dirección
+     * (null = borde cerrado). Al cruzar el borde caminando, el jugador pasa
+     * al mapa vecino por el lado opuesto, conservando su fila/columna.
+     */
+    val edgeNorth: Int? = null,
+    val edgeSouth: Int? = null,
+    val edgeWest: Int? = null,
+    val edgeEast: Int? = null,
 ) {
     fun inBounds(x: Int, y: Int): Boolean = x in 0 until width && y in 0 until height
 
