@@ -6,6 +6,8 @@ import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
+import com.rolebuilder.core.snes.compression.CompressionCodecs
+import com.rolebuilder.core.snes.compression.LcLz2
 import kotlinx.serialization.json.Json
 import java.awt.image.BufferedImage
 import java.io.File
@@ -37,9 +39,18 @@ fun main(args: Array<String>) {
 
     // Modo demo: fabrica una ROM procedural (sin material con copyright) y la extrae.
     val demoDir = opts["demo"]
+    val demoCompressedDir = opts["demo-compressed"]
     val romFile: File
     val outDir: File
-    if (demoDir != null) {
+    if (demoCompressedDir != null) {
+        // ROM de prueba con gráficos COMPRIMIDOS en LC_LZ2 a partir de 0x1000,
+        // para demostrar la descompresión sin usar ninguna ROM con copyright.
+        outDir = File(demoCompressedDir).also { it.mkdirs() }
+        romFile = File(outDir, "demo_lz2.sfc")
+        romFile.writeBytes(buildCompressedDemoRom())
+        println("ROM comprimida de prueba: ${romFile.absolutePath}")
+        println("Pruébala con:  --rom ${romFile.name} --offset 0x1000 --decompress auto --format 4bpp")
+    } else if (demoDir != null) {
         outDir = File(demoDir).also { it.mkdirs() }
         romFile = File(outDir, "demo.sfc")
         romFile.writeBytes(buildDemoRom())
@@ -65,14 +76,29 @@ fun main(args: Array<String>) {
 
     val format = parseFormat(opts["format"] ?: "4bpp")
 
-    // Modo --scan: autodetecta zonas con gráficos SIN comprimir y las lista.
+    // Modo --scan: autodetecta zonas con gráficos. Con --decompress prueba a
+    // descomprimir en cada offset (localiza bloques comprimidos); sin él, busca
+    // gráficos sin comprimir.
     if (opts.containsKey("scan")) {
-        val candidates = SnesGraphicsScanner.findCandidates(rom, format)
-        if (candidates.isEmpty()) {
-            println("No se encontraron zonas gráficas evidentes con $format (¿gráficos comprimidos?).")
+        val scanDecompress = opts["decompress"]
+        if (scanDecompress != null) {
+            val hits = scanForCompressedGraphics(rom, format)
+            if (hits.isEmpty()) {
+                println("No se encontraron bloques descomprimibles con gráficos (¿otro formato de compresión?).")
+            } else {
+                println("Bloques comprimidos con gráficos ($format), prueba: --offset <X> --decompress auto")
+                hits.forEach { (off, score, size) ->
+                    println("  0x${off.toString(16).uppercase()}  (coherencia ${"%.2f".format(score)}, ${size}B)")
+                }
+            }
         } else {
-            println("Candidatos de gráficos ($format), prueba estos offsets:")
-            candidates.forEach { println("  0x${it.offset.toString(16).uppercase()}  (score ${"%.2f".format(it.score)})") }
+            val candidates = SnesGraphicsScanner.findCandidates(rom, format)
+            if (candidates.isEmpty()) {
+                println("No se encontraron zonas gráficas evidentes con $format (¿gráficos comprimidos?).")
+            } else {
+                println("Candidatos de gráficos SIN comprimir ($format), prueba estos offsets:")
+                candidates.forEach { println("  0x${it.offset.toString(16).uppercase()}  (score ${"%.2f".format(it.score)})") }
+            }
         }
         return
     }
@@ -82,8 +108,40 @@ fun main(args: Array<String>) {
         ?: SnesGraphicsScanner.findCandidates(rom, format).firstOrNull()?.offset?.also {
             println("Offset autodetectado: 0x${it.toString(16).uppercase()} (usa --offset para fijarlo)")
         } ?: 0
+    // --decompress <auto|nombre>: descomprime el bloque en offset y extrae de su salida.
+    // Los tiles salen de los bytes descomprimidos; la paleta sigue leyéndose de la ROM.
+    val decompressMode = opts["decompress"]
+    val tileRom: ByteArray
+    val tileOffset: Int
+    if (decompressMode != null) {
+        val data = when {
+            decompressMode.equals("auto", true) -> {
+                val auto = CompressionCodecs.autoDecompress(rom, offset, format)
+                if (auto == null) {
+                    System.err.println("Ningún códec conocido produjo gráficos en 0x${offset.toString(16).uppercase()}.")
+                    return
+                }
+                println("Códec detectado: ${auto.codec.name} (coherencia ${"%.2f".format(auto.score)})")
+                auto.result.data
+            }
+            else -> {
+                val codec = CompressionCodecs.all.firstOrNull { it.name.contains(decompressMode, true) }
+                    ?: CompressionCodecs.all.first()
+                runCatching { codec.decompress(rom, offset) }.getOrElse {
+                    System.err.println("No se pudo descomprimir con ${codec.name}: ${it.message}")
+                    return
+                }.also { println("Descomprimidos ${it.data.size} bytes con ${codec.name}") }.data
+            }
+        }
+        tileRom = data
+        tileOffset = 0
+    } else {
+        tileRom = rom
+        tileOffset = offset
+    }
+
     val columns = parseInt(opts["columns"] ?: "16")
-    val available = SnesAssetExtractor.availableTiles(rom.size, offset, format)
+    val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
     val tileCount = (opts["tiles"]?.let { parseInt(it) } ?: available).coerceIn(1, minOf(available, 256))
 
     val palette: IntArray = opts["palette-offset"]?.let {
@@ -91,7 +149,7 @@ fun main(args: Array<String>) {
     } ?: defaultPalette(format.colorCount)
 
     val name = opts["name"] ?: "snes"
-    val sheet = SnesAssetExtractor.extractTileSheet(rom, offset, format, palette, tileCount, columns)
+    val sheet = SnesAssetExtractor.extractTileSheet(tileRom, tileOffset, format, palette, tileCount, columns)
     val imageName = "$name.png"
 
     val imagesDir = File(outDir, "images").also { it.mkdirs() }
@@ -218,6 +276,76 @@ private fun buildDemoRom(): ByteArray {
     return rom
 }
 
+/**
+ * Como [buildDemoRom] pero con gráficos COMPRIMIDOS en LC_LZ2 a partir de 0x1000
+ * (tiles con zonas planas, coherentes). Sirve para demostrar y probar la
+ * descompresión de punta a punta sin usar ninguna ROM con derechos de autor.
+ */
+private fun buildCompressedDemoRom(): ByteArray {
+    val rom = buildDemoRom() // reutiliza cabecera y paleta CGRAM en 0x100
+
+    // Genera 64 tiles 4bpp "gráficos" (fondo plano + una cruz de otro color).
+    val gfx = ByteArray(32 * 64)
+    var p = 0
+    var tileNo = 0
+    while (p + 32 <= gfx.size) {
+        val base = tileNo % 16
+        val mark = (base + 1) % 16
+        for (y in 0..7) {
+            val planes = IntArray(4)
+            for (x in 0..7) {
+                val value = if (x == 3 || y == 3) mark else base
+                for (bit in 0..3) if ((value shr bit) and 1 == 1) planes[bit] = planes[bit] or (1 shl (7 - x))
+            }
+            gfx[p + 2 * y] = planes[0].toByte()
+            gfx[p + 2 * y + 1] = planes[1].toByte()
+            gfx[p + 16 + 2 * y] = planes[2].toByte()
+            gfx[p + 16 + 2 * y + 1] = planes[3].toByte()
+        }
+        p += 32; tileNo++
+    }
+
+    val compressed = LcLz2.compress(gfx)
+    compressed.copyInto(rom, destinationOffset = 0x1000)
+    return rom
+}
+
+/**
+ * Recorre la ROM probando a descomprimir en cada offset con los códecs conocidos
+ * y devuelve los offsets cuya salida "parece un dibujo". Localiza bloques
+ * comprimidos sin conocer las tablas de punteros internas del juego.
+ */
+private fun scanForCompressedGraphics(
+    rom: ByteArray,
+    format: SnesGraphicFormat,
+    minScore: Double = 0.42,
+    maxResults: Int = 24,
+): List<Triple<Int, Double, Int>> {
+    // Los bloques comprimidos empiezan en cualquier byte (no están alineados), así
+    // que se prueba byte a byte; tras un acierto se salta el bloque consumido para
+    // no repetir casi-duplicados. Se acota la salida para que el barrido sea rápido.
+    val hits = ArrayList<Triple<Int, Double, Int>>()
+    val minBytes = format.bytesPerTile * 32
+    var offset = 0
+    while (offset < rom.size - 3) {
+        var advanced = false
+        for (codec in CompressionCodecs.all) {
+            val res = runCatching { codec.decompress(rom, offset, 0x4000) }.getOrNull() ?: continue
+            if (res.data.size >= minBytes) {
+                val score = CompressionCodecs.graphicScore(res.data, format)
+                if (score >= minScore) {
+                    hits.add(Triple(offset, score, res.data.size))
+                    offset += maxOf(1, res.consumedBytes) // saltar el bloque encontrado
+                    advanced = true
+                    break
+                }
+            }
+        }
+        if (!advanced) offset++
+    }
+    return hits.sortedByDescending { it.second }.take(maxResults).sortedBy { it.first }
+}
+
 private fun printUsage() {
     println(
         """
@@ -225,6 +353,8 @@ private fun printUsage() {
           --rom <ruta> --out <dir> [--offset 0x2000] --format 4bpp [--tiles N] [--columns 16]
           [--palette-offset 0x100] [--name terreno]
           --rom <ruta> --format 4bpp --scan   (autodetecta offsets con gráficos)
+          [--decompress auto|lc_lz2]          (descomprime el bloque antes de extraer)
+          --demo-compressed <dir>             (ROM de prueba con gráficos LC_LZ2)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()
