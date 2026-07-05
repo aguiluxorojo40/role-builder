@@ -25,6 +25,12 @@ ruido porque están comprimidas.
 > de la app: es que ese juego comprime sus gráficos. Prueba otro juego o busca
 > las zonas sin comprimir (fuentes de texto, iconos del HUD y logos suelen estarlo).
 
+> **Ejemplo real (Secret of Mana):** es un juego que comprime casi todo su arte
+> (hasta la intro se diseñó pensando en lo rápido que podían descomprimir). Al
+> recorrerlo verás sobre todo ruido; el **Auto-buscar** encontrará solo unas
+> pocas zonas con estructura. Es un mal candidato para practicar: elige un juego
+> que no comprima sus gráficos y tendrás éxito a la primera.
+
 ---
 
 ## 2. Vocabulario mínimo
@@ -138,9 +144,12 @@ Genera un PNG en `salida/images/` y un `*.tileset.json` que describe la rejilla.
   el índice de color de cada píxel combinando los bits de cada plano.
 - Los **colores** se guardan en 15 bits `0bbbbbgg gggrrrrr` (BGR); se escalan a
   RGB de 8 bits para pintarlos.
-- El **autodetector** recorre la ROM en ventanas y las puntúa: descarta las casi
-  vacías (relleno) y las de entropía casi máxima (código o datos comprimidos), y
-  favorece la entropía media típica de gráficos indexados sin comprimir.
+- El **autodetector** recorre la ROM en ventanas, **decodifica** cada una como
+  tiles y mide su **coherencia espacial**: qué fracción de píxeles contiguos
+  comparten color. Un dibujo real tiene grandes zonas planas (coherencia alta);
+  el ruido de datos comprimidos o de código casi no la tiene. Así, en un juego
+  que comprime su arte, devuelve pocos candidatos —la respuesta honesta— en vez
+  de mandarte a ruido. No descomprime nada: solo localiza lo que ya está claro.
 - Toda esta lógica vive en `core/snes` (Kotlin puro) y está cubierta por tests
   JVM, así que se ejecuta igual en el móvil que en el escritorio.
 
