@@ -37,3 +37,15 @@ tasks.register<JavaExec>("generateDefaultAssets") {
     systemProperty("java.awt.headless", "true")
     args(rootDir.resolve("app/src/main/assets/default_project").absolutePath)
 }
+
+// Extrae una hoja de tiles (PNG + Tileset JSON) desde una ROM de SNES usando el
+// decodificador de :core. Pasa los argumentos con --args, por ejemplo:
+//   ./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp"
+//   ./gradlew :core:extractSnesTileset --args="--demo out"
+tasks.register<JavaExec>("extractSnesTileset") {
+    group = "rolebuilder"
+    description = "Extrae assets gráficos de una ROM de SNES (usa --args para las opciones)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SnesExtractorKt")
+    systemProperty("java.awt.headless", "true")
+}

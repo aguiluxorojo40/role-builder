@@ -91,6 +91,11 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 
 # Regenerar los assets de la plantilla (tileset y sprites procedurales + JSON)
 ./gradlew :core:generateDefaultAssets
+
+# Extraer una hoja de tiles desde una ROM de SNES (PNG + Tileset JSON)
+./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --palette-offset 0x100"
+# o probar con una ROM de ejemplo generada al vuelo (sin material con copyright):
+./gradlew :core:extractSnesTileset --args="--demo out"
 ```
 
 - minSdk 26 (Android 8.0), target 34, OpenGL ES 3.0.
