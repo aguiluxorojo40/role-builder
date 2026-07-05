@@ -150,19 +150,48 @@ class SnesDecoderTest {
         }
     }
 
-    @Test
-    fun `scanRomForPalettes encuentra un bloque CGRAM de 16 colores`() {
-        val rom = ByteArray(0x400)
-        // Escribe 16 colores unicos con bit 15 = 0 en el offset 0.
+    /** Escribe 16 colores BGR15 (bit15=0) little-endian en [rom] desde [at]. */
+    private fun writePalette(rom: ByteArray, at: Int, colors: IntArray) {
         for (i in 0 until 16) {
-            val bgr = (i * 0x111) and 0x7FFF // variados, bit15 a 0
-            rom[2 * i] = (bgr and 0xFF).toByte()
-            rom[2 * i + 1] = ((bgr shr 8) and 0xFF).toByte()
+            val bgr = colors[i] and 0x7FFF
+            rom[at + 2 * i] = (bgr and 0xFF).toByte()
+            rom[at + 2 * i + 1] = ((bgr shr 8) and 0xFF).toByte()
         }
+    }
+
+    // Rampa gris de 16 pasos: un color oscuro + brillo creciente (pinta de paleta real).
+    private fun grayRamp(): IntArray = IntArray(16) { i ->
+        val c = i * 2 // 0..30 en cada canal de 5 bits
+        (c shl 10) or (c shl 5) or c
+    }
+
+    @Test
+    fun `scanRomForPalettes encuentra un bloque CGRAM aislado`() {
+        // Relleno inválido (bit15=1 en todo) salvo una paleta real en 0x40.
+        val rom = ByteArray(0x400) { 0xFF.toByte() }
+        writePalette(rom, 0x40, grayRamp())
         val palettes = SnesDecoder.scanRomForPalettes(rom, minUniqueColors = 8)
-        assertTrue(palettes.isNotEmpty())
-        assertEquals(0, palettes.first().offset)
+        assertTrue(palettes.isNotEmpty(), "debería encontrar la paleta")
+        assertEquals(0x40, palettes.first().offset)
         assertEquals(16, palettes.first().size)
+    }
+
+    @Test
+    fun `scanRomForPalettes ordena por calidad y deduplica cercanas`() {
+        val rom = ByteArray(0x400) { 0xFF.toByte() }
+        // Paleta "buena": rampa suave con oscuro. Paleta "pobre": saltos bruscos, sin oscuro.
+        val good = grayRamp()
+        val poor = IntArray(16) { i -> if (i % 2 == 0) 0x7FFF else 0x0421 } // 2 colores alternos, brusca
+        writePalette(rom, 0x100, poor)
+        writePalette(rom, 0x200, good)
+        val palettes = SnesDecoder.scanRomForPalettes(rom, minUniqueColors = 2)
+        // La buena (rampa + oscuro) debe rankear por delante de la pobre.
+        assertEquals(0x200, palettes.first().offset, "la paleta de más calidad va primera")
+        // Dedup: no debe haber dos resultados a menos de 32 bytes entre sí.
+        val offs = palettes.map { it.offset!! }.sorted()
+        for (i in 1 until offs.size) {
+            assertTrue(offs[i] - offs[i - 1] >= 32, "resultados demasiado cercanos: ${offs[i-1]} y ${offs[i]}")
+        }
     }
 
     // ------------------------------------------------------ extractor
