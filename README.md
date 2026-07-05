@@ -19,6 +19,9 @@ externos: editor y motor son la misma app.
 - Base de datos: actores, enemigos (comportamiento, visión, drops), objetos,
   habilidades (melee/proyectil) y colisión del tileset.
 - Importación de imágenes PNG propias (tilesets y hojas de personaje 3×4).
+- **Extracción de assets de ROMs de Super Nintendo**: carga una ROM (.smc/.sfc)
+  y decodifica sus gráficos planares (2bpp/4bpp/8bpp) y paletas CGRAM
+  directamente en el dispositivo para convertirlos en tilesets del proyecto.
 - Exporta tu juego como .zip para compartirlo e importa los de otros.
 - Botón ▶ para probar el juego al instante.
 
@@ -45,6 +48,9 @@ core/   Kotlin JVM puro, sin dependencias de Android
             eventos y comandos como jerarquía sellada)
   engine/   RpgEngine.tick(dt): movimiento, colisiones, combate, intérprete
   io/       Carga/guardado de proyectos y partidas (kotlinx.serialization)
+  snes/     Extracción de assets de ROMs de SNES: decodificador planar
+            (2/4/8bpp), lectura de cabecera y paletas, y composición de hojas
+            de tiles ARGB que se convierten en un Tileset del proyecto
 
 app/    Aplicación Android (solo UI y render)
   editor/   Editor Compose: mapas, eventos, base de datos, ajustes
@@ -53,8 +59,9 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (34 tests: serialización, movimiento, intérprete, combate y el proyecto
-demo completo). `app` solo dibuja el estado del motor y le pasa el input.
+JVM rápidos (110 tests: serialización, movimiento, intérprete, combate, extracción
+de assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del
+motor y le pasa el input.
 
 ## Formato de proyecto
 
