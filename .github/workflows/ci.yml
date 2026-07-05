@@ -60,17 +60,19 @@ jobs:
           name: role-builder-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
-      # Release rodante con enlace de descarga estable (solo en esta rama).
+      # Release rodante con enlace de descarga estable. La rama principal publica
+      # en 'apk-latest'; la rama del extractor de SNES publica en 'apk-snes-latest'
+      # para no pisar la anterior.
       - name: Preparar APK con nombre
-        if: github.ref_name == 'claude/android-rpg-engine-jsrssr'
+        if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch'
         run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
 
-      - name: Actualizar release rodante (apk-latest)
-        if: github.ref_name == 'claude/android-rpg-engine-jsrssr'
+      - name: Actualizar release rodante
+        if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-latest
-          name: APK más reciente (debug)
+          tag_name: ${{ github.ref_name == 'claude/snes-asset-extraction-htsbch' && 'apk-snes-latest' || 'apk-latest' }}
+          name: ${{ github.ref_name == 'claude/snes-asset-extraction-htsbch' && 'APK con extractor de SNES (debug)' || 'APK más reciente (debug)' }}
           prerelease: true
           body: APK de depuración compilada automáticamente a partir del último push de la rama.
           files: role-builder-debug.apk

@@ -5,6 +5,7 @@ import com.rolebuilder.core.snes.ArgbImage
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
+import com.rolebuilder.core.snes.SnesGraphicsScanner
 import kotlinx.serialization.json.Json
 import java.awt.image.BufferedImage
 import java.io.File
@@ -63,7 +64,24 @@ fun main(args: Array<String>) {
     println("  ${header.country} · ${header.licensee} · checksum ${if (header.isChecksumValid) "válido" else "no válido"}")
 
     val format = parseFormat(opts["format"] ?: "4bpp")
-    val offset = parseInt(opts["offset"] ?: "0")
+
+    // Modo --scan: autodetecta zonas con gráficos SIN comprimir y las lista.
+    if (opts.containsKey("scan")) {
+        val candidates = SnesGraphicsScanner.findCandidates(rom, format)
+        if (candidates.isEmpty()) {
+            println("No se encontraron zonas gráficas evidentes con $format (¿gráficos comprimidos?).")
+        } else {
+            println("Candidatos de gráficos ($format), prueba estos offsets:")
+            candidates.forEach { println("  0x${it.offset.toString(16).uppercase()}  (score ${"%.2f".format(it.score)})") }
+        }
+        return
+    }
+
+    // Si no se indica offset, se autodetecta el mejor candidato.
+    val offset = opts["offset"]?.let { parseInt(it) }
+        ?: SnesGraphicsScanner.findCandidates(rom, format).firstOrNull()?.offset?.also {
+            println("Offset autodetectado: 0x${it.toString(16).uppercase()} (usa --offset para fijarlo)")
+        } ?: 0
     val columns = parseInt(opts["columns"] ?: "16")
     val available = SnesAssetExtractor.availableTiles(rom.size, offset, format)
     val tileCount = (opts["tiles"]?.let { parseInt(it) } ?: available).coerceIn(1, minOf(available, 256))
@@ -204,9 +222,11 @@ private fun printUsage() {
     println(
         """
         Extractor de assets de ROM de SNES
-          --rom <ruta> --out <dir> --offset 0x2000 --format 4bpp [--tiles N] [--columns 16]
+          --rom <ruta> --out <dir> [--offset 0x2000] --format 4bpp [--tiles N] [--columns 16]
           [--palette-offset 0x100] [--name terreno]
+          --rom <ruta> --format 4bpp --scan   (autodetecta offsets con gráficos)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
+        Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()
     )
 }
