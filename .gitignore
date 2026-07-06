@@ -7,3 +7,6 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Worktrees y estado local de los agentes de Claude Code (transitorio)
+.claude/
