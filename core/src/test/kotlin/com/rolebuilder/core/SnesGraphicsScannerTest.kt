@@ -107,6 +107,41 @@ class SnesGraphicsScannerTest {
     }
 
     @Test
+    fun `spriteFitness detecta hojas de sprites que el barrido normal se salta`() {
+        // 32 tiles 4bpp. En cada tile: fondo transparente (0) con un cuadro sólido
+        // central de color (una "figura"). Mucha transparencia -> el barrido de
+        // coherencia lo penaliza a ~0, pero es claramente una hoja de sprites.
+        val tiles = 32
+        val rom = ByteArray(32 * tiles)
+        var p = 0
+        var n = 0
+        while (p + 32 <= rom.size) {
+            val body = 1 + (n % 6)                 // color de la figura (1..6), con sombra
+            val shade = 1 + ((n + 1) % 6)
+            for (y in 0..7) {
+                val planes = IntArray(4)
+                for (x in 0..7) {
+                    // Cuadro central 4x4 sólido = la figura; el resto transparente.
+                    val v = if (x in 2..5 && y in 2..5) (if (x == 2 || y == 2) shade else body) else 0
+                    for (bit in 0..3) if ((v shr bit) and 1 == 1) planes[bit] = planes[bit] or (1 shl (7 - x))
+                }
+                rom[p + 2 * y] = planes[0].toByte()
+                rom[p + 2 * y + 1] = planes[1].toByte()
+                rom[p + 16 + 2 * y] = planes[2].toByte()
+                rom[p + 16 + 2 * y + 1] = planes[3].toByte()
+            }
+            p += 32; n++
+        }
+        val fmt = SnesGraphicFormat.SNES_4BPP
+        val sprite = SnesGraphicsScanner.spriteFitness(rom, 0, fmt, tiles)
+        val coherence = SnesGraphicsScanner.scoreWindow(rom, 0, fmt, tiles)
+        assertTrue(sprite >= 0.55, "una hoja de sprites debería puntuar alto: $sprite")
+        // El barrido normal la infravalora (mucho índice 0 dominante) frente al sprite.
+        assertTrue(sprite > coherence, "spriteFitness ($sprite) > coherencia ($coherence)")
+        assertTrue(SnesGraphicsScanner.findSpriteCandidates(rom, fmt).any { it.offset == 0 })
+    }
+
+    @Test
     fun `rom mas pequena que una ventana no da candidatos`() {
         val rom = ByteArray(100)
         assertTrue(SnesGraphicsScanner.findCandidates(rom, format).isEmpty())

@@ -129,6 +129,88 @@ object SnesGraphicsScanner {
     }
 
     /**
+     * Aptitud de "hoja de sprites/personajes" en [offset]. A diferencia de
+     * [scoreWindow] —que penaliza la transparencia y por eso se salta a los
+     * personajes—, aquí se PREMIA la firma de una hoja de sprites: un fondo
+     * transparente (índice 0) generoso pero no total, con figuras **compactas y
+     * sólidas** encima (regiones de color contiguas) y algo de sombreado (varios
+     * colores). Así afloran las hojas tipo "Mario" que el barrido normal ignora.
+     *
+     * Devuelve 0 si el bloque está casi vacío, casi lleno (es un fondo, no
+     * sprites) o si las zonas de color no forman cuerpos sólidos (ruido).
+     */
+    fun spriteFitness(rom: ByteArray, offset: Int, format: SnesGraphicFormat, windowTiles: Int = 32): Double {
+        val windowBytes = format.bytesPerTile * windowTiles
+        if (offset < 0 || offset + windowBytes > rom.size) return 0.0
+
+        var zero = 0L
+        var total = 0L
+        // Coherencia de cuerpo separada por dirección: una FIGURA es sólida en
+        // horizontal Y vertical; una barra/raya vertical solo lo es en vertical,
+        // así que se puede descartar exigiendo cuerpo en ambas direcciones.
+        var hEqual = 0L; var hAdj = 0L
+        var vEqual = 0L; var vAdj = 0L
+        val nonZeroColors = HashSet<Int>()
+
+        for (t in 0 until windowTiles) {
+            val px = SnesDecoder.decodeTile(rom, offset + t * format.bytesPerTile, format, t).pixelIndices
+            for (y in 0 until 8) {
+                for (x in 0 until 8) {
+                    val v = px[y * 8 + x]
+                    total++
+                    if (v == 0) zero++ else nonZeroColors.add(v)
+                    if (x < 7) {
+                        val w = px[y * 8 + x + 1]
+                        if (v != 0 && w != 0) { hAdj++; if (v == w) hEqual++ }
+                    }
+                    if (y < 7) {
+                        val w = px[(y + 1) * 8 + x]
+                        if (v != 0 && w != 0) { vAdj++; if (v == w) vEqual++ }
+                    }
+                }
+            }
+        }
+        if (total == 0L) return 0.0
+        val transparentFrac = zero / total.toDouble()
+        // Ni casi vacío ni casi lleno: una hoja de sprites tiene fondo Y figuras.
+        if (transparentFrac < 0.15 || transparentFrac > 0.82) return 0.0
+        if (nonZeroColors.size < 3) return 0.0        // sin sombreado: no es un personaje
+        // Se exigen cuerpos con extensión en AMBAS direcciones (descarta rayas).
+        if (hAdj < 24 || vAdj < 24) return 0.0
+        val hCoh = hEqual / hAdj.toDouble()
+        val vCoh = vEqual / vAdj.toDouble()
+        val bodyCoherence = minOf(hCoh, vCoh)         // el eje más débil manda: figura 2D real
+        if (bodyCoherence < 0.5) return 0.0           // cuerpos poco sólidos: ruido, no figuras
+        // Puntúa por solidez de los cuerpos, con un empujón por tener contenido.
+        val contentBonus = ((1.0 - transparentFrac) / 0.85).coerceIn(0.0, 1.0)
+        return bodyCoherence * (0.7 + 0.3 * contentBonus)
+    }
+
+    /**
+     * Barre la ROM buscando **hojas de sprites** (ver [spriteFitness]) y devuelve
+     * hasta [maxResults] offsets, ordenados por posición. Complementa a
+     * [findCandidates]: uno encuentra fondos/tilesets, el otro personajes.
+     */
+    fun findSpriteCandidates(
+        rom: ByteArray,
+        format: SnesGraphicFormat,
+        maxResults: Int = 24,
+        windowTiles: Int = 32,
+        minFitness: Double = 0.55,
+    ): List<Candidate> {
+        val windowBytes = format.bytesPerTile * windowTiles
+        if (windowBytes <= 0 || rom.size < windowBytes) return emptyList()
+        val scored = ArrayList<Candidate>()
+        var offset = 0
+        while (offset + windowBytes <= rom.size) {
+            val s = spriteFitness(rom, offset, format, windowTiles)
+            if (s >= minFitness) scored.add(Candidate(offset, s))
+            offset += windowBytes
+        }
+        return scored.sortedByDescending { it.score }.take(maxResults).sortedBy { it.offset }
+    }
+
+    /**
      * Prueba varios [formats] en [offset] y devuelve el que mejor encaja por
      * [formatFitness], o null si ninguno supera el mínimo. Sirve para que el
      * programa acierte solo entre 2/3/4/8bpp en vez de pedirlo a mano (clave para

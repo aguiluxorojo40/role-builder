@@ -108,6 +108,11 @@ detecta sola; no tienes que hacer nada.
   salen medio corazón por aquí, media cara por allá. En **"Tamaño de sprite"**
   elige **16×16 (2×2)** —o 24×24, 32×32— y el atlas recompone cada bloque como un
   sprite entero. Ahí "Columnas" pasa a contar sprites por fila.
+- **¿Buscas personajes, no fondos? Activa "Buscar sprites".** El buscador normal
+  premia las zonas planas y por eso se salta las hojas de personajes (que son casi
+  todo fondo transparente). Con el interruptor **"Buscar hojas de sprites"**, en
+  cambio, premia las figuras sólidas sobre fondo vacío: así afloran las hojas tipo
+  Mario/enemigos que el barrido de fondos ignora.
 - **Deja que adivine el formato.** Pulsa **"Detectar bpp"** y el programa prueba
   2/3/4/8bpp y elige el que da gráficos coherentes. Casi todos los gráficos de
   fondo y enemigos de **Super Mario World** (bloques ON/OFF, nubes, colinas, la
