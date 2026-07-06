@@ -103,6 +103,11 @@ detecta sola; no tienes que hacer nada.
 
 ## 6. Consejos para encontrar buenos gráficos
 
+- **¿El sprite sale partido en 4 trozos? Agrúpalo.** Muchos juegos guardan un
+  sprite de 16×16 como **cuatro tiles de 8×8 consecutivos**, así que sin agrupar
+  salen medio corazón por aquí, media cara por allá. En **"Tamaño de sprite"**
+  elige **16×16 (2×2)** —o 24×24, 32×32— y el atlas recompone cada bloque como un
+  sprite entero. Ahí "Columnas" pasa a contar sprites por fila.
 - **Prueba varios formatos.** Si a 4bpp se ve raro, prueba 2bpp: muchas fuentes e
   iconos son 2bpp.
 - **Las fuentes y el HUD casi siempre están sin comprimir.** Son un buen primer

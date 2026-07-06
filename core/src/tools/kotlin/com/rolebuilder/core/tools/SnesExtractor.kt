@@ -32,6 +32,7 @@ import javax.imageio.ImageIO
  *   --columns <n>          Columnas de la rejilla (por defecto 16).
  *   --palette-offset <n>  Offset de la paleta CGRAM en la ROM (si se omite, se usa una por defecto).
  *   --grayscale           Colorea en escala de grises para ver la FORMA sin conocer la paleta real.
+ *   --sprite <WxH>        Agrupa bloques de W×H tiles de 8×8 en un sprite entero (2x2 = 16×16, 4x4 = 32×32).
  *   --name <texto>        Nombre del tileset y base del archivo (por defecto "snes").
  *   --demo <dir>          Genera una ROM de prueba procedural en <dir>/demo.sfc y la extrae.
  */
@@ -159,7 +160,20 @@ fun main(args: Array<String>) {
     }
 
     val name = opts["name"] ?: "snes"
-    val sheet = SnesAssetExtractor.extractTileSheet(tileRom, tileOffset, format, palette, tileCount, columns)
+    // --sprite WxH (en tiles de 8×8): agrupa cada bloque en un sprite entero.
+    val spriteDim = opts["sprite"]?.let { parseSpriteDim(it) }
+    val sheet = if (spriteDim != null) {
+        val (sw, sh) = spriteDim
+        val availSprites = SnesAssetExtractor.availableSprites(tileRom.size, tileOffset, format, sw, sh)
+        val spriteCount = (opts["tiles"]?.let { parseInt(it) / (sw * sh) } ?: availSprites)
+            .coerceIn(1, minOf(availSprites, 256))
+        println("Atlas de sprites: agrupando ${sw}×${sh} tiles → celdas de ${sw * 8}×${sh * 8}px ($spriteCount sprites)")
+        SnesAssetExtractor.extractSpriteAtlas(
+            tileRom, tileOffset, format, palette, spriteCount, sw, sh, columns,
+        )
+    } else {
+        SnesAssetExtractor.extractTileSheet(tileRom, tileOffset, format, palette, tileCount, columns)
+    }
     val imageName = "$name.png"
 
     val imagesDir = File(outDir, "images").also { it.mkdirs() }
@@ -199,6 +213,18 @@ private fun parseArgs(args: Array<String>): Map<String, String> {
 
 private fun parseInt(s: String): Int =
     if (s.startsWith("0x") || s.startsWith("0X")) s.substring(2).toInt(16) else s.toInt()
+
+/**
+ * Interpreta "2x2" (tiles) o "16x16" (píxeles, múltiplos de 8) como el tamaño de
+ * sprite en TILES de 8×8. También acepta un solo número ("16" → 16×16 px).
+ */
+private fun parseSpriteDim(s: String): Pair<Int, Int> {
+    val parts = s.lowercase().split("x", "×").map { it.trim().toIntOrNull() ?: 0 }
+    val w = parts.getOrElse(0) { 0 }
+    val h = parts.getOrElse(1) { w }
+    fun toTiles(v: Int) = (if (v >= 8) v / 8 else v).coerceAtLeast(1)
+    return toTiles(w) to toTiles(h)
+}
 
 private fun parseFormat(s: String): SnesGraphicFormat = when (s.lowercase()) {
     "2bpp", "snes2bpp" -> SnesGraphicFormat.SNES_2BPP
@@ -361,8 +387,9 @@ private fun printUsage() {
         """
         Extractor de assets de ROM de SNES
           --rom <ruta> --out <dir> [--offset 0x2000] --format 4bpp [--tiles N] [--columns 16]
-          [--palette-offset 0x100] [--grayscale] [--name terreno]
+          [--palette-offset 0x100] [--grayscale] [--sprite 2x2] [--name terreno]
           --grayscale                         (vista en escala de grises: ver la FORMA sin la paleta real)
+          --sprite 2x2                        (agrupa bloques de tiles en sprites enteros: 2x2=16x16, 4x4=32x32)
           --rom <ruta> --format 4bpp --scan   (autodetecta offsets con gráficos)
           [--decompress auto|lc_lz2]          (descomprime el bloque antes de extraer)
           --demo-compressed <dir>             (ROM de prueba con gráficos LC_LZ2)

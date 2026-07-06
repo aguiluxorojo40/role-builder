@@ -107,6 +107,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("snes_rip") }
     // 0 = sin descompresión (datos crudos), 1 = autodetectar códec, 2 = LC_LZ2.
     var decompressMode by remember { mutableStateOf(0) }
+    // Lado del sprite en tiles de 8×8: 1 = sin agrupar, 2 = 16×16, 3 = 24×24, 4 = 32×32.
+    var spriteTiles by remember { mutableStateOf(1) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     val detected: List<SnesPalette> = remember(romBytes) {
@@ -153,7 +155,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
     // Vista previa reactiva: recalcula la hoja de tiles al cambiar cualquier parámetro.
     val preview: Pair<ImageBitmap, SnesAssetExtractor.TileSheet>? =
-        remember(romBytes, format, offsetText, columns, tiles, paletteIndex, decompressMode) {
+        remember(romBytes, format, offsetText, columns, tiles, paletteIndex, decompressMode, spriteTiles) {
             val rom = romBytes ?: return@remember null
             runCatching {
                 val offset = parseOffset(offsetText)
@@ -183,9 +185,23 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         ?: defaultColorPalette(format.colorCount)
                     else -> defaultColorPalette(format.colorCount)
                 }
-                val sheet = SnesAssetExtractor.extractTileSheet(
-                    tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
-                )
+                val sheet = if (spriteTiles > 1) {
+                    // Agrupa bloques de spriteTiles×spriteTiles tiles en sprites enteros.
+                    val availSprites = SnesAssetExtractor.availableSprites(
+                        tileRom.size, tileOffset, format, spriteTiles, spriteTiles,
+                    )
+                    if (availSprites <= 0) return@runCatching null
+                    val spriteCount = (count / (spriteTiles * spriteTiles))
+                        .coerceIn(1, minOf(availSprites, 1024))
+                    SnesAssetExtractor.extractSpriteAtlas(
+                        tileRom, tileOffset, format, palette, spriteCount,
+                        spriteTiles, spriteTiles, columns.coerceAtLeast(1),
+                    )
+                } else {
+                    SnesAssetExtractor.extractTileSheet(
+                        tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
+                    )
+                }
                 SnesImport.toBitmap(sheet.image).asImageBitmap() to sheet
             }.getOrNull()
         }
@@ -292,6 +308,32 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     IntField("Nº de tiles", tiles, { tiles = it.coerceIn(1, 1024) }, Modifier.weight(1f))
                 }
 
+                val spriteOptions = remember {
+                    listOf(
+                        1 to "8×8 · sin agrupar (tiles sueltos)",
+                        2 to "16×16 · agrupar 2×2",
+                        3 to "24×24 · agrupar 3×3",
+                        4 to "32×32 · agrupar 4×4",
+                    )
+                }
+                DropdownField(
+                    label = "Tamaño de sprite (atlas)",
+                    options = spriteOptions,
+                    selected = spriteOptions.first { it.first == spriteTiles },
+                    optionLabel = { it.second },
+                    onSelect = { spriteTiles = it.first },
+                )
+                if (spriteTiles > 1) {
+                    Text(
+                        "Muchos juegos guardan un sprite grande como varios tiles de 8×8 " +
+                            "consecutivos; sin agrupar salen partidos en trozos. Al agrupar " +
+                            "${spriteTiles}×${spriteTiles}, cada bloque se recompone como un " +
+                            "sprite entero de ${spriteTiles * 8}×${spriteTiles * 8} px en el atlas. " +
+                            "\"Columnas\" pasa a ser sprites por fila.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
                 DropdownField(
                     label = "Paleta",
                     options = paletteOptions,
@@ -341,8 +383,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             filterQuality = FilterQuality.None,
                         )
                     }
+                    val unit = if (spriteTiles > 1) "sprites" else "tiles"
                     Text(
-                        "${sheet.columns}×${sheet.rows} tiles · ${img.width}×${img.height} px · tile ${sheet.tileSize}px",
+                        "${sheet.columns}×${sheet.rows} $unit · ${img.width}×${img.height} px · celda ${sheet.tileSize}px",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 } else {
