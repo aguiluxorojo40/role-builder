@@ -79,6 +79,15 @@ object SnesGameRecipes {
     // vez de adivinar la paleta mirando el dibujo.
     internal const val SMW_SPRITE_GFX_TABLE_PC = 0x28C3
     internal const val SMW_FGBG_GFX_TABLE_PC = 0x292B
+    /**
+     * Tabla de punteros de datos de Layer 1 por nivel: SNES $05E000 → LoROM PC
+     * 0x2E000. 512 niveles (0x000..0x1FF) × 3 bytes (low/high/bank). El puntero
+     * lleva al inicio de los datos del nivel, cuyos 5 primeros bytes son la CABECERA
+     * (de ahí salen los índices REALES de paleta FG/BG/sprite/back y los GFX settings).
+     */
+    internal const val SMW_LAYER1_PTR_PC = 0x2E000
+    /** Nº de niveles direccionables (0x000..0x1FF). */
+    internal const val SMW_LEVEL_COUNT = 0x200
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
     internal const val SMW_SLOT_ENTRIES = 16
     /** Valor "ranura vacía" en las tablas de slots (no carga ningún fichero). */
@@ -235,6 +244,95 @@ object SnesGameRecipes {
     }
 
     /**
+     * Paletas REALES por fichero GFX, derivadas de los NIVELES que lo cargan.
+     *
+     * La idea que da color de verdad (no adivinado): cada nivel tiene una cabecera
+     * (5 bytes al inicio de sus datos de Layer 1, tabla de punteros en $05E000) que
+     * dice qué índice de sub-paleta 0..7 usa para FG, BG, sprites y back area, y qué
+     * "GFX setting" carga en sus ranuras (que se expanden con las tablas de slot). Así,
+     * recorriendo los 512 niveles, sabemos para CADA fichero GFX con qué índice de
+     * paleta lo pinta el juego de verdad. Elegimos el índice MAYORITARIO entre los
+     * niveles que lo usan: color real y variado, sin heurístico.
+     *
+     * [read] valida el invariante de las tablas de slot (FG1=0x14/FG2=0x17) y exige un
+     * mínimo de cabeceras de nivel plausibles; si no cuadra (ROM modificada u offsets
+     * dudosos) devuelve null y la receta cae al heurístico. Los mapas van indexados por
+     * número de fichero GFX (0..51) → índice de sub-paleta 0..7.
+     */
+    internal class SmwLevelPalettes private constructor(
+        val fgIndexByFile: Map<Int, Int>,
+        val bgIndexByFile: Map<Int, Int>,
+        val spriteIndexByFile: Map<Int, Int>,
+        val levelsRead: Int,
+    ) {
+        companion object {
+            /** Mínimo de niveles válidos para fiarnos (una ROM vanilla tiene cientos). */
+            private const val MIN_VALID_LEVELS = 64
+
+            fun read(rom: ByteArray, delta: Int): SmwLevelPalettes? {
+                val fgBase = SMW_FGBG_GFX_TABLE_PC + delta
+                val spBase = SMW_SPRITE_GFX_TABLE_PC + delta
+                val ptrBase = SMW_LAYER1_PTR_PC + delta
+                if (fgBase < 0 || spBase < 0 || ptrBase < 0 ||
+                    fgBase + 4 * SMW_SLOT_ENTRIES > rom.size ||
+                    spBase + 4 * SMW_SLOT_ENTRIES > rom.size ||
+                    ptrBase + 3 * SMW_LEVEL_COUNT > rom.size
+                ) return null
+
+                // Mismo gate que SmwSlotTables: confirma offset/layout/delta de slots.
+                var invariant = 0
+                for (e in 0 until SMW_SLOT_ENTRIES) {
+                    if (byte(rom, fgBase + 4 * e) == SMW_FG1_GFX &&
+                        byte(rom, fgBase + 4 * e + 1) == SMW_FG2_GFX
+                    ) invariant++
+                }
+                if (invariant < SMW_SLOT_ENTRIES - 2) return null
+
+                // file -> conteo de veces que cada índice 0..7 se le asigna.
+                val fgAcc = HashMap<Int, IntArray>()
+                val bgAcc = HashMap<Int, IntArray>()
+                val sprAcc = HashMap<Int, IntArray>()
+                fun bump(acc: HashMap<Int, IntArray>, file: Int, idx: Int) {
+                    if (file != SMW_SLOT_EMPTY) acc.getOrPut(file) { IntArray(8) }[idx and 7]++
+                }
+
+                var valid = 0
+                for (level in 0 until SMW_LEVEL_COUNT) {
+                    val p = ptrBase + 3 * level
+                    val pc = lorom(byte(rom, p), byte(rom, p + 1), byte(rom, p + 2))
+                    if (pc < 0 || pc + 5 > rom.size) continue
+                    val h0 = byte(rom, pc); val h2 = byte(rom, pc + 2); val h3 = byte(rom, pc + 3)
+                    val h4 = byte(rom, pc + 4)
+                    val bgPal = h0 shr 5            // BBB
+                    val sprPal = (h3 shr 3) and 7  // PPP
+                    val fgPal = h3 and 7           // FFF
+                    val sprSetting = h2 and 0x0F   // SSSS
+                    val fgbgSetting = h4 and 0x0F  // ZZZZ
+                    valid++
+                    // FG/BG: entrada [FG1, FG2, BG1, FG3] del setting de este nivel.
+                    val fe = fgBase + 4 * fgbgSetting
+                    bump(fgAcc, byte(rom, fe), fgPal)
+                    bump(fgAcc, byte(rom, fe + 1), fgPal)
+                    bump(bgAcc, byte(rom, fe + 2), bgPal)
+                    bump(fgAcc, byte(rom, fe + 3), fgPal)
+                    // Sprite: entrada [SP1..SP4] del setting de sprite.
+                    val se = spBase + 4 * sprSetting
+                    for (k in 0..3) bump(sprAcc, byte(rom, se + k), sprPal)
+                }
+                if (valid < MIN_VALID_LEVELS) return null
+
+                fun modal(acc: HashMap<Int, IntArray>): Map<Int, Int> =
+                    acc.mapValues { (_, counts) ->
+                        var best = 0
+                        for (idx in 1 until 8) if (counts[idx] > counts[best]) best = idx
+                        best
+                    }
+                return SmwLevelPalettes(modal(fgAcc), modal(bgAcc), modal(sprAcc), valid)
+            }
+        }
+    }
+
+    /**
      * Fila canónica de Mario (4bpp, 16 colores):
      * `[TRANSPARENTE, NEGRO, fix0..fix3, pl0..pl9]`, con `fix = fixedRow(8)` (los 4
      * primeros de los 6) y `pl = player(0)` (10 colores).
@@ -307,12 +405,12 @@ object SnesGameRecipes {
     private fun extractSmw(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
         val bases = findSmwGfxTable(rom) ?: return emptyList()
         val (bLo, bHi, bBank) = bases
-        // Paletas REALES del juego (no adivinadas). Para cada CLASE construimos sus
-        // 8 sub-paletas reales (índices 0..7 de la tabla). La clase la decide el slot;
-        // el índice, la coherencia con el dibujo: la cabecera de nivel elige un índice
-        // 0..7 que la galería (sin nivel) no conoce, así que en vez de fijar el 0
-        // (que es el terreno verde → todo salía verde) probamos los 8 y nos quedamos
-        // con el que mejor encaja. Da a cada hoja su paleta real más plausible.
+        // Paletas REALES del juego. Para cada CLASE construimos sus 8 sub-paletas
+        // reales (índices 0..7). La CLASE (FG/BG/sprite/player) la decide el slot; el
+        // ÍNDICE 0..7 lo decide, cuando podemos, el color REAL que los niveles que
+        // cargan ese fichero le asignan (SmwLevelPalettes, leyendo las cabeceras de
+        // nivel en $05E000). Solo si no hay dato real cae al índice más coherente con
+        // el dibujo (heurístico), para no volver al "todo verde" del índice 0 fijo.
         val delta = smwHeaderDelta(header)
         val tables = SmwPaletteTables(rom, delta)
         val fgRows = (0..7).map { row3bppFG(tables, it, SMW_DEFAULT_BACK_INDEX) }
@@ -323,6 +421,8 @@ object SnesGameRecipes {
         // ranura carga cada fichero). Si no (ROM modificada u offset dudoso), null y
         // se elige entre todas las clases por coherencia de dibujo.
         val slots = SmwSlotTables.readIfValid(rom, delta)
+        // Índices de paleta REALES por fichero, derivados de los niveles que lo cargan.
+        val levelPals = SmwLevelPalettes.read(rom, delta)
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
         for (i in 0 until 52) {
@@ -339,15 +439,18 @@ object SnesGameRecipes {
             val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
             fun bestOf(rows: List<IntArray>): IntArray =
                 rows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
-            // La CLASE la manda el slot (la verdad del juego); dentro de ella se elige
-            // el sub-índice 0..7 más coherente con el dibujo. La fila de Mario solo
-            // aplica a GFX32/4bpp; imponerla a todo 4bpp teñía de arcoíris fuentes/HUD.
+            // Elige la fila de [rows]: el índice REAL del nivel si lo conocemos para
+            // este fichero; si no, el más coherente con el dibujo.
+            fun pick(rows: List<IntArray>, realIndex: Int?): IntArray =
+                realIndex?.let { rows[it] } ?: bestOf(rows)
+            // La CLASE la manda el slot; el ÍNDICE, el color real del nivel (o el
+            // heurístico si no hay dato). Mario solo en GFX32/4bpp.
             val pal = if (slots != null) {
                 when (slots.roleOf(i, is4bpp)) {
-                    SmwGfxRole.PLAYER -> if (is4bpp) marioRow else bestOf(fgRows)
-                    SmwGfxRole.SPRITE -> bestOf(spriteRows)
-                    SmwGfxRole.BG -> bestOf(bgRows)
-                    SmwGfxRole.FG -> bestOf(fgRows)
+                    SmwGfxRole.PLAYER -> if (is4bpp) marioRow else pick(fgRows, levelPals?.fgIndexByFile?.get(i))
+                    SmwGfxRole.SPRITE -> pick(spriteRows, levelPals?.spriteIndexByFile?.get(i))
+                    SmwGfxRole.BG -> pick(bgRows, levelPals?.bgIndexByFile?.get(i))
+                    SmwGfxRole.FG -> pick(fgRows, levelPals?.fgIndexByFile?.get(i))
                 }
             } else {
                 val all = if (is4bpp) fgRows + spriteRows + marioRow else fgRows + spriteRows

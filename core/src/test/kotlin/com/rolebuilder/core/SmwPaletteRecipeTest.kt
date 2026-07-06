@@ -239,6 +239,51 @@ class SmwPaletteRecipeTest {
         assertEquals(SnesGameRecipes.SmwGfxRole.FG, slots.roleOf(0x2A, is4bpp = false))
     }
 
+    /**
+     * ROM con tablas de slot válidas + tabla de punteros de nivel ($05E000) + una
+     * cabecera de nivel con índices de paleta conocidos, apuntada por los 512 niveles.
+     */
+    private fun romWithLevelData(): ByteArray {
+        val rom = ByteArray(0x40000)
+        val fg = SnesGameRecipes.SMW_FGBG_GFX_TABLE_PC
+        val sp = SnesGameRecipes.SMW_SPRITE_GFX_TABLE_PC
+        val empty = SnesGameRecipes.SMW_SLOT_EMPTY
+        for (e in 0 until SnesGameRecipes.SMW_SLOT_ENTRIES) {
+            writeSlot(rom, fg, e, SnesGameRecipes.SMW_FG1_GFX, SnesGameRecipes.SMW_FG2_GFX, empty, empty)
+            writeSlot(rom, sp, e, empty, empty, empty, empty)
+        }
+        // Setting FG/BG 5: BG1=0x0B, FG3=0x0A. Setting sprite 3: SP1=0x1A.
+        writeSlot(rom, fg, 5, SnesGameRecipes.SMW_FG1_GFX, SnesGameRecipes.SMW_FG2_GFX, 0x0B, 0x0A)
+        writeSlot(rom, sp, 3, 0x1A, empty, empty, empty)
+        // Cabecera de nivel en PC 0x30000: BG pal=2, sprite pal=6, FG pal=4,
+        // sprite setting=3, FG/BG setting=5.
+        val hdr = intArrayOf(0x40, 0x00, 0x03, 0x34, 0x05)
+        for (k in hdr.indices) rom[0x30000 + k] = hdr[k].toByte()
+        // Los 512 niveles apuntan a esa cabecera: LoROM [lo=0x00, hi=0x80, bank=0x06] → PC 0x30000.
+        for (level in 0 until SnesGameRecipes.SMW_LEVEL_COUNT) {
+            val p = SnesGameRecipes.SMW_LAYER1_PTR_PC + 3 * level
+            rom[p] = 0x00; rom[p + 1] = 0x80.toByte(); rom[p + 2] = 0x06
+        }
+        return rom
+    }
+
+    @Test
+    fun `SmwLevelPalettes deriva el indice REAL de cada fichero de los niveles que lo cargan`() {
+        val lp = SnesGameRecipes.SmwLevelPalettes.read(romWithLevelData(), 0)
+        assertTrue(lp != null, "con slots válidos y punteros de nivel plausibles debe leerse")
+        assertTrue(lp!!.levelsRead >= 64)
+        // El fichero FG3 (0x0A) lo cargan niveles con FG pal 4 → índice real 4.
+        assertEquals(4, lp.fgIndexByFile[0x0A])
+        // El fichero BG1 (0x0B) con BG pal 2; el sprite (0x1A) con sprite pal 6.
+        assertEquals(2, lp.bgIndexByFile[0x0B])
+        assertEquals(6, lp.spriteIndexByFile[0x1A])
+    }
+
+    @Test
+    fun `SmwLevelPalettes null cuando el gate de slots no valida`() {
+        assertTrue(SnesGameRecipes.SmwLevelPalettes.read(ByteArray(0x40000), 0) == null)
+    }
+
     @Test
     fun `row3bppBG ordena back, negro y los 6 colores BG`() {
         val rom = ByteArray(0x8000)
