@@ -161,6 +161,25 @@ object SnesTilemap {
         return result
     }
 
+    /**
+     * Construye el selector de paleta POR TILE que consume
+     * [SnesAssetExtractor.extractTileSheet]: dado el índice de un tile en la hoja,
+     * devuelve los 16 colores de la fila que el tilemap le asigna. Los tiles que el
+     * tilemap no referencia (o que caen fuera de [tileRange]) reciben la fila
+     * [defaultRow], para que la hoja quede coloreada por completo aunque el mapa
+     * solo cubra parte de ella.
+     */
+    fun paletteSelector(
+        entries: List<TilemapEntry>,
+        cgram: IntArray,
+        defaultRow: Int = 0,
+        tileRange: IntRange? = null,
+    ): (Int) -> IntArray {
+        val byTile = assignPalettesByTile(entries, cgram, tileRange)
+        val fallback = paletteRow(cgram, defaultRow)
+        return { tile -> byTile[tile] ?: fallback }
+    }
+
     // ----------------------------------------------------- detector heurístico
 
     /**

@@ -33,6 +33,27 @@ object SnesAssetExtractor {
         tileCount: Int,
         columns: Int = 16,
         transparentIndex0: Boolean = true,
+    ): TileSheet = extractTileSheet(rom, offset, format, tileCount, columns, transparentIndex0) { palette }
+
+    /**
+     * Igual que la sobrecarga con una [IntArray] única, pero elige la paleta POR
+     * TILE mediante [paletteForTile] `(índice de tile en la hoja) -> colores ARGB`.
+     *
+     * Es lo que permite pintar un fondo con su color REAL: en el SNES cada tile de
+     * un fondo puede llevar una sub-paleta distinta que ordena el tilemap (ver
+     * [SnesTilemap]). Con una sola paleta global todos los tiles salían teñidos
+     * igual; aquí cada uno recibe su fila asignada. La sobrecarga de una paleta
+     * delega en esta pasando la misma para todos, así que el camino sin tilemap no
+     * cambia.
+     */
+    fun extractTileSheet(
+        rom: ByteArray,
+        offset: Int,
+        format: SnesGraphicFormat,
+        tileCount: Int,
+        columns: Int = 16,
+        transparentIndex0: Boolean = true,
+        paletteForTile: (Int) -> IntArray,
     ): TileSheet {
         require(tileCount > 0) { "tileCount debe ser positivo" }
         require(columns > 0) { "columns debe ser positivo" }
@@ -43,6 +64,7 @@ object SnesAssetExtractor {
 
         for (i in 0 until tileCount) {
             val decoded = SnesDecoder.decodeTile(rom, offset + i * format.bytesPerTile, format, i)
+            val palette = paletteForTile(i)
             val tileCol = i % cols
             val tileRow = i / cols
             val baseX = tileCol * tile
