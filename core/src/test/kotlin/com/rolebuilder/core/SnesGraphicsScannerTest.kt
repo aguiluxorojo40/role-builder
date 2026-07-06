@@ -75,6 +75,38 @@ class SnesGraphicsScannerTest {
     }
 
     @Test
+    fun `detectBestFormat acierta el 3bpp de unos graficos 3bpp`() {
+        // 64 tiles 3bpp (24B) con zonas planas + una cruz: coherentes en 3bpp,
+        // pero desalineados y revueltos si se leen como 2bpp o 4bpp.
+        val tiles = 64
+        val rom = ByteArray(24 * tiles)
+        var p = 0
+        var tileNo = 0
+        while (p + 24 <= rom.size) {
+            val base = tileNo % 8
+            val mark = (base + 1) % 8
+            for (y in 0..7) {
+                val planes = IntArray(3)
+                for (x in 0..7) {
+                    val value = if (x == 3 || y == 3) mark else base
+                    for (bit in 0..2) if ((value shr bit) and 1 == 1) planes[bit] = planes[bit] or (1 shl (7 - x))
+                }
+                rom[p + 2 * y] = planes[0].toByte()
+                rom[p + 2 * y + 1] = planes[1].toByte()
+                rom[p + 16 + y] = planes[2].toByte()
+            }
+            p += 24; tileNo++
+        }
+        val guess = SnesGraphicsScanner.detectBestFormat(rom, 0)
+        assertTrue(guess != null, "debería detectar un formato")
+        assertEquals(SnesGraphicFormat.SNES_3BPP, guess!!.format, "debería reconocer 3bpp")
+        // La aptitud del 3bpp debe superar a la del 4bpp sobre estos mismos bytes.
+        val fit3 = SnesGraphicsScanner.formatFitness(rom, 0, SnesGraphicFormat.SNES_3BPP)
+        val fit4 = SnesGraphicsScanner.formatFitness(rom, 0, SnesGraphicFormat.SNES_4BPP)
+        assertTrue(fit3 > fit4, "3bpp ($fit3) debería encajar mejor que 4bpp ($fit4)")
+    }
+
+    @Test
     fun `rom mas pequena que una ventana no da candidatos`() {
         val rom = ByteArray(100)
         assertTrue(SnesGraphicsScanner.findCandidates(rom, format).isEmpty())

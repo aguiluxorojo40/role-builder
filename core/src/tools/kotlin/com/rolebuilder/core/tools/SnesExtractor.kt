@@ -27,7 +27,8 @@ import javax.imageio.ImageIO
  *   --rom <ruta>            ROM de entrada (.smc/.sfc/.bin). Con SMC de 512 bytes se detecta sola.
  *   --out <dir>            Carpeta de salida (por defecto: snes_out).
  *   --offset <n>           Offset de los gráficos (dec o 0x...). Por defecto 0.
- *   --format <fmt>         2bpp | 4bpp | 8bpp | gb2bpp | nes2bpp (por defecto 4bpp).
+ *   --format <fmt>         auto | 2bpp | 3bpp | 4bpp | 8bpp | gb2bpp | nes2bpp (por defecto 4bpp).
+ *                          Con "auto" el programa adivina el bpp por sí solo.
  *   --tiles <n>            Nº de tiles a extraer (por defecto: los que quepan, máx. 256).
  *   --columns <n>          Columnas de la rejilla (por defecto 16).
  *   --palette-offset <n>  Offset de la paleta CGRAM en la ROM (si se omite, se usa una por defecto).
@@ -76,11 +77,13 @@ fun main(args: Array<String>) {
     println("Cabecera: \"${header.title}\"  ${header.mapping}  ${header.romTypeDescription}")
     println("  ${header.country} · ${header.licensee} · checksum ${if (header.isChecksumValid) "válido" else "no válido"}")
 
-    val format = parseFormat(opts["format"] ?: "4bpp")
+    // --format auto: se decide el bpp por sí solo (tras descomprimir, si procede).
+    val autoFormat = opts["format"]?.lowercase() == "auto"
+    var format = if (autoFormat) SnesGraphicFormat.SNES_4BPP else parseFormat(opts["format"] ?: "4bpp")
 
     // Modo --scan: autodetecta zonas con gráficos. Con --decompress prueba a
     // descomprimir en cada offset (localiza bloques comprimidos); sin él, busca
-    // gráficos sin comprimir.
+    // gráficos sin comprimir. Con --format auto, además adivina el bpp de cada uno.
     if (opts.containsKey("scan")) {
         val scanDecompress = opts["decompress"]
         if (scanDecompress != null) {
@@ -88,9 +91,14 @@ fun main(args: Array<String>) {
             if (hits.isEmpty()) {
                 println("No se encontraron bloques descomprimibles con gráficos (¿otro formato de compresión?).")
             } else {
-                println("Bloques comprimidos con gráficos ($format), prueba: --offset <X> --decompress auto")
+                println("Bloques comprimidos con gráficos, prueba: --offset <X> --decompress auto${if (autoFormat) " --format auto" else " ($format)"}")
                 hits.forEach { (off, score, size) ->
-                    println("  0x${off.toString(16).uppercase()}  (coherencia ${"%.2f".format(score)}, ${size}B)")
+                    val fmt = if (autoFormat) {
+                        val data = CompressionCodecs.autoDecompress(rom, off, format)?.result?.data
+                        val g = data?.let { SnesGraphicsScanner.detectBestFormat(it, 0) }
+                        g?.let { " · ${formatShortName(it.format)}" } ?: ""
+                    } else ""
+                    println("  0x${off.toString(16).uppercase()}  (coherencia ${"%.2f".format(score)}, ${size}B)$fmt")
                 }
             }
         } else {
@@ -98,8 +106,13 @@ fun main(args: Array<String>) {
             if (candidates.isEmpty()) {
                 println("No se encontraron zonas gráficas evidentes con $format (¿gráficos comprimidos?).")
             } else {
-                println("Candidatos de gráficos SIN comprimir ($format), prueba estos offsets:")
-                candidates.forEach { println("  0x${it.offset.toString(16).uppercase()}  (score ${"%.2f".format(it.score)})") }
+                println("Candidatos de gráficos SIN comprimir${if (autoFormat) " (bpp autodetectado)" else " ($format)"}, prueba estos offsets:")
+                candidates.forEach {
+                    val fmt = if (autoFormat) {
+                        SnesGraphicsScanner.detectBestFormat(rom, it.offset)?.let { g -> " · ${formatShortName(g.format)}" } ?: ""
+                    } else ""
+                    println("  0x${it.offset.toString(16).uppercase()}  (score ${"%.2f".format(it.score)})$fmt")
+                }
             }
         }
         return
@@ -140,6 +153,18 @@ fun main(args: Array<String>) {
     } else {
         tileRom = rom
         tileOffset = offset
+    }
+
+    // Con --format auto, ahora que tenemos los bytes finales (descomprimidos o no),
+    // se decide el bpp por aptitud normalizada.
+    if (autoFormat) {
+        val guess = SnesGraphicsScanner.detectBestFormat(tileRom, tileOffset)
+        if (guess != null) {
+            format = guess.format
+            println("Formato autodetectado: ${formatShortName(format)} (aptitud ${"%.2f".format(guess.fitness)})")
+        } else {
+            println("No se pudo autodetectar el formato; se usa ${formatShortName(format)}.")
+        }
     }
 
     val columns = parseInt(opts["columns"] ?: "16")
@@ -224,6 +249,15 @@ private fun parseSpriteDim(s: String): Pair<Int, Int> {
     val h = parts.getOrElse(1) { w }
     fun toTiles(v: Int) = (if (v >= 8) v / 8 else v).coerceAtLeast(1)
     return toTiles(w) to toTiles(h)
+}
+
+private fun formatShortName(f: SnesGraphicFormat): String = when (f) {
+    SnesGraphicFormat.SNES_2BPP -> "2bpp"
+    SnesGraphicFormat.SNES_3BPP -> "3bpp"
+    SnesGraphicFormat.SNES_4BPP -> "4bpp"
+    SnesGraphicFormat.SNES_8BPP -> "8bpp"
+    SnesGraphicFormat.GB_2BPP -> "gb2bpp"
+    SnesGraphicFormat.NES_2BPP -> "nes2bpp"
 }
 
 private fun parseFormat(s: String): SnesGraphicFormat = when (s.lowercase()) {
