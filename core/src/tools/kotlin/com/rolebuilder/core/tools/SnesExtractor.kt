@@ -86,12 +86,14 @@ fun main(args: Array<String>) {
     // gráficos sin comprimir. Con --format auto, además adivina el bpp de cada uno.
     if (opts.containsKey("scan")) {
         val scanDecompress = opts["decompress"]
+        val scanSprites = opts.containsKey("sprites")
         if (scanDecompress != null) {
-            val hits = scanForCompressedGraphics(rom, format)
+            val hits = scanForCompressedGraphics(rom, format, sprites = scanSprites)
             if (hits.isEmpty()) {
-                println("No se encontraron bloques descomprimibles con gráficos (¿otro formato de compresión?).")
+                println("No se encontraron bloques descomprimibles con ${if (scanSprites) "hojas de sprites" else "gráficos"} (¿otro formato de compresión?).")
             } else {
-                println("Bloques comprimidos con gráficos, prueba: --offset <X> --decompress auto${if (autoFormat) " --format auto" else " ($format)"}")
+                val kind = if (scanSprites) "hojas de SPRITES" else "gráficos"
+                println("Bloques comprimidos con $kind, prueba: --offset <X> --decompress auto${if (autoFormat) " --format auto" else " ($format)"}")
                 hits.forEach { (off, score, size) ->
                     val fmt = if (autoFormat) {
                         val data = CompressionCodecs.autoDecompress(rom, off, format)?.result?.data
@@ -102,11 +104,16 @@ fun main(args: Array<String>) {
                 }
             }
         } else {
-            val candidates = SnesGraphicsScanner.findCandidates(rom, format)
-            if (candidates.isEmpty()) {
-                println("No se encontraron zonas gráficas evidentes con $format (¿gráficos comprimidos?).")
+            val candidates = if (scanSprites) {
+                SnesGraphicsScanner.findSpriteCandidates(rom, format)
             } else {
-                println("Candidatos de gráficos SIN comprimir${if (autoFormat) " (bpp autodetectado)" else " ($format)"}, prueba estos offsets:")
+                SnesGraphicsScanner.findCandidates(rom, format)
+            }
+            if (candidates.isEmpty()) {
+                println("No se encontraron ${if (scanSprites) "hojas de sprites" else "zonas gráficas"} con $format (¿gráficos comprimidos?).")
+            } else {
+                val kind = if (scanSprites) "HOJAS DE SPRITES" else "gráficos SIN comprimir"
+                println("Candidatos de $kind${if (autoFormat) " (bpp autodetectado)" else " ($format)"}, prueba estos offsets:")
                 candidates.forEach {
                     val fmt = if (autoFormat) {
                         SnesGraphicsScanner.detectBestFormat(rom, it.offset)?.let { g -> " · ${formatShortName(g.format)}" } ?: ""
@@ -391,20 +398,30 @@ private fun scanForCompressedGraphics(
     format: SnesGraphicFormat,
     minScore: Double = 0.42,
     maxResults: Int = 24,
+    sprites: Boolean = false,
 ): List<Triple<Int, Double, Int>> {
     // Los bloques comprimidos empiezan en cualquier byte (no están alineados), así
     // que se prueba byte a byte; tras un acierto se salta el bloque consumido para
     // no repetir casi-duplicados. Se acota la salida para que el barrido sea rápido.
+    // Con sprites=true se puntúa por "hoja de personajes" (premia la transparencia
+    // con figuras sólidas) en vez de por coherencia, para localizar sprites como
+    // Mario que el barrido normal se salta.
     val hits = ArrayList<Triple<Int, Double, Int>>()
     val minBytes = format.bytesPerTile * 32
+    val threshold = if (sprites) 0.55 else minScore
     var offset = 0
     while (offset < rom.size - 3) {
         var advanced = false
         for (codec in CompressionCodecs.all) {
             val res = runCatching { codec.decompress(rom, offset, 0x4000) }.getOrNull() ?: continue
             if (res.data.size >= minBytes) {
-                val score = CompressionCodecs.graphicScore(res.data, format)
-                if (score >= minScore) {
+                val tiles = minOf(res.data.size / format.bytesPerTile, 32)
+                val score = if (sprites) {
+                    SnesGraphicsScanner.spriteFitness(res.data, 0, format, tiles)
+                } else {
+                    CompressionCodecs.graphicScore(res.data, format)
+                }
+                if (score >= threshold) {
                     hits.add(Triple(offset, score, res.data.size))
                     offset += maxOf(1, res.consumedBytes) // saltar el bloque encontrado
                     advanced = true
@@ -426,6 +443,7 @@ private fun printUsage() {
           --grayscale                         (vista en escala de grises: ver la FORMA sin la paleta real)
           --sprite 2x2                        (agrupa bloques de tiles en sprites enteros: 2x2=16x16, 4x4=32x32)
           --rom <ruta> --format 4bpp --scan   (autodetecta offsets con gráficos)
+          --scan --sprites                    (busca HOJAS DE SPRITES/personajes, no fondos)
           [--decompress auto|lc_lz2]          (descomprime el bloque antes de extraer)
           --demo-compressed <dir>             (ROM de prueba con gráficos LC_LZ2)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)

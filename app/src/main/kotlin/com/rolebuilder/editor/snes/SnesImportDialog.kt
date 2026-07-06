@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -126,9 +127,14 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         paletteIndex = if (detected.isNotEmpty()) 0 else -1
     }
 
+    // Buscar hojas de sprites/personajes en vez de fondos (no penaliza la transparencia).
+    var spriteSearch by remember { mutableStateOf(false) }
     // Autodetección de zonas con gráficos sin comprimir para el offset elegido.
-    val candidates: List<Int> = remember(romBytes, format) {
-        romBytes?.let { rom -> SnesGraphicsScanner.findCandidates(rom, format).map { it.offset } } ?: emptyList()
+    val candidates: List<Int> = remember(romBytes, format, spriteSearch) {
+        romBytes?.let { rom ->
+            if (spriteSearch) SnesGraphicsScanner.findSpriteCandidates(rom, format).map { it.offset }
+            else SnesGraphicsScanner.findCandidates(rom, format).map { it.offset }
+        } ?: emptyList()
     }
     var candidateIndex by remember { mutableStateOf(0) }
     fun jumpToCandidate(i: Int) {
@@ -287,6 +293,15 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         "Si el juego comprime sus gráficos, indica el offset donde EMPIEZA el " +
                             "bloque comprimido y elige el códec (o Auto). Si la vista previa sigue " +
                             "en ruido, ese juego usa un formato aún no soportado.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(checked = spriteSearch, onCheckedChange = { spriteSearch = it })
+                    Text(
+                        "  Buscar hojas de SPRITES/personajes (no fondos): premia figuras " +
+                            "sólidas sobre fondo transparente, para dar con hojas tipo Mario.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
