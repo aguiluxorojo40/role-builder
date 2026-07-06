@@ -1,6 +1,7 @@
 package com.rolebuilder.core.snes
 
 import com.rolebuilder.core.snes.compression.LcLz2
+import com.rolebuilder.core.snes.compression.Rle1
 
 /**
  * "Recetas por juego": para ROMs concretas y conocidas sabemos EXACTAMENTE dónde
@@ -26,8 +27,46 @@ object SnesGameRecipes {
      * Devuelve vacío si no hay receta o no se pudo localizar su mapa gráfico.
      */
     fun extract(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> = when (detect(header)) {
-        "Super Mario World" -> extractSmw(rom, header)
+        "Super Mario World" -> extractSmw(rom, header) + extractSmwBackgrounds(rom, header)
         else -> emptyList()
+    }
+
+    /**
+     * Escenas de FONDO (Layer 2) reconstruidas con COLOR REAL POR TESELA. A
+     * diferencia de las hojas de tiles (una paleta por hoja), aquí cada tesela lleva
+     * la sub-paleta que le manda su bloque Map16, así que se ven como en el juego.
+     * Deduplica por datos (muchos niveles comparten fondo) y limita la cantidad.
+     */
+    private fun extractSmwBackgrounds(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
+        val delta = smwHeaderDelta(header)
+        val seen = HashSet<Int>()
+        val out = ArrayList<SnesAutoExtractor.Finding>()
+        for (level in 0 until SMW_LEVEL_COUNT) {
+            val p = SMW_LAYER2_PTR_PC + delta + 3 * level
+            if (p + 2 >= rom.size) continue
+            if (byte(rom, p + 2) != SMW_BG_IS_BACKGROUND) continue
+            val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
+            if (addr < 0x8000) continue
+            val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)
+            if (!seen.add(dataPc)) continue // fondo ya renderizado
+            val img = renderSmwBackground(rom, header, level) ?: continue
+            val tilesW = img.width / 8
+            out.add(
+                SnesAutoExtractor.Finding(
+                    image = img,
+                    label = "SMW fondo ${out.size + 1}",
+                    offset = dataPc,
+                    compressed = true,
+                    format = SnesGraphicFormat.SNES_3BPP,
+                    palette = IntArray(0),
+                    tileCount = tilesW * (img.height / 8),
+                    columns = tilesW,
+                    score = 1.0,
+                )
+            )
+            if (out.size >= 16) break
+        }
+        return out
     }
 
     // ------------------------------------------------------------ Super Mario World
@@ -88,6 +127,25 @@ object SnesGameRecipes {
     internal const val SMW_LAYER1_PTR_PC = 0x2E000
     /** Nº de niveles direccionables (0x000..0x1FF). */
     internal const val SMW_LEVEL_COUNT = 0x200
+
+    // -------------------- Fondos de Layer 2 (color REAL por tesela) --------------------
+    //
+    // Los fondos de Layer 2 sí llevan un tilemap ESTÁTICO: por eso son la vía asequible
+    // al color por tesela. Cadena: puntero $05E600 → (si banco 0xFF) banco $0C → RLE1 →
+    // índices de bloque Map16 → tabla Map16 de Layer 2 → 4 palabras [tile#][YXPCCCTT]
+    // que SnesTilemap ya sabe leer. OFFSETS [PROBABLE] pendientes de validar en ROM real
+    // (por eso el render va con gate de cordura y es aditivo).
+
+    /** Tabla de punteros de Layer 2: SNES $05E600 → PC 0x2E600 (0x200 × 3 bytes). */
+    internal const val SMW_LAYER2_PTR_PC = 0x2E600
+    /** Base PC del banco $0C, donde viven los datos de fondo (SNES $0C8000 → 0x60000). */
+    internal const val SMW_BG_BANK_PC = 0x60000
+    /** Byte de banco que marca "este Layer 2 es un FONDO (tilemap), no objetos". */
+    internal const val SMW_BG_IS_BACKGROUND = 0xFF
+    /** Tabla de definiciones Map16 de Layer 2: SNES $0D9100 → PC 0x69100 [PROBABLE]. */
+    internal const val SMW_MAP16_L2_PC = 0x69100
+    /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
+    internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
     internal const val SMW_SLOT_ENTRIES = 16
     /** Valor "ranura vacía" en las tablas de slots (no carga ningún fichero). */
@@ -330,6 +388,116 @@ object SnesGameRecipes {
                 return SmwLevelPalettes(modal(fgAcc), modal(bgAcc), modal(sprAcc), valid)
             }
         }
+    }
+
+    /**
+     * Lee las entradas de tilemap (`[tile#][YXPCCCTT]`) del FONDO de Layer 2 de un
+     * [level], o vacío si ese nivel no tiene fondo (Layer 2 de objetos) o los datos
+     * no son válidos. Cadena: puntero $05E600 → banco $0C → RLE1 → índices de bloque
+     * Map16 → 4 palabras por bloque en la tabla Map16 de Layer 2.
+     *
+     * Es la vía al color REAL por tesela de los fondos: cada entrada trae el `CCC`
+     * (sub-paleta) de esa tesela. Función pura para poder testearla con datos
+     * sintéticos. Los offsets Map16/umbral son [PROBABLE]; el consumidor aplica un
+     * gate de cordura sobre la concentración de sub-paletas.
+     */
+    internal fun layer2BgEntries(rom: ByteArray, delta: Int, level: Int): List<SnesTilemap.TilemapEntry> {
+        val p = SMW_LAYER2_PTR_PC + delta + 3 * level
+        if (p < 0 || p + 2 >= rom.size) return emptyList()
+        if (byte(rom, p + 2) != SMW_BG_IS_BACKGROUND) return emptyList() // no es un fondo
+        val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
+        if (addr < 0x8000) return emptyList()
+        val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)
+        if (dataPc < 0 || dataPc >= rom.size) return emptyList()
+        val blocks = runCatching { Rle1.decompress(rom, dataPc, 0x4000).data }.getOrNull() ?: return emptyList()
+        if (blocks.size < 4) return emptyList()
+        val page = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
+        val map16Base = SMW_MAP16_L2_PC + delta
+        val entries = ArrayList<SnesTilemap.TilemapEntry>(blocks.size * 4)
+        for (bb in blocks) {
+            val block = page * 0x100 + (bb.toInt() and 0xFF)
+            val o = map16Base + 8 * block
+            if (o < 0 || o + 8 > rom.size) continue
+            for (k in 0..3) {
+                val w = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
+                entries.add(SnesTilemap.decodeEntry(w))
+            }
+        }
+        return entries
+    }
+
+    /**
+     * Renderiza la ESCENA de fondo (Layer 2) de un nivel con COLOR REAL POR TESELA:
+     * cada tesela 8×8 pintada con la sub-paleta (`CCC`) que le asigna su bloque Map16.
+     * Devuelve null si el nivel no tiene fondo o faltan datos. La rejilla de SMW es
+     * 32×27 bloques 16×16; el flujo llena primero la mitad izquierda y luego la
+     * derecha, en column-major dentro de cada mitad.
+     */
+    internal fun renderSmwBackground(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val entries = layer2BgEntries(rom, delta, level)
+        val blockCount = entries.size / 4
+        if (blockCount < 64) return null
+
+        // Cabecera del nivel: índices de paleta e info de GFX.
+        val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
+        val lpc = lorom(byte(rom, l1), byte(rom, l1 + 1), byte(rom, l1 + 2))
+        if (lpc < 0 || lpc + 5 > rom.size) return null
+        val backIdx = byte(rom, lpc + 1) shr 5          // CCC de back area
+        val fgbgSetting = byte(rom, lpc + 4) and 0x0F    // ZZZZ
+        val bgFile = byte(rom, SMW_FGBG_GFX_TABLE_PC + delta + 4 * fgbgSetting + 2) // BG1
+
+        val bases = findSmwGfxTable(rom) ?: return null
+        val (bLo, bHi, bBank) = bases
+        fun gfxData(file: Int): ByteArray? {
+            if (file == SMW_SLOT_EMPTY) return null
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) return null
+            return runCatching { LcLz2.decompress(rom, pc).data }.getOrNull()
+        }
+        val bgData = gfxData(bgFile) ?: return null
+        val fmt = SnesGraphicsScanner.detectBestFormat(bgData, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+        val avail = SnesAssetExtractor.availableTiles(bgData.size, 0, fmt)
+        val tables = SmwPaletteTables(rom, delta)
+        // Filas por CCC (una por sub-paleta 0..7). El índice 0 es el color de back
+        // area (cielo), NO transparente: los fondos son opacos.
+        val rowsByCcc = (0..7).map { row3bppBG(tables, it, backIdx) }
+
+        val w = 32; val h = 27
+        val cols = if (blockCount % h == 0) blockCount / h else w
+        val img = ArgbImage(cols * 16, h * 16)
+        val half = blockCount / 2
+        // Posiciones de las 4 sub-teselas del bloque: TL, BL, TR, BR.
+        val subPos = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
+        for (b in 0 until blockCount) {
+            val leftHalf = b < half
+            val idx = if (leftHalf) b else b - half
+            val colInHalf = idx / h
+            val row = idx % h
+            val col = (if (leftHalf) 0 else cols / 2) + colInHalf
+            if (col >= cols) continue
+            val ox = col * 16; val oy = row * 16
+            for (k in 0..3) {
+                val e = entries[b * 4 + k]
+                val t = e.tileIndex - 0x100 // slot BG1
+                val palette = rowsByCcc[e.palette and 7]
+                val bx = ox + subPos[k][0]; val by = oy + subPos[k][1]
+                if (t in 0 until avail) {
+                    val dec = SnesDecoder.decodeTile(bgData, t * fmt.bytesPerTile, fmt, t)
+                    for (py in 0..7) for (px in 0..7) {
+                        val sx = if (e.hFlip) 7 - px else px
+                        val sy = if (e.vFlip) 7 - py else py
+                        val ci = dec.pixelIndices[sy * 8 + sx]
+                        val argb = if (ci < palette.size) palette[ci] else 0xFF000000.toInt()
+                        img.set(bx + px, by + py, argb)
+                    }
+                } else {
+                    // Tesela fuera del slot BG1 (p. ej. FG): rellena con back area.
+                    for (py in 0..7) for (px in 0..7) img.set(bx + px, by + py, palette[0])
+                }
+            }
+        }
+        return img
     }
 
     /**
