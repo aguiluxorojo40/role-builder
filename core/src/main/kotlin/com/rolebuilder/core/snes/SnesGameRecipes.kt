@@ -68,6 +68,27 @@ object SnesGameRecipes {
     /** Sprite palette: $00B318 + 0x18*x → PC 0x3318 + 0x18*x (x=0..7, 12 colores). */
     internal const val SMW_SPRITE_PC = 0x3318
 
+    // -------- Tablas de SLOT: qué fichero GFX se carga en cada ranura de VRAM -------
+    //
+    // La paleta de un GFX no es fija: depende de la ranura donde el nivel lo carga.
+    // Dos tablas en banco $00, 16 entradas de 4 bytes (un nº de fichero GFX por byte):
+    //   - Sprite ($00A8C3 → PC 0x28C3): SP1, SP2, SP3, SP4  → paleta de sprite.
+    //   - FG/BG  ($00A92B → PC 0x292B): FG1, FG2, BG1, FG3   → paleta FG (o BG en BG1).
+    // Un GFX que solo aparece en ranuras FG/BG va con la fila FG/BG; el que solo
+    // aparece en SP va con la de sprite. Así clasificamos por la VERDAD del juego en
+    // vez de adivinar la paleta mirando el dibujo.
+    internal const val SMW_SPRITE_GFX_TABLE_PC = 0x28C3
+    internal const val SMW_FGBG_GFX_TABLE_PC = 0x292B
+    /** Nº de entradas (settings 0..F) de cada tabla de slots. */
+    internal const val SMW_SLOT_ENTRIES = 16
+    /** Valor "ranura vacía" en las tablas de slots (no carga ningún fichero). */
+    internal const val SMW_SLOT_EMPTY = 0x7F
+    /** Invariante vanilla verificable: FG1 siempre es GFX 0x14 y FG2 siempre GFX 0x17. */
+    internal const val SMW_FG1_GFX = 0x14
+    internal const val SMW_FG2_GFX = 0x17
+    /** Nº de fichero GFX de Mario/player (GFX32). Siempre va con la player palette. */
+    internal const val SMW_MARIO_GFX = 0x32
+
     /** Negro opaco (índice de contorno/sombra en las filas 3bpp/4bpp). */
     private val SMW_BLACK = 0xFF000000.toInt()
     /** Transparente: la hoja de tiles ya trata el índice 0 como transparente. */
@@ -123,12 +144,94 @@ object SnesGameRecipes {
     }
 
     /**
+     * Fila canónica BG (3bpp, 8 colores):
+     * `[backColor(backIndex), NEGRO, bg0..bg5]`. Igual estructura que la FG pero con
+     * la entrada de BG; es la que corresponde a los ficheros que se cargan en la
+     * ranura BG1.
+     */
+    internal fun row3bppBG(t: SmwPaletteTables, bgIndex: Int, backIndex: Int): IntArray {
+        val bg = t.bgEntry(bgIndex)
+        return intArrayOf(t.backColor(backIndex), SMW_BLACK, bg[0], bg[1], bg[2], bg[3], bg[4], bg[5])
+    }
+
+    /**
      * Fila canónica de sprite (3bpp, 8 colores):
      * `[TRANSPARENTE, NEGRO, spr0..spr5]`.
      */
     internal fun row3bppSprite(t: SmwPaletteTables, sprIndex: Int): IntArray {
         val s = t.sprEntry(sprIndex)
         return intArrayOf(SMW_TRANSPARENT, SMW_BLACK, s[0], s[1], s[2], s[3], s[4], s[5])
+    }
+
+    /** Rol de paleta de un fichero GFX según la ranura de VRAM donde se carga. */
+    internal enum class SmwGfxRole { FG, BG, SPRITE, PLAYER }
+
+    /**
+     * Tablas de slots LEÍDAS y VALIDADAS de la ROM: qué números de fichero GFX se
+     * cargan en ranuras FG/BG y en ranuras de sprite. Con esto clasificamos cada
+     * fichero por la verdad del juego en vez de puntuar su dibujo.
+     *
+     * [readIfValid] solo devuelve tablas si se cumple el invariante vanilla (FG1 =
+     * GFX 0x14 y FG2 = GFX 0x17 en la mayoría de entradas). Ese chequeo confirma de
+     * paso que el offset, el layout y el delta de cabecera son correctos; si no
+     * cuadra (ROM modificada, offset equivocado…), devuelve null y la receta cae al
+     * heurístico de siempre. Es la misma disciplina que [findSmwGfxTable]: no fiarse
+     * de una dirección sin verificarla contra la propia ROM.
+     */
+    internal class SmwSlotTables private constructor(
+        private val fgGfx: Set<Int>,
+        private val bgGfx: Set<Int>,
+        private val spriteGfx: Set<Int>,
+    ) {
+        /** Rol de la paleta para el fichero [gfx] (su número 0..51). [is4bpp] desempata. */
+        fun roleOf(gfx: Int, is4bpp: Boolean): SmwGfxRole {
+            if (gfx == SMW_MARIO_GFX) return SmwGfxRole.PLAYER
+            val inFg = gfx in fgGfx
+            val inBg = gfx in bgGfx
+            val inSp = gfx in spriteGfx
+            return when {
+                inSp && !inFg && !inBg -> SmwGfxRole.SPRITE
+                (inFg || inBg) && !inSp -> if (inFg) SmwGfxRole.FG else SmwGfxRole.BG
+                // Aparece en ambos tipos de ranura, o en ninguno (fuente/HUD por
+                // rutinas fijas): desempata el formato. 4bpp → sprite; 3bpp → FG.
+                else -> if (is4bpp) SmwGfxRole.SPRITE else SmwGfxRole.FG
+            }
+        }
+
+        companion object {
+            fun readIfValid(rom: ByteArray, delta: Int): SmwSlotTables? {
+                val fgBase = SMW_FGBG_GFX_TABLE_PC + delta
+                val spBase = SMW_SPRITE_GFX_TABLE_PC + delta
+                if (fgBase < 0 || spBase < 0 ||
+                    fgBase + 4 * SMW_SLOT_ENTRIES > rom.size ||
+                    spBase + 4 * SMW_SLOT_ENTRIES > rom.size
+                ) return null
+
+                // Gate: FG1==0x14 y FG2==0x17 en la gran mayoría de las 16 entradas.
+                var invariant = 0
+                for (e in 0 until SMW_SLOT_ENTRIES) {
+                    if (byte(rom, fgBase + 4 * e) == SMW_FG1_GFX &&
+                        byte(rom, fgBase + 4 * e + 1) == SMW_FG2_GFX
+                    ) invariant++
+                }
+                if (invariant < SMW_SLOT_ENTRIES - 2) return null
+
+                val fg = HashSet<Int>()
+                val bg = HashSet<Int>()
+                val sp = HashSet<Int>()
+                for (e in 0 until SMW_SLOT_ENTRIES) {
+                    // FG/BG: [FG1, FG2, BG1, FG3]
+                    val fgb = fgBase + 4 * e
+                    for (v in intArrayOf(byte(rom, fgb), byte(rom, fgb + 1), byte(rom, fgb + 3)))
+                        if (v != SMW_SLOT_EMPTY) fg.add(v)
+                    byte(rom, fgb + 2).let { if (it != SMW_SLOT_EMPTY) bg.add(it) }
+                    // Sprite: [SP1, SP2, SP3, SP4]
+                    val spb = spBase + 4 * e
+                    for (k in 0..3) byte(rom, spb + k).let { if (it != SMW_SLOT_EMPTY) sp.add(it) }
+                }
+                return SmwSlotTables(fg, bg, sp)
+            }
+        }
     }
 
     /**
@@ -205,10 +308,16 @@ object SnesGameRecipes {
         val bases = findSmwGfxTable(rom) ?: return emptyList()
         val (bLo, bHi, bBank) = bases
         // Paletas REALES del juego (no adivinadas): filas canónicas por defecto.
-        val tables = SmwPaletteTables(rom, smwHeaderDelta(header))
+        val delta = smwHeaderDelta(header)
+        val tables = SmwPaletteTables(rom, delta)
         val fgRow = row3bppFG(tables, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_BACK_INDEX)
+        val bgRow = row3bppBG(tables, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_BACK_INDEX)
         val spriteRow = row3bppSprite(tables, SMW_DEFAULT_SPRITE_INDEX)
         val marioRow = rowMario(tables)
+        // Tablas de slot: si validan, deciden la paleta por la VERDAD del juego (qué
+        // ranura carga cada fichero). Si no (ROM modificada u offset dudoso), null y
+        // se usa el heurístico de coherencia de dibujo de siempre.
+        val slots = SmwSlotTables.readIfValid(rom, delta)
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
         for (i in 0 until 52) {
@@ -221,19 +330,23 @@ object SnesGameRecipes {
             val available = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
             if (available < 16) continue
             val count = minOf(available, 128)
-            // Cada fichero recibe una fila REAL del juego, nunca una paleta adivinada.
-            // Entre las filas reales candidatas se elige la de mejor coherencia con el
-            // dibujo (SnesPaletteMatcher.scorePalette): así automatizamos la decisión
-            // sin imponer ninguna. La fila de Mario SOLO compite en 4bpp y solo gana si
-            // de verdad encaja; imponerla a todo 4bpp hacía que las hojas 4bpp que no
-            // son Mario (fuentes, objetos del HUD) salieran en ruido arcoíris.
-            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
-            val candidates = if (fmt == SnesGraphicFormat.SNES_4BPP) {
-                listOf(fgRow, spriteRow, marioRow)
+            val is4bpp = fmt == SnesGraphicFormat.SNES_4BPP
+            // Preferencia: la VERDAD del slot (a qué ranura va el fichero i) sobre el
+            // heurístico. Solo cuando las tablas no validan se recurre a puntuar el
+            // dibujo con las filas reales candidatas. La fila de Mario SOLO compite en
+            // 4bpp; imponerla a todo 4bpp teñía de arcoíris las fuentes/HUD.
+            val pal = if (slots != null) {
+                when (slots.roleOf(i, is4bpp)) {
+                    SmwGfxRole.PLAYER -> if (is4bpp) marioRow else fgRow
+                    SmwGfxRole.SPRITE -> spriteRow
+                    SmwGfxRole.BG -> bgRow
+                    SmwGfxRole.FG -> fgRow
+                }
             } else {
-                listOf(fgRow, spriteRow)
+                val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
+                val candidates = if (is4bpp) listOf(fgRow, spriteRow, marioRow) else listOf(fgRow, spriteRow)
+                candidates.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
             }
-            val pal = candidates.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
             val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             n++
             out.add(

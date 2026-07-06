@@ -181,4 +181,81 @@ class SmwPaletteRecipeTest {
         val rom = ByteArray(0x8000)
         assertTrue(SnesGameRecipes.extract(rom, headerWith(0x7FC0)).isEmpty())
     }
+
+    // --------------------------------------------- clasificacion por slot (rol)
+
+    /** Escribe una entrada de 4 bytes en la tabla de slots [base] + 4*[e]. */
+    private fun writeSlot(rom: ByteArray, base: Int, e: Int, b0: Int, b1: Int, b2: Int, b3: Int) {
+        rom[base + 4 * e] = b0.toByte()
+        rom[base + 4 * e + 1] = b1.toByte()
+        rom[base + 4 * e + 2] = b2.toByte()
+        rom[base + 4 * e + 3] = b3.toByte()
+    }
+
+    /**
+     * ROM con tablas de slots VALIDAS (invariante FG1=0x14, FG2=0x17 en las 16
+     * entradas). Coloca unos pocos GFX de prueba en ranuras conocidas.
+     */
+    private fun romWithSlotTables(): ByteArray {
+        val rom = ByteArray(0x8000)
+        val fg = SnesGameRecipes.SMW_FGBG_GFX_TABLE_PC
+        val sp = SnesGameRecipes.SMW_SPRITE_GFX_TABLE_PC
+        val empty = SnesGameRecipes.SMW_SLOT_EMPTY
+        for (e in 0 until SnesGameRecipes.SMW_SLOT_ENTRIES) {
+            // FG/BG: [FG1=0x14, FG2=0x17, BG1, FG3] — invariante + huecos por defecto.
+            writeSlot(rom, fg, e, SnesGameRecipes.SMW_FG1_GFX, SnesGameRecipes.SMW_FG2_GFX, empty, empty)
+            // Sprite: todo vacio salvo lo que pongamos abajo.
+            writeSlot(rom, sp, e, empty, empty, empty, empty)
+        }
+        // GFX de prueba (numeros dentro de 0..0x33, distintos de 0x14/0x17/0x32):
+        writeSlot(rom, fg, 0, SnesGameRecipes.SMW_FG1_GFX, SnesGameRecipes.SMW_FG2_GFX, 0x0B, 0x0A) // BG1=0x0B, FG3=0x0A
+        writeSlot(rom, sp, 0, 0x1A, empty, empty, empty)                                            // SP1=0x1A
+        writeSlot(rom, fg, 1, SnesGameRecipes.SMW_FG1_GFX, SnesGameRecipes.SMW_FG2_GFX, empty, 0x1B) // FG3=0x1B
+        writeSlot(rom, sp, 1, 0x1B, empty, empty, empty)                                            // SP1=0x1B (en ambos)
+        return rom
+    }
+
+    @Test
+    fun `el gate rechaza una ROM sin el invariante FG1-FG2`() {
+        // ROM en blanco: FG1/FG2 no valen 0x14/0x17 → no se fia de las tablas.
+        assertTrue(SnesGameRecipes.SmwSlotTables.readIfValid(ByteArray(0x8000), 0) == null)
+    }
+
+    @Test
+    fun `roleOf clasifica por la ranura donde se carga el fichero`() {
+        val slots = SnesGameRecipes.SmwSlotTables.readIfValid(romWithSlotTables(), 0)
+        assertTrue(slots != null, "con el invariante presente, las tablas deben validar")
+        // Mario siempre player, sin importar el bpp.
+        assertEquals(SnesGameRecipes.SmwGfxRole.PLAYER, slots!!.roleOf(SnesGameRecipes.SMW_MARIO_GFX, is4bpp = true))
+        // Solo en FG3 → FG; solo en BG1 → BG; solo en sprite → SPRITE.
+        assertEquals(SnesGameRecipes.SmwGfxRole.FG, slots.roleOf(0x0A, is4bpp = false))
+        assertEquals(SnesGameRecipes.SmwGfxRole.BG, slots.roleOf(0x0B, is4bpp = false))
+        assertEquals(SnesGameRecipes.SmwGfxRole.SPRITE, slots.roleOf(0x1A, is4bpp = false))
+        // En FG y en sprite a la vez → desempata el formato: 4bpp sprite, 3bpp FG.
+        assertEquals(SnesGameRecipes.SmwGfxRole.SPRITE, slots.roleOf(0x1B, is4bpp = true))
+        assertEquals(SnesGameRecipes.SmwGfxRole.FG, slots.roleOf(0x1B, is4bpp = false))
+        // Un GFX que no aparece en ninguna tabla (fuente/HUD): mismo desempate por bpp.
+        assertEquals(SnesGameRecipes.SmwGfxRole.SPRITE, slots.roleOf(0x2A, is4bpp = true))
+        assertEquals(SnesGameRecipes.SmwGfxRole.FG, slots.roleOf(0x2A, is4bpp = false))
+    }
+
+    @Test
+    fun `row3bppBG ordena back, negro y los 6 colores BG`() {
+        val rom = ByteArray(0x8000)
+        val backBgr = 0x0421
+        val blues = blueRamp(6)
+        writeColor(rom, SnesGameRecipes.SMW_BACK_AREA_PC, backBgr)
+        writeColors(rom, SnesGameRecipes.SMW_BG_PC + 0x18 * SnesGameRecipes.SMW_DEFAULT_FG_INDEX, blues)
+
+        val t = SnesGameRecipes.SmwPaletteTables(rom, 0)
+        val row = SnesGameRecipes.row3bppBG(
+            t, SnesGameRecipes.SMW_DEFAULT_FG_INDEX, SnesGameRecipes.SMW_DEFAULT_BACK_INDEX,
+        )
+        assertEquals(8, row.size)
+        assertEquals(SnesDecoder.bgr15ToArgb(backBgr), row[0])
+        assertEquals(BLACK, row[1])
+        for (i in 0 until 6) {
+            assertEquals(SnesDecoder.bgr15ToArgb(blues[i]), row[2 + i], "BG color $i")
+        }
+    }
 }
