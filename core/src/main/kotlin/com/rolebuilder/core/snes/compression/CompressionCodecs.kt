@@ -51,4 +51,44 @@ object CompressionCodecs {
         if (tiles <= 0) return 0.0
         return SnesGraphicsScanner.scoreWindow(data, 0, format, minOf(tiles, 64))
     }
+
+    /**
+     * Recorre la ROM probando a descomprimir en cada byte y devuelve los offsets
+     * cuya salida "parece un dibujo" (por coherencia O por firma de sprite), sin
+     * conocer las tablas de punteros del juego. Tras un acierto salta el bloque
+     * consumido para no repetir. [maxScanBytes] acota el barrido (0 = toda la ROM)
+     * para que en el dispositivo tarde poco.
+     */
+    fun findCompressedBlocks(
+        rom: ByteArray,
+        format: SnesGraphicFormat = SnesGraphicFormat.SNES_4BPP,
+        minScore: Double = 0.42,
+        maxResults: Int = 24,
+        maxScanBytes: Int = 0,
+    ): List<Int> {
+        val limit = if (maxScanBytes in 1 until rom.size) maxScanBytes else rom.size
+        val minBytes = format.bytesPerTile * 32
+        val hits = ArrayList<Pair<Int, Double>>()
+        var offset = 0
+        while (offset < limit - 3) {
+            var advanced = false
+            for (codec in all) {
+                val res = runCatching { codec.decompress(rom, offset, 0x4000) }.getOrNull() ?: continue
+                if (res.data.size >= minBytes) {
+                    val tiles = minOf(res.data.size / format.bytesPerTile, 32)
+                    val coh = SnesGraphicsScanner.scoreWindow(res.data, 0, format, tiles)
+                    val spr = SnesGraphicsScanner.spriteFitness(res.data, 0, format, tiles)
+                    val score = maxOf(coh, spr)
+                    if (score >= minScore) {
+                        hits.add(offset to score)
+                        offset += maxOf(1, res.consumedBytes)
+                        advanced = true
+                        break
+                    }
+                }
+            }
+            if (!advanced) offset++
+        }
+        return hits.sortedByDescending { it.second }.take(maxResults).map { it.first }.sorted()
+    }
 }

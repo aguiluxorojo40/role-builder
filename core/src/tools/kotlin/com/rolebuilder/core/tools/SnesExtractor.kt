@@ -3,6 +3,7 @@ package com.rolebuilder.core.tools
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.ArgbImage
 import com.rolebuilder.core.snes.SnesAssetExtractor
+import com.rolebuilder.core.snes.SnesAutoExtractor
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
@@ -76,6 +77,22 @@ fun main(args: Array<String>) {
     val header = SnesDecoder.parseHeader(rom)
     println("Cabecera: \"${header.title}\"  ${header.mapping}  ${header.romTypeDescription}")
     println("  ${header.country} · ${header.licensee} · checksum ${if (header.isChecksumValid) "válido" else "no válido"}")
+
+    // Modo --gallery: "modo fácil". Busca gráficos automáticamente y vuelca cada
+    // hallazgo como una miniatura en color, sin pedir offsets ni formatos.
+    if (opts.containsKey("gallery")) {
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val findings = SnesAutoExtractor.findGraphics(rom, maxResults = 24)
+        println("Encontrados ${findings.size} gráficos automáticamente:")
+        findings.forEach { f ->
+            val file = File(imagesDir, "auto_${"%02d".format(findings.indexOf(f) + 1)}.png")
+            ImageIO.write(toBufferedImage(f.image), "png", file)
+            println("  ${f.label}: ${f.image.width}x${f.image.height}px  " +
+                "(${if (f.compressed) "comprimido" else "directo"} @0x${f.offset.toString(16)}, " +
+                "${f.format.name.removePrefix("SNES_").lowercase()}, calidad ${"%.2f".format(f.score)}) -> ${file.name}")
+        }
+        return
+    }
 
     // --format auto: se decide el bpp por sí solo (tras descomprimir, si procede).
     val autoFormat = opts["format"]?.lowercase() == "auto"
