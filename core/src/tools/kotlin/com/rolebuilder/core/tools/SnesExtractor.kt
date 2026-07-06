@@ -228,11 +228,12 @@ private fun parseSpriteDim(s: String): Pair<Int, Int> {
 
 private fun parseFormat(s: String): SnesGraphicFormat = when (s.lowercase()) {
     "2bpp", "snes2bpp" -> SnesGraphicFormat.SNES_2BPP
+    "3bpp", "snes3bpp" -> SnesGraphicFormat.SNES_3BPP
     "4bpp", "snes4bpp" -> SnesGraphicFormat.SNES_4BPP
     "8bpp", "snes8bpp" -> SnesGraphicFormat.SNES_8BPP
     "gb2bpp", "gb" -> SnesGraphicFormat.GB_2BPP
     "nes2bpp", "nes" -> SnesGraphicFormat.NES_2BPP
-    else -> error("Formato desconocido: $s (usa 2bpp|4bpp|8bpp|gb2bpp|nes2bpp)")
+    else -> error("Formato desconocido: $s (usa 2bpp|3bpp|4bpp|8bpp|gb2bpp|nes2bpp)")
 }
 
 /** Colores vivos de respaldo (índice 0 transparente): la salida siempre en color. */

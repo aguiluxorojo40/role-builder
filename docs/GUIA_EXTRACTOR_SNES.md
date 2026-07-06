@@ -108,8 +108,10 @@ detecta sola; no tienes que hacer nada.
   salen medio corazón por aquí, media cara por allá. En **"Tamaño de sprite"**
   elige **16×16 (2×2)** —o 24×24, 32×32— y el atlas recompone cada bloque como un
   sprite entero. Ahí "Columnas" pasa a contar sprites por fila.
-- **Prueba varios formatos.** Si a 4bpp se ve raro, prueba 2bpp: muchas fuentes e
-  iconos son 2bpp.
+- **Prueba varios formatos.** Si a 4bpp se ve raro, prueba 2bpp (muchas fuentes e
+  iconos) o **3bpp**. El **3bpp** es clave: casi todos los gráficos de fondo y
+  enemigos de **Super Mario World** (bloques ON/OFF, nubes, colinas…) están en
+  3bpp; leídos como 4bpp salen revueltos, y en 3bpp se ven perfectos.
 - **Las fuentes y el HUD casi siempre están sin comprimir.** Son un buen primer
   objetivo para practicar.
 - **La imagen "cortada" se arregla con el offset.** Si cada tile parece partido

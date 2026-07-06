@@ -70,6 +70,24 @@ class SnesDecoderTest {
     }
 
     @Test
+    fun `decode 3bpp usa tres planos`() {
+        // pixel(0,0) = 7 = 0b111: bit7 (0x80) en los 3 planos.
+        // 3bpp: plano0=byte0, plano1=byte1, plano2=byte16.
+        val rom = ByteArray(24)
+        rom[0] = 0x80.toByte()   // plano 0
+        rom[1] = 0x80.toByte()   // plano 1
+        rom[16] = 0x80.toByte()  // plano 2 (suelto)
+        val tile = SnesDecoder.decodeTile(rom, 0, SnesGraphicFormat.SNES_3BPP)
+        assertEquals(7, tile.pixelIndices[0])
+        assertEquals(0, tile.pixelIndices[1])
+        // Solo plano 2 en el pixel (1,0) -> valor 4.
+        val rom2 = ByteArray(24)
+        rom2[16] = 0x40.toByte() // bit 6 -> pixel x=1
+        val tile2 = SnesDecoder.decodeTile(rom2, 0, SnesGraphicFormat.SNES_3BPP)
+        assertEquals(4, tile2.pixelIndices[1])
+    }
+
+    @Test
     fun `decode 8bpp alcanza 255`() {
         val rom = ByteArray(64)
         // Ocho planos: bytes 0,1,16,17,32,33,48,49 -> bit 7 (0x80) para el pixel (0,0)

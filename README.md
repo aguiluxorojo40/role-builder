@@ -20,7 +20,7 @@ externos: editor y motor son la misma app.
   habilidades (melee/proyectil) y colisión del tileset.
 - Importación de imágenes PNG propias (tilesets y hojas de personaje 3×4).
 - **Extracción de assets de ROMs de Super Nintendo**: carga una ROM (.smc/.sfc)
-  y decodifica sus gráficos (2bpp/4bpp/8bpp) y paletas CGRAM directamente en el
+  y decodifica sus gráficos (2bpp/3bpp/4bpp/8bpp) y paletas CGRAM directamente en el
   dispositivo para convertirlos en tilesets del proyecto, con **autodetección de
   zonas gráficas** para no adivinar offsets y **descompresión conectable**
   (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. Incluye una
