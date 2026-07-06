@@ -54,8 +54,15 @@ object SnesPaletteMatcher {
     private const val MAX_STAT_TILES = 128
 
     /**
-     * Decodifica hasta [tileCount] tiles desde [offset] y acumula el uso de
-     * índices y los pares vecinos (clave `(a shl 16) or b` con a < b, ambos > 0).
+     * Decodifica una muestra de [tileCount] tiles desde [offset] y acumula el uso
+     * de índices y los pares vecinos (clave `(a shl 16) or b` con a < b, ambos > 0).
+     *
+     * La muestra se REPARTE por toda la hoja, no se toma del principio: como el
+     * color se aplica luego a los [tileCount] tiles completos, la radiografía debe
+     * representar el conjunto entero. Si el arranque de una hoja grande es padding
+     * transparente (o una región distinta de la que interesa), leer solo los
+     * primeros tiles elegía la paleta con una muestra sesgada o vacía. Cuando hay
+     * [MAX_STAT_TILES] o menos tiles se leen todos, en orden, igual que antes.
      */
     fun indexStats(
         data: ByteArray,
@@ -73,7 +80,10 @@ object SnesPaletteMatcher {
             edges[key] = (edges[key] ?: 0) + 1
         }
 
-        for (t in 0 until tiles) {
+        for (s in 0 until tiles) {
+            // Índice del tile muestreado: 0,1,2… si caben todos; repartido por la
+            // hoja completa cuando hay más de MAX_STAT_TILES.
+            val t = (s.toLong() * tileCount / tiles).toInt()
             val px = SnesDecoder.decodeTile(data, offset + t * format.bytesPerTile, format, t).pixelIndices
             for (y in 0 until 8) {
                 for (x in 0 until 8) {

@@ -125,6 +125,29 @@ class SnesPaletteMatcherTest {
     }
 
     @Test
+    fun `muestrea toda la hoja, no solo los primeros tiles`() {
+        // Hoja grande (256 tiles) cuyo dibujo real vive en la SEGUNDA mitad; la
+        // primera son tiles vacíos (padding transparente). Leer solo los primeros
+        // 128 dejaría la radiografía vacía y no habría con qué elegir paleta. Al
+        // repartir la muestra por toda la hoja, la rampa correcta debe destacar.
+        val ring = encode4bpp(ringTilePixels(), tiles = 128)
+        val rom = ByteArray(32 * 128) + ring // 128 tiles vacíos + 128 con anillos
+
+        val candidates = listOf(
+            pal("ajena", clashing16()),
+            pal("rampa", greenRamp16()),
+        )
+        val ranked = SnesPaletteMatcher.rankPalettes(rom, 0, SnesGraphicFormat.SNES_4BPP, 256, candidates)
+        assertEquals("rampa", ranked[0].source.id, "debería mirar la segunda mitad: $ranked")
+
+        // Cordura: si el dibujo estuviera SOLO en la cabecera, el muestreo antiguo
+        // (contiguo) y el nuevo coinciden, así que el orden se mantiene.
+        val soloCabecera = ring + ByteArray(32 * 128)
+        val head = SnesPaletteMatcher.rankPalettes(soloCabecera, 0, SnesGraphicFormat.SNES_4BPP, 256, candidates)
+        assertEquals("rampa", head[0].source.id)
+    }
+
+    @Test
     fun `sin candidatas o sin indices usados no revienta`() {
         val rom = encode4bpp(ringTilePixels(), tiles = 4)
         assertTrue(SnesPaletteMatcher.rankPalettes(rom, 0, SnesGraphicFormat.SNES_4BPP, 4, emptyList()).isEmpty())
