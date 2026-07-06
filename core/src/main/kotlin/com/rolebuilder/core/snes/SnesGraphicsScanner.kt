@@ -125,7 +125,16 @@ object SnesGraphicsScanner {
         if (m.dominant > 0.97) return 0.0
         val baseline = 1.0 / format.colorCount
         val normalized = ((m.coherence - baseline) / (1.0 - baseline)).coerceIn(0.0, 1.0)
-        return normalized * (1.0 - m.dominant)
+        // Sesgo de Occam: a igualdad, gana el bpp más BAJO. Sin esto, el 8bpp (cuya
+        // base aleatoria 1/256 es minúscula) se lleva casi todo por inflación, y
+        // unos datos leídos con demasiados planos parecen "coherentes" por azar.
+        val simplicity = when (format) {
+            SnesGraphicFormat.SNES_2BPP, SnesGraphicFormat.GB_2BPP, SnesGraphicFormat.NES_2BPP -> 1.0
+            SnesGraphicFormat.SNES_3BPP -> 0.97
+            SnesGraphicFormat.SNES_4BPP -> 0.93
+            SnesGraphicFormat.SNES_8BPP -> 0.55
+        }
+        return normalized * simplicity * (1.0 - m.dominant)
     }
 
     /**
