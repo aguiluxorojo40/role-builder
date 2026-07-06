@@ -307,16 +307,21 @@ object SnesGameRecipes {
     private fun extractSmw(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
         val bases = findSmwGfxTable(rom) ?: return emptyList()
         val (bLo, bHi, bBank) = bases
-        // Paletas REALES del juego (no adivinadas): filas canónicas por defecto.
+        // Paletas REALES del juego (no adivinadas). Para cada CLASE construimos sus
+        // 8 sub-paletas reales (índices 0..7 de la tabla). La clase la decide el slot;
+        // el índice, la coherencia con el dibujo: la cabecera de nivel elige un índice
+        // 0..7 que la galería (sin nivel) no conoce, así que en vez de fijar el 0
+        // (que es el terreno verde → todo salía verde) probamos los 8 y nos quedamos
+        // con el que mejor encaja. Da a cada hoja su paleta real más plausible.
         val delta = smwHeaderDelta(header)
         val tables = SmwPaletteTables(rom, delta)
-        val fgRow = row3bppFG(tables, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_BACK_INDEX)
-        val bgRow = row3bppBG(tables, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_BACK_INDEX)
-        val spriteRow = row3bppSprite(tables, SMW_DEFAULT_SPRITE_INDEX)
+        val fgRows = (0..7).map { row3bppFG(tables, it, SMW_DEFAULT_BACK_INDEX) }
+        val bgRows = (0..7).map { row3bppBG(tables, it, SMW_DEFAULT_BACK_INDEX) }
+        val spriteRows = (0..7).map { row3bppSprite(tables, it) }
         val marioRow = rowMario(tables)
-        // Tablas de slot: si validan, deciden la paleta por la VERDAD del juego (qué
+        // Tablas de slot: si validan, deciden la CLASE por la VERDAD del juego (qué
         // ranura carga cada fichero). Si no (ROM modificada u offset dudoso), null y
-        // se usa el heurístico de coherencia de dibujo de siempre.
+        // se elige entre todas las clases por coherencia de dibujo.
         val slots = SmwSlotTables.readIfValid(rom, delta)
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
@@ -331,21 +336,22 @@ object SnesGameRecipes {
             if (available < 16) continue
             val count = minOf(available, 128)
             val is4bpp = fmt == SnesGraphicFormat.SNES_4BPP
-            // Preferencia: la VERDAD del slot (a qué ranura va el fichero i) sobre el
-            // heurístico. Solo cuando las tablas no validan se recurre a puntuar el
-            // dibujo con las filas reales candidatas. La fila de Mario SOLO compite en
-            // 4bpp; imponerla a todo 4bpp teñía de arcoíris las fuentes/HUD.
+            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
+            fun bestOf(rows: List<IntArray>): IntArray =
+                rows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
+            // La CLASE la manda el slot (la verdad del juego); dentro de ella se elige
+            // el sub-índice 0..7 más coherente con el dibujo. La fila de Mario solo
+            // aplica a GFX32/4bpp; imponerla a todo 4bpp teñía de arcoíris fuentes/HUD.
             val pal = if (slots != null) {
                 when (slots.roleOf(i, is4bpp)) {
-                    SmwGfxRole.PLAYER -> if (is4bpp) marioRow else fgRow
-                    SmwGfxRole.SPRITE -> spriteRow
-                    SmwGfxRole.BG -> bgRow
-                    SmwGfxRole.FG -> fgRow
+                    SmwGfxRole.PLAYER -> if (is4bpp) marioRow else bestOf(fgRows)
+                    SmwGfxRole.SPRITE -> bestOf(spriteRows)
+                    SmwGfxRole.BG -> bestOf(bgRows)
+                    SmwGfxRole.FG -> bestOf(fgRows)
                 }
             } else {
-                val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
-                val candidates = if (is4bpp) listOf(fgRow, spriteRow, marioRow) else listOf(fgRow, spriteRow)
-                candidates.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
+                val all = if (is4bpp) fgRows + spriteRows + marioRow else fgRows + spriteRows
+                bestOf(all)
             }
             val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             n++
