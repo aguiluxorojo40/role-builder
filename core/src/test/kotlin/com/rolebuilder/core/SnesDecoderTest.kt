@@ -291,6 +291,19 @@ class SnesDecoderTest {
     }
 
     @Test
+    fun `SnesGameRecipes reconoce Super Mario World por la cabecera`() {
+        fun headerWith(title: String) = com.rolebuilder.core.snes.SnesHeader(
+            title = title, isFastRom = false, romTypeDescription = "", romSizeBytes = 0,
+            sramSizeBytes = 0, country = "", licensee = "", version = 0, checksum = 0,
+            checksumComplement = 0, isChecksumValid = true, mapping = SnesMapping.LOROM, headerOffset = 0,
+        )
+        assertEquals("Super Mario World", com.rolebuilder.core.snes.SnesGameRecipes.detect(headerWith("SUPER MARIOWORLD")))
+        assertEquals(null, com.rolebuilder.core.snes.SnesGameRecipes.detect(headerWith("OTRO JUEGO")))
+        // Sin receta, extract devuelve vacío (no revienta).
+        assertTrue(com.rolebuilder.core.snes.SnesGameRecipes.extract(ByteArray(0x10000), headerWith("OTRO")).isEmpty())
+    }
+
+    @Test
     fun `availableTiles cuenta tiles completos`() {
         assertEquals(4, SnesAssetExtractor.availableTiles(64, 0, SnesGraphicFormat.SNES_2BPP))
         assertEquals(2, SnesAssetExtractor.availableTiles(64, 32, SnesGraphicFormat.SNES_2BPP))

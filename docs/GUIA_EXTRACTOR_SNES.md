@@ -108,6 +108,12 @@ detecta sola; no tienes que hacer nada.
   salen medio corazón por aquí, media cara por allá. En **"Tamaño de sprite"**
   elige **16×16 (2×2)** —o 24×24, 32×32— y el atlas recompone cada bloque como un
   sprite entero. Ahí "Columnas" pasa a contar sprites por fila.
+- **¿Es un juego conocido? Usa el "Modo fácil".** Si al cargar la ROM aparece
+  arriba **"✨ Modo fácil"** con el nombre del juego (p. ej. *Super Mario World*),
+  pulsa **"Extraer gráficos de …"**: la app sigue el mapa REAL del juego y te
+  muestra sus conjuntos de gráficos ya limpios. Solo tienes que **tocar** los que
+  quieras para guardarlos como tileset. Cero offsets, cero formatos. (Para juegos
+  sin receta, usa el modo manual de abajo.)
 - **¿Buscas personajes, no fondos? Activa "Buscar sprites".** El buscador normal
   premia las zonas planas y por eso se salta las hojas de personajes (que son casi
   todo fondo transparente). Con el interruptor **"Buscar hojas de sprites"**, en

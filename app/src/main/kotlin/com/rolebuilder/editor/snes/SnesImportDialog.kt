@@ -4,12 +4,16 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -41,8 +45,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.layout.ContentScale
 import com.rolebuilder.core.snes.SnesAssetExtractor
+import com.rolebuilder.core.snes.SnesAutoExtractor
 import com.rolebuilder.core.snes.SnesDecoder
+import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
 import com.rolebuilder.core.snes.SnesPalette
@@ -111,8 +118,12 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     var decompressMode by remember { mutableStateOf(0) }
     // Lado del sprite en tiles de 8×8: 1 = sin agrupar, 2 = 16×16, 3 = 24×24, 4 = 32×32.
     var spriteTiles by remember { mutableStateOf(1) }
+    // Modo fácil: si la ROM es un juego con receta, sus gráficos ya extraídos.
+    var recipeFindings by remember(romBytes) { mutableStateOf<List<SnesAutoExtractor.Finding>>(emptyList()) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
+    // Juego reconocido con receta (modo fácil), o null.
+    val gameRecipe = remember(header) { header?.let { SnesGameRecipes.detect(it) } }
     val detected: List<SnesPalette> = remember(romBytes) {
         romBytes?.let { SnesDecoder.scanRomForPalettes(it) } ?: emptyList()
     }
@@ -245,6 +256,73 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
             }
 
             if (romBytes != null) {
+                if (gameRecipe != null) {
+                    HorizontalDivider()
+                    Text("✨ Modo fácil", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Reconocido: $gameRecipe. Extrae sus gráficos de un toque " +
+                            "(sin tocar nada técnico) y luego toca las imágenes que quieras guardar.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(onClick = {
+                        val rom = romBytes ?: return@Button
+                        val hdr = header ?: return@Button
+                        recipeFindings = runCatching { SnesGameRecipes.extract(rom, hdr) }.getOrDefault(emptyList())
+                        if (recipeFindings.isEmpty()) {
+                            Toast.makeText(context, "No se pudo leer el mapa gráfico de este juego.", Toast.LENGTH_LONG).show()
+                        }
+                    }) { Text("Extraer gráficos de $gameRecipe") }
+
+                    if (recipeFindings.isNotEmpty()) {
+                        Text(
+                            "${recipeFindings.size} conjuntos de gráficos. Toca uno para importarlo como tileset:",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        recipeFindings.chunked(3).forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                rowItems.forEach { f ->
+                                    val idx = recipeFindings.indexOf(f)
+                                    Image(
+                                        bitmap = SnesImport.toBitmap(f.image).asImageBitmap(),
+                                        contentDescription = f.label,
+                                        filterQuality = FilterQuality.None,
+                                        contentScale = ContentScale.FillWidth,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(48.dp)
+                                            .background(Color(0xFF202024), RoundedCornerShape(4.dp))
+                                            .border(1.dp, Color(0xFF555555), RoundedCornerShape(4.dp))
+                                            .clickable {
+                                                runCatching {
+                                                    val fileName = SnesImport.sanitizeFileName("${gameRecipe}_${idx + 1}")
+                                                    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(f.image))
+                                                    val sheet = SnesAssetExtractor.TileSheet(
+                                                        f.image, f.columns, f.image.height / 8, 8,
+                                                    )
+                                                    state.addTileset(
+                                                        SnesAssetExtractor.toTileset(
+                                                            sheet, state.nextTilesetId(),
+                                                            "$gameRecipe ${idx + 1}", fileName,
+                                                        )
+                                                    )
+                                                    Toast.makeText(context, "Importado: $fileName", Toast.LENGTH_SHORT).show()
+                                                }.onFailure {
+                                                    Toast.makeText(context, "No se pudo guardar: ${it.message}", Toast.LENGTH_LONG).show()
+                                                }
+                                            },
+                                    )
+                                }
+                                repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                            }
+                        }
+                    }
+                    HorizontalDivider()
+                    Text("— o ajústalo a mano (avanzado) —", style = MaterialTheme.typography.bodySmall)
+                }
+
                 HorizontalDivider()
 
                 DropdownField(
