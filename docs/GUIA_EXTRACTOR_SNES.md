@@ -46,8 +46,9 @@ ruido porque están comprimidas.
   gráficos. Se escribe en decimal (`8192`) o en hexadecimal (`0x2000`). No hace
   falta que sepas hex: el botón **Auto-buscar** los encuentra por ti.
 - **Paleta**: el conjunto de colores. El SNES guarda colores de 15 bits (formato
-  CGRAM). La app **detecta paletas** dentro de la ROM automáticamente; si ninguna
-  encaja, tienes una en escala de grises para ver la forma.
+  CGRAM). La app **detecta paletas** dentro de la ROM y además **empareja sola**
+  cada gráfico con la que mejor le encaja (modo "Automática"); si ninguna
+  convence, tienes el desplegable manual y una escala de grises para ver la forma.
 - **Índice 0 = transparente**: en los sprites del SNES el primer color es el
   fondo. La app lo guarda transparente para que el tile se integre en tus mapas.
 
@@ -88,8 +89,8 @@ detecta sola; no tienes que hacer nada.
    contener dibujos sin comprimir. Usa **◀ ▶** para recorrer las demás zonas
    candidatas mirando la **vista previa** en vivo.
 6. Cuando veas algo reconocible (un personaje, tiles de suelo, una fuente…):
-   - Ajusta la **paleta** en el desplegable hasta que los colores cuadren (o deja
-     escala de grises si solo quieres la forma).
+   - La **paleta** "Automática" ya habrá elegido color por ti; si no cuadra,
+     ajusta el desplegable a mano (o pon escala de grises si solo quieres la forma).
    - Cambia **Columnas** si quieres reorganizar la rejilla, y **Nº de tiles**
      para recortar cuántos coges.
    - Afina el **offset** con pequeños desplazamientos si la imagen sale "cortada"
@@ -136,12 +137,17 @@ detecta sola; no tienes que hacer nada.
   dibujos, has dado con gráficos auténticos: solo te falta elegir la paleta CGRAM
   para el color. Si en gris sigue siendo ruido aleatorio, ahí no hay gráficos (o
   están comprimidos).
-- **La paleta correcta suele estar en la ROM.** La app escanea **toda** la ROM y
-  ordena las paletas detectadas **de mayor a menor calidad** (rampas de sombreado,
-  un color oscuro de fondo, buen contraste), así que la primera "CGRAM @ 0x…" ya
-  suele ser una paleta real. Una vez confirmes la forma en gris, ve probando esas
-  entradas hasta que los colores cuadren: qué paleta va con qué gráfico lo decide
-  cada juego por dentro, así que a veces hay que cambiar entre unas cuantas.
+- **El color se elige solo (paleta "Automática").** La app escanea **toda** la
+  ROM en busca de paletas CGRAM y, con la opción **"Automática (la que mejor
+  encaja)"** —la que viene por defecto—, un emparejador puntúa cada paleta
+  **contra el gráfico que estás viendo**: en pixel art real, los índices que
+  aparecen pegados son pasos de una rampa de sombreado, así que la paleta
+  correcta produce colores afines donde una ajena produce ruido de tonos. También
+  prueba las **sub-paletas** (mitades de 8 colores de cada fila de 16), como hace
+  el SNES real. Debajo del desplegable te dice cuál eligió. No es infalible —el
+  emparejado exacto lo deciden las tablas internas de cada juego—, pero suele
+  acertar; si el color no convence, elige otra "CGRAM @ 0x…" del desplegable
+  (están ordenadas de mayor a menor calidad).
 - **Si ni en gris se ve nada**, ese juego comprime sus gráficos: prueba la
   descompresión (sección 6.5) o cambia de juego. Los homebrew y las demos suelen
   tener gráficos sin comprimir.
@@ -221,6 +227,13 @@ Genera un PNG en `salida/images/` y un `*.tileset.json` que describe la rejilla.
   el ruido de datos comprimidos o de código casi no la tiene. Así, en un juego
   que comprime su arte, devuelve pocos candidatos —la respuesta honesta— en vez
   de mandarte a ruido. No descomprime nada: solo localiza lo que ya está claro.
+- El **emparejador de paletas** automatiza el color: radiografía el gráfico
+  (qué índices usa y qué pares de índices conviven pegados en los píxeles) y
+  puntúa cada paleta CGRAM detectada según si esos pares vecinos se traducen a
+  colores afines (rampas de sombreado y contornos oscuros = paleta plausible) o
+  a saltos de tono aleatorios (paleta ajena). Prueba también las sub-paletas de
+  8/4 colores dentro de cada fila de 16, igual que las trocea la consola. Gana
+  la de mejor puntuación; el desplegable manual queda para corregir los fallos.
 - Toda esta lógica vive en `core/snes` (Kotlin puro) y está cubierta por tests
   JVM, así que se ejecuta igual en el móvil que en el escritorio.
 

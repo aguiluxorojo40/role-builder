@@ -53,6 +53,7 @@ import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
 import com.rolebuilder.core.snes.SnesPalette
+import com.rolebuilder.core.snes.SnesPaletteMatcher
 import com.rolebuilder.core.snes.compression.CompressionCodecs
 import com.rolebuilder.core.snes.compression.LcLz2
 import com.rolebuilder.editor.EditorState
@@ -62,13 +63,15 @@ import kotlin.math.floor
 
 /**
  * Opción de paleta en el desplegable. Índices especiales negativos:
- *   -1 = colores vivos por defecto, -2 = escala de grises (ver formas).
+ *   -1 = colores vivos por defecto, -2 = escala de grises (ver formas),
+ *   -3 = automática (el emparejador elige la que mejor encaja al gráfico actual).
  * Índices >= 0 apuntan a una paleta CGRAM detectada en la ROM.
  */
 private data class PaletteOption(val index: Int, val label: String)
 
 private const val PALETTE_DEFAULT = -1
 private const val PALETTE_GRAYSCALE = -2
+private const val PALETTE_AUTO = -3
 
 private val FORMAT_LABELS = mapOf(
     SnesGraphicFormat.SNES_2BPP to "SNES 2bpp (4 colores)",
@@ -90,6 +93,13 @@ private val VIVID_16 = intArrayOf(
 
 private fun defaultColorPalette(colorCount: Int): IntArray =
     IntArray(colorCount) { i -> if (i < VIVID_16.size) VIVID_16[i] else 0xFF000000.toInt() }
+
+/** Resultado de la vista previa: imagen, rejilla y, en modo automático, la paleta elegida. */
+private data class PreviewData(
+    val bitmap: ImageBitmap,
+    val sheet: SnesAssetExtractor.TileSheet,
+    val autoPalette: String?,
+)
 
 private fun parseOffset(text: String): Int {
     val s = text.trim()
@@ -129,13 +139,15 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     }
     val paletteOptions = remember(detected) {
         listOf(
+            PaletteOption(PALETTE_AUTO, "Automática (la que mejor encaja)"),
             PaletteOption(PALETTE_DEFAULT, "Colores por defecto"),
             PaletteOption(PALETTE_GRAYSCALE, "Escala de grises (ver formas)"),
         ) + detected.mapIndexed { i, p -> PaletteOption(i, p.name) }
     }
-    // Al detectar paletas en la ROM, selecciona la primera (color real) por defecto.
+    // Con paletas detectadas, arranca en modo automático: el emparejador elige
+    // para CADA gráfico la paleta detectada que mejor le encaja (sin tocar nada).
     LaunchedEffect(detected) {
-        paletteIndex = if (detected.isNotEmpty()) 0 else -1
+        paletteIndex = if (detected.isNotEmpty()) PALETTE_AUTO else PALETTE_DEFAULT
     }
 
     // Buscar hojas de sprites/personajes en vez de fondos (no penaliza la transparencia).
@@ -172,7 +184,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     }
 
     // Vista previa reactiva: recalcula la hoja de tiles al cambiar cualquier parámetro.
-    val preview: Pair<ImageBitmap, SnesAssetExtractor.TileSheet>? =
+    val preview: PreviewData? =
         remember(romBytes, format, offsetText, columns, tiles, paletteIndex, decompressMode, spriteTiles) {
             val rom = romBytes ?: return@remember null
             runCatching {
@@ -197,8 +209,22 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
                 if (available <= 0) return@runCatching null
                 val count = tiles.coerceIn(1, minOf(available, 1024))
+                var autoPalette: String? = null
                 val palette = when {
                     paletteIndex == PALETTE_GRAYSCALE -> SnesDecoder.grayscalePalette(format.colorCount)
+                    paletteIndex == PALETTE_AUTO -> {
+                        // El emparejador puntúa cada paleta detectada CONTRA estos
+                        // tiles y se queda con la que mejor les sienta (y su sub-paleta).
+                        val match = SnesPaletteMatcher
+                            .rankPalettes(tileRom, tileOffset, format, count, detected)
+                            .firstOrNull()
+                        if (match != null) {
+                            autoPalette = match.source.name + if (match.window > 0) {
+                                " · colores ${match.window}-${match.window + format.colorCount - 1}"
+                            } else ""
+                            match.colors
+                        } else defaultColorPalette(format.colorCount)
+                    }
                     paletteIndex >= 0 -> detected.getOrNull(paletteIndex)?.colors
                         ?: defaultColorPalette(format.colorCount)
                     else -> defaultColorPalette(format.colorCount)
@@ -220,7 +246,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
                     )
                 }
-                SnesImport.toBitmap(sheet.image).asImageBitmap() to sheet
+                PreviewData(SnesImport.toBitmap(sheet.image).asImageBitmap(), sheet, autoPalette)
             }.getOrNull()
         }
 
@@ -459,12 +485,19 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         "color 0 se guarda transparente (fondo de los sprites).",
                     style = MaterialTheme.typography.bodySmall,
                 )
+                if (paletteIndex == PALETTE_AUTO && preview?.autoPalette != null) {
+                    Text(
+                        "Elegida para este gráfico: ${preview.autoPalette}. Si el color no " +
+                            "convence, elige otra del desplegable.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
                 if (paletteIndex == PALETTE_GRAYSCALE) {
                     Text(
                         "En escala de grises ves la FORMA de los tiles aunque no sepas su paleta " +
                             "real: si aquí distingues dibujos, has dado con gráficos de verdad " +
-                            "(luego elige una paleta CGRAM para el color). Con la paleta equivocada, " +
-                            "unos gráficos correctos parecen ruido de colores.",
+                            "(vuelve a \"Automática\" y el emparejador buscará su color). Con la " +
+                            "paleta equivocada, unos gráficos correctos parecen ruido de colores.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -472,8 +505,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 HorizontalDivider()
                 Text("Vista previa", style = MaterialTheme.typography.titleSmall)
                 if (preview != null) {
-                    val img = preview.first
-                    val sheet = preview.second
+                    val img = preview.bitmap
+                    val sheet = preview.sheet
                     Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -528,7 +561,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 Button(
                     enabled = preview != null,
                     onClick = {
-                        val sheet = preview?.second ?: return@Button
+                        val sheet = preview?.sheet ?: return@Button
                         runCatching {
                             val fileName = SnesImport.sanitizeFileName(name)
                             val bmp = SnesImport.toBitmap(sheet.image)

@@ -44,10 +44,6 @@ object SnesAutoExtractor {
         maxScanBytes: Int = 0,
     ): List<Finding> {
         val palettes = SnesDecoder.scanRomForPalettes(rom)
-        val bestPalette: (SnesGraphicFormat) -> IntArray = { fmt ->
-            palettes.firstOrNull()?.colors?.let { adaptPalette(it, fmt.colorCount) }
-                ?: SnesDecoder.grayscalePalette(fmt.colorCount)
-        }
 
         data class Cand(val offset: Int, val compressed: Boolean)
         val cands = LinkedHashSet<Cand>()
@@ -79,7 +75,10 @@ object SnesAutoExtractor {
             val available = SnesAssetExtractor.availableTiles(data.size, dataOffset, fmt)
             if (available < 16) continue
             val count = minOf(available, previewTiles)
-            val palette = bestPalette(fmt)
+            // Paleta emparejada A ESTE gráfico (no una global): la coherencia de
+            // tono del propio dibujo decide cuál de las detectadas le corresponde.
+            val palette = SnesPaletteMatcher.bestColors(data, dataOffset, fmt, count, palettes)
+                ?: SnesDecoder.grayscalePalette(fmt.colorCount)
             val sheet = SnesAssetExtractor.extractTileSheet(data, dataOffset, fmt, palette, count, columns)
             findings.add(
                 Finding(
@@ -106,8 +105,4 @@ object SnesAutoExtractor {
         }
         return kept.mapIndexed { i, f -> f.copy(label = "Gráfico ${i + 1}") }
     }
-
-    /** Ajusta una paleta detectada al nº de colores del formato (recorta o rellena). */
-    private fun adaptPalette(src: IntArray, colorCount: Int): IntArray =
-        IntArray(colorCount) { if (it < src.size) src[it] else 0xFF000000.toInt() }
 }

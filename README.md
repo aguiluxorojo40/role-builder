@@ -23,7 +23,11 @@ externos: editor y motor son la misma app.
   y decodifica sus gráficos (2bpp/3bpp/4bpp/8bpp) y paletas CGRAM directamente en el
   dispositivo para convertirlos en tilesets del proyecto, con **autodetección de
   zonas gráficas** para no adivinar offsets y **descompresión conectable**
-  (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. Incluye una
+  (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. El color se
+  elige solo: un **emparejador de paletas** puntúa cada paleta CGRAM detectada
+  contra el gráfico concreto (coherencia de tono entre índices vecinos, con
+  sub-paletas de 8/4 colores) y aplica la que mejor encaja, dejando el desplegable
+  manual solo para corregir. Incluye una
   **vista en escala de grises** para reconocer la *forma* de los tiles aunque aún
   no conozcas la paleta (con la paleta equivocada, unos gráficos correctos parecen
   ruido de colores) y un **atlas de sprites** que agrupa bloques de tiles de 8×8
