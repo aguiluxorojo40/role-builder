@@ -26,7 +26,10 @@ externos: editor y motor son la misma app.
   (LC_LZ2, verificado con Super Mario World) juzgada por coherencia. Incluye una
   **vista en escala de grises** para reconocer la *forma* de los tiles aunque aún
   no conozcas la paleta (con la paleta equivocada, unos gráficos correctos parecen
-  ruido de colores). Guía paso a paso para principiantes en
+  ruido de colores) y un **atlas de sprites** que agrupa bloques de tiles de 8×8
+  en sprites enteros (2×2 → 16×16, 4×4 → 32×32), porque muchos juegos guardan un
+  sprite grande como varios 8×8 consecutivos que, sin agrupar, salen partidos.
+  Guía paso a paso para principiantes en
   [`docs/GUIA_EXTRACTOR_SNES.md`](docs/GUIA_EXTRACTOR_SNES.md).
 - Exporta tu juego como .zip para compartirlo e importa los de otros.
 - Botón ▶ para probar el juego al instante.
@@ -103,6 +106,8 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 ./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --palette-offset 0x100"
 # Vista en escala de grises: reconoce la FORMA de los tiles sin conocer la paleta
 ./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --grayscale"
+# Atlas de sprites: agrupa bloques de tiles en sprites enteros (2x2 = 16×16, 4x4 = 32×32)
+./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --sprite 2x2"
 # o probar con una ROM de ejemplo generada al vuelo (sin material con copyright):
 ./gradlew :core:extractSnesTileset --args="--demo out"
 ```

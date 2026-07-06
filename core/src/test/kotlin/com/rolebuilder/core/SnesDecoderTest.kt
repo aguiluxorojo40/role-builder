@@ -218,6 +218,45 @@ class SnesDecoderTest {
     }
 
     @Test
+    fun `extractSpriteAtlas agrupa 2x2 tiles en un sprite entero`() {
+        // 4 tiles 2bpp, cada uno RELLENO de un índice distinto (1,2,3,1) en su
+        // esquina superior izquierda basta para identificarlo: ponemos el pixel
+        // (0,0) de cada tile a un índice conocido y comprobamos dónde cae.
+        val rom = ByteArray(4 * 16) // 4 tiles de 16 bytes (2bpp)
+        // tile 0 -> pixel(0,0)=1 ; tile1 -> 2 ; tile2 -> 3 ; tile3 -> 1
+        // 2bpp: bit0 en byte 0, bit1 en byte 1, máscara 0x80 = pixel (0,0)
+        rom[0 * 16] = 0x80.toByte()                    // tile0 idx1
+        rom[1 * 16 + 1] = 0x80.toByte()                // tile1 idx2
+        rom[2 * 16] = 0x80.toByte(); rom[2 * 16 + 1] = 0x80.toByte() // tile2 idx3
+        rom[3 * 16] = 0x80.toByte()                    // tile3 idx1
+        val pal = intArrayOf(0xFF000000.toInt(), 0xFFAA0000.toInt(), 0xFF00BB00.toInt(), 0xFF0000CC.toInt())
+        val sheet = SnesAssetExtractor.extractSpriteAtlas(
+            rom, offset = 0, format = SnesGraphicFormat.SNES_2BPP, palette = pal,
+            spriteCount = 1, spriteTilesW = 2, spriteTilesH = 2, columns = 1,
+            transparentIndex0 = false, // queremos ver el índice 0 como color, no transparente
+        )
+        // Un solo sprite de 16×16 px.
+        assertEquals(1, sheet.columns)
+        assertEquals(1, sheet.rows)
+        assertEquals(16, sheet.image.width)
+        assertEquals(16, sheet.image.height)
+        assertEquals(16, sheet.tileSize)
+        // Orden de lectura dentro del sprite: TL=tile0, TR=tile1, BL=tile2, BR=tile3.
+        assertEquals(pal[1], sheet.image.get(0, 0), "TL = tile0 idx1")
+        assertEquals(pal[2], sheet.image.get(8, 0), "TR = tile1 idx2")
+        assertEquals(pal[3], sheet.image.get(0, 8), "BL = tile2 idx3")
+        assertEquals(pal[1], sheet.image.get(8, 8), "BR = tile3 idx1")
+    }
+
+    @Test
+    fun `availableSprites cuenta grupos completos`() {
+        // 64 bytes, 2bpp (16B/tile) = 4 tiles = 1 sprite de 2x2.
+        assertEquals(1, SnesAssetExtractor.availableSprites(64, 0, SnesGraphicFormat.SNES_2BPP, 2, 2))
+        assertEquals(4, SnesAssetExtractor.availableSprites(64, 0, SnesGraphicFormat.SNES_2BPP, 1, 1))
+        assertEquals(0, SnesAssetExtractor.availableSprites(48, 0, SnesGraphicFormat.SNES_2BPP, 2, 2))
+    }
+
+    @Test
     fun `toTileset describe la hoja generada`() {
         val rom = ByteArray(16 * 8)
         val palette = SnesDecoder.parsePalette(rom, 0, 4)

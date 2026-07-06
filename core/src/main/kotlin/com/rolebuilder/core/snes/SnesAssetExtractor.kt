@@ -63,6 +63,80 @@ object SnesAssetExtractor {
     }
 
     /**
+     * Compone un **atlas de sprites** agrupando bloques de [spriteTilesW]×[spriteTilesH]
+     * tiles de 8×8 en una sola celda (p. ej. 2×2 → un sprite de 16×16). Dentro de
+     * cada sprite los tiles se leen en orden de lectura (arriba-izq, arriba-der,
+     * …, abajo-der), que es como la mayoría de juegos de SNES guardan un sprite
+     * grande: varios 8×8 consecutivos. Así los personajes y objetos salen ENTEROS
+     * en el atlas en vez de partidos en trozos sueltos.
+     *
+     * Los sprites se disponen en una rejilla de [columns] sprites por fila. Con
+     * [spriteTilesW] = [spriteTilesH] = 1 equivale a [extractTileSheet].
+     */
+    fun extractSpriteAtlas(
+        rom: ByteArray,
+        offset: Int,
+        format: SnesGraphicFormat,
+        palette: IntArray,
+        spriteCount: Int,
+        spriteTilesW: Int = 2,
+        spriteTilesH: Int = 2,
+        columns: Int = 8,
+        transparentIndex0: Boolean = true,
+    ): TileSheet {
+        require(spriteCount > 0) { "spriteCount debe ser positivo" }
+        require(spriteTilesW > 0 && spriteTilesH > 0) { "el tamaño del sprite debe ser positivo" }
+        require(columns > 0) { "columns debe ser positivo" }
+        val tile = 8
+        val tilesPerSprite = spriteTilesW * spriteTilesH
+        val spriteCols = minOf(columns, spriteCount)
+        val spriteRows = (spriteCount + spriteCols - 1) / spriteCols
+        val spriteW = spriteTilesW * tile
+        val spriteH = spriteTilesH * tile
+        val image = ArgbImage(spriteCols * spriteW, spriteRows * spriteH)
+
+        for (s in 0 until spriteCount) {
+            val originX = (s % spriteCols) * spriteW
+            val originY = (s / spriteCols) * spriteH
+            for (ty in 0 until spriteTilesH) {
+                for (tx in 0 until spriteTilesW) {
+                    val tileIndex = s * tilesPerSprite + ty * spriteTilesW + tx
+                    val decoded = SnesDecoder.decodeTile(
+                        rom, offset + tileIndex * format.bytesPerTile, format, tileIndex,
+                    )
+                    val baseX = originX + tx * tile
+                    val baseY = originY + ty * tile
+                    for (py in 0 until tile) {
+                        for (px in 0 until tile) {
+                            val colorIndex = decoded.pixelIndices[py * tile + px]
+                            val argb = when {
+                                transparentIndex0 && colorIndex == 0 -> 0x00000000
+                                colorIndex < palette.size -> palette[colorIndex]
+                                else -> 0xFF000000.toInt()
+                            }
+                            image.set(baseX + px, baseY + py, argb)
+                        }
+                    }
+                }
+            }
+        }
+        // tileSize describe la celda del atlas: el lado del sprite (cuadrado habitual).
+        return TileSheet(image, spriteCols, spriteRows, spriteW)
+    }
+
+    /**
+     * Cuántos sprites completos de [spriteTilesW]×[spriteTilesH] tiles caben desde
+     * [offset] con [format] hasta el final de la ROM.
+     */
+    fun availableSprites(
+        romSize: Int,
+        offset: Int,
+        format: SnesGraphicFormat,
+        spriteTilesW: Int,
+        spriteTilesH: Int,
+    ): Int = availableTiles(romSize, offset, format) / (spriteTilesW * spriteTilesH).coerceAtLeast(1)
+
+    /**
      * Construye un [Tileset] de role-builder que describe la hoja generada por
      * [extractTileSheet]. La imagen se guarda aparte; aquí solo se registran la
      * rejilla y el nombre de archivo. Todos los tiles se marcan transitables por
