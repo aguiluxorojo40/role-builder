@@ -22,8 +22,23 @@ object SnesGraphicsScanner {
     /** Un offset candidato con su puntuación (0..1); mayor = más "gráfico". */
     data class Candidate(val offset: Int, val score: Double)
 
+    /** Un formato candidato con su aptitud normalizada (0..1); mayor = mejor encaje. */
+    data class FormatGuess(val format: SnesGraphicFormat, val fitness: Double)
+
     /** Coherencia mínima para considerar que una ventana "parece" un dibujo. */
     private const val MIN_SCORE = 0.30
+
+    /**
+     * Formatos que se prueban al autodetectar el número de bits por píxel. Se
+     * omiten GB/NES 2bpp (se decodifican igual que SNES 2bpp en la práctica) para
+     * no duplicar; el ganador se decide por aptitud normalizada, no por bpp.
+     */
+    val DETECTABLE_FORMATS = listOf(
+        SnesGraphicFormat.SNES_2BPP,
+        SnesGraphicFormat.SNES_3BPP,
+        SnesGraphicFormat.SNES_4BPP,
+        SnesGraphicFormat.SNES_8BPP,
+    )
 
     /**
      * Devuelve hasta [maxResults] offsets candidatos, ordenados por posición en
@@ -60,8 +75,18 @@ object SnesGraphicsScanner {
      *  - diversidad: penaliza las ventanas de un solo color (relleno).
      */
     fun scoreWindow(rom: ByteArray, offset: Int, format: SnesGraphicFormat, windowTiles: Int): Double {
+        val m = measure(rom, offset, format, windowTiles) ?: return 0.0
+        if (m.dominant > 0.97) return 0.0 // ventana de un solo color: relleno vacío
+        // Penaliza el relleno casi uniforme conservando el premio a las zonas planas.
+        return m.coherence * (1.0 - m.dominant)
+    }
+
+    /** Coherencia y color dominante de una ventana, o null si se sale de la ROM. */
+    private data class Measure(val coherence: Double, val dominant: Double)
+
+    private fun measure(rom: ByteArray, offset: Int, format: SnesGraphicFormat, windowTiles: Int): Measure? {
         val windowBytes = format.bytesPerTile * windowTiles
-        if (offset < 0 || offset + windowBytes > rom.size) return 0.0
+        if (offset < 0 || offset + windowBytes > rom.size) return null
 
         var equalAdjacent = 0L
         var totalAdjacent = 0L
@@ -72,7 +97,6 @@ object SnesGraphicsScanner {
         for (t in 0 until windowTiles) {
             val tile = SnesDecoder.decodeTile(rom, offset + t * format.bytesPerTile, format, t)
             val px = tile.pixelIndices
-            // Coherencia horizontal y vertical dentro del tile 8x8.
             for (y in 0 until 8) {
                 for (x in 0 until 8) {
                     val v = px[y * 8 + x]
@@ -84,14 +108,43 @@ object SnesGraphicsScanner {
                 }
             }
         }
+        if (totalAdjacent == 0L || globalPixels == 0L) return null
+        return Measure(equalAdjacent / totalAdjacent.toDouble(), maxGlobal / globalPixels.toDouble())
+    }
 
-        if (totalAdjacent == 0L || globalPixels == 0L) return 0.0
+    /**
+     * Aptitud de un [format] en [offset], NORMALIZADA para poder comparar entre
+     * distintas profundidades de bits. La coherencia bruta favorece a los
+     * formatos con menos colores (más coincidencias por puro azar), así que se
+     * resta la línea base aleatoria (≈ 1/colores) y se reescala: unos datos al
+     * azar puntúan ~0 en cualquier bpp, y el formato CORRECTO —que produce zonas
+     * planas de verdad— destaca. Devuelve 0 si es relleno de un solo color.
+     */
+    fun formatFitness(rom: ByteArray, offset: Int, format: SnesGraphicFormat, windowTiles: Int = 32): Double {
+        val m = measure(rom, offset, format, windowTiles) ?: return 0.0
+        if (m.dominant > 0.97) return 0.0
+        val baseline = 1.0 / format.colorCount
+        val normalized = ((m.coherence - baseline) / (1.0 - baseline)).coerceIn(0.0, 1.0)
+        return normalized * (1.0 - m.dominant)
+    }
 
-        val dominant = maxGlobal / globalPixels.toDouble()
-        if (dominant > 0.97) return 0.0 // ventana de un solo color: relleno vacío
-
-        val coherence = equalAdjacent / totalAdjacent.toDouble()
-        // Penaliza el relleno casi uniforme conservando el premio a las zonas planas.
-        return coherence * (1.0 - dominant)
+    /**
+     * Prueba varios [formats] en [offset] y devuelve el que mejor encaja por
+     * [formatFitness], o null si ninguno supera el mínimo. Sirve para que el
+     * programa acierte solo entre 2/3/4/8bpp en vez de pedirlo a mano (clave para
+     * juegos como Super Mario World, cuyos gráficos son casi todos 3bpp).
+     */
+    fun detectBestFormat(
+        rom: ByteArray,
+        offset: Int,
+        windowTiles: Int = 32,
+        formats: List<SnesGraphicFormat> = DETECTABLE_FORMATS,
+    ): FormatGuess? {
+        var best: FormatGuess? = null
+        for (f in formats) {
+            val fit = formatFitness(rom, offset, f, windowTiles)
+            if (best == null || fit > best.fitness) best = FormatGuess(f, fit)
+        }
+        return best?.takeIf { it.fitness >= MIN_SCORE }
     }
 }

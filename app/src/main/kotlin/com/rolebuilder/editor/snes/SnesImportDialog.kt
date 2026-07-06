@@ -248,6 +248,25 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     optionLabel = { FORMAT_LABELS[it] ?: it.name },
                     onSelect = { format = it },
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = {
+                        // Detecta el bpp por sí solo sobre los bytes actuales (descomprimidos
+                        // si toca): elige el formato con mejor aptitud normalizada.
+                        val rom = romBytes ?: return@Button
+                        val offset = parseOffset(offsetText)
+                        val data = when (decompressMode) {
+                            1 -> CompressionCodecs.autoDecompress(rom, offset, format)?.result?.data?.let { it to 0 }
+                            2 -> runCatching { LcLz2.decompress(rom, offset) }.getOrNull()?.data?.let { it to 0 }
+                            else -> rom to offset
+                        }
+                        val guess = data?.let { (bytes, off) -> SnesGraphicsScanner.detectBestFormat(bytes, off) }
+                        if (guess != null) format = guess.format
+                    }) { Text("Detectar bpp") }
+                    Text(
+                        "  Prueba 2/3/4/8bpp y elige el que da gráficos coherentes.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
 
                 val decompressOptions = remember {
                     listOf(

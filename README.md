@@ -108,6 +108,8 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 ./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --grayscale"
 # Atlas de sprites: agrupa bloques de tiles en sprites enteros (2x2 = 16×16, 4x4 = 32×32)
 ./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format 4bpp --sprite 2x2"
+# Autodetección de bpp: el programa adivina 2/3/4/8bpp por sí solo
+./gradlew :core:extractSnesTileset --args="--rom juego.sfc --out out --offset 0x2000 --format auto"
 # o probar con una ROM de ejemplo generada al vuelo (sin material con copyright):
 ./gradlew :core:extractSnesTileset --args="--demo out"
 ```
