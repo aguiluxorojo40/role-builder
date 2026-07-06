@@ -1,5 +1,7 @@
 package com.rolebuilder.core
 
+import com.rolebuilder.core.snes.SnesAssetExtractor
+import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesTilemap
 import com.rolebuilder.core.snes.SnesTilemap.TilemapEntry
 import kotlin.random.Random
@@ -219,5 +221,54 @@ class SnesTilemapTest {
         // Todo hueco (tile 0) tampoco.
         val blanks = ByteArray(200)
         assertTrue(SnesTilemap.detectTilemapRegions(blanks, 0..63, minEntries = 32).isEmpty())
+    }
+
+    // ----------------------------------------------- integración con el extractor
+
+    /** Un tile 4bpp de 8×8 con TODOS los píxeles al mismo [index] (bytes planares). */
+    private fun solid4bppTile(index: Int): ByteArray {
+        val b = ByteArray(32)
+        for (y in 0..7) {
+            for (bit in 0..3) {
+                if ((index shr bit) and 1 == 1) {
+                    val at = if (bit < 2) 2 * y + bit else 16 + 2 * y + (bit - 2)
+                    b[at] = 0xFF.toByte()
+                }
+            }
+        }
+        return b
+    }
+
+    @Test
+    fun `el extractor pinta cada tile con la sub-paleta que ordena el tilemap`() {
+        val cgram = syntheticCgram() // fila p → rojo=p; columna c → verde=c
+        // Dos tiles de forma IDÉNTICA (todo índice 1) pero el tilemap les da filas
+        // distintas: es la corrección visible del problema, misma hoja y colores
+        // distintos porque manda el tilemap, no el dibujo.
+        val rom = solid4bppTile(1) + solid4bppTile(1)
+        val entries = listOf(entry(0, 2), entry(1, 5)) // tile0→fila2, tile1→fila5
+        val selector = SnesTilemap.paletteSelector(entries, cgram)
+
+        val sheet = SnesAssetExtractor.extractTileSheet(
+            rom, 0, SnesGraphicFormat.SNES_4BPP, tileCount = 2, columns = 2, paletteForTile = selector,
+        )
+        // Tile 0 en la columna 0 (x=0), tile 1 en la columna 1 (x=8).
+        val c0 = sheet.image.get(0, 0)
+        val c1 = sheet.image.get(8, 0)
+        assertEquals(2, (c0 shr 16) and 0xFF, "el tile 0 debe usar la fila 2 de la CGRAM")
+        assertEquals(5, (c1 shr 16) and 0xFF, "el tile 1 debe usar la fila 5, distinta del tile 0")
+        assertEquals(1, (c0 shr 8) and 0xFF, "el índice de color (1) se conserva: verde=columna 1")
+    }
+
+    @Test
+    fun `la sobrecarga de una sola paleta sigue coloreando todo igual`() {
+        // Camino sin tilemap: la firma clásica no cambia de comportamiento.
+        val rom = solid4bppTile(1) + solid4bppTile(1)
+        val row = SnesTilemap.paletteRow(syntheticCgram(), 3)
+        val sheet = SnesAssetExtractor.extractTileSheet(
+            rom, 0, SnesGraphicFormat.SNES_4BPP, palette = row, tileCount = 2, columns = 2,
+        )
+        assertEquals(sheet.image.get(0, 0), sheet.image.get(8, 0)) // ambos tiles, mismo color
+        assertEquals(3, (sheet.image.get(0, 0) shr 16) and 0xFF)
     }
 }

@@ -9,6 +9,7 @@ import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
 import com.rolebuilder.core.snes.SnesPaletteMatcher
+import com.rolebuilder.core.snes.SnesTilemap
 import com.rolebuilder.core.snes.compression.CompressionCodecs
 import com.rolebuilder.core.snes.compression.LcLz2
 import kotlinx.serialization.json.Json
@@ -35,6 +36,11 @@ import javax.imageio.ImageIO
  *   --tiles <n>            Nº de tiles a extraer (por defecto: los que quepan, máx. 256).
  *   --columns <n>          Columnas de la rejilla (por defecto 16).
  *   --palette-offset <n>  Offset de la paleta CGRAM en la ROM (si se omite, se usa una por defecto).
+ *   --tilemap <n>         Offset de un TILEMAP de fondo: colorea cada tile con la sub-paleta REAL
+ *                          que el mapa le asigna (bits 10-12), en vez de una paleta única. Requiere --cgram.
+ *   --cgram <n>           Offset de la CGRAM real (256 colores) que usan las filas del tilemap.
+ *   --tilemap-entries <n> Nº de entradas del tilemap a leer (por defecto 1024 ≈ una pantalla).
+ *   --default-row <n>     Fila de CGRAM (0..15) para los tiles que el tilemap no cubre (por defecto 0).
  *   --grayscale           Colorea en escala de grises para ver la FORMA sin conocer la paleta real.
  *   --sprite <WxH>        Agrupa bloques de W×H tiles de 8×8 en un sprite entero (2x2 = 16×16, 4x4 = 32×32).
  *   --name <texto>        Nombre del tileset y base del archivo (por defecto "snes").
@@ -238,6 +244,13 @@ fun main(args: Array<String>) {
     }
 
     val name = opts["name"] ?: "snes"
+    // --tilemap + --cgram: color REAL de fondo. En vez de una paleta única para
+    // toda la hoja, se lee la sub-paleta que el tilemap asigna a CADA tile (bits
+    // 10-12 de cada entrada) contra la CGRAM real. Los tiles que el mapa no cubre
+    // usan --default-row. Los números de tile del mapa se toman relativos al tile
+    // extraído (tile 0 = primer tile desde --offset).
+    val tilemapOffset = opts["tilemap"]?.let { parseInt(it) }
+    val cgramOffset = opts["cgram"]?.let { parseInt(it) }
     // --sprite WxH (en tiles de 8×8): agrupa cada bloque en un sprite entero.
     val spriteDim = opts["sprite"]?.let { parseSpriteDim(it) }
     val sheet = if (spriteDim != null) {
@@ -248,6 +261,20 @@ fun main(args: Array<String>) {
         println("Atlas de sprites: agrupando ${sw}×${sh} tiles → celdas de ${sw * 8}×${sh * 8}px ($spriteCount sprites)")
         SnesAssetExtractor.extractSpriteAtlas(
             tileRom, tileOffset, format, palette, spriteCount, sw, sh, columns,
+        )
+    } else if (tilemapOffset != null && cgramOffset != null) {
+        val cgram = SnesTilemap.readCgram(rom, cgramOffset)
+        val entryCount = opts["tilemap-entries"]?.let { parseInt(it) } ?: 1024
+        val entries = SnesTilemap.parseTilemap(rom, tilemapOffset, entryCount)
+        val defaultRow = opts["default-row"]?.let { parseInt(it) } ?: 0
+        val selector = SnesTilemap.paletteSelector(entries, cgram, defaultRow, 0 until tileCount)
+        val assigned = SnesTilemap.assignedPaletteByTile(entries, 0 until tileCount)
+        println(
+            "Color por TILEMAP (0x${tilemapOffset.toString(16)}) + CGRAM (0x${cgramOffset.toString(16)}): " +
+                "${assigned.size} tiles con sub-paleta propia; el resto usa la fila $defaultRow"
+        )
+        SnesAssetExtractor.extractTileSheet(
+            tileRom, tileOffset, format, tileCount, columns, paletteForTile = selector,
         )
     } else {
         SnesAssetExtractor.extractTileSheet(tileRom, tileOffset, format, palette, tileCount, columns)
