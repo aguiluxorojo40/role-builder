@@ -64,6 +64,7 @@ private const val PALETTE_GRAYSCALE = -2
 
 private val FORMAT_LABELS = mapOf(
     SnesGraphicFormat.SNES_2BPP to "SNES 2bpp (4 colores)",
+    SnesGraphicFormat.SNES_3BPP to "SNES 3bpp (8 colores · fondos SMW)",
     SnesGraphicFormat.SNES_4BPP to "SNES 4bpp (16 colores)",
     SnesGraphicFormat.SNES_8BPP to "SNES 8bpp (256 colores)",
     SnesGraphicFormat.GB_2BPP to "Game Boy 2bpp",

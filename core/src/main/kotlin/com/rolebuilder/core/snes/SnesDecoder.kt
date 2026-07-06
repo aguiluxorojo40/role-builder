@@ -77,6 +77,20 @@ object SnesDecoder {
                     }
                 }
             }
+            SnesGraphicFormat.SNES_3BPP -> {
+                // Bytes 0-15: planos 0 y 1 entrelazados. Bytes 16-23: plano 2 suelto.
+                for (y in 0..7) {
+                    val b1 = byte(rom, offset + 2 * y)
+                    val b2 = byte(rom, offset + 2 * y + 1)
+                    val b3 = byte(rom, offset + 16 + y)
+                    for (x in 0..7) {
+                        val s = 7 - x
+                        pixels[y * 8 + x] = ((b1 shr s) and 1) or
+                            (((b2 shr s) and 1) shl 1) or
+                            (((b3 shr s) and 1) shl 2)
+                    }
+                }
+            }
             SnesGraphicFormat.SNES_4BPP -> {
                 // Bytes 0-15: bits 0,1. Bytes 16-31: bits 2,3.
                 for (y in 0..7) {

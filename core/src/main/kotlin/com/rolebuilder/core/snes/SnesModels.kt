@@ -20,6 +20,13 @@ enum class SnesMapping { LOROM, HIROM, UNKNOWN }
 enum class SnesGraphicFormat(val bytesPerTile: Int, val colorCount: Int) {
     /** SNES 2bpp: 16 bytes/tile, 4 colores (fondos sencillos, fuentes). */
     SNES_2BPP(16, 4),
+    /**
+     * SNES 3bpp: 24 bytes/tile, 8 colores. Planos 0 y 1 entrelazados (bytes
+     * 0..15) + plano 2 suelto (bytes 16..23). Es el formato de casi todos los
+     * gráficos de Super Mario World (fondos y enemigos); leerlos como 4bpp los
+     * revuelve. Mario (GFX32) es la excepción y va en 4bpp.
+     */
+    SNES_3BPP(24, 8),
     /** SNES 4bpp: 32 bytes/tile, 16 colores (formato más común de sprites y BG). */
     SNES_4BPP(32, 16),
     /** SNES 8bpp: 64 bytes/tile, 256 colores (modo 7, gráficos de alto color). */
