@@ -91,7 +91,7 @@ object SnesGameRecipes {
     private fun extractSmw(rom: ByteArray): List<SnesAutoExtractor.Finding> {
         val bases = findSmwGfxTable(rom) ?: return emptyList()
         val (bLo, bHi, bBank) = bases
-        val palette = SnesDecoder.scanRomForPalettes(rom).firstOrNull()?.colors
+        val palettes = SnesDecoder.scanRomForPalettes(rom)
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
         for (i in 0 until 52) {
@@ -104,7 +104,9 @@ object SnesGameRecipes {
             val available = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
             if (available < 16) continue
             val count = minOf(available, 128)
-            val pal = palette?.let { p -> IntArray(fmt.colorCount) { if (it < p.size) p[it] else 0xFF000000.toInt() } }
+            // Cada fichero GFX recibe LA paleta (y sub-paleta) que mejor le encaja,
+            // no la primera detectada: los fondos y los enemigos usan filas distintas.
+            val pal = SnesPaletteMatcher.bestColors(data, 0, fmt, count, palettes)
                 ?: SnesDecoder.grayscalePalette(fmt.colorCount)
             val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             n++

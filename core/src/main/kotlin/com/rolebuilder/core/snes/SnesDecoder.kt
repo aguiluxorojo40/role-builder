@@ -363,8 +363,11 @@ object SnesDecoder {
      *
      * Nota honesta: qué paleta corresponde EXACTAMENTE a unos gráficos concretos
      * lo decide el juego con sus tablas internas de punteros, así que ningún
-     * escaneo puede garantizar el color exacto; esto ofrece una lista limpia y
-     * ordenada para elegir/cambiar (como hacen YY-CHR y demás).
+     * escaneo puede GARANTIZAR el color exacto. Pero elegir a mano tampoco es la
+     * única salida: [SnesPaletteMatcher] puntúa estas candidatas contra un
+     * gráfico concreto (coherencia de tono de sus pares de índices vecinos) y
+     * automatiza el emparejado con acierto habitual; esta lista queda como
+     * respaldo manual para corregirlo cuando falle.
      */
     fun scanRomForPalettes(
         rom: ByteArray,

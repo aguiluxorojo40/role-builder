@@ -8,6 +8,7 @@ import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
+import com.rolebuilder.core.snes.SnesPaletteMatcher
 import com.rolebuilder.core.snes.compression.CompressionCodecs
 import com.rolebuilder.core.snes.compression.LcLz2
 import kotlinx.serialization.json.Json
@@ -217,17 +218,23 @@ fun main(args: Array<String>) {
     val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
     val tileCount = (opts["tiles"]?.let { parseInt(it) } ?: available).coerceIn(1, minOf(available, 256))
 
-    // Paleta: --grayscale (vista de formas) > offset explícito > primera paleta
-    // detectada en la ROM > colores vivos de respaldo.
+    // Paleta: --grayscale (vista de formas) > offset explícito > emparejado
+    // automático contra ESTOS tiles (la que mejor les encaja) > colores vivos.
     val palette: IntArray = when {
         opts.containsKey("grayscale") -> SnesDecoder.grayscalePalette(format.colorCount).also {
             println("Paleta en escala de grises (vista de formas: ignora el color real)")
         }
         opts["palette-offset"] != null ->
             SnesDecoder.parsePalette(rom, parseInt(opts["palette-offset"]!!), format.colorCount)
-        else -> SnesDecoder.scanRomForPalettes(rom).firstOrNull()?.also {
-            println("Paleta autodetectada: ${it.name}")
-        }?.colors ?: defaultPalette(format.colorCount)
+        else -> {
+            val match = SnesPaletteMatcher
+                .rankPalettes(tileRom, tileOffset, format, tileCount, SnesDecoder.scanRomForPalettes(rom))
+                .firstOrNull()
+            match?.also {
+                val sub = if (it.window > 0) " (sub-paleta desde el color ${it.window})" else ""
+                println("Paleta emparejada con el gráfico: ${it.source.name}$sub · afinidad ${"%.2f".format(it.score)}")
+            }?.colors ?: defaultPalette(format.colorCount)
+        }
     }
 
     val name = opts["name"] ?: "snes"
