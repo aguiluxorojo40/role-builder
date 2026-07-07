@@ -144,6 +144,8 @@ object SnesGameRecipes {
     internal const val SMW_BG_IS_BACKGROUND = 0xFF
     /** Tabla de definiciones Map16 de Layer 2: SNES $0D9100 → PC 0x69100 [PROBABLE]. */
     internal const val SMW_MAP16_L2_PC = 0x69100
+    /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000 [PROBABLE]. */
+    internal const val SMW_MAP16_FG_PC = 0x68000
     /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
     internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
@@ -501,6 +503,59 @@ object SnesGameRecipes {
     }
 
     /**
+     * Agrega, de la tabla de definiciones Map16 de FG ($0D8000), la sub-paleta (`CCC`)
+     * mayoritaria de CADA número de tesela de VRAM. A diferencia del LAYOUT de un nivel
+     * (que se monta en runtime), estas DEFINICIONES de bloque sí son estáticas: dicen
+     * "el bloque B son estas 4 teselas con estas sub-paletas". Recorriendo las páginas
+     * FG (0..0x1FF) obtenemos, por tesela, con qué fila la pinta el juego. Es la base
+     * del color por-tesela del primer plano.
+     */
+    internal fun map16FgPaletteByTile(rom: ByteArray, delta: Int): Map<Int, Int> {
+        val base = SMW_MAP16_FG_PC + delta
+        val acc = HashMap<Int, IntArray>()
+        for (b in 0 until 0x200) {
+            val o = base + 8 * b
+            if (o + 8 > rom.size) break
+            for (k in 0..3) {
+                val w = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
+                val e = SnesTilemap.decodeEntry(w)
+                acc.getOrPut(e.tileIndex) { IntArray(8) }[e.palette]++
+            }
+        }
+        return acc.mapValues { (_, c) -> var best = 0; for (i in 1 until 8) if (c[i] > c[best]) best = i; best }
+    }
+
+    /**
+     * Colorea una hoja de tiles de FG con COLOR REAL POR TESELA: cada tesela recibe la
+     * sub-paleta que le asigna el Map16 de FG. [gfxFile] es el fichero (p. ej. 0x14 para
+     * FG1, 0x17 para FG2) y [slotBase] el número de tesela de VRAM donde arranca ese
+     * slot (0x000 FG1, 0x080 FG2, 0x180 FG3). Índice 0 = transparente (tiles de mapa).
+     */
+    internal fun renderSmwForeground(
+        rom: ByteArray, header: SnesHeader, gfxFile: Int, slotBase: Int, backIndex: Int = SMW_DEFAULT_BACK_INDEX,
+    ): SnesAutoExtractor.Finding? {
+        val delta = smwHeaderDelta(header)
+        val cccByTile = map16FgPaletteByTile(rom, delta)
+        val bases = findSmwGfxTable(rom) ?: return null
+        val (bLo, bHi, bBank) = bases
+        val pc = lorom(byte(rom, bLo + gfxFile), byte(rom, bHi + gfxFile), byte(rom, bBank + gfxFile))
+        if (pc < 0x40000 || pc >= rom.size) return null
+        val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: return null
+        val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+        val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+        if (avail < 16) return null
+        val count = minOf(avail, 128)
+        val tables = SmwPaletteTables(rom, delta)
+        val rowsByCcc = (0..7).map { row3bppFG(tables, it, backIndex) }
+        val selector: (Int) -> IntArray = { t -> rowsByCcc[cccByTile[slotBase + t] ?: SMW_DEFAULT_FG_INDEX] }
+        val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, count, 16, paletteForTile = selector)
+        return SnesAutoExtractor.Finding(
+            image = sheet.image, label = "SMW FG 0x${gfxFile.toString(16)}", offset = pc,
+            compressed = true, format = fmt, palette = rowsByCcc[0], tileCount = count, columns = 16, score = 1.0,
+        )
+    }
+
+    /**
      * Fila canónica de Mario (4bpp, 16 colores):
      * `[TRANSPARENTE, NEGRO, fix0..fix3, pl0..pl9]`, con `fix = fixedRow(8)` (los 4
      * primeros de los 6) y `pl = player(0)` (10 colores).
@@ -591,6 +646,8 @@ object SnesGameRecipes {
         val slots = SmwSlotTables.readIfValid(rom, delta)
         // Índices de paleta REALES por fichero, derivados de los niveles que lo cargan.
         val levelPals = SmwLevelPalettes.read(rom, delta)
+        // Sub-paleta REAL por tesela de FG (Map16 de primer plano): color por-tesela.
+        val map16Fg = if (slots != null) map16FgPaletteByTile(rom, delta) else emptyMap()
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
         for (i in 0 until 52) {
@@ -613,18 +670,32 @@ object SnesGameRecipes {
                 realIndex?.let { rows[it] } ?: bestOf(rows)
             // La CLASE la manda el slot; el ÍNDICE, el color real del nivel (o el
             // heurístico si no hay dato). Mario solo en GFX32/4bpp.
-            val pal = if (slots != null) {
-                when (slots.roleOf(i, is4bpp)) {
-                    SmwGfxRole.PLAYER -> if (is4bpp) marioRow else pick(fgRows, levelPals?.fgIndexByFile?.get(i))
-                    SmwGfxRole.SPRITE -> pick(spriteRows, levelPals?.spriteIndexByFile?.get(i))
-                    SmwGfxRole.BG -> pick(bgRows, levelPals?.bgIndexByFile?.get(i))
-                    SmwGfxRole.FG -> pick(fgRows, levelPals?.fgIndexByFile?.get(i))
+            val role = if (slots != null) slots.roleOf(i, is4bpp) else null
+            val pal = when (role) {
+                SmwGfxRole.PLAYER -> if (is4bpp) marioRow else pick(fgRows, levelPals?.fgIndexByFile?.get(i))
+                SmwGfxRole.SPRITE -> pick(spriteRows, levelPals?.spriteIndexByFile?.get(i))
+                SmwGfxRole.BG -> pick(bgRows, levelPals?.bgIndexByFile?.get(i))
+                SmwGfxRole.FG -> pick(fgRows, levelPals?.fgIndexByFile?.get(i))
+                null -> {
+                    val all = if (is4bpp) fgRows + spriteRows + marioRow else fgRows + spriteRows
+                    bestOf(all)
                 }
-            } else {
-                val all = if (is4bpp) fgRows + spriteRows + marioRow else fgRows + spriteRows
-                bestOf(all)
             }
-            val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
+            // Los ficheros de FG se pintan POR TESELA con la sub-paleta que les da el
+            // Map16 (EXIT verde, monedas amarillas…), no con una paleta plana de hoja.
+            // El slot fija el rango de tesela en VRAM: FG1=0x14→0x000, FG2=0x17→0x080,
+            // el resto de FG cae en FG3→0x180.
+            val sheet = if (role == SmwGfxRole.FG && map16Fg.isNotEmpty()) {
+                val base = when (i) {
+                    SMW_FG1_GFX -> 0x000
+                    SMW_FG2_GFX -> 0x080
+                    else -> 0x180
+                }
+                val selector: (Int) -> IntArray = { t -> fgRows[map16Fg[base + t] ?: SMW_DEFAULT_FG_INDEX] }
+                SnesAssetExtractor.extractTileSheet(data, 0, fmt, count, 16, paletteForTile = selector)
+            } else {
+                SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
+            }
             n++
             out.add(
                 SnesAutoExtractor.Finding(
