@@ -1,6 +1,8 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SnesGameRecipes
+import com.rolebuilder.core.snes.SnesHeader
+import com.rolebuilder.core.snes.SnesMapping
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -56,5 +58,18 @@ class SnesLayer2Test {
         val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
         rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0x0C
         assertTrue(SnesGameRecipes.layer2BgEntries(rom, 0, 0).isEmpty())
+    }
+
+    @Test
+    fun `renderSmwBackground devuelve null cuando el nivel no tiene fondo`() {
+        // Motor de escenas de fondo (base guardada): sin datos de fondo válidos, no
+        // revienta, devuelve null.
+        val header = SnesHeader(
+            title = "SUPER MARIOWORLD", isFastRom = false, romTypeDescription = "",
+            romSizeBytes = 0, sramSizeBytes = 0, country = "", licensee = "", version = 0,
+            checksum = 0, checksumComplement = 0, isChecksumValid = true,
+            mapping = SnesMapping.LOROM, headerOffset = 0x7FC0,
+        )
+        assertTrue(SnesGameRecipes.renderSmwBackground(ByteArray(0x70000), header, 0) == null)
     }
 }
