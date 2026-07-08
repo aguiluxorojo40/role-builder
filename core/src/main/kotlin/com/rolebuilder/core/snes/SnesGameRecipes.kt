@@ -720,6 +720,23 @@ object SnesGameRecipes {
     }
 
     /**
+     * Nº de ficheros de la tabla de descompresión de GFX de SMW: GFX00..GFX31
+     * (0x32 entradas). GFX32/GFX33 existen pero se cargan por otra vía, no por esta
+     * tabla (leer más allá se solaparía con la tabla de bytes altos).
+     */
+    private const val SMW_GFX_COUNT = 0x32
+
+    /**
+     * Tablas de punteros de GFX en el banco $00, VERIFICADAS contra el desensamblado
+     * SMWDisX: GFXFilesLow=$00B992, GFXFilesHigh=$00B9C4, GFXFilesBank=$00B9F6. En
+     * offset PC (unheadered, banco $00: PC = SNES − 0x8000): 0x3992/0x39C4/0x39F6.
+     * (Antes estaban 5 bytes desplazadas —0x398D…—: el bucle empezaba en basura y se
+     *  cortaba antes, dejándose GFX2F..GFX31 y desalineando el índice de fichero, con
+     *  el que SmwLevelPalettes/SmwSlotTables asignan la sub-paleta REAL de cada hoja.)
+     */
+    internal val SMW_GFX_TABLE = Triple(0x3992, 0x39C4, 0x39F6)
+
+    /**
      * Localiza las tres tablas de punteros de GFX de SMW (byte bajo/alto/banco).
      * Prueba primero las posiciones de la ROM estándar y, si no validan, hace una
      * búsqueda acotada anclada en la tabla de bancos (tira de bytes de banco
@@ -727,9 +744,9 @@ object SnesGameRecipes {
      */
     private fun findSmwGfxTable(rom: ByteArray): Triple<Int, Int, Int>? {
         fun successes(bLo: Int, bHi: Int, bBank: Int): Int {
-            if (bLo < 0 || bBank + 52 > rom.size) return 0
+            if (bLo < 0 || bBank + SMW_GFX_COUNT > rom.size) return 0
             var ok = 0
-            for (i in 0 until 52) {
+            for (i in 0 until SMW_GFX_COUNT) {
                 val pc = lorom(byte(rom, bLo + i), byte(rom, bHi + i), byte(rom, bBank + i))
                 if (pc < 0x40000 || pc >= rom.size) continue
                 val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
@@ -737,8 +754,8 @@ object SnesGameRecipes {
             }
             return ok
         }
-        // 1) Posiciones de la ROM estándar (USA/EUR): validar antes de fiarse.
-        val standard = Triple(0x398D, 0x39BF, 0x39F1)
+        // 1) Posiciones de la ROM estándar (USA/EUR), del desensamblado: validar igual.
+        val standard = SMW_GFX_TABLE
         if (successes(standard.first, standard.second, standard.third) >= 30) return standard
 
         // 2) Búsqueda acotada: tira de bancos válidos no decreciente en la zona baja.
@@ -805,7 +822,7 @@ object SnesGameRecipes {
         val levelPals = SmwLevelPalettes.read(rom, delta)
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
-        for (i in 0 until 52) {
+        for (i in 0 until SMW_GFX_COUNT) {
             val pc = lorom(byte(rom, bLo + i), byte(rom, bHi + i), byte(rom, bBank + i))
             if (pc < 0x40000 || pc >= rom.size) continue
             val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
