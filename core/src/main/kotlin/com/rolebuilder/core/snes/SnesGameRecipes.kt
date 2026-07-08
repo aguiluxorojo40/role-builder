@@ -247,19 +247,23 @@ object SnesGameRecipes {
         data: ByteArray,
         fmt: SnesGraphicFormat,
         count: Int,
-        fgRow: IntArray,
+        fgRows: List<IntArray>,
         spriteRows: List<IntArray>,
         playerRows: List<IntArray>,
     ): IntArray {
+        val stats by lazy { SnesPaletteMatcher.indexStats(data, 0, fmt, count) }
         if (fmt == SnesGraphicFormat.SNES_4BPP) {
-            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
             return playerRows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
         }
         if (gfxIndex in SMW_SPRITE_GFX) {
-            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
             return spriteRows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
         }
-        return fgRow
+        // Tileset FG/BG: elige su paleta TEMÁTICA entre un subconjunto FG seguro
+        // (terreno, castillo/agua, tierra, hierba). Se excluyen las filas FG casi
+        // monocromas (rampas pálidas) porque su coherencia perfecta engaña al
+        // puntuador y teñían casi todo igual; con este subconjunto un nivel de
+        // castillo cae en la fila azulada y una pradera en la verde, sin ese sesgo.
+        return fgRows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
     }
 
     private fun extractSmw(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
@@ -267,7 +271,10 @@ object SnesGameRecipes {
         val (bLo, bHi, bBank) = bases
         // Paletas REALES del juego (no adivinadas): banco de filas canónicas.
         val tables = SmwPaletteTables(rom, smwHeaderDelta(header))
-        val fgRow = row3bppFG(tables, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_BACK_INDEX)
+        // Subconjunto FG "seguro" y multicolor para elegir la paleta temática de cada
+        // tileset: 0 terreno, 2 azul/agua-castillo, 4 tierra/madera, 6 hierba. Se dejan
+        // fuera las filas casi monocromas (p. ej. la 5 lavanda) que sesgaban al puntuador.
+        val fgRows = intArrayOf(0, 2, 4, 6).map { row3bppFG(tables, it, SMW_DEFAULT_BACK_INDEX) }
         val spriteRows = (0 until 8).map { row3bppSprite(tables, it) }
         val playerRows = (0 until 4).map { rowPlayer(tables, it) }
         val out = ArrayList<SnesAutoExtractor.Finding>()
@@ -284,7 +291,7 @@ object SnesGameRecipes {
             if (available < 16) continue
             val count = minOf(available, 128)
             // Paleta REAL del juego según una tabla curada por fichero (ver smwPalette).
-            val pal = smwPalette(i, data, fmt, count, fgRow, spriteRows, playerRows)
+            val pal = smwPalette(i, data, fmt, count, fgRows, spriteRows, playerRows)
             val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             n++
             out.add(
