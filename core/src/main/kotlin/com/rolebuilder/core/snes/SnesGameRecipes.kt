@@ -780,16 +780,22 @@ object SnesGameRecipes {
         // nivel en $05E000). Solo si no hay dato real cae al índice más coherente con
         // el dibujo (heurístico), para no volver al "todo verde" del índice 0 fijo.
         val delta = smwHeaderDelta(header)
-        // CGRAM REAL de un nivel de pradera, ensamblada EXACTAMENTE como el juego
-        // (validada 48/48 contra volcado de emulador). Sub-paleta k (0..7) = fila CCC.
-        val cgram = assembleSmwCgram(rom, delta, 0x106)
-        fun cgSub(row: Int): IntArray {
-            val a = cgram.copyOfRange(row * 16, row * 16 + 16); a[0] = 0; return a // idx 0 = transparente
-        }
         val tables = SmwPaletteTables(rom, delta)
-        val fgRows = (0..7).map { row3bppFG(tables, it, SMW_DEFAULT_BACK_INDEX) }
-        val bgRows = (0..7).map { row3bppBG(tables, it, SMW_DEFAULT_BACK_INDEX) }
-        val spriteRows = (0..7).map { row3bppSprite(tables, it) }
+        // Sub-paletas REALES por ÍNDICE 0..7, montadas como en la CGRAM del juego pero
+        // con el índice 0 TRANSPARENTE (hoja de tileset, no escena): col 1 = blanco
+        // $7FDD, cols 2-7 = la entrada FG/BG del índice, cols 8-F = berry (para los
+        // pocos FG/BG 4bpp). El ÍNDICE lo elige el color REAL del nivel (SmwLevelPalettes),
+        // así cada tileset (pradera, cueva, castillo, casa fantasma…) sale con SU color y
+        // no todo teñido de verde de pradera.
+        val white = SnesDecoder.bgr15ToArgb(0x7FDD)
+        val berryCols = SnesDecoder.parsePalette(rom, SMW_BERRY_PC + delta, 7)
+        fun sub(entry: IntArray): IntArray = intArrayOf(
+            0, white, entry[0], entry[1], entry[2], entry[3], entry[4], entry[5],
+            0, berryCols[0], berryCols[1], berryCols[2], berryCols[3], berryCols[4], berryCols[5], berryCols[6],
+        )
+        fun fgSub(k: Int) = sub(tables.fgEntry(k and 7))
+        fun bgSub(k: Int) = sub(tables.bgEntry(k and 7))
+        fun sprSub(k: Int) = sub(tables.sprEntry(k and 7))
         val marioRow = rowMario(tables)
         // Tablas de slot: si validan, deciden la CLASE por la VERDAD del juego (qué
         // ranura carga cada fichero). Si no (ROM modificada u offset dudoso), null y
@@ -797,8 +803,6 @@ object SnesGameRecipes {
         val slots = SmwSlotTables.readIfValid(rom, delta)
         // Índices de paleta REALES por fichero, derivados de los niveles que lo cargan.
         val levelPals = SmwLevelPalettes.read(rom, delta)
-        // Sub-paleta REAL por tesela de FG (Map16 de primer plano): color por-tesela.
-        val map16Fg = if (slots != null) map16FgPaletteByTile(rom, delta) else emptyMap()
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
         for (i in 0 until 52) {
@@ -813,40 +817,28 @@ object SnesGameRecipes {
             val count = minOf(available, 128)
             val is4bpp = fmt == SnesGraphicFormat.SNES_4BPP
             val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
-            fun bestOf(rows: List<IntArray>): IntArray =
-                rows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
-            // Elige la fila de [rows]: el índice REAL del nivel si lo conocemos para
-            // este fichero; si no, el más coherente con el dibujo.
-            fun pick(rows: List<IntArray>, realIndex: Int?): IntArray =
-                realIndex?.let { rows[it] } ?: bestOf(rows)
-            // La CLASE la manda el slot; el ÍNDICE, el color real del nivel (o el
-            // heurístico si no hay dato). Mario solo en GFX32/4bpp.
+            // Índice 0..7 más coherente con el DIBUJO (solo como respaldo si no hay dato
+            // real del nivel para este fichero).
+            fun bestIndex(subFor: (Int) -> IntArray): Int =
+                (0..7).maxByOrNull { SnesPaletteMatcher.scorePalette(subFor(it), stats) }!!
+            // La CLASE la manda el slot; el ÍNDICE de sub-paleta lo manda el color REAL
+            // con el que los niveles cargan este fichero (SmwLevelPalettes) — así cada
+            // tileset sale con SU paleta (pradera verde, cueva azul, castillo gris…) y no
+            // todo teñido de pradera. Si no hay dato, cae al índice más coherente con el
+            // dibujo. Mario (GFX32/4bpp) va con su fila de jugador.
             val role = if (slots != null) slots.roleOf(i, is4bpp) else null
             val pal = when (role) {
-                SmwGfxRole.PLAYER -> if (is4bpp) marioRow else pick(fgRows, levelPals?.fgIndexByFile?.get(i))
-                SmwGfxRole.SPRITE -> pick(spriteRows, levelPals?.spriteIndexByFile?.get(i))
-                SmwGfxRole.BG -> pick(bgRows, levelPals?.bgIndexByFile?.get(i))
-                SmwGfxRole.FG -> pick(fgRows, levelPals?.fgIndexByFile?.get(i))
+                SmwGfxRole.PLAYER -> if (is4bpp) marioRow else fgSub(levelPals?.fgIndexByFile?.get(i) ?: bestIndex(::fgSub))
+                SmwGfxRole.SPRITE -> sprSub(levelPals?.spriteIndexByFile?.get(i) ?: bestIndex(::sprSub))
+                SmwGfxRole.BG -> bgSub(levelPals?.bgIndexByFile?.get(i) ?: bestIndex(::bgSub))
+                SmwGfxRole.FG -> fgSub(levelPals?.fgIndexByFile?.get(i) ?: bestIndex(::fgSub))
                 null -> {
-                    val all = if (is4bpp) fgRows + spriteRows + marioRow else fgRows + spriteRows
-                    bestOf(all)
+                    val fi = bestIndex(::fgSub); val si = bestIndex(::sprSub)
+                    if (SnesPaletteMatcher.scorePalette(sprSub(si), stats) >
+                        SnesPaletteMatcher.scorePalette(fgSub(fi), stats)) sprSub(si) else fgSub(fi)
                 }
             }
-            // Los ficheros de FG se pintan POR TESELA con la sub-paleta que les da el
-            // Map16 (EXIT verde, monedas amarillas…), no con una paleta plana de hoja.
-            // El slot fija el rango de tesela en VRAM: FG1=0x14→0x000, FG2=0x17→0x080,
-            // el resto de FG cae en FG3→0x180.
-            val sheet = if (role == SmwGfxRole.FG && map16Fg.isNotEmpty()) {
-                val base = when (i) {
-                    SMW_FG1_GFX -> 0x000
-                    SMW_FG2_GFX -> 0x080
-                    else -> 0x180
-                }
-                val selector: (Int) -> IntArray = { t -> cgSub(map16Fg[base + t] ?: SMW_DEFAULT_FG_INDEX) }
-                SnesAssetExtractor.extractTileSheet(data, 0, fmt, count, 16, paletteForTile = selector)
-            } else {
-                SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
-            }
+            val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             n++
             // Etiqueta por CATEGORÍA (el rol de slot que ya detectamos), para una
             // galería ORDENADA: fondos, tilesets de primer plano, sprites, personajes.
@@ -884,10 +876,14 @@ object SnesGameRecipes {
                 val mfmt = SnesGraphicFormat.SNES_4BPP
                 val mcount = minOf(SnesAssetExtractor.availableTiles(mdata.size, 0, mfmt), 128)
                 if (mcount >= 16) {
-                    // Paleta de Mario = fila 8 REAL de la CGRAM ensamblada (sprite 0):
-                    // cols 6-F = mario_normal.pal, cols 2-5 = StandardColors. Sale del
-                    // mismo algoritmo del juego, sin horneado ni contaminación verde.
-                    val marioPal = cgSub(8)
+                    // Paleta de Mario = fila 8 REAL de la CGRAM (sprite 0), montada como
+                    // el juego: col 1 = blanco, cols 2-5 = StandardColors(fila 8), cols
+                    // 6-F = mario_normal.pal (player 0). Sin horneado ni verde compartido.
+                    val fix8 = tables.fixedRow(8); val pl = tables.player(0)
+                    val marioPal = intArrayOf(
+                        0, white, fix8[0], fix8[1], fix8[2], fix8[3],
+                        pl[0], pl[1], pl[2], pl[3], pl[4], pl[5], pl[6], pl[7], pl[8], pl[9],
+                    )
                     val sheet = SnesAssetExtractor.extractTileSheet(
                         mdata, 0, mfmt, marioPal, mcount, 16,
                     )
