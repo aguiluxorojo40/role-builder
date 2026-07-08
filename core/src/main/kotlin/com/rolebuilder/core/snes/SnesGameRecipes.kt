@@ -39,7 +39,11 @@ object SnesGameRecipes {
     // banco $00: PC = SNES - 0x8000. Si la ROM trae cabecera de copiador SMC de 512
     // bytes, se suma un delta de 0x200 a cada offset PC (ver smwHeaderDelta).
     //
-    // Todas las direcciones son offsets PC "unheadered". Las tablas teselan sin
+    // Direcciones VERIFICADAS contra el desensamblado SMWDisX (etiquetas del banco $00):
+    //   BackAreaColors=$B0A0, BackgroundPalettes=$B0B0, StatusBarColors=$B170,
+    //   ForegroundPalettes=$B190, StandardColors=$B250, PlayerColors=$B2C8,
+    //   SpriteColors=$B318, OverworldColors=$B3D8.
+    // Todas se guardan aquí como offsets PC "unheadered" (= SNES − 0x8000). Teselan sin
     // huecos: B0A0+0x10=B0B0, B0B0+0xC0=B170, B190+0xC0=B250, B250+0x78=B2C8,
     // B2C8+0x50=B318, B318+0xC0=B3D8.
 
@@ -155,6 +159,20 @@ object SnesGameRecipes {
     }
 
     /**
+     * Nº de ficheros GFX de la tabla de descompresión estándar de SMW: GFX00..GFX31
+     * (0x32 entradas). GFX32/GFX33 existen pero se cargan por otra vía, no por esta
+     * tabla (leer más allá se solaparía con la tabla de bytes altos).
+     */
+    private const val SMW_GFX_COUNT = 0x32
+
+    /**
+     * Tablas de punteros de GFX en el banco $00, verificadas contra el desensamblado
+     * SMWDisX (etiquetas GFXFilesLow=$00B992, GFXFilesHigh=$00B9C4, GFXFilesBank=$00B9F6).
+     * En offset PC (unheadered, banco $00: PC = SNES − 0x8000): 0x3992/0x39C4/0x39F6.
+     */
+    internal val SMW_GFX_TABLE = Triple(0x3992, 0x39C4, 0x39F6)
+
+    /**
      * Localiza las tres tablas de punteros de GFX de SMW (byte bajo/alto/banco).
      * Prueba primero las posiciones de la ROM estándar y, si no validan, hace una
      * búsqueda acotada anclada en la tabla de bancos (tira de bytes de banco
@@ -162,9 +180,9 @@ object SnesGameRecipes {
      */
     private fun findSmwGfxTable(rom: ByteArray): Triple<Int, Int, Int>? {
         fun successes(bLo: Int, bHi: Int, bBank: Int): Int {
-            if (bLo < 0 || bBank + 52 > rom.size) return 0
+            if (bLo < 0 || bBank + SMW_GFX_COUNT > rom.size) return 0
             var ok = 0
-            for (i in 0 until 52) {
+            for (i in 0 until SMW_GFX_COUNT) {
                 val pc = lorom(byte(rom, bLo + i), byte(rom, bHi + i), byte(rom, bBank + i))
                 if (pc < 0x40000 || pc >= rom.size) continue
                 val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
@@ -172,8 +190,8 @@ object SnesGameRecipes {
             }
             return ok
         }
-        // 1) Posiciones de la ROM estándar (USA/EUR): validar antes de fiarse.
-        val standard = Triple(0x398D, 0x39BF, 0x39F1)
+        // 1) Posiciones de la ROM estándar (USA/EUR), del desensamblado: validar igual.
+        val standard = SMW_GFX_TABLE
         if (successes(standard.first, standard.second, standard.third) >= 30) return standard
 
         // 2) Búsqueda acotada: tira de bancos válidos no decreciente en la zona baja.
@@ -226,14 +244,16 @@ object SnesGameRecipes {
     }
 
     /**
-     * Índices de fichero GFX que son HOJAS DE SPRITE/PERSONAJE (fondo transparente,
-     * figuras con sombreado) y no tiles de fondo. Curados mirando el propio juego:
-     * al contrario que los tilesets FG/BG —que quedan bien con la paleta de terreno—
-     * estas hojas piden una paleta de sprite viva. Para ellas elegimos, entre las 8
-     * paletas de sprite reales, la de mejor coherencia con el dibujo (así Bowser sale
-     * naranja, los enemigos con su tono, etc.), sin arriesgar los fondos.
+     * Números de fichero GFX (GFX0D/GFX20/GFX21/GFX23) que son HOJAS DE SPRITE/PERSONAJE
+     * (fondo transparente, figuras con sombreado) y no tiles de fondo. Con la tabla de
+     * punteros correcta ([SMW_GFX_TABLE]) el índice del bucle es ya el número de GFX real,
+     * así que estos valores son directamente GFX0D (personajes azules), GFX20 (jefe),
+     * GFX21 (Bowser) y GFX23 (perros/Chomps). Al contrario que los tilesets FG/BG —que
+     * quedan bien con la paleta de terreno— estas hojas piden una paleta de sprite viva:
+     * elegimos, entre las 8 reales, la de mejor coherencia con el dibujo (Bowser naranja,
+     * etc.) sin arriesgar los fondos.
      */
-    private val SMW_SPRITE_GFX = setOf(18, 37, 38, 40)
+    private val SMW_SPRITE_GFX = setOf(0x0D, 0x20, 0x21, 0x23)
 
     /**
      * Paleta curada para el fichero GFX número [gfxIndex]. La inmensa mayoría de los
@@ -279,7 +299,7 @@ object SnesGameRecipes {
         val playerRows = (0 until 4).map { rowPlayer(tables, it) }
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
-        for (i in 0 until 52) {
+        for (i in 0 until SMW_GFX_COUNT) {
             val pc = lorom(byte(rom, bLo + i), byte(rom, bHi + i), byte(rom, bBank + i))
             if (pc < 0x40000 || pc >= rom.size) continue
             val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
