@@ -67,7 +67,7 @@ object SnesGameRecipes {
             val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
             if (pc < 0x40000 || pc >= rom.size) continue
             val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
-            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val fmt = smwFormat(data)
             val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
             for (t in 0 until minOf(avail, 128)) {
                 vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
@@ -686,7 +686,7 @@ object SnesGameRecipes {
         val pc = lorom(byte(rom, bLo + gfxFile), byte(rom, bHi + gfxFile), byte(rom, bBank + gfxFile))
         if (pc < 0x40000 || pc >= rom.size) return null
         val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: return null
-        val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+        val fmt = smwFormat(data)
         val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
         if (avail < 16) return null
         val count = minOf(avail, 128)
@@ -735,6 +735,27 @@ object SnesGameRecipes {
      *  el que SmwLevelPalettes/SmwSlotTables asignan la sub-paleta REAL de cada hoja.)
      */
     internal val SMW_GFX_TABLE = Triple(0x3992, 0x39C4, 0x39F6)
+
+    /**
+     * Margen de aptitud por el que otro formato tiene que GANAR a 3bpp para creérselo.
+     * Los gráficos de SMW son 3bpp casi sin excepción; cuando el detector genérico elige
+     * 4bpp/2bpp por una diferencia mínima suele ser un error que sale como "ruido
+     * arcoíris" (índices altos coloreados con basura). Exigiendo un margen claro, esos
+     * empates técnicos vuelven a 3bpp —su formato real— y la hoja se ve.
+     */
+    private const val SMW_FORMAT_MARGIN = 0.06
+
+    /**
+     * Formato de un fichero de SMW con SESGO a 3bpp: solo se acepta otro formato si su
+     * aptitud supera a la de 3bpp por [SMW_FORMAT_MARGIN]; si no, 3bpp (el real). Los
+     * 4bpp de verdad (Mario, algún objeto) ganan por margen claro y se conservan.
+     */
+    internal fun smwFormat(data: ByteArray): SnesGraphicFormat {
+        val guess = SnesGraphicsScanner.detectBestFormat(data, 0) ?: return SnesGraphicFormat.SNES_3BPP
+        if (guess.format == SnesGraphicFormat.SNES_3BPP) return SnesGraphicFormat.SNES_3BPP
+        val fit3 = SnesGraphicsScanner.formatFitness(data, 0, SnesGraphicFormat.SNES_3BPP)
+        return if (guess.fitness - fit3 >= SMW_FORMAT_MARGIN) guess.format else SnesGraphicFormat.SNES_3BPP
+    }
 
     /**
      * Localiza las tres tablas de punteros de GFX de SMW (byte bajo/alto/banco).
@@ -828,7 +849,7 @@ object SnesGameRecipes {
             val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
             if (data.size < 0x300) continue
             // El bpp lo decide el detector (casi todo SMW es 3bpp; algunos 4bpp).
-            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val fmt = smwFormat(data)
             val available = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
             if (available < 16) continue
             val count = minOf(available, 128)
