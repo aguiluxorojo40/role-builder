@@ -132,18 +132,22 @@ object SnesGameRecipes {
     }
 
     /**
-     * Fila canónica de Mario (4bpp, 16 colores):
+     * Fila canónica de jugador (4bpp, 16 colores) para p = 0..3
+     * (Mario/Luigi/FireMario/FireLuigi):
      * `[TRANSPARENTE, NEGRO, fix0..fix3, pl0..pl9]`, con `fix = fixedRow(8)` (los 4
-     * primeros de los 6) y `pl = player(0)` (10 colores).
+     * primeros de los 6) y `pl = player(p)` (10 colores).
      */
-    internal fun rowMario(t: SmwPaletteTables): IntArray {
+    internal fun rowPlayer(t: SmwPaletteTables, p: Int): IntArray {
         val fix = t.fixedRow(8)
-        val pl = t.player(0)
+        val pl = t.player(p)
         return intArrayOf(
             SMW_TRANSPARENT, SMW_BLACK, fix[0], fix[1], fix[2], fix[3],
             pl[0], pl[1], pl[2], pl[3], pl[4], pl[5], pl[6], pl[7], pl[8], pl[9],
         )
     }
+
+    /** Fila canónica de Mario (4bpp, 16 colores): jugador 0. */
+    internal fun rowMario(t: SmwPaletteTables): IntArray = rowPlayer(t, 0)
 
     private fun lorom(lo: Int, hi: Int, bank: Int): Int {
         val addr = lo or (hi shl 8)
@@ -201,14 +205,71 @@ object SnesGameRecipes {
 
     private fun byte(rom: ByteArray, i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0
 
+    /**
+     * Margen de aptitud por el que otro formato tiene que GANAR a 3bpp para que se
+     * le crea. Los gráficos de SMW son 3bpp casi sin excepción; cuando el detector
+     * elige 4bpp/2bpp por una diferencia mínima suele ser un error que sale como
+     * "ruido arcoíris" (índices altos coloreados con basura). Exigiendo un margen
+     * claro, esos empates técnicos vuelven a 3bpp —su formato real— y la hoja se ve.
+     */
+    private const val SMW_FORMAT_MARGIN = 0.06
+
+    /**
+     * Formato de un fichero de SMW con SESGO a 3bpp. Solo se acepta otro formato si
+     * su aptitud supera a la de 3bpp por [SMW_FORMAT_MARGIN]; si no, 3bpp (el real).
+     */
+    internal fun smwFormat(data: ByteArray): SnesGraphicFormat {
+        val guess = SnesGraphicsScanner.detectBestFormat(data, 0) ?: return SnesGraphicFormat.SNES_3BPP
+        if (guess.format == SnesGraphicFormat.SNES_3BPP) return SnesGraphicFormat.SNES_3BPP
+        val fit3 = SnesGraphicsScanner.formatFitness(data, 0, SnesGraphicFormat.SNES_3BPP)
+        return if (guess.fitness - fit3 >= SMW_FORMAT_MARGIN) guess.format else SnesGraphicFormat.SNES_3BPP
+    }
+
+    /**
+     * Índices de fichero GFX que son HOJAS DE SPRITE/PERSONAJE (fondo transparente,
+     * figuras con sombreado) y no tiles de fondo. Curados mirando el propio juego:
+     * al contrario que los tilesets FG/BG —que quedan bien con la paleta de terreno—
+     * estas hojas piden una paleta de sprite viva. Para ellas elegimos, entre las 8
+     * paletas de sprite reales, la de mejor coherencia con el dibujo (así Bowser sale
+     * naranja, los enemigos con su tono, etc.), sin arriesgar los fondos.
+     */
+    private val SMW_SPRITE_GFX = setOf(18, 37, 38, 40)
+
+    /**
+     * Paleta curada para el fichero GFX número [gfxIndex]. La inmensa mayoría de los
+     * ficheros de esta tabla son tiles de FG/BG y se ven con la paleta de terreno
+     * clásica (FG0), que es el aspecto canónico de SMW; las pocas hojas de personaje
+     * ([SMW_SPRITE_GFX]) reciben la mejor paleta de sprite para su dibujo; y los
+     * ficheros realmente 4bpp toman la paleta de jugador que mejor encaje.
+     */
+    private fun smwPalette(
+        gfxIndex: Int,
+        data: ByteArray,
+        fmt: SnesGraphicFormat,
+        count: Int,
+        fgRow: IntArray,
+        spriteRows: List<IntArray>,
+        playerRows: List<IntArray>,
+    ): IntArray {
+        if (fmt == SnesGraphicFormat.SNES_4BPP) {
+            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
+            return playerRows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
+        }
+        if (gfxIndex in SMW_SPRITE_GFX) {
+            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
+            return spriteRows.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
+        }
+        return fgRow
+    }
+
     private fun extractSmw(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
         val bases = findSmwGfxTable(rom) ?: return emptyList()
         val (bLo, bHi, bBank) = bases
-        // Paletas REALES del juego (no adivinadas): filas canónicas por defecto.
+        // Paletas REALES del juego (no adivinadas): banco de filas canónicas.
         val tables = SmwPaletteTables(rom, smwHeaderDelta(header))
         val fgRow = row3bppFG(tables, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_BACK_INDEX)
-        val spriteRow = row3bppSprite(tables, SMW_DEFAULT_SPRITE_INDEX)
-        val marioRow = rowMario(tables)
+        val spriteRows = (0 until 8).map { row3bppSprite(tables, it) }
+        val playerRows = (0 until 4).map { rowPlayer(tables, it) }
         val out = ArrayList<SnesAutoExtractor.Finding>()
         var n = 0
         for (i in 0 until 52) {
@@ -216,24 +277,14 @@ object SnesGameRecipes {
             if (pc < 0x40000 || pc >= rom.size) continue
             val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
             if (data.size < 0x300) continue
-            // El bpp lo decide el detector (casi todo SMW es 3bpp; algunos 4bpp).
-            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            // Formato con sesgo a 3bpp (el real de SMW): evita el "ruido arcoíris" que
+            // producían los ficheros 3bpp detectados como 4bpp/2bpp por un pelo.
+            val fmt = smwFormat(data)
             val available = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
             if (available < 16) continue
             val count = minOf(available, 128)
-            // Cada fichero recibe una fila REAL del juego, nunca una paleta adivinada.
-            // Entre las filas reales candidatas se elige la de mejor coherencia con el
-            // dibujo (SnesPaletteMatcher.scorePalette): así automatizamos la decisión
-            // sin imponer ninguna. La fila de Mario SOLO compite en 4bpp y solo gana si
-            // de verdad encaja; imponerla a todo 4bpp hacía que las hojas 4bpp que no
-            // son Mario (fuentes, objetos del HUD) salieran en ruido arcoíris.
-            val stats = SnesPaletteMatcher.indexStats(data, 0, fmt, count)
-            val candidates = if (fmt == SnesGraphicFormat.SNES_4BPP) {
-                listOf(fgRow, spriteRow, marioRow)
-            } else {
-                listOf(fgRow, spriteRow)
-            }
-            val pal = candidates.maxByOrNull { SnesPaletteMatcher.scorePalette(it, stats) }!!
+            // Paleta REAL del juego según una tabla curada por fichero (ver smwPalette).
+            val pal = smwPalette(i, data, fmt, count, fgRow, spriteRows, playerRows)
             val sheet = SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             n++
             out.add(

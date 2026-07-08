@@ -2,6 +2,7 @@ package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
+import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesMapping
 import kotlin.test.Test
@@ -170,6 +171,42 @@ class SmwPaletteRecipeTest {
         assertEquals(SnesGameRecipes.SMW_PLAYER_PC, SnesGameRecipes.SMW_FIXED_PC + 0x78)
         assertEquals(SnesGameRecipes.SMW_SPRITE_PC, SnesGameRecipes.SMW_PLAYER_PC + 0x50)
         assertEquals(0x33D8, SnesGameRecipes.SMW_SPRITE_PC + 0xC0)  // B318+0xC0 = B3D8
+    }
+
+    // -------------------------------------------------- sesgo de formato a 3bpp
+
+    /** Anillos concéntricos: píxeles vecinos casi siempre iguales (arte real). */
+    private fun ringTilePixels(): IntArray {
+        val px = IntArray(64)
+        for (y in 0..7) for (x in 0..7) {
+            val d = maxOf(kotlin.math.abs(2 * x - 7), kotlin.math.abs(2 * y - 7))
+            px[y * 8 + x] = 4 - (d - 1) / 2
+        }
+        return px
+    }
+
+    private fun encode3bpp(pixels: IntArray, tiles: Int): ByteArray {
+        val rom = ByteArray(24 * tiles)
+        for (t in 0 until tiles) {
+            val p = t * 24
+            for (y in 0..7) {
+                val planes = IntArray(3)
+                for (x in 0..7) {
+                    val v = pixels[y * 8 + x]
+                    for (bit in 0..2) if ((v shr bit) and 1 == 1) planes[bit] = planes[bit] or (1 shl (7 - x))
+                }
+                rom[p + 2 * y] = planes[0].toByte()
+                rom[p + 2 * y + 1] = planes[1].toByte()
+                rom[p + 16 + y] = planes[2].toByte()
+            }
+        }
+        return rom
+    }
+
+    @Test
+    fun `smwFormat elige 3bpp cuando el dibujo es 3bpp`() {
+        val data = encode3bpp(ringTilePixels(), tiles = 64)
+        assertEquals(SnesGraphicFormat.SNES_3BPP, SnesGameRecipes.smwFormat(data))
     }
 
     // ------------------------------------------------- extract no revienta
