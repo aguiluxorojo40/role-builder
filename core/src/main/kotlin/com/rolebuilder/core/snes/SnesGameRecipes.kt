@@ -34,8 +34,77 @@ object SnesGameRecipes {
         // con escenas a medias, de momento la receta entrega solo las HOJAS de tiles con
         // color por-tesela; el motor de fondos queda listo para reactivarlo (ver
         // renderSmwBackground / layer2BgEntries) cuando se resuelva el layout de VRAM.
+        // La galería entrega las HOJAS por categoría coloreadas con la CGRAM REAL del
+        // juego (ensamblada por assembleSmwCgram, validada 48/48 contra emulador): FG y
+        // BG POR-TESELA con su sub-paleta Map16, sprites y Mario con su fila real. El
+        // render Map16 de "todos los bloques" (extractSmwMap16Tileset) queda como base
+        // para las ESCENAS de nivel (objetivo B): en frío pinta también los ~cientos de
+        // bloques SIN USAR (magenta placeholder), así que no va en la galería hasta
+        // acotarlo al tilemap real de un nivel.
         "Super Mario World" -> extractSmw(rom, header)
         else -> emptyList()
+    }
+
+    /**
+     * Renderiza el TILESET Map16 de SMW: monta cada bloque 16×16 del juego (suelo,
+     * tuberías, bloques…) desde la VRAM del nivel (sus 4 slots de GFX) y lo colorea
+     * con la CGRAM real por su CCC. Es la hoja de tiles LIMPIA y usable para pintar
+     * mapas — los ladrillos de verdad de SMW, no un atlas de VRAM en crudo.
+     */
+    internal fun extractSmwMap16Tileset(rom: ByteArray, header: SnesHeader): SnesAutoExtractor.Finding? {
+        val delta = smwHeaderDelta(header)
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        // VRAM de un nivel de pradera (0x106): FG1=GFX14, FG2=GFX17, BG1/FG3 del setting.
+        val l1 = SMW_LAYER1_PTR_PC + delta + 3 * 0x106
+        val lpc = lorom(byte(rom, l1), byte(rom, l1 + 1), byte(rom, l1 + 2))
+        val fgbgSetting = if (lpc in 0 until rom.size) byte(rom, lpc + 4) and 0x0F else 0
+        val se = SMW_FGBG_GFX_TABLE_PC + delta + 4 * fgbgSetting
+        val slotFiles = intArrayOf(SMW_FG1_GFX, SMW_FG2_GFX, byte(rom, se + 2), byte(rom, se + 3))
+        // Ensambla 512 teselas de VRAM (4 slots × 128) decodificadas a índices.
+        val vram = arrayOfNulls<IntArray>(512)
+        for (s in 0..3) {
+            val file = slotFiles[s]; if (file == SMW_SLOT_EMPTY) continue
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+            }
+        }
+        if (vram.all { it == null }) return null
+        // CGRAM REAL del nivel, ensamblada como el juego (no horneada): color correcto.
+        val cgram = assembleSmwCgram(rom, delta, 0x106)
+        // Renderiza los 512 bloques Map16 (8 bytes = 4 teselas + su CCC/flip).
+        val map16 = SMW_MAP16_FG_PC + delta
+        val cols = 16; val blocks = 512
+        val img = ArgbImage(cols * 16, (blocks / cols) * 16)
+        val subPos = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
+        for (blk in 0 until blocks) {
+            val o = map16 + 8 * blk
+            if (o + 8 > rom.size) break
+            val bx = (blk % cols) * 16; val by = (blk / cols) * 16
+            for (k in 0..3) {
+                val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
+                val e = SnesTilemap.decodeEntry(word)
+                val px = vram.getOrNull(e.tileIndex) ?: continue
+                val row = (e.palette and 7) * 16
+                val ox = bx + subPos[k][0]; val oy = by + subPos[k][1]
+                for (yy in 0..7) for (xx in 0..7) {
+                    val sx = if (e.hFlip) 7 - xx else xx
+                    val sy = if (e.vFlip) 7 - yy else yy
+                    val ci = px[sy * 8 + sx]
+                    val argb = if (ci == 0) 0x00000000 else cgram[row + ci]
+                    img.set(ox + xx, oy + yy, argb)
+                }
+            }
+        }
+        return SnesAutoExtractor.Finding(
+            image = img, label = "Tileset SMW", offset = map16, compressed = false,
+            format = SnesGraphicFormat.SNES_4BPP, palette = IntArray(0),
+            tileCount = (img.width / 8) * (img.height / 8), columns = img.width / 8, score = 1.0,
+        )
     }
 
     // ------------------------------------------------------------ Super Mario World
@@ -67,6 +136,8 @@ object SnesGameRecipes {
     internal const val SMW_BACK_AREA_PC = 0x30A0
     /** BG palette: $00B0B0 + 0x18*x → PC 0x30B0 + 0x18*x (x=0..7, 12 colores). */
     internal const val SMW_BG_PC = 0x30B0
+    /** Barra de estado (Layer 3): $00B170 → PC 0x3170 (colores 8-F de paletas 0 y 1). */
+    internal const val SMW_STATUSBAR_PC = 0x3170
     /** FG palette: $00B190 + 0x18*x → PC 0x3190 + 0x18*x (x=0..7, 12 colores). */
     internal const val SMW_FG_PC = 0x3190
     /** Fijas filas 4-D: $00B250 + 0x0C*(row-4) → PC 0x3250 + 0x0C*(row-4) (6 colores). */
@@ -75,6 +146,8 @@ object SnesGameRecipes {
     internal const val SMW_PLAYER_PC = 0x32C8
     /** Sprite palette: $00B318 + 0x18*x → PC 0x3318 + 0x18*x (x=0..7, 12 colores). */
     internal const val SMW_SPRITE_PC = 0x3318
+    /** Colores de bayas (berry): $00B674 → PC 0x3674 (colores 9-F de varias paletas). */
+    internal const val SMW_BERRY_PC = 0x3674
 
     // -------- Tablas de SLOT: qué fichero GFX se carga en cada ranura de VRAM -------
     //
@@ -119,21 +192,14 @@ object SnesGameRecipes {
     // -------------------- Mario (GFX32): puntero especial + paleta REAL --------------------
     //
     // GFX32 (los gráficos de Mario) NO está en la tabla de punteros estándar: usa un
-    // puntero propio ($00B8D8 low/high + banco en $00B890). Y su paleta no se puede
-    // leer "en frío" de la ROM (el juego la ENSAMBLA en CGRAM). Estos 16 colores son
-    // la fila 9 REAL de la CGRAM de SMW USA 1.0, verificada volcándola de un emulador
-    // (Mario sale rojo, no cian). Índice 0 = transparente.
+    // puntero propio ($00B8D8 low/high + banco en $00B890). Su color tampoco se lee
+    // "en frío": el juego lo ENSAMBLA en la fila 8 de la CGRAM (sprite 0), así que su
+    // paleta sale de assembleSmwCgram(fila 8) — rojo, no cian, y sin verde compartido.
     /** Puntero de GFX32 (Mario): byte bajo/alto en 0x38D8/0x38D9, banco en 0x3890. */
     internal const val SMW_GFX32_LO_PC = 0x38D8
     internal const val SMW_GFX32_HI_PC = 0x38D9
     internal const val SMW_GFX32_BANK_PC = 0x3890
-    /** Paleta REAL de Mario (fila 9 de la CGRAM, SMW USA 1.0). */
-    internal val SMW_MARIO_REAL_PALETTE = intArrayOf(
-        0x00000000, 0xFFFFFFFF.toInt(), 0xFF000000.toInt(), 0xFF737373.toInt(),
-        0xFFA5A5A5.toInt(), 0xFFC5C5C5.toInt(), 0xFFE6E6E6.toInt(), 0xFFFF105A.toInt(),
-        0xFF000000.toInt(), 0xFFFFFFFF.toInt(), 0xFF000000.toInt(), 0xFF00CE00.toInt(),
-        0xFFB50000.toInt(), 0xFFFF0000.toInt(), 0xFFFF5A00.toInt(), 0xFFFFA500.toInt(),
-    )
+
     /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
     internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
@@ -156,6 +222,83 @@ object SnesGameRecipes {
      * 0x7FC0 (sin cabecera) → 0; 0x7FC0+512 = 0x81C0 (con cabecera) → 0x200.
      */
     internal fun smwHeaderDelta(header: SnesHeader): Int = header.headerOffset - 0x7FC0
+
+    /**
+     * Selectores de paleta REALES de la cabecera primaria (5 bytes) de un nivel.
+     * Decodificados EXACTAMENTE como la rutina de carga del juego (bank $00
+     * CODE_0584E3 del disassembly SMWDisX):
+     *   byte0 bits 7-5 = BG palette; byte1 bits 7-5 = back area color;
+     *   byte3 bits 2-0 = FG palette; byte3 bits 5-3 = sprite palette;
+     *   byte4 bits 3-0 = tileset FG (ObjectTileset).
+     */
+    internal data class SmwLevelHeader(
+        val bgPal: Int, val backArea: Int, val fgPal: Int, val sprPal: Int, val objectTileset: Int,
+    )
+
+    /** Lee y decodifica la cabecera primaria del nivel [level] (0..0x1FF), o null. */
+    internal fun readSmwLevelHeader(rom: ByteArray, delta: Int, level: Int): SmwLevelHeader? {
+        val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
+        if (l1 + 2 >= rom.size) return null
+        val lpc = lorom(byte(rom, l1), byte(rom, l1 + 1), byte(rom, l1 + 2))
+        if (lpc < 0 || lpc + 4 >= rom.size) return null
+        val b0 = byte(rom, lpc); val b1 = byte(rom, lpc + 1)
+        val b3 = byte(rom, lpc + 3); val b4 = byte(rom, lpc + 4)
+        return SmwLevelHeader(
+            bgPal = (b0 shr 5) and 0x07, backArea = (b1 shr 5) and 0x07,
+            fgPal = b3 and 0x07, sprPal = (b3 shr 3) and 0x07, objectTileset = b4 and 0x0F,
+        )
+    }
+
+    /**
+     * Ensambla la CGRAM COMPLETA (256 colores ARGB) de un nivel EXACTAMENTE como el
+     * juego (rutina LoadPalette, bank $00 del disassembly SMWDisX). Esto sustituye a
+     * cualquier paleta "horneada": lee las tablas reales de la ROM y las coloca en la
+     * misma disposición de 16 filas × 16 colores que construye SMW en tiempo real, así
+     * que el color sale CORRECTO para CUALQUIER nivel, no solo pradera.
+     *
+     * Disposición (filas 0-7 = capas de fondo/objeto; 8-15 = sprites):
+     *  - col 1 de filas 0-7 = blanco $7FDD; col 1 de filas 8-15 = blanco $7FFF.
+     *  - StatusBar → filas 0-1 cols 8-F.        - StandardColors → filas 4-D cols 2-7.
+     *  - BackArea → color 0 (fondo).            - FG palette → filas 2-3 cols 2-7.
+     *  - Sprite palette → filas E-F cols 2-7.   - BG palette → filas 0-1 cols 2-7.
+     *  - Berry → filas 2-4 y 9-B cols 9-F.      - Player (Mario) → fila 8 cols 6-F.
+     */
+    internal fun assembleSmwCgram(rom: ByteArray, delta: Int, level: Int): IntArray {
+        val hdr = readSmwLevelHeader(rom, delta, level)
+            ?: SmwLevelHeader(0, 0, SMW_DEFAULT_FG_INDEX, SMW_DEFAULT_SPRITE_INDEX, 0)
+        val pal = IntArray(256)
+        fun color(pc: Int): Int = SnesDecoder.bgr15ToArgb(byte(rom, pc + delta) or (byte(rom, pc + delta + 1) shl 8))
+        // idx(fila,col) → índice de color absoluto 0..255.
+        fun idx(row: Int, col: Int) = row * 16 + col
+        // Copia n colores consecutivos de ROM[srcPc..] a (row,col0), (row,col0+1)...
+        fun run(srcPc: Int, row: Int, col0: Int, n: Int) {
+            for (i in 0 until n) pal[idx(row, col0 + i)] = color(srcPc + 2 * i)
+        }
+        // A/B) col 1 = blanco en las 16 filas (objeto $7FDD, sprite $7FFF): estético.
+        for (r in 0..7) pal[idx(r, 1)] = SnesDecoder.bgr15ToArgb(0x7FDD)
+        for (r in 8..15) pal[idx(r, 1)] = SnesDecoder.bgr15ToArgb(0x7FFF)
+        // C) StatusBar: filas 0-1, cols 8-F (8 colores/fila, secuencial).
+        for (r in 0..1) run(SMW_STATUSBAR_PC + r * 16, r, 8, 8)
+        // D) StandardColors: filas 4-D, cols 2-7 (6 colores/fila, secuencial).
+        for (r in 4..13) run(SMW_FIXED_PC + (r - 4) * 12, r, 2, 6)
+        // E) Back area color → color de fondo (índice 0).
+        pal[0] = color(SMW_BACK_AREA_PC + 2 * (hdr.backArea and 0x0F))
+        // F) FG palette (según cabecera): filas 2-3, cols 2-7.
+        val fgBase = SMW_FG_PC + hdr.fgPal * 0x18
+        run(fgBase, 2, 2, 6); run(fgBase + 12, 3, 2, 6)
+        // G) Sprite palette: filas E-F, cols 2-7.
+        val sprBase = SMW_SPRITE_PC + hdr.sprPal * 0x18
+        run(sprBase, 14, 2, 6); run(sprBase + 12, 15, 2, 6)
+        // H) BG palette: filas 0-1, cols 2-7.
+        val bgBase = SMW_BG_PC + hdr.bgPal * 0x18
+        run(bgBase, 0, 2, 6); run(bgBase + 12, 1, 2, 6)
+        // I/J) Berry: filas 2-4 y 9-B, cols 9-F (7 colores/fila, secuencial).
+        for (r in 0..2) run(SMW_BERRY_PC + r * 14, 2 + r, 9, 7)
+        for (r in 0..2) run(SMW_BERRY_PC + r * 14, 9 + r, 9, 7)
+        // Player (Mario normal): fila 8 (sprite 0), cols 6-F (10 colores).
+        run(SMW_PLAYER_PC, 8, 6, 10)
+        return pal
+    }
 
     /**
      * Lecturas de las tablas de paleta reales de SMW sobre [rom], ya aplicado el
@@ -637,6 +780,12 @@ object SnesGameRecipes {
         // nivel en $05E000). Solo si no hay dato real cae al índice más coherente con
         // el dibujo (heurístico), para no volver al "todo verde" del índice 0 fijo.
         val delta = smwHeaderDelta(header)
+        // CGRAM REAL de un nivel de pradera, ensamblada EXACTAMENTE como el juego
+        // (validada 48/48 contra volcado de emulador). Sub-paleta k (0..7) = fila CCC.
+        val cgram = assembleSmwCgram(rom, delta, 0x106)
+        fun cgSub(row: Int): IntArray {
+            val a = cgram.copyOfRange(row * 16, row * 16 + 16); a[0] = 0; return a // idx 0 = transparente
+        }
         val tables = SmwPaletteTables(rom, delta)
         val fgRows = (0..7).map { row3bppFG(tables, it, SMW_DEFAULT_BACK_INDEX) }
         val bgRows = (0..7).map { row3bppBG(tables, it, SMW_DEFAULT_BACK_INDEX) }
@@ -693,7 +842,7 @@ object SnesGameRecipes {
                     SMW_FG2_GFX -> 0x080
                     else -> 0x180
                 }
-                val selector: (Int) -> IntArray = { t -> fgRows[map16Fg[base + t] ?: SMW_DEFAULT_FG_INDEX] }
+                val selector: (Int) -> IntArray = { t -> cgSub(map16Fg[base + t] ?: SMW_DEFAULT_FG_INDEX) }
                 SnesAssetExtractor.extractTileSheet(data, 0, fmt, count, 16, paletteForTile = selector)
             } else {
                 SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
@@ -735,13 +884,17 @@ object SnesGameRecipes {
                 val mfmt = SnesGraphicFormat.SNES_4BPP
                 val mcount = minOf(SnesAssetExtractor.availableTiles(mdata.size, 0, mfmt), 128)
                 if (mcount >= 16) {
+                    // Paleta de Mario = fila 8 REAL de la CGRAM ensamblada (sprite 0):
+                    // cols 6-F = mario_normal.pal, cols 2-5 = StandardColors. Sale del
+                    // mismo algoritmo del juego, sin horneado ni contaminación verde.
+                    val marioPal = cgSub(8)
                     val sheet = SnesAssetExtractor.extractTileSheet(
-                        mdata, 0, mfmt, SMW_MARIO_REAL_PALETTE, mcount, 16,
+                        mdata, 0, mfmt, marioPal, mcount, 16,
                     )
                     out.add(
                         SnesAutoExtractor.Finding(
                             image = sheet.image, label = "Personaje Mario", offset = mpc,
-                            compressed = true, format = mfmt, palette = SMW_MARIO_REAL_PALETTE,
+                            compressed = true, format = mfmt, palette = marioPal,
                             tileCount = mcount, columns = 16, score = 1.0,
                         )
                     )
