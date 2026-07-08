@@ -699,10 +699,19 @@ object SnesGameRecipes {
                 SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, count, 16)
             }
             n++
+            // Etiqueta por CATEGORÍA (el rol de slot que ya detectamos), para una
+            // galería ORDENADA: fondos, tilesets de primer plano, sprites, personajes.
+            val category = when (role) {
+                SmwGfxRole.FG -> "Tileset FG"
+                SmwGfxRole.BG -> "Tileset BG"
+                SmwGfxRole.SPRITE -> "Sprites"
+                SmwGfxRole.PLAYER -> "Personaje"
+                null -> "Gráficos"
+            }
             out.add(
                 SnesAutoExtractor.Finding(
                     image = sheet.image,
-                    label = "SMW $n",
+                    label = "$category $n",
                     offset = pc,
                     compressed = true,
                     format = fmt,
@@ -731,7 +740,7 @@ object SnesGameRecipes {
                     )
                     out.add(
                         SnesAutoExtractor.Finding(
-                            image = sheet.image, label = "SMW Mario", offset = mpc,
+                            image = sheet.image, label = "Personaje Mario", offset = mpc,
                             compressed = true, format = mfmt, palette = SMW_MARIO_REAL_PALETTE,
                             tileCount = mcount, columns = 16, score = 1.0,
                         )
@@ -739,6 +748,8 @@ object SnesGameRecipes {
                 }
             }
         }
-        return out
+        // Orden final por categoría, para una galería limpia y navegable.
+        val order = listOf("Personaje", "Tileset FG", "Tileset BG", "Sprites", "Gráficos")
+        return out.sortedBy { f -> order.indexOfFirst { f.label.startsWith(it) }.let { if (it < 0) order.size else it } }
     }
 }
