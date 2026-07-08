@@ -115,6 +115,25 @@ object SnesGameRecipes {
     internal const val SMW_MAP16_L2_PC = 0x69100
     /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000 [PROBABLE]. */
     internal const val SMW_MAP16_FG_PC = 0x68000
+
+    // -------------------- Mario (GFX32): puntero especial + paleta REAL --------------------
+    //
+    // GFX32 (los gráficos de Mario) NO está en la tabla de punteros estándar: usa un
+    // puntero propio ($00B8D8 low/high + banco en $00B890). Y su paleta no se puede
+    // leer "en frío" de la ROM (el juego la ENSAMBLA en CGRAM). Estos 16 colores son
+    // la fila 9 REAL de la CGRAM de SMW USA 1.0, verificada volcándola de un emulador
+    // (Mario sale rojo, no cian). Índice 0 = transparente.
+    /** Puntero de GFX32 (Mario): byte bajo/alto en 0x38D8/0x38D9, banco en 0x3890. */
+    internal const val SMW_GFX32_LO_PC = 0x38D8
+    internal const val SMW_GFX32_HI_PC = 0x38D9
+    internal const val SMW_GFX32_BANK_PC = 0x3890
+    /** Paleta REAL de Mario (fila 9 de la CGRAM, SMW USA 1.0). */
+    internal val SMW_MARIO_REAL_PALETTE = intArrayOf(
+        0x00000000, 0xFFFFFFFF.toInt(), 0xFF000000.toInt(), 0xFF737373.toInt(),
+        0xFFA5A5A5.toInt(), 0xFFC5C5C5.toInt(), 0xFFE6E6E6.toInt(), 0xFFFF105A.toInt(),
+        0xFF000000.toInt(), 0xFFFFFFFF.toInt(), 0xFF000000.toInt(), 0xFF00CE00.toInt(),
+        0xFFB50000.toInt(), 0xFFFF0000.toInt(), 0xFFFF5A00.toInt(), 0xFFFFA500.toInt(),
+    )
     /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
     internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
@@ -693,6 +712,32 @@ object SnesGameRecipes {
                     score = 1.0,
                 )
             )
+        }
+        // Mario (GFX32): puntero ESPECIAL + paleta de jugador REAL. Va aparte porque
+        // no está en la tabla estándar y su color no se puede leer en frío de la ROM.
+        runCatching {
+            val mpc = lorom(
+                byte(rom, SMW_GFX32_LO_PC + delta),
+                byte(rom, SMW_GFX32_HI_PC + delta),
+                byte(rom, SMW_GFX32_BANK_PC + delta),
+            )
+            if (mpc in 0x40000 until rom.size) {
+                val mdata = LcLz2.decompress(rom, mpc).data
+                val mfmt = SnesGraphicFormat.SNES_4BPP
+                val mcount = minOf(SnesAssetExtractor.availableTiles(mdata.size, 0, mfmt), 128)
+                if (mcount >= 16) {
+                    val sheet = SnesAssetExtractor.extractTileSheet(
+                        mdata, 0, mfmt, SMW_MARIO_REAL_PALETTE, mcount, 16,
+                    )
+                    out.add(
+                        SnesAutoExtractor.Finding(
+                            image = sheet.image, label = "SMW Mario", offset = mpc,
+                            compressed = true, format = mfmt, palette = SMW_MARIO_REAL_PALETTE,
+                            tileCount = mcount, columns = 16, score = 1.0,
+                        )
+                    )
+                }
+            }
         }
         return out
     }
