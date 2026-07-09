@@ -54,6 +54,18 @@ object SnesGameRecipes {
     internal fun smwFgbgVramSlot(tileIndex: Int): Int =
         if (tileIndex in 0 until 512) tileIndex / 128 else -1
 
+    /**
+     * ¿Es [tileIndex] una tesela ANIMADA? SMW reescribe cada pocos frames unas regiones
+     * de VRAM (monedas, bloques ?, agua…) desde GFX32 (ver HandleLevelTileAnimations,
+     * $05:BB39). Sus destinos son las direcciones word 0x400..0x800 (+0xDA0/0xEA0), es
+     * decir tiles 0x40..0x83, 0xDA..0xDD y 0xEA..0xED. En un render estático su GFX base
+     * no es su aspecto de juego; las tratamos aparte.
+     */
+    internal fun smwAnimatedVramTile(tileIndex: Int): Boolean {
+        val t = tileIndex and 0x1FF
+        return t in 0x40..0x83 || t in 0xDA..0xDD || t in 0xEA..0xED
+    }
+
     /** PC del inicio de los datos de Layer 1 del nivel (cabecera de 5 bytes + objetos). */
     internal fun smwLayer1DataPc(rom: ByteArray, delta: Int, level: Int): Int? {
         val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
@@ -195,6 +207,10 @@ object SnesGameRecipes {
                 val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
                 val e = SnesTilemap.decodeEntry(word)
                 if ((e.tileIndex and 0xFF) in 0xF8..0xFF) continue // slots animados (aire)
+                // Teselas animadas (monedas, bloques ?, agua…): su GFX estático no es su
+                // aspecto de juego (el motor las reescribe por frame desde GFX32). En un
+                // render estático salían como basura de colores; mejor dejarlas de cielo.
+                if (smwAnimatedVramTile(e.tileIndex)) continue
                 val px = vram.getOrNull(e.tileIndex) ?: continue
                 val rowP = (e.palette and 7) * 16
                 val ox = x * 16 + subPos[k][0]; val oy = y * 16 + subPos[k][1]

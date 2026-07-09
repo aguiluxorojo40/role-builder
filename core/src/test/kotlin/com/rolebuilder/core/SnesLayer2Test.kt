@@ -77,6 +77,20 @@ class SnesLayer2Test {
     }
 
     @Test
+    fun `smwAnimatedVramTile marca las regiones de teselas animadas`() {
+        // Destinos de HandleLevelTileAnimations: tiles 0x40-0x83, 0xDA-0xDD, 0xEA-0xED.
+        assertTrue(SnesGameRecipes.smwAnimatedVramTile(0x40))
+        assertTrue(SnesGameRecipes.smwAnimatedVramTile(0x83))
+        assertTrue(SnesGameRecipes.smwAnimatedVramTile(0xDA))
+        assertTrue(SnesGameRecipes.smwAnimatedVramTile(0xEC))
+        // Terreno normal: NO animado.
+        assertTrue(!SnesGameRecipes.smwAnimatedVramTile(0x3F))
+        assertTrue(!SnesGameRecipes.smwAnimatedVramTile(0x84))
+        assertTrue(!SnesGameRecipes.smwAnimatedVramTile(0x100))
+        assertTrue(!SnesGameRecipes.smwAnimatedVramTile(0x192))
+    }
+
+    @Test
     fun `renderSmwBackground devuelve null cuando el nivel no tiene fondo`() {
         // Motor de escenas de fondo (base guardada): sin datos de fondo válidos, no
         // revienta, devuelve null.
