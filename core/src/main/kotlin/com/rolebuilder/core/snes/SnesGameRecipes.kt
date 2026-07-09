@@ -1,7 +1,6 @@
 package com.rolebuilder.core.snes
 
 import com.rolebuilder.core.snes.compression.LcLz2
-import com.rolebuilder.core.snes.compression.Rle1
 
 /**
  * "Recetas por juego": para ROMs concretas y conocidas sabemos EXACTAMENTE dónde
@@ -744,23 +743,53 @@ object SnesGameRecipes {
      * sintéticos. Los offsets Map16/umbral son [PROBABLE]; el consumidor aplica un
      * gate de cordura sobre la concentración de sub-paletas.
      */
+    /**
+     * Descompresor EXACTO del fondo de Layer 2 (port 1:1 de BufferBGTilemap, $05:8126):
+     * flujo de comandos de 1 byte. `L = cmd & 0x7F` emite L+1 bytes: bit7=0 copia L+1
+     * literales; bit7=1 repite el byte siguiente L+1 veces. A diferencia de un RLE
+     * genérico, **0xFF es un comando válido** (repite 128); el flujo termina SOLO con
+     * DOS 0xFF seguidos en posición de comando. (Mi Rle1 genérico paraba en el primero,
+     * lo que truncaba fondos con rachas de 128.)
+     */
+    private fun decompressSmwBackground(rom: ByteArray, dataPc: Int, maxOut: Int = 0x4000): ByteArray {
+        val out = ArrayList<Byte>(1024)
+        var p = dataPc
+        fun rd(): Int { val v = if (p in rom.indices) rom[p].toInt() and 0xFF else 0xFF; p++; return v }
+        while (out.size < maxOut) {
+            if (p + 1 >= rom.size) break
+            if ((rom[p].toInt() and 0xFF) == 0xFF && (rom[p + 1].toInt() and 0xFF) == 0xFF) break
+            val cmd = rd()
+            val len = (cmd and 0x7F) + 1
+            if (cmd and 0x80 == 0) repeat(len) { out.add(rd().toByte()) }
+            else { val v = rd().toByte(); repeat(len) { out.add(v) } }
+        }
+        return ByteArray(out.size) { out[it] }
+    }
+
     internal fun layer2BgEntries(rom: ByteArray, delta: Int, level: Int): List<SnesTilemap.TilemapEntry> {
         val p = SMW_LAYER2_PTR_PC + delta + 3 * level
         if (p < 0 || p + 2 >= rom.size) return emptyList()
-        if (byte(rom, p + 2) != SMW_BG_IS_BACKGROUND) return emptyList() // no es un fondo
+        val isBg = byte(rom, p + 2)
+        if (isBg and 2 == 0) return emptyList() // bit1: Layer 2 de imagen; si no, son objetos
         val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
         if (addr < 0x8000) return emptyList()
         val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)
         if (dataPc < 0 || dataPc >= rom.size) return emptyList()
-        val blocks = runCatching { Rle1.decompress(rom, dataPc, 0x4000).data }.getOrNull() ?: return emptyList()
+        val blocks = decompressSmwBackground(rom, dataPc)
         if (blocks.size < 4) return emptyList()
-        val page = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
+        // block = (hi<<8)|lo. LoadSublevel: si bit2 está set (fondos vanilla, is_bg=0xFF)
+        // el juego NO rellena hi → hi=0 (página 0); si no, hi = is_bg>>4.
+        // Página del Map16 de fondo (hi del índice de bloque). Con is_bg vanilla el juego
+        // deja el hi en el estado previo de WRAM, que resulta ser 0 o 1 según el grupo de
+        // datos; el umbral de PC (reverse-engineered) lo distingue: los datos por encima
+        // de él usan la página 1 del Map16 de fondo.
+        val hi = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
         val map16Base = SMW_MAP16_L2_PC + delta
         val entries = ArrayList<SnesTilemap.TilemapEntry>(blocks.size * 4)
         for (bb in blocks) {
-            val block = page * 0x100 + (bb.toInt() and 0xFF)
+            val block = (hi shl 8) or (bb.toInt() and 0xFF)
             val o = map16Base + 8 * block
-            if (o < 0 || o + 8 > rom.size) continue
+            if (o < 0 || o + 8 > rom.size) { repeat(4) { entries.add(SnesTilemap.decodeEntry(0)) }; continue }
             for (k in 0..3) {
                 val w = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
                 entries.add(SnesTilemap.decodeEntry(w))
@@ -773,8 +802,9 @@ object SnesGameRecipes {
      * Renderiza la ESCENA de fondo (Layer 2) de un nivel con COLOR REAL POR TESELA:
      * cada tesela 8×8 pintada con la sub-paleta (`CCC`) que le asigna su bloque Map16.
      * Devuelve null si el nivel no tiene fondo o faltan datos. La rejilla de SMW es
-     * 32×27 bloques 16×16; el flujo llena primero la mitad izquierda y luego la
-     * derecha, en column-major dentro de cada mitad.
+     * El buffer es screen-major (16×27 por screen, fila*16+col), como monta el juego
+     * en BufferBGTilemap; se decodifica contra la VRAM de 4 slots y se colorea con la
+     * CGRAM real del nivel.
      */
     internal fun renderSmwBackground(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? {
         val delta = smwHeaderDelta(header)
@@ -786,7 +816,6 @@ object SnesGameRecipes {
         val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
         val lpc = lorom(byte(rom, l1), byte(rom, l1 + 1), byte(rom, l1 + 2))
         if (lpc < 0 || lpc + 5 > rom.size) return null
-        val backIdx = byte(rom, lpc + 1) shr 5          // CCC de back area (cielo)
         val tileset = byte(rom, lpc + 4) and 0x0F
         val se = SMW_FGBG_GFX_TABLE_PC + delta + 4 * tileset
 
@@ -816,28 +845,33 @@ object SnesGameRecipes {
         val mapped = entries.count { smwFgbgVramSlot(it.tileIndex) >= 0 && vram[it.tileIndex] != null }
         if (distinct.size < 4 || mapped.toDouble() / entries.size < 0.5) return null
 
-        val tables = SmwPaletteTables(rom, delta)
-        // Filas por CCC (una por sub-paleta 0..7). El índice 0 es el color de back
-        // area (cielo), NO transparente: los fondos son opacos.
-        val rowsByCcc = (0..7).map { row3bppBG(tables, it, backIdx) }
+        // CGRAM ensamblada del nivel (la MISMA que la escena FG), no la fila 3bpp
+        // simplificada: esta trae el col 1 = blanco real, así las nubes salen blancas
+        // en vez de negras. Índice de color 0 = back area (cielo), compartido por todas
+        // las filas de fondo.
+        val cgram = assembleSmwCgram(rom, delta, level)
 
+        // Arrangement REAL (BufferBGTilemap + BufferScrollingTiles_Layer2_Background):
+        // el buffer es screen-major; cada screen es 16 cols × 27 filas = 432 bloques,
+        // ordenados fila*16+col. El bloque lineal b va a screen b/432, dentro fila
+        // (b%432)/16 y columna b%432%16; las screens se colocan una tras otra a lo ancho.
         val h = 27
-        val cols = if (blockCount % h == 0) blockCount / h else 32
+        val screens = (blockCount + 431) / 432
+        val cols = maxOf(1, screens) * 16
         val img = ArgbImage(cols * 16, h * 16)
-        val half = blockCount / 2
+        for (i in img.pixels.indices) img.pixels[i] = cgram[0] // back area (cielo)
         // Posiciones de las 4 sub-teselas del bloque: TL, BL, TR, BR.
         val subPos = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
         for (b in 0 until blockCount) {
-            val leftHalf = b < half
-            val idx = if (leftHalf) b else b - half
-            val colInHalf = idx / h
-            val row = idx % h
-            val col = (if (leftHalf) 0 else cols / 2) + colInHalf
-            if (col >= cols) continue
+            val screen = b / 432
+            val rem = b % 432
+            val row = rem / 16
+            val col = screen * 16 + rem % 16
+            if (col >= cols || row >= h) continue
             val ox = col * 16; val oy = row * 16
             for (k in 0..3) {
                 val e = entries[b * 4 + k]
-                val palette = rowsByCcc[e.palette and 7]
+                val rowP = (e.palette and 7) * 16
                 val bx = ox + subPos[k][0]; val by = oy + subPos[k][1]
                 val px = if (smwFgbgVramSlot(e.tileIndex) >= 0) vram[e.tileIndex] else null
                 if (px != null) {
@@ -845,12 +879,13 @@ object SnesGameRecipes {
                         val sx = if (e.hFlip) 7 - pxx else pxx
                         val sy = if (e.vFlip) 7 - py else py
                         val ci = px[sy * 8 + sx]
-                        val argb = if (ci < palette.size) palette[ci] else palette[0]
+                        // ci 0 = transparente → back area (cielo), común a todo el fondo.
+                        val argb = if (ci == 0) cgram[0] else cgram[rowP + ci]
                         img.set(bx + pxx, by + py, argb)
                     }
                 } else {
                     // Tesela no mapeable: rellena con back area (cielo).
-                    for (py in 0..7) for (pxx in 0..7) img.set(bx + pxx, by + py, palette[0])
+                    for (py in 0..7) for (pxx in 0..7) img.set(bx + pxx, by + py, cgram[0])
                 }
             }
         }

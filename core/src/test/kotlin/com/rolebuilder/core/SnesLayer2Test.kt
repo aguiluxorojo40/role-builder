@@ -27,11 +27,11 @@ class SnesLayer2Test {
         val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
         rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = SnesGameRecipes.SMW_BG_IS_BACKGROUND.toByte()
 
-        // Datos de fondo (RLE1) en 0x60100: copia directa de 4 bloques [5,6,5,6] + fin.
+        // Datos de fondo en 0x60100: copia directa de 4 bloques [5,6,5,6] + fin (FF FF).
         val dataPc = SnesGameRecipes.SMW_BG_BANK_PC + (0x8100 - 0x8000)
         rom[dataPc] = 0x03           // copia directa, L+1 = 4
         rom[dataPc + 1] = 5; rom[dataPc + 2] = 6; rom[dataPc + 3] = 5; rom[dataPc + 4] = 6
-        rom[dataPc + 5] = 0xFF.toByte() // fin
+        rom[dataPc + 5] = 0xFF.toByte(); rom[dataPc + 6] = 0xFF.toByte() // fin: doble 0xFF
 
         // Tabla Map16 (Layer 2): bloque 5 y 6, 8 bytes = 4 palabras cada uno.
         val m16 = SnesGameRecipes.SMW_MAP16_L2_PC
