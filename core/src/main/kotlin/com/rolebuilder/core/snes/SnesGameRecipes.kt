@@ -34,17 +34,160 @@ object SnesGameRecipes {
         // con escenas a medias, de momento la receta entrega solo las HOJAS de tiles con
         // color por-tesela; el motor de fondos queda listo para reactivarlo (ver
         // renderSmwBackground / layer2BgEntries) cuando se resuelva el layout de VRAM.
-        // La galería entrega las HOJAS por categoría coloreadas con la CGRAM REAL del
-        // juego (ensamblada por assembleSmwCgram, validada 48/48 contra emulador y
-        // contra 488 renders de nivel de Lunar Magic): FG y BG POR-TESELA con su
-        // sub-paleta Map16, sprites y Mario con su fila real. Además, ABRE la galería
-        // el tileset Map16 de pradera (extractSmwMap16Tileset): antes quedaba fuera
-        // porque pintaba los bloques sin usar como placeholders; ahora se acota a los
-        // bloques que el nivel usa de verdad (máscara del informe de uso de Lunar
-        // Magic) y entrega los ladrillos reales listos para pintar mapas.
+        // La galería entrega: (1) ESCENAS de nivel reales — tilemap reconstruido con el
+        // parser de objetos de Layer 1 (port de las rutinas del juego, validado 831/832
+        // celdas contra el buffer $7EC800 de un emulador) pintado con los gráficos del
+        // nivel y su CGRAM ensamblada; (2) el tileset Map16 acotado a los bloques que el
+        // nivel usa de verdad (los ladrillos reales para pintar mapas); (3) las HOJAS
+        // por categoría con la paleta real por fichero; (4) Mario con su fila real.
         "Super Mario World" ->
-            listOfNotNull(extractSmwMap16Tileset(rom, header)) + extractSmw(rom, header)
+            extractSmwScenes(rom, header) +
+                listOfNotNull(extractSmwMap16Tileset(rom, header)) +
+                extractSmw(rom, header)
         else -> emptyList()
+    }
+
+    /** PC del inicio de los datos de Layer 1 del nivel (cabecera de 5 bytes + objetos). */
+    internal fun smwLayer1DataPc(rom: ByteArray, delta: Int, level: Int): Int? {
+        val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
+        if (l1 + 2 >= rom.size) return null
+        val pc = lorom(byte(rom, l1), byte(rom, l1 + 1), byte(rom, l1 + 2))
+        return if (pc >= 0 && pc + 5 < rom.size) pc else null
+    }
+
+    /**
+     * Tabla de definiciones Map16 por TILESET: PC de la definición (8 bytes) de cada
+     * bloque 0..511. Port de InitializeMap16Pointers ($05:81FB, vía snesrev/smw): las
+     * definiciones NO son lineales; una máscara de bits decide bloque a bloque si la
+     * definición viene de la zona COMÚN ($0D:8000+) o de la zona ESPECÍFICA del
+     * tileset (p.ej. pradera $0D:8B70+). Con la tabla equivocada salen bloques
+     * "sucios" — este era el fallo del render Map16 lineal.
+     */
+    internal fun smwMap16DefTable(rom: ByteArray, delta: Int, tileset: Int): IntArray {
+        val ptrs = IntArray(512)
+        var common = 0x8000
+        var specific = SMW_TILESET_MAP16_PTRS[tileset and 0xF]
+        var idx = 0
+        for (v0 in 0 until 64) {
+            var bits = SMW_MAP16_COMMON_MASK[v0]
+            repeat(8) {
+                val fromCommon = bits and 0x80 != 0
+                bits = (bits shl 1) and 0xFF
+                if (fromCommon) { ptrs[idx] = common; common += 8 } else { ptrs[idx] = specific; specific += 8 }
+                idx++
+            }
+        }
+        // Pradera/etc. (tileset 0 y 7): 8 bloques de animación con definiciones propias.
+        if (tileset == 0 || tileset == 7) {
+            var addr = 0x8A70
+            for (b in 452..455) { ptrs[b] = addr; addr += 8 }
+            for (b in 492..495) { ptrs[b] = addr; addr += 8 }
+        }
+        // SNES $0D:8000+x → PC 0x68000 + x.
+        return IntArray(512) { 0x68000 + delta + (ptrs[it] - 0x8000) }
+    }
+
+    /** Máscara (64 bytes, MSB primero): bit=1 → definición común, 0 → del tileset. */
+    private val SMW_MAP16_COMMON_MASK = intArrayOf(
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xe0, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0xfe, 0x00, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xe0, 0x00, 0x00, 0x03, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    )
+
+    /** Base SNES (banco $0D) de las definiciones Map16 específicas de cada tileset. */
+    private val SMW_TILESET_MAP16_PTRS = intArrayOf(
+        0x8B70, 0xBC00, 0xC800, 0xD400, 0xE300, 0xE300, 0xC800, 0x8B70,
+        0xC800, 0xD400, 0xD400, 0xD400, 0x8B70, 0xE300, 0xD400, 0xD400,
+    )
+
+    /**
+     * ESCENA de un nivel: reconstruye el tilemap Map16 con el parser de objetos de
+     * Layer 1 ([SmwLayer1], port del juego) y lo pinta con los gráficos del nivel y
+     * su CGRAM ensamblada. Devuelve null si el nivel no es renderizable con fidelidad
+     * (vertical, tileset sin rutinas, o demasiados objetos sin portar).
+     */
+    /**
+     * ESCENAS para la galería: renderiza los primeros niveles del juego que el parser
+     * cubre al 100% (0 objetos sin portar), recortadas a [maxCols] columnas para no
+     * disparar la memoria del dispositivo. Máximo [maxScenes] escenas.
+     */
+    internal fun extractSmwScenes(rom: ByteArray, header: SnesHeader, maxScenes: Int = 4, maxCols: Int = 96): List<SnesAutoExtractor.Finding> {
+        val out = ArrayList<SnesAutoExtractor.Finding>()
+        val candidates = intArrayOf(0x106, 0x103, 0x101, 0x102, 0x104, 0x105, 0x107, 0x108, 0x109, 0x10A, 0x10B, 0xC7) +
+            IntArray(0x30) { 0x10C + it }
+        for (level in candidates) {
+            if (out.size >= maxScenes) break
+            val f = renderSmwLevelScene(rom, header, level, maxCols) ?: continue
+            out.add(f)
+        }
+        return out
+    }
+
+    internal fun renderSmwLevelScene(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = Int.MAX_VALUE): SnesAutoExtractor.Finding? {
+        val delta = smwHeaderDelta(header)
+        val tm = SmwLayer1.parse(rom, delta, level) ?: return null
+        // Gate de honestidad: si el parser se saltó objetos, la escena tendría huecos.
+        if (tm.totalObjects == 0 || tm.unknownObjects * 10 > tm.totalObjects) return null
+
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
+        val fgbgSetting = byte(rom, lpc + 4) and 0x0F
+        val se = SMW_FGBG_GFX_TABLE_PC + delta + 4 * fgbgSetting
+        val slotFiles = intArrayOf(SMW_FG1_GFX, SMW_FG2_GFX, byte(rom, se + 2), byte(rom, se + 3))
+        val vram = arrayOfNulls<IntArray>(512)
+        for (s in 0..3) {
+            val file = slotFiles[s]; if (file == SMW_SLOT_EMPTY) continue
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+            }
+        }
+        if (vram.all { it == null }) return null
+        val cgram = assembleSmwCgram(rom, delta, level)
+        val defs = smwMap16DefTable(rom, delta, tm.tileset)
+
+        // Recorta a las columnas con contenido real (los niveles no llenan 32 pantallas).
+        val totalCols = tm.screens * 16
+        var lastCol = -1
+        for (c in 0 until totalCols) for (r in 0..26) {
+            val b = tm.block(c, r); if (b > 0 && b != 0x25) { lastCol = maxOf(lastCol, c); break }
+        }
+        if (lastCol < 3) return null
+        val cols = minOf(lastCol + 2, totalCols, maxCols)
+        val rows = 27
+        val img = ArgbImage(cols * 16, rows * 16)
+        for (i in img.pixels.indices) img.pixels[i] = cgram[0] // cielo = back area color
+        val subPos = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
+        for (y in 0 until rows) for (x in 0 until cols) {
+            val block = tm.block(x, y)
+            if (block <= 0 || block >= 0x200) continue
+            val o = defs[block]
+            if (o + 8 > rom.size) continue
+            for (k in 0..3) {
+                val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
+                val e = SnesTilemap.decodeEntry(word)
+                if ((e.tileIndex and 0xFF) in 0xF8..0xFF) continue // slots animados (aire)
+                val px = vram.getOrNull(e.tileIndex) ?: continue
+                val rowP = (e.palette and 7) * 16
+                val ox = x * 16 + subPos[k][0]; val oy = y * 16 + subPos[k][1]
+                for (yy in 0..7) for (xx in 0..7) {
+                    val sx = if (e.hFlip) 7 - xx else xx
+                    val sy = if (e.vFlip) 7 - yy else yy
+                    val ci = px[sy * 8 + sx]
+                    if (ci != 0) img.set(ox + xx, oy + yy, cgram[rowP + ci])
+                }
+            }
+        }
+        return SnesAutoExtractor.Finding(
+            image = img, label = "Escena nivel ${level.toString(16).uppercase()}", offset = lpc,
+            compressed = false, format = SnesGraphicFormat.SNES_3BPP, palette = IntArray(0),
+            tileCount = cols * rows, columns = cols, score = 1.0,
+        )
     }
 
     /**
@@ -801,6 +944,8 @@ object SnesGameRecipes {
             return ok
         }
         // 1) Posiciones de la ROM estándar (USA/EUR), del desensamblado: validar igual.
+        // (GFXFilesLow/High/Bank = $00B992/$00B9C4/$00B9F6; una versión anterior usaba
+        // 0x398D, corrido 5 bytes: decomprimía bien pero entregaba el fichero N-5.)
         val standard = SMW_GFX_TABLE
         if (successes(standard.first, standard.second, standard.third) >= 30) return standard
 
