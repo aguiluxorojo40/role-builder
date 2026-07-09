@@ -108,15 +108,27 @@ object SnesGameRecipes {
      * (vertical, tileset sin rutinas, o demasiados objetos sin portar).
      */
     /**
-     * ESCENAS para la galería: renderiza los primeros niveles del juego que el parser
-     * cubre al 100% (0 objetos sin portar), recortadas a [maxCols] columnas para no
-     * disparar la memoria del dispositivo. Máximo [maxScenes] escenas.
+     * Niveles "escaparate" para las ESCENAS de la galería: lista CURADA de niveles
+     * REALES y reconocibles del juego (praderas, colinas de Yoshi's Island, cielo,
+     * cueva, castillo, casa fantasma). Se excluyen a propósito los niveles de PRUEBA/
+     * utilidad de la ROM vanilla —sobre todo 0x104 ("Side Exit Enabled / TEST") y el
+     * bloque 0x107-0x13B, lleno de slots de test y escenas a medias— que ensuciaban la
+     * galería con mapeados de test. Cada uno verificado sobre la ROM US: los cubre el
+     * parser al 100% y salen limpios (sin bloques placeholder magenta). Praderas,
+     * cueva y cielo — escaparate variado y reconocible.
+     */
+    private val SMW_SCENE_LEVELS = intArrayOf(
+        0x106, 0x024, 0x0C7, 0x022, 0x0C5,
+    )
+
+    /**
+     * ESCENAS para la galería: renderiza los niveles escaparate ([SMW_SCENE_LEVELS])
+     * que el parser cubre al 100% (0 objetos sin portar), recortadas a [maxCols]
+     * columnas para no disparar la memoria del dispositivo. Máximo [maxScenes] escenas.
      */
     internal fun extractSmwScenes(rom: ByteArray, header: SnesHeader, maxScenes: Int = 4, maxCols: Int = 96): List<SnesAutoExtractor.Finding> {
         val out = ArrayList<SnesAutoExtractor.Finding>()
-        val candidates = intArrayOf(0x106, 0x103, 0x101, 0x102, 0x104, 0x105, 0x107, 0x108, 0x109, 0x10A, 0x10B, 0xC7) +
-            IntArray(0x30) { 0x10C + it }
-        for (level in candidates) {
+        for (level in SMW_SCENE_LEVELS) {
             if (out.size >= maxScenes) break
             val f = renderSmwLevelScene(rom, header, level, maxCols) ?: continue
             out.add(f)
