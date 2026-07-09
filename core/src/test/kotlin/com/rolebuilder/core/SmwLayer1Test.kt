@@ -70,6 +70,28 @@ class SmwLayer1Test {
     }
 
     @Test
+    fun `cuesta invertida normal-izquierda (subtipo 6) se dibuja, ya no cuenta como desconocida`() {
+        // Obj 0x12 (slopes) con size 0x16: subtipo 6 (UpsideDownNormalLeft), altura 1.
+        // objNum 0x12 = (h1>>4=2) | ((h0&0x60)>>1=0x10). pos 0x44 (fila 4, col 4).
+        // h0=0x24 (bit5 puesto, sin screen/página, low=4), h1=0x24 (hi=2, low=4).
+        val rom = romWithLevel(
+            0x00, 0x00, 0x00, 0x00, 0x00,  // cabecera modo 0, tileset 0
+            0x24, 0x24, 0x16,               // obj 0x12 subtipo 6, altura 1, en fila4,col4
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(1, tm.totalObjects)
+        assertEquals(0, tm.unknownObjects, "la cuesta invertida ya está portada")
+        // Fila superior del techo (bloques de página 1): 0xEE, 0xF0 en cols 4,5.
+        assertEquals(0x1EE, tm.block(4, 4))
+        assertEquals(0x1F0, tm.block(5, 4))
+        // Fila de debajo (relleno interior): 0xC6, 0xC7 en cols 4,5.
+        assertEquals(0x1C6, tm.block(4, 5))
+        assertEquals(0x1C7, tm.block(5, 5))
+    }
+
+    @Test
     fun `nivel vertical devuelve null (no soportado aun)`() {
         // Modo 10 (0x0A) es vertical según la VerticalTable.
         val rom = romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xFF)

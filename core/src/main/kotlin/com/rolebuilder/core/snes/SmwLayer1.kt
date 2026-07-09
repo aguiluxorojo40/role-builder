@@ -165,6 +165,9 @@ internal object SmwLayer1 {
         // int8: (int8)(x - n) >= 0
         fun ge8(x: Int, n: Int) = ((x - n) and 0x80) == 0
 
+        // Reinterpreta un uint8 como int8 con signo (contadores de cuesta invertida).
+        fun s8(x: Int) = x.toByte().toInt()
+
         // ------------------------------ dispatch ------------------------------
 
         fun std(obj: Int) {
@@ -419,7 +422,11 @@ internal object SmwLayer1 {
                 3 -> slopeRight()
                 4 -> slopeSteepRight()
                 5 -> slopeGradualRight()
-                else -> unknown++ // cuestas invertidas: pendientes de portar
+                6 -> slopeUpsideDownNormalLeft()
+                7 -> slopeUpsideDownNormalRight()
+                8 -> slopeUpsideDownSteepLeft()
+                9 -> slopeUpsideDownSteepRight()
+                else -> unknown++ // (i queda en 0..9 tras el módulo; else nunca ocurre)
             }
         }
 
@@ -628,6 +635,167 @@ internal object SmwLayer1 {
                 val v5 = horiz(v4, 0xDB); setHi01(v5)
                 v0 = horiz(v5, 0xDC)
             } while (r0 != 0)
+        }
+
+        // --------------------- cuestas invertidas (techos en pendiente) ---------------------
+        // Port 1:1 de StdObj12_Slopes_UpsideDown* ($0D:AE6D..AFEA, smw_0d.c). Ojo: los
+        // dos "izquierda" avanzan de pantalla a mano (no con vert()) y difieren entre sí:
+        // el normal usa Entry2(0) (no toca ptr), el steep usa 0DAFDF(0) (ptr -= 0x100).
+
+        fun slopeUpsideDownNormalLeft() {
+            var v0 = pos
+            var r0 = size shr 4
+            var r2 = (2 * (size shr 4) - 1) and 0xFF
+            var r1 = 0
+            var v1 = s8(r2)
+            preserve()
+            label3@ while (true) {
+                setHi01(v0)
+                val v4 = horiz(v0, 0xEE)
+                setHi01(v4)
+                var v5 = horiz(v4, 0xF0)
+                var v6 = v1 - 1
+                while (--v6 >= 0) { setHi01(v5); v5 = horiz(v5, 0x65) }
+                while (true) {
+                    restore()
+                    var v7: Int
+                    if (r1 != 0) {
+                        r2 = (r2 - 2) and 0xFF
+                        val raw = pos + 18
+                        if (raw >= 256) pageCross(1)
+                        v7 = raw and 0xFF
+                        if (!ge8(v7 and 0xF, 2)) {
+                            val v8 = v7 >= 0x10
+                            v7 = (v7 - 16) and 0xFF
+                            if (!v8) pageCross(0) // Entry2(0): sincroniza ptrBak, no mueve ptr
+                            forwardOneScreen()
+                        }
+                    } else {
+                        r1++
+                        v7 = vert()
+                    }
+                    pos = v7
+                    r0 = (r0 - 1) and 0xFF
+                    if (r0 and 0x80 != 0) return
+                    val v2 = r2
+                    setHi01(v7)
+                    val v3 = horiz(v7, 0xC6)
+                    setHi01(v3)
+                    v0 = horiz(v3, 0xC7)
+                    v1 = s8((v2 - 2) and 0xFF)
+                    if (v1 >= 0) continue@label3
+                }
+            }
+        }
+
+        fun slopeUpsideDownNormalRight() {
+            var v0 = pos
+            var r0 = size shr 4
+            var r2 = (2 * (size shr 4) + 1) and 0xFF
+            var r1 = 0
+            preserve()
+            var v1 = r2
+            do {
+                while (s8(v1 - 4) >= 0) {
+                    setHi01(v0); v0 = horiz(v0, 0x65); v1 = (v1 - 1) and 0xFF
+                }
+                // if ((int8)(v1-2) < 0 || (pinta F0/EF, valor = r1)) → pinta C8/C9.
+                val cond: Boolean
+                if (s8(v1 - 2) < 0) {
+                    cond = true
+                } else {
+                    setHi01(v0)
+                    val v2 = horiz(v0, 0xF0)
+                    setHi01(v2)
+                    v0 = horiz(v2, 0xEF)
+                    cond = r1 != 0
+                }
+                if (cond) {
+                    setHi01(v0)
+                    val v3 = horiz(v0, 0xC8)
+                    setHi01(v3)
+                    horiz(v3, 0xC9)
+                }
+                restore()
+                r2 = (r2 - 2) and 0xFF
+                v1 = r2
+                r1++
+                v0 = vert()
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
+
+        fun slopeUpsideDownSteepLeft() {
+            var v0 = pos
+            var r0 = size shr 4
+            var r2 = ((size shr 4) - 1) and 0xFF
+            var r1 = 0
+            var v1 = s8(((size shr 4) - 1) and 0xFF)
+            preserve()
+            label3@ while (true) {
+                setHi01(v0)
+                var i = horiz(v0, 0xEC)
+                while (--v1 >= 0) { setHi01(i); i = horiz(i, 0x65) }
+                while (true) {
+                    restore()
+                    var v4: Int
+                    if (r1 != 0) {
+                        r2 = (r2 - 1) and 0xFF
+                        val raw = pos + 17
+                        if (raw >= 256) pageCross(1)
+                        v4 = raw and 0xFF
+                        if (!ge8(v4 and 0xF, 1)) {
+                            val v5 = v4 >= 0x10
+                            v4 = (v4 - 16) and 0xFF
+                            if (!v5) { ptr -= 256; ptrBak = ptr } // 0DAFDF(0): ptr -= una página
+                            forwardOneScreen()
+                        }
+                    } else {
+                        r1++
+                        v4 = vert()
+                    }
+                    pos = v4
+                    r0 = (r0 - 1) and 0xFF
+                    if (r0 and 0x80 != 0) return
+                    val v2 = r2
+                    setHi01(v4)
+                    v0 = horiz(v4, 0xC4)
+                    v1 = s8((v2 - 1) and 0xFF)
+                    if (v1 >= 0) continue@label3
+                }
+            }
+        }
+
+        fun slopeUpsideDownSteepRight() {
+            var v0 = pos
+            var r0 = size shr 4
+            var r2 = size shr 4
+            var r1 = 0
+            preserve()
+            var v1 = r2
+            do {
+                while (s8(v1 - 2) >= 0) {
+                    setHi01(v0); v0 = horiz(v0, 0x65); v1 = (v1 - 1) and 0xFF
+                }
+                val cond: Boolean
+                if (s8(v1 - 1) < 0) {
+                    cond = true
+                } else {
+                    setHi01(v0)
+                    v0 = horiz(v0, 0xED)
+                    cond = r1 != 0
+                }
+                if (cond) {
+                    setHi01(v0)
+                    horiz(v0, 0xC5)
+                }
+                restore()
+                r2 = (r2 - 1) and 0xFF
+                v1 = r2
+                r1++
+                v0 = vert()
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
         }
 
         fun stdGroundEdges() {
