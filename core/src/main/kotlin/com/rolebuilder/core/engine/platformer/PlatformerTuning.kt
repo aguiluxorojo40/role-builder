@@ -1,6 +1,10 @@
 package com.rolebuilder.core.engine.platformer
 
 import com.rolebuilder.core.snes.SmwPhysics
+import com.rolebuilder.core.snes.SmwPowerup
+
+/** Entorno de físicas de un nivel: cambia rozamiento y caída (hielo, agua). */
+enum class PlatformerEnvironment { LAND, ICE, WATER }
 
 /**
  * Parámetros de físicas del motor de plataformas, en **píxeles por fotograma** (el
@@ -41,17 +45,35 @@ data class PlatformerTuning(
          * (las tablas de aceleración de SMW van indexadas por estado); el tacto lo
          * marcan sobre todo salto, gravedad y topes, que sí son exactos.
          */
-        fun fromSmw(p: SmwPhysics): PlatformerTuning {
+        fun fromSmw(
+            p: SmwPhysics,
+            powerup: SmwPowerup = SmwPowerup.SMALL,
+            environment: PlatformerEnvironment = PlatformerEnvironment.LAND,
+        ): PlatformerTuning {
             fun sp(v: Int) = v / 16f
+            val landAccel = 0x180 / 4096f
+            // Hielo: mucho menos rozamiento (Mario patina), usando el hecho de que SMW
+            // cambia a la tabla de aceleración de hielo ($00:D43D), más suave.
+            val friction = if (environment == PlatformerEnvironment.ICE) landAccel * 0.15f else landAccel
+            // Agua: SMW limita la velocidad vertical a ±16 subpíxeles (±1.0 px/fotograma)
+            // y la gravedad es suave (nada de salto seco); el resto se atenúa.
+            val underwater = environment == PlatformerEnvironment.WATER
+            val gravFall = if (underwater) sp(p.gravity.getOrElse(0) { 6 }) * 0.3f else sp(p.gravity.getOrElse(0) { 6 })
+            val gravHold = if (underwater) gravFall * 0.5f else sp(p.gravity.getOrElse(1) { 3 })
+            val maxFall = if (underwater) sp(0x10) else sp(p.defaultMaxFall) // agua: cap 1.0 px/f
+            val jump = if (underwater) sp(0x20) * -1 else sp(p.baseJumpYSpeed) // agua: brazada suave
+            // Powerup: Mario grande ocupa dos casillas; pequeño, una.
+            val height = if (powerup.heightTiles >= 2) 26f else 14f
             return PlatformerTuning(
-                jumpSpeed = sp(p.baseJumpYSpeed),              // -80  -> -5.0
-                gravityFall = sp(p.gravity.getOrElse(0) { 6 }),   // 6   ->  0.375
-                gravityHold = sp(p.gravity.getOrElse(1) { 3 }),   // 3   ->  0.1875
-                maxFallSpeed = sp(p.defaultMaxFall),          // 0x40 ->  4.0
+                jumpSpeed = jump,
+                gravityFall = gravFall,
+                gravityHold = gravHold,
+                maxFallSpeed = maxFall,
                 maxWalkSpeed = sp(0x16),                      //      ->  1.375
                 maxRunSpeed = sp(0x30),                       //      ->  3.0
-                runAccel = 0x180 / 4096f,                     //      ≈  0.094
-                friction = 0x180 / 4096f,
+                runAccel = landAccel,                         //      ≈  0.094
+                friction = friction,
+                playerHeight = height,
             )
         }
     }

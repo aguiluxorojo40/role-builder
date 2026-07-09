@@ -184,6 +184,16 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --powerups: lista los estados de powerup de Mario y qué cambian.
+    if (opts.containsKey("powerups")) {
+        println("Powerups de Mario (id · alto · agacha/rompe/fuego/vuela):")
+        for (pu in com.rolebuilder.core.snes.SmwPowerup.entries) {
+            println("  ${pu.id} ${pu.name.padEnd(6)}: ${pu.heightTiles} casilla(s) · " +
+                "agacha=${pu.canDuck} rompe=${pu.canBreakBlocks} fuego=${pu.canShootFire} capa=${pu.canFlyWithCape}")
+        }
+        return
+    }
+
     // Modo --level-info: ficha del nivel (tamaño, modo, música, paletas, tiempo).
     if (opts.containsKey("level-info")) {
         val level = opts["level"]?.let { parseInt(it) } ?: 0x106
@@ -229,11 +239,22 @@ fun main(args: Array<String>) {
             println("Faltan datos para simular (colisión/físicas/inicio) del nivel 0x${level.toString(16)}.")
             return
         }
+        val powerup = when (opts["powerup"]?.lowercase()) {
+            "big", "grande" -> com.rolebuilder.core.snes.SmwPowerup.BIG
+            "cape", "capa" -> com.rolebuilder.core.snes.SmwPowerup.CAPE
+            "fire", "fuego" -> com.rolebuilder.core.snes.SmwPowerup.FIRE
+            else -> com.rolebuilder.core.snes.SmwPowerup.SMALL
+        }
+        val env = when (opts["env"]?.lowercase()) {
+            "ice", "hielo" -> com.rolebuilder.core.engine.platformer.PlatformerEnvironment.ICE
+            "water", "agua" -> com.rolebuilder.core.engine.platformer.PlatformerEnvironment.WATER
+            else -> com.rolebuilder.core.engine.platformer.PlatformerEnvironment.LAND
+        }
         val engine = com.rolebuilder.core.engine.platformer.PlatformerEngine(
             cols = col.cols, rows = col.rows,
             solidityAt = { c, r -> col.solidityAt(c, r) },
             startPixelX = start.startPixelX, startPixelY = start.startPixelY,
-            tuning = com.rolebuilder.core.engine.platformer.PlatformerTuning.fromSmw(phys),
+            tuning = com.rolebuilder.core.engine.platformer.PlatformerTuning.fromSmw(phys, powerup, env),
         )
         println("Simulando ${frames} fotogramas del nivel 0x${level.toString(16)} " +
             "(inicio casilla ${start.startTileX},${start.startTileY})…")
@@ -669,8 +690,9 @@ private fun printUsage() {
                                               (TWEAKERS de comportamiento de enemigos: hitbox y banderas por id)
           --rom smw.sfc --level-info [--level 0x106]
                                               (FICHA del nivel: tamaño, modo, música, paletas, tiempo)
-          --rom smw.sfc --play-sim [--level 0x106] [--frames 180]
-                                              (SIMULA el nivel en el motor de plataformas: colisión+físicas+inicio)
+          --rom smw.sfc --powerups            (estados de powerup de Mario: tamaño y habilidades)
+          --rom smw.sfc --play-sim [--level 0x106] [--frames 180] [--powerup big|cape|fire] [--env ice|water]
+                                              (SIMULA el nivel en el motor: colisión+físicas+inicio, con powerup/entorno)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()
