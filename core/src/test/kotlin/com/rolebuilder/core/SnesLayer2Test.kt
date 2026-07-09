@@ -77,6 +77,16 @@ class SnesLayer2Test {
     }
 
     @Test
+    fun `fillSmwAnimatedTiles no revienta sin datos y FrameData mapea a PC 0x2B999`() {
+        // La tabla FrameData vive en SNES $05:B999; el mapeo LoROM da PC 0x2B999.
+        assertEquals(0x2B999, SnesGameRecipes.SMW_TILEANIM_FRAMEDATA_PC)
+        // Con una ROM vacía (sin GFX33 válida) no debe petar; deja el vram intacto.
+        val vram = arrayOfNulls<IntArray>(512)
+        SnesGameRecipes.fillSmwAnimatedTiles(ByteArray(0x80000), 0, 0, vram)
+        assertTrue(vram.all { it == null })
+    }
+
+    @Test
     fun `smwAnimatedVramTile marca las regiones de teselas animadas`() {
         // Destinos de HandleLevelTileAnimations: tiles 0x40-0x83, 0xDA-0xDD, 0xEA-0xED.
         assertTrue(SnesGameRecipes.smwAnimatedVramTile(0x40))

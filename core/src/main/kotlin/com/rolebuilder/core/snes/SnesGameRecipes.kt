@@ -65,6 +65,61 @@ object SnesGameRecipes {
         return t in 0x40..0x83 || t in 0xDA..0xDD || t in 0xEA..0xED
     }
 
+    // ------------------------ teselas ANIMADAS (monedas, bloques ?, agua) ------------------------
+    // Port de HandleLevelTileAnimations ($05:BB39): cada frame el juego copia teselas de
+    // GFX33 (descomprimida y expandida a 4bpp en g_ram, hacia abajo desde ~0xACFE) a los
+    // 19 destinos VRAM de abajo. FrameData (SNES $05:B999 → PC) da el offset g_ram fuente
+    // por tesela y frame. Para el render estático usamos el frame 0 (R0_W=0).
+
+    /** Destinos VRAM (word addr) de las 19 teselas animadas; /16 = nº de tesela. */
+    private val SMW_ANIM_DEST = intArrayOf(
+        0x600, 0x640, 0x680, 0x740, 0xEA0, 0x800, 0x500, 0x540, 0x580, 0x5C0,
+        0x780, 0x7C0, 0xDA0, 0x6C0, 0x700, 0x4C0, 0x440, 0x480, 0x400,
+    )
+    /** Tipo por destino (DATA_05B96B): 2 = índice de fuente dependiente del tileset. */
+    private val SMW_ANIM_TYPE = intArrayOf(0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2)
+    /** Desplazamiento de fuente por tileset para los de tipo 2 (DATA_05B98B). */
+    private val SMW_ANIM_TS = intArrayOf(0, 5, 0xA, 0xF, 0x14, 0x14, 0x19, 0x14, 0xA, 0x14, 0, 5, 0, 0x14)
+
+    /** FrameData: $05:B999 → PC 0x2B999 (208 words, offsets g_ram por tesela×frame). */
+    internal const val SMW_TILEANIM_FRAMEDATA_PC = 0x2B999
+    /** Base en g_ram del buffer GFX33 expandido a 4bpp (escrito hacia abajo desde 0xACFE). */
+    private const val SMW_ANIM_SRC_BASE = 0x7D00
+
+    /** Descomprime GFX33 (fuente de las animadas): va contigua tras GFX32/Mario. */
+    private fun decompressSmwGfx33(rom: ByteArray, delta: Int): ByteArray? {
+        val mpc = lorom(
+            byte(rom, SMW_GFX32_LO_PC + delta), byte(rom, SMW_GFX32_HI_PC + delta),
+            byte(rom, SMW_GFX32_BANK_PC + delta),
+        )
+        if (mpc < 0x40000 || mpc >= rom.size) return null
+        val g32 = runCatching { LcLz2.decompress(rom, mpc) }.getOrNull() ?: return null
+        return runCatching { LcLz2.decompress(rom, mpc + g32.consumedBytes).data }.getOrNull()
+    }
+
+    /** Rellena en [vram] las 19 teselas animadas (4 teselas cada una) con su frame 0. */
+    internal fun fillSmwAnimatedTiles(rom: ByteArray, delta: Int, tileset: Int, vram: Array<IntArray?>) {
+        val g33 = decompressSmwGfx33(rom, delta) ?: return
+        val fmt = SnesGraphicFormat.SNES_3BPP
+        val avail = SnesAssetExtractor.availableTiles(g33.size, 0, fmt)
+        val fdPc = SMW_TILEANIM_FRAMEDATA_PC + delta
+        fun fd(i: Int) = byte(rom, fdPc + 2 * i) or (byte(rom, fdPc + 2 * i + 1) shl 8)
+        for (s in SMW_ANIM_DEST.indices) {
+            val v3 = if (SMW_ANIM_TYPE[s] == 2) SMW_ANIM_TS[tileset.coerceIn(0, SMW_ANIM_TS.size - 1)] + s else s
+            val source = fd(4 * v3) // frame 0 (R0_W = 0)
+            val tile0 = (source - SMW_ANIM_SRC_BASE) / 32
+            val destTile = SMW_ANIM_DEST[s] / 16
+            for (i in 0..3) {
+                val t = tile0 + i
+                if (destTile + i >= vram.size) continue
+                // Si la fuente cae fuera de GFX33, deja la tesela de cielo (null) en vez
+                // del GFX estático (que sería basura), igual que el blanqueo anterior.
+                vram[destTile + i] =
+                    if (t in 0 until avail) SnesDecoder.decodeTile(g33, t * fmt.bytesPerTile, fmt, t).pixelIndices else null
+            }
+        }
+    }
+
     /** PC del inicio de los datos de Layer 1 del nivel (cabecera de 5 bytes + objetos). */
     internal fun smwLayer1DataPc(rom: ByteArray, delta: Int, level: Int): Int? {
         val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
@@ -182,6 +237,9 @@ object SnesGameRecipes {
             }
         }
         if (vram.all { it == null }) return null
+        // Teselas animadas (monedas, bloques ?, agua…): se cargan de GFX33 en su frame 0,
+        // como hace el motor, en vez de dejarlas de cielo.
+        fillSmwAnimatedTiles(rom, delta, tm.tileset, vram)
         val cgram = assembleSmwCgram(rom, delta, level)
         val defs = smwMap16DefTable(rom, delta, tm.tileset)
 
@@ -206,10 +264,6 @@ object SnesGameRecipes {
                 val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
                 val e = SnesTilemap.decodeEntry(word)
                 if ((e.tileIndex and 0xFF) in 0xF8..0xFF) continue // slots animados (aire)
-                // Teselas animadas (monedas, bloques ?, agua…): su GFX estático no es su
-                // aspecto de juego (el motor las reescribe por frame desde GFX32). En un
-                // render estático salían como basura de colores; mejor dejarlas de cielo.
-                if (smwAnimatedVramTile(e.tileIndex)) continue
                 val px = vram.getOrNull(e.tileIndex) ?: continue
                 val rowP = (e.palette and 7) * 16
                 val ox = x * 16 + subPos[k][0]; val oy = y * 16 + subPos[k][1]
