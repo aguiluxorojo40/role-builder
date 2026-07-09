@@ -253,7 +253,18 @@ object SnesGameRecipes {
         val cols = minOf(lastCol + 2, totalCols, maxCols)
         val rows = 27
         val img = ArgbImage(cols * 16, rows * 16)
-        for (i in img.pixels.indices) img.pixels[i] = cgram[0] // cielo = back area color
+        // Fondo (Layer 2) COMPUESTO detrás del primer plano: si el nivel tiene fondo de
+        // imagen, se tila a lo ancho como telón; si no, cielo plano (back area). El primer
+        // plano se dibuja encima y sus píxeles transparentes (índice 0) dejan ver el fondo.
+        val bg = renderSmwBackground(rom, header, level)
+        if (bg != null) {
+            val bw = bg.width; val bh = bg.height
+            for (y in 0 until img.height) for (x in 0 until img.width) {
+                img.pixels[y * img.width + x] = bg.pixels[(y % bh) * bw + (x % bw)]
+            }
+        } else {
+            for (i in img.pixels.indices) img.pixels[i] = cgram[0] // cielo = back area color
+        }
         val subPos = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
         for (y in 0 until rows) for (x in 0 until cols) {
             val block = tm.block(x, y)
