@@ -184,6 +184,20 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --level-info: ficha del nivel (tamaño, modo, música, paletas, tiempo).
+    if (opts.containsKey("level-info")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val info = com.rolebuilder.core.snes.SnesGameRecipes.smwLevelInfo(rom, header, level)
+        if (info == null) { println("Sin cabecera válida para el nivel 0x${level.toString(16)}."); return }
+        println("Ficha del nivel 0x${level.toString(16).uppercase()}:")
+        println("  Tamaño: ${info.screens} pantallas (${info.widthTiles} casillas de ancho)")
+        println("  Modo: ${info.levelMode}  ·  Música: ${info.musicIndex}  ·  Tiempo: ${info.startTime}")
+        println("  Paletas → fondo ${info.bgPalette}, color de fondo ${info.backgroundColor}, " +
+            "FG ${info.fgPalette}, sprites ${info.spritePalette}")
+        println("  Gráficos → sprite-set ${info.spriteGfx}, tileset FG ${info.fgTileset}")
+        return
+    }
+
     // Modo --sprite-behavior: lee las 6 tablas "tweaker" de COMPORTAMIENTO de sprites
     // (cómo se mueve/choca/se pisa cada enemigo) y las vuelca por id de sprite.
     if (opts.containsKey("sprite-behavior")) {
@@ -653,6 +667,10 @@ private fun printUsage() {
           --rom smw.sfc --physics             (TABLAS DE FÍSICAS del jugador: acelerar, correr, saltar, caer, gravedad)
           --rom smw.sfc --sprite-behavior [--id 0x0C]
                                               (TWEAKERS de comportamiento de enemigos: hitbox y banderas por id)
+          --rom smw.sfc --level-info [--level 0x106]
+                                              (FICHA del nivel: tamaño, modo, música, paletas, tiempo)
+          --rom smw.sfc --play-sim [--level 0x106] [--frames 180]
+                                              (SIMULA el nivel en el motor de plataformas: colisión+físicas+inicio)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()

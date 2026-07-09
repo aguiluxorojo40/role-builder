@@ -556,6 +556,59 @@ object SnesGameRecipes {
     }
 
     /**
+     * Datos de un nivel de SMW leídos de su cabecera primaria (5 bytes en el puntero
+     * de Layer 1). Complementa a colisión/físicas/inicio con el "resto de la ficha"
+     * del nivel: tamaño, modo, música, paletas y tiempo.
+     */
+    class SmwLevelInfo(
+        val level: Int,
+        /** Nº de pantallas de 16 casillas (ancho del nivel: ×16 casillas, ×256 px). */
+        val screens: Int,
+        /** Modo de nivel (horizontal/vertical/especial). */
+        val levelMode: Int,
+        /** Índice de MÚSICA del nivel (0-7): elige una de las pistas de nivel del juego. */
+        val musicIndex: Int,
+        val bgPalette: Int,
+        val backgroundColor: Int,
+        val fgPalette: Int,
+        val spritePalette: Int,
+        val spriteGfx: Int,
+        val fgTileset: Int,
+        /** Tiempo inicial (×100): 0 = sin tiempo, si no 200/300/400. */
+        val startTime: Int,
+    ) {
+        /** Ancho del nivel en casillas de 16 px. */
+        val widthTiles: Int get() = screens * 16
+    }
+
+    private val SMW_TIMER_TABLE = intArrayOf(0, 2, 3, 4)
+
+    /**
+     * Lee la ficha de un nivel de SMW (cabecera primaria de 5 bytes) EXACTAMENTE como
+     * `LoadLevelHeader` ($05:84E3, vía snesrev/smw). Devuelve null si el puntero de
+     * Layer 1 no es válido.
+     */
+    fun smwLevelInfo(rom: ByteArray, header: SnesHeader, level: Int): SmwLevelInfo? {
+        val delta = smwHeaderDelta(header)
+        val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
+        val h0 = byte(rom, lpc); val h1 = byte(rom, lpc + 1); val h2 = byte(rom, lpc + 2)
+        val h3 = byte(rom, lpc + 3); val h4 = byte(rom, lpc + 4)
+        return SmwLevelInfo(
+            level = level,
+            screens = (h0 and 0x1F) + 1,
+            levelMode = h1 and 0x1F,
+            musicIndex = (h2 shr 4) and 0x07,
+            bgPalette = h0 shr 5,
+            backgroundColor = h1 shr 5,
+            fgPalette = h3 and 0x07,
+            spritePalette = (h3 shr 3) and 0x07,
+            spriteGfx = h2 and 0x0F,
+            fgTileset = h4 and 0x0F,
+            startTime = SMW_TIMER_TABLE[(h3 shr 6) and 0x03] * 100,
+        )
+    }
+
+    /**
      * Selectores de paleta REALES de la cabecera primaria (5 bytes) de un nivel.
      * Decodificados EXACTAMENTE como la rutina de carga del juego (bank $00
      * CODE_0584E3 del disassembly SMWDisX):
