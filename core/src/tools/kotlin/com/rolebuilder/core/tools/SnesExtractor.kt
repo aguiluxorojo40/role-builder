@@ -107,6 +107,51 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --collision: extrae el MAPA DE COLISIÓN (solidez de cada celda 16×16) de un
+    // nivel de SMW, la pieza que faltaba para poder jugarlo. Imprime un mapa ASCII y
+    // vuelca una máscara PNG coloreada por clase de solidez.
+    if (opts.containsKey("collision")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val map = SnesGameRecipes.smwLevelCollision(rom, header, level)
+        if (map == null) {
+            println("El nivel 0x${level.toString(16).uppercase()} no tiene datos de colisión " +
+                "(¿vertical, sala de jefe o vacío?). Prueba otro --level.")
+            return
+        }
+        println("Colisión del nivel 0x${level.toString(16).uppercase()}: ${map.cols}×${map.rows} celdas.")
+        val counts = LinkedHashMap<String, Int>()
+        for (s in map.solidity) counts[s.name] = (counts[s.name] ?: 0) + 1
+        println("  Solidez: " + counts.entries.joinToString(", ") { "${it.key}=${it.value}" })
+        // Vista ASCII: '.' aire · '-' borde de un sentido · '#' sólido · '/' cuesta ·
+        // 'X' cuesta doble · '!' pinchos.
+        val glyph = mapOf(
+            "NONE" to '.', "LEDGE_TOP" to '-', "SOLID" to '#',
+            "SLOPE" to '/', "SLOPE_STEEP" to 'X', "SPIKE" to '!',
+        )
+        val sb = StringBuilder()
+        for (r in 0 until map.rows) {
+            for (c in 0 until map.cols) sb.append(glyph[map.solidityAt(c, r).name] ?: '?')
+            sb.append('\n')
+        }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        File(outDir, "collision_${level.toString(16)}.txt").writeText(sb.toString())
+        // Máscara PNG (4 px/celda) coloreada por clase.
+        val color = mapOf(
+            "NONE" to 0x00000000, "LEDGE_TOP" to 0xFF7FD07F.toInt(), "SOLID" to 0xFF8B5A2B.toInt(),
+            "SLOPE" to 0xFF5AA0FF.toInt(), "SLOPE_STEEP" to 0xFF2060C0.toInt(), "SPIKE" to 0xFFE03030.toInt(),
+        )
+        val cell = 4
+        val mask = ArgbImage(map.cols * cell, map.rows * cell)
+        for (r in 0 until map.rows) for (c in 0 until map.cols) {
+            val argb = color[map.solidityAt(c, r).name] ?: 0
+            for (yy in 0 until cell) for (xx in 0 until cell) mask.set(c * cell + xx, r * cell + yy, argb)
+        }
+        val png = File(imagesDir, "collision_${level.toString(16)}.png")
+        ImageIO.write(toBufferedImage(mask), "png", png)
+        println("  ASCII -> ${File(outDir, "collision_${level.toString(16)}.txt").name} · máscara -> images/${png.name}")
+        return
+    }
+
     // Modo --gallery: "modo fácil". Busca gráficos automáticamente y vuelca cada
     // hallazgo como una miniatura en color, sin pedir offsets ni formatos.
     if (opts.containsKey("gallery")) {
@@ -519,6 +564,9 @@ private fun printUsage() {
           --scan --sprites                    (busca HOJAS DE SPRITES/personajes, no fondos)
           [--decompress auto|lc_lz2]          (descomprime el bloque antes de extraer)
           --demo-compressed <dir>             (ROM de prueba con gráficos LC_LZ2)
+          --rom <ruta> --recipe               (modo fácil: vuelca los gráficos reales de un juego con receta)
+          --rom smw.sfc --collision [--level 0x106]
+                                              (MAPA DE COLISIÓN de un nivel de SMW: solidez por celda + máscara PNG)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()

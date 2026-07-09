@@ -498,6 +498,64 @@ object SnesGameRecipes {
     internal fun smwHeaderDelta(header: SnesHeader): Int = header.headerOffset - 0x7FC0
 
     /**
+     * Mapa de COLISIÓN de un nivel de SMW: la solidez de cada celda 16×16, lista para
+     * que un motor de plataformas la use directamente. Es la pieza que faltaba para
+     * jugar un nivel extraído (los gráficos y la geometría ya se sacaban; esto dice
+     * dónde te paras, chocas, resbalas o mueres).
+     *
+     * Rejilla fila a fila (row-major) de [cols]×[rows] celdas. [block] guarda el
+     * número de bloque Map16 crudo de cada celda por si se quiere reclasificar o
+     * dibujar; [solidity] su clase de colisión ya resuelta ([SmwBlockCollision]).
+     */
+    class SmwCollisionMap(
+        val level: Int,
+        val cols: Int,
+        val rows: Int,
+        val blocks: IntArray,
+        val solidity: List<SmwSolidity>,
+    ) {
+        fun blockAt(col: Int, row: Int): Int = blocks[row * cols + col]
+
+        fun solidityAt(col: Int, row: Int): SmwSolidity = solidity[row * cols + col]
+    }
+
+    /**
+     * Extrae el mapa de colisión del nivel [level] de una ROM de SMW: parsea la
+     * geometría de Layer 1 ([SmwLayer1]) y clasifica cada bloque con la solidez real
+     * del juego ([SmwBlockCollision]). Recorta a las columnas con contenido (los
+     * niveles no llenan las 32 pantallas). Devuelve null si el nivel no tiene datos
+     * de Layer 1 (vertical, sala de jefe) o queda vacío.
+     */
+    fun smwLevelCollision(rom: ByteArray, header: SnesHeader, level: Int): SmwCollisionMap? {
+        val delta = smwHeaderDelta(header)
+        val tm = SmwLayer1.parse(rom, delta, level) ?: return null
+
+        // Última columna con algún bloque distinto de aire (0x25), como en las escenas.
+        val totalCols = tm.screens * 16
+        var lastCol = -1
+        for (c in 0 until totalCols) {
+            for (r in 0..26) {
+                val b = tm.block(c, r)
+                if (b > 0 && b != 0x25) { lastCol = c; break }
+            }
+        }
+        if (lastCol < 3) return null
+
+        val cols = minOf(lastCol + 2, totalCols)
+        val rows = 27 // 0x1B0 / 16: alto fijo de un nivel horizontal de SMW
+        val blocks = IntArray(cols * rows)
+        val solidity = ArrayList<SmwSolidity>(cols * rows)
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                val b = tm.block(c, r)
+                blocks[r * cols + c] = b
+                solidity.add(SmwBlockCollision.classify(b))
+            }
+        }
+        return SmwCollisionMap(level, cols, rows, blocks, solidity)
+    }
+
+    /**
      * Selectores de paleta REALES de la cabecera primaria (5 bytes) de un nivel.
      * Decodificados EXACTAMENTE como la rutina de carga del juego (bank $00
      * CODE_0584E3 del disassembly SMWDisX):
