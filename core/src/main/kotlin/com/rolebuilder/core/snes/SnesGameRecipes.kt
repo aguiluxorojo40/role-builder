@@ -27,25 +27,32 @@ object SnesGameRecipes {
      * Devuelve vacío si no hay receta o no se pudo localizar su mapa gráfico.
      */
     fun extract(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> = when (detect(header)) {
-        // Nota: las ESCENAS de fondo (Layer 2) están implementadas y validadas
-        // (RLE1 + Map16 + renderSmwBackground: algunos fondos salen perfectos, como las
-        // colinas de Yoshi's Island), pero el mapeo VRAM de CADA fondo varía y el render
-        // fiable de todos necesita más ingeniería inversa. Para no ensuciar la galería
-        // con escenas a medias, de momento la receta entrega solo las HOJAS de tiles con
-        // color por-tesela; el motor de fondos queda listo para reactivarlo (ver
-        // renderSmwBackground / layer2BgEntries) cuando se resuelva el layout de VRAM.
         // La galería entrega: (1) ESCENAS de nivel reales — tilemap reconstruido con el
         // parser de objetos de Layer 1 (port de las rutinas del juego, validado 831/832
         // celdas contra el buffer $7EC800 de un emulador) pintado con los gráficos del
-        // nivel y su CGRAM ensamblada; (2) el tileset Map16 acotado a los bloques que el
-        // nivel usa de verdad (los ladrillos reales para pintar mapas); (3) las HOJAS
-        // por categoría con la paleta real por fichero; (4) Mario con su fila real.
+        // nivel y su CGRAM ensamblada; (2) los FONDOS (Layer 2) con color real por tesela
+        // —ya con el layout VRAM resuelto: los 4 ficheros GFX del tileset ocupan los
+        // tiles 0x000/0x080/0x100/0x180, así que el fondo se decodifica contra la VRAM
+        // completa, no solo el slot BG1—; (3) el tileset Map16 acotado a los bloques que
+        // el nivel usa de verdad; (4) las HOJAS por categoría con la paleta real por
+        // fichero; (5) Mario con su fila real.
         "Super Mario World" ->
             extractSmwScenes(rom, header) +
+                extractSmwBackgrounds(rom, header) +
                 listOfNotNull(extractSmwMap16Tileset(rom, header)) +
                 extractSmw(rom, header)
         else -> emptyList()
     }
+
+    /**
+     * Slot GFX (0..3) al que pertenece un número de tesela de VRAM en un nivel de SMW,
+     * o -1 si cae fuera de los 4 slots FG/BG. Derivado 1:1 de UploadGraphicsFiles
+     * ($00:A9DA): los 4 ficheros del tileset se suben a las direcciones VRAM
+     * 0x0000/0x0800/0x1000/0x1800; a 4bpp (0x10 palabras/tesela) eso son las teselas
+     * 0x000/0x080/0x100/0x180, 0x80 por slot. FONDO y primer plano comparten esta VRAM.
+     */
+    internal fun smwFgbgVramSlot(tileIndex: Int): Int =
+        if (tileIndex in 0 until 512) tileIndex / 128 else -1
 
     /** PC del inicio de los datos de Layer 1 del nivel (cabecera de 5 bytes + objetos). */
     internal fun smwLayer1DataPc(rom: ByteArray, delta: Int, level: Int): Int? {
@@ -759,46 +766,47 @@ object SnesGameRecipes {
         val blockCount = entries.size / 4
         if (blockCount < 64) return null
 
-        // Gate de calidad: solo renderizamos fondos cuyo contenido cae en el slot BG1
-        // (tile# 0x100..0x17F), que es el que sabemos mapear a su fichero GFX con
-        // certeza. Algunos fondos dibujan con teselas de otras regiones de VRAM cuyo
-        // mapeo exacto aún no está resuelto; esos se omiten para no ensuciar la galería
-        // con escenas a medias. Mejor pocos fondos correctos que muchos rotos.
-        // Gate de calidad: solo mostramos fondos cuyo contenido cae mayoritariamente en
-        // el slot BG1 (tile# 0x100..0x17F), que sabemos mapear limpio a su fichero GFX.
-        // Los fondos que dibujan con teselas de otras regiones de VRAM (cuyo mapeo exacto
-        // aún no está resuelto) se omiten: mejor pocos fondos correctos que muchos a
-        // medias. Contamos por ENTRADA para que el cielo (fuera de BG1) no infle nada.
-        val distinct = entries.mapTo(HashSet()) { it.tileIndex }
-        val inBg1 = entries.count { it.tileIndex in 0x100..0x17F }
-        if (distinct.size < 4 || inBg1.toDouble() / entries.size < 0.45) return null
-
         // Cabecera del nivel: índices de paleta e info de GFX.
         val l1 = SMW_LAYER1_PTR_PC + delta + 3 * level
         val lpc = lorom(byte(rom, l1), byte(rom, l1 + 1), byte(rom, l1 + 2))
         if (lpc < 0 || lpc + 5 > rom.size) return null
-        val backIdx = byte(rom, lpc + 1) shr 5          // CCC de back area
-        val fgbgSetting = byte(rom, lpc + 4) and 0x0F    // ZZZZ
-        val bgFile = byte(rom, SMW_FGBG_GFX_TABLE_PC + delta + 4 * fgbgSetting + 2) // BG1
+        val backIdx = byte(rom, lpc + 1) shr 5          // CCC de back area (cielo)
+        val tileset = byte(rom, lpc + 4) and 0x0F
+        val se = SMW_FGBG_GFX_TABLE_PC + delta + 4 * tileset
 
+        // VRAM de 4 slots (tiles 0x000/0x080/0x100/0x180), montada como UploadGraphicsFiles:
+        // los 4 ficheros GFX del tileset en esos rangos, 0x80 teselas cada uno. El fondo
+        // se decodifica contra la VRAM COMPLETA, no solo BG1 — ese era el bloqueo.
         val bases = findSmwGfxTable(rom) ?: return null
         val (bLo, bHi, bBank) = bases
-        fun gfxData(file: Int): ByteArray? {
-            if (file == SMW_SLOT_EMPTY) return null
+        val vram = arrayOfNulls<IntArray>(512)
+        for (s in 0..3) {
+            val file = byte(rom, se + s); if (file == SMW_SLOT_EMPTY) continue
             val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
-            if (pc < 0x40000 || pc >= rom.size) return null
-            return runCatching { LcLz2.decompress(rom, pc).data }.getOrNull()
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+            }
         }
-        val bgData = gfxData(bgFile) ?: return null
-        val fmt = SnesGraphicsScanner.detectBestFormat(bgData, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
-        val avail = SnesAssetExtractor.availableTiles(bgData.size, 0, fmt)
+        if (vram.all { it == null }) return null
+
+        // Gate de honestidad: la mayoría de las teselas del fondo deben caer en VRAM que
+        // sabemos decodificar. Si un fondo usa sobre todo teselas no mapeables (animadas,
+        // FG3…), lo omitimos en vez de pintarlo a medias.
+        val distinct = entries.mapTo(HashSet()) { it.tileIndex }
+        val mapped = entries.count { smwFgbgVramSlot(it.tileIndex) >= 0 && vram[it.tileIndex] != null }
+        if (distinct.size < 4 || mapped.toDouble() / entries.size < 0.5) return null
+
         val tables = SmwPaletteTables(rom, delta)
         // Filas por CCC (una por sub-paleta 0..7). El índice 0 es el color de back
         // area (cielo), NO transparente: los fondos son opacos.
         val rowsByCcc = (0..7).map { row3bppBG(tables, it, backIdx) }
 
-        val w = 32; val h = 27
-        val cols = if (blockCount % h == 0) blockCount / h else w
+        val h = 27
+        val cols = if (blockCount % h == 0) blockCount / h else 32
         val img = ArgbImage(cols * 16, h * 16)
         val half = blockCount / 2
         // Posiciones de las 4 sub-teselas del bloque: TL, BL, TR, BR.
@@ -813,25 +821,47 @@ object SnesGameRecipes {
             val ox = col * 16; val oy = row * 16
             for (k in 0..3) {
                 val e = entries[b * 4 + k]
-                val t = e.tileIndex - 0x100 // slot BG1; fuera de rango = cielo (back area)
                 val palette = rowsByCcc[e.palette and 7]
                 val bx = ox + subPos[k][0]; val by = oy + subPos[k][1]
-                if (t in 0 until avail) {
-                    val dec = SnesDecoder.decodeTile(bgData, t * fmt.bytesPerTile, fmt, t)
-                    for (py in 0..7) for (px in 0..7) {
-                        val sx = if (e.hFlip) 7 - px else px
+                val px = if (smwFgbgVramSlot(e.tileIndex) >= 0) vram[e.tileIndex] else null
+                if (px != null) {
+                    for (py in 0..7) for (pxx in 0..7) {
+                        val sx = if (e.hFlip) 7 - pxx else pxx
                         val sy = if (e.vFlip) 7 - py else py
-                        val ci = dec.pixelIndices[sy * 8 + sx]
-                        val argb = if (ci < palette.size) palette[ci] else 0xFF000000.toInt()
-                        img.set(bx + px, by + py, argb)
+                        val ci = px[sy * 8 + sx]
+                        val argb = if (ci < palette.size) palette[ci] else palette[0]
+                        img.set(bx + pxx, by + py, argb)
                     }
                 } else {
-                    // Tesela fuera del slot BG1 (p. ej. FG): rellena con back area.
-                    for (py in 0..7) for (px in 0..7) img.set(bx + px, by + py, palette[0])
+                    // Tesela no mapeable: rellena con back area (cielo).
+                    for (py in 0..7) for (pxx in 0..7) img.set(bx + pxx, by + py, palette[0])
                 }
             }
         }
         return img
+    }
+
+    /**
+     * FONDOS (Layer 2) para la galería: renderiza los fondos de los niveles escaparate
+     * ([SMW_SCENE_LEVELS]) que tienen Layer 2 de imagen y pasan el gate de honestidad.
+     * Los niveles cuyo Layer 2 son objetos (no fondo) o cuyo fondo no es mapeable se
+     * saltan solos. Máximo [maxScenes] fondos para no disparar la memoria.
+     */
+    internal fun extractSmwBackgrounds(rom: ByteArray, header: SnesHeader, maxScenes: Int = 3): List<SnesAutoExtractor.Finding> {
+        val out = ArrayList<SnesAutoExtractor.Finding>()
+        for (level in SMW_SCENE_LEVELS) {
+            if (out.size >= maxScenes) break
+            val img = renderSmwBackground(rom, header, level) ?: continue
+            val cols = img.width / 16
+            out.add(
+                SnesAutoExtractor.Finding(
+                    image = img, label = "Fondo nivel ${level.toString(16).uppercase()}", offset = 0,
+                    compressed = false, format = SnesGraphicFormat.SNES_3BPP, palette = IntArray(0),
+                    tileCount = cols * 27, columns = cols, score = 1.0,
+                )
+            )
+        }
+        return out
     }
 
     /**

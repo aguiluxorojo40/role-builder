@@ -61,6 +61,22 @@ class SnesLayer2Test {
     }
 
     @Test
+    fun `smwFgbgVramSlot mapea cada rango de tile al slot GFX correcto`() {
+        // Layout VRAM de UploadGraphicsFiles: 4 ficheros en tiles 0x000/0x080/0x100/0x180,
+        // 0x80 teselas por slot. Fuera de 0x000..0x1FF no hay slot FG/BG (-1).
+        assertEquals(0, SnesGameRecipes.smwFgbgVramSlot(0x000))
+        assertEquals(0, SnesGameRecipes.smwFgbgVramSlot(0x07F))
+        assertEquals(1, SnesGameRecipes.smwFgbgVramSlot(0x080))
+        assertEquals(1, SnesGameRecipes.smwFgbgVramSlot(0x0FF))
+        assertEquals(2, SnesGameRecipes.smwFgbgVramSlot(0x100)) // BG1: el único que se mapeaba antes
+        assertEquals(2, SnesGameRecipes.smwFgbgVramSlot(0x17F))
+        assertEquals(3, SnesGameRecipes.smwFgbgVramSlot(0x180))
+        assertEquals(3, SnesGameRecipes.smwFgbgVramSlot(0x1FF))
+        assertEquals(-1, SnesGameRecipes.smwFgbgVramSlot(0x200)) // animadas/FG3/sprites: no mapeable
+        assertEquals(-1, SnesGameRecipes.smwFgbgVramSlot(-1))
+    }
+
+    @Test
     fun `renderSmwBackground devuelve null cuando el nivel no tiene fondo`() {
         // Motor de escenas de fondo (base guardada): sin datos de fondo válidos, no
         // revienta, devuelve null.

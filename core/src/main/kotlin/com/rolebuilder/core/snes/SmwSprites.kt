@@ -25,6 +25,11 @@ package com.rolebuilder.core.snes
  *
  * Todo es Kotlin puro y sin ROM con copyright en los tests: se planta un flujo
  * mínimo y se comprueba el decodificado bit a bit.
+ *
+ * Verificado contra el código real del juego (snesrev/smw, ParseLevelSpriteList /
+ * LoadSpriteLoopStrt / LoadOneSprite): la pantalla se calcula igual —`(8*b1)&0x10 |
+ * (b2&0xF)`—, la X dentro de pantalla es `b2&0xF0` (píxeles) y la Y `b1&0xF0 |
+ * (b1&0x0D)<<8`, que en niveles vanilla (bits extra = 0) equivale a este decode.
  */
 internal object SmwSprites {
 
