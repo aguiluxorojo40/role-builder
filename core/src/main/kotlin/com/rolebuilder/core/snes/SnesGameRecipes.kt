@@ -142,6 +142,10 @@ object SnesGameRecipes {
         // Gate de honestidad: si el parser se saltó objetos, la escena tendría huecos.
         if (tm.totalObjects == 0 || tm.unknownObjects * 10 > tm.totalObjects) return null
 
+        // Capa de sprites (enemigos): tercer flujo de datos del nivel, independiente
+        // del tilemap. Solo la CUENTA se refleja en la etiqueta; el escenario no cambia.
+        val spriteCount = SmwSprites.parse(rom, delta, level)?.sprites?.size ?: 0
+
         val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
         val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
         val fgbgSetting = byte(rom, lpc + 4) and 0x0F
@@ -196,7 +200,10 @@ object SnesGameRecipes {
             }
         }
         return SnesAutoExtractor.Finding(
-            image = img, label = "Escena nivel ${level.toString(16).uppercase()}", offset = lpc,
+            image = img,
+            label = "Escena nivel ${level.toString(16).uppercase()}" +
+                if (spriteCount > 0) " · $spriteCount sprites" else "",
+            offset = lpc,
             compressed = false, format = SnesGraphicFormat.SNES_3BPP, palette = IntArray(0),
             tileCount = cols * rows, columns = cols, score = 1.0,
         )
