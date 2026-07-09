@@ -148,6 +148,11 @@ fun main(args: Array<String>) {
         }
         val png = File(imagesDir, "collision_${level.toString(16)}.png")
         ImageIO.write(toBufferedImage(mask), "png", png)
+        val start = com.rolebuilder.core.snes.SmwLevelStartReader.read(rom, header, level)
+        if (start != null) {
+            println("  Inicio del jugador: píxel (${start.startPixelX}, ${start.startPixelY}) " +
+                "= casilla (${start.startTileX}, ${start.startTileY})")
+        }
         println("  ASCII -> ${File(outDir, "collision_${level.toString(16)}.txt").name} · máscara -> images/${png.name}")
         return
     }
