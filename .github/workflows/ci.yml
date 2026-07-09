@@ -64,15 +64,15 @@ jobs:
       # en 'apk-latest'; las ramas del extractor de SNES publican en
       # 'apk-snes-latest' para no pisar la anterior.
       - name: Preparar APK con nombre
-        if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa'
+        if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy'
         run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
 
       - name: Actualizar release rodante
-        if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa'
+        if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ (github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa') && 'apk-snes-latest' || 'apk-latest' }}
-          name: ${{ (github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa') && 'APK con extractor de SNES (debug)' || 'APK más reciente (debug)' }}
+          tag_name: ${{ (github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy') && 'apk-snes-latest' || 'apk-latest' }}
+          name: ${{ (github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy') && 'APK con extractor de SNES (debug)' || 'APK más reciente (debug)' }}
           prerelease: true
           body: APK de depuración compilada automáticamente a partir del último push de la rama.
           files: role-builder-debug.apk
