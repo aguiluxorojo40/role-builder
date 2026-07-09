@@ -202,6 +202,39 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --play-sim: integra TODO lo extraído (colisión + físicas + inicio) en el
+    // motor de plataformas y simula unos fotogramas, para probar que Mario aparece y
+    // se posa sobre el suelo REAL del nivel.
+    if (opts.containsKey("play-sim")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val frames = opts["frames"]?.let { parseInt(it) } ?: 180
+        val col = com.rolebuilder.core.snes.SnesGameRecipes.smwLevelCollision(rom, header, level)
+        val phys = com.rolebuilder.core.snes.SmwPhysicsReader.read(rom, header)
+        val start = com.rolebuilder.core.snes.SmwLevelStartReader.read(rom, header, level)
+        if (col == null || phys == null || start == null) {
+            println("Faltan datos para simular (colisión/físicas/inicio) del nivel 0x${level.toString(16)}.")
+            return
+        }
+        val engine = com.rolebuilder.core.engine.platformer.PlatformerEngine(
+            cols = col.cols, rows = col.rows,
+            solidityAt = { c, r -> col.solidityAt(c, r) },
+            startPixelX = start.startPixelX, startPixelY = start.startPixelY,
+            tuning = com.rolebuilder.core.engine.platformer.PlatformerTuning.fromSmw(phys),
+        )
+        println("Simulando ${frames} fotogramas del nivel 0x${level.toString(16)} " +
+            "(inicio casilla ${start.startTileX},${start.startTileY})…")
+        var landedAtFrame = -1
+        for (f in 0 until frames) {
+            engine.tick()
+            if (engine.player.onGround && landedAtFrame < 0) landedAtFrame = f
+        }
+        val p = engine.player
+        println("  Tras $frames fotogramas: píxel (%.1f, %.1f) = casilla (%d, %d), onGround=%b, dead=%b"
+            .format(p.x, p.y, (p.x / 16).toInt(), (p.y / 16).toInt(), p.onGround, p.dead))
+        if (landedAtFrame >= 0) println("  Mario se posó sobre el suelo en el fotograma $landedAtFrame.")
+        return
+    }
+
     // Modo --gallery: "modo fácil". Busca gráficos automáticamente y vuelca cada
     // hallazgo como una miniatura en color, sin pedir offsets ni formatos.
     if (opts.containsKey("gallery")) {
