@@ -152,6 +152,33 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --physics: lee las TABLAS DE FÍSICAS reales del jugador de SMW (acelerar,
+    // correr, saltar, caer, gravedad, tope de caída) y las imprime en sus unidades.
+    if (opts.containsKey("physics")) {
+        val phys = com.rolebuilder.core.snes.SmwPhysicsReader.read(rom, header)
+        if (phys == null) {
+            println("No se pudieron leer las físicas: la ROM no parece SMW vanilla en las " +
+                "direcciones del banco $00 (¿otro juego o un hack que las reubica?).")
+            return
+        }
+        fun ppf(v: Int) = "%.2f".format(phys.toPixelsPerFrame(v))
+        println("Físicas del jugador (unidades: 1/16 px por fotograma; 60 fps):")
+        println("  Salto parado:        ${phys.baseJumpYSpeed}  (${ppf(phys.baseJumpYSpeed)} px/fotograma hacia arriba)")
+        println("  Gravedad (por def.): ${phys.defaultGravity}  (${ppf(phys.defaultGravity)} px/fotograma²)")
+        println("  Caída terminal:      ${phys.defaultMaxFall}  (${ppf(phys.defaultMaxFall)} px/fotograma)")
+        println("  Muerte (impulso):    ${com.rolebuilder.core.snes.SmwPhysics.DEATH_POP_YSPEED}  (${ppf(com.rolebuilder.core.snes.SmwPhysics.DEATH_POP_YSPEED)} px/fotograma)")
+        println("  Rebote pisar (salto mantenido / suelto): " +
+            "${com.rolebuilder.core.snes.SmwPhysics.STOMP_BOUNCE_JUMP_HELD} / ${com.rolebuilder.core.snes.SmwPhysics.STOMP_BOUNCE}")
+        println("  Tabla de salto ($00:D2BD):     " + phys.jumpYSpeed.joinToString(" "))
+        println("  Gravedad ($00:D7A5):           " + phys.gravity.joinToString(" "))
+        println("  Caída terminal ($00:D7AF):     " + phys.maxFallSpeed.joinToString(" "))
+        println("  Vel. máx. horizontal ($00:D535, primeros 16): " +
+            phys.maxXSpeed.take(16).joinToString(" "))
+        println("  Aceleración ($00:D345, primeros 8 words):     " +
+            phys.marioXAccel.take(8).joinToString(" "))
+        return
+    }
+
     // Modo --gallery: "modo fácil". Busca gráficos automáticamente y vuelca cada
     // hallazgo como una miniatura en color, sin pedir offsets ni formatos.
     if (opts.containsKey("gallery")) {
@@ -567,6 +594,7 @@ private fun printUsage() {
           --rom <ruta> --recipe               (modo fácil: vuelca los gráficos reales de un juego con receta)
           --rom smw.sfc --collision [--level 0x106]
                                               (MAPA DE COLISIÓN de un nivel de SMW: solidez por celda + máscara PNG)
+          --rom smw.sfc --physics             (TABLAS DE FÍSICAS del jugador: acelerar, correr, saltar, caer, gravedad)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()
