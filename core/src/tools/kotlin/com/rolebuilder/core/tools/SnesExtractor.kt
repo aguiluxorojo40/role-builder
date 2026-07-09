@@ -179,6 +179,24 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --sprite-behavior: lee las 6 tablas "tweaker" de COMPORTAMIENTO de sprites
+    // (cómo se mueve/choca/se pisa cada enemigo) y las vuelca por id de sprite.
+    if (opts.containsKey("sprite-behavior")) {
+        val list = com.rolebuilder.core.snes.SmwSpriteBehaviorReader.read(rom, header)
+        if (list == null) {
+            println("No se pudieron leer los tweakers de sprites: ¿ROM no SMW vanilla?")
+            return
+        }
+        println("Comportamiento de ${list.size} tipos de sprite (id: 1656 1662 166e 167a 1686 190f | hitbox):")
+        val show = opts["id"]?.let { listOf(parseInt(it)) } ?: (0..0x20)
+        for (id in show) {
+            val b = list.getOrNull(id) ?: continue
+            println("  %02X: %02x %02x %02x %02x %02x %02x | hitbox %02x".format(
+                b.id, b.b1656, b.b1662, b.b166e, b.b167a, b.b1686, b.b190f, b.spriteClipping))
+        }
+        return
+    }
+
     // Modo --gallery: "modo fácil". Busca gráficos automáticamente y vuelca cada
     // hallazgo como una miniatura en color, sin pedir offsets ni formatos.
     if (opts.containsKey("gallery")) {
@@ -595,6 +613,8 @@ private fun printUsage() {
           --rom smw.sfc --collision [--level 0x106]
                                               (MAPA DE COLISIÓN de un nivel de SMW: solidez por celda + máscara PNG)
           --rom smw.sfc --physics             (TABLAS DE FÍSICAS del jugador: acelerar, correr, saltar, caer, gravedad)
+          --rom smw.sfc --sprite-behavior [--id 0x0C]
+                                              (TWEAKERS de comportamiento de enemigos: hitbox y banderas por id)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()
