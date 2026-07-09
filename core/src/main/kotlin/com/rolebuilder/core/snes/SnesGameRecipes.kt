@@ -35,21 +35,42 @@ object SnesGameRecipes {
         // color por-tesela; el motor de fondos queda listo para reactivarlo (ver
         // renderSmwBackground / layer2BgEntries) cuando se resuelva el layout de VRAM.
         // La galería entrega las HOJAS por categoría coloreadas con la CGRAM REAL del
-        // juego (ensamblada por assembleSmwCgram, validada 48/48 contra emulador): FG y
-        // BG POR-TESELA con su sub-paleta Map16, sprites y Mario con su fila real. El
-        // render Map16 de "todos los bloques" (extractSmwMap16Tileset) queda como base
-        // para las ESCENAS de nivel (objetivo B): en frío pinta también los ~cientos de
-        // bloques SIN USAR (magenta placeholder), así que no va en la galería hasta
-        // acotarlo al tilemap real de un nivel.
-        "Super Mario World" -> extractSmw(rom, header)
+        // juego (ensamblada por assembleSmwCgram, validada 48/48 contra emulador y
+        // contra 488 renders de nivel de Lunar Magic): FG y BG POR-TESELA con su
+        // sub-paleta Map16, sprites y Mario con su fila real. Además, ABRE la galería
+        // el tileset Map16 de pradera (extractSmwMap16Tileset): antes quedaba fuera
+        // porque pintaba los bloques sin usar como placeholders; ahora se acota a los
+        // bloques que el nivel usa de verdad (máscara del informe de uso de Lunar
+        // Magic) y entrega los ladrillos reales listos para pintar mapas.
+        "Super Mario World" ->
+            listOfNotNull(extractSmwMap16Tileset(rom, header)) + extractSmw(rom, header)
         else -> emptyList()
     }
+
+    /**
+     * Bloques Map16 FG (0..0x1FF) que el nivel 0x106 usa DE VERDAD, como máscara de
+     * bits little-endian por byte (bit t%8 del byte t/8). Derivada del informe "Map16
+     * Tile Usage" de Lunar Magic 3.63 sobre la ROM US vanilla: 75 bloques (suelo,
+     * taludes, tuberías, arbustos…). Con ella el render Map16 entrega SOLO los
+     * ladrillos reales del nivel —cuyo VRAM/CGRAM ya montamos— en vez de pintar
+     * también los ~cientos de bloques sin usar como placeholders magenta, que era lo
+     * que mantenía este render fuera de la galería.
+     */
+    private val SMW_MAP16_USED_106: ByteArray = (
+        "0000000020e82db763fe9fe4db031802e00000000000000000000000000000" +
+            "005f0000445000fc016019000000080000000000000000000000000000140000" +
+            "00"
+        ).chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+
+    private fun map16Used106(block: Int): Boolean =
+        block < 0x200 && (SMW_MAP16_USED_106[block / 8].toInt() shr (block % 8)) and 1 == 1
 
     /**
      * Renderiza el TILESET Map16 de SMW: monta cada bloque 16×16 del juego (suelo,
      * tuberías, bloques…) desde la VRAM del nivel (sus 4 slots de GFX) y lo colorea
      * con la CGRAM real por su CCC. Es la hoja de tiles LIMPIA y usable para pintar
-     * mapas — los ladrillos de verdad de SMW, no un atlas de VRAM en crudo.
+     * mapas — los ladrillos de verdad de SMW, no un atlas de VRAM en crudo. Se
+     * limita a los bloques que el nivel usa de verdad ([SMW_MAP16_USED_106]).
      */
     internal fun extractSmwMap16Tileset(rom: ByteArray, header: SnesHeader): SnesAutoExtractor.Finding? {
         val delta = smwHeaderDelta(header)
@@ -76,15 +97,19 @@ object SnesGameRecipes {
         if (vram.all { it == null }) return null
         // CGRAM REAL del nivel, ensamblada como el juego (no horneada): color correcto.
         val cgram = assembleSmwCgram(rom, delta, 0x106)
-        // Renderiza los 512 bloques Map16 (8 bytes = 4 teselas + su CCC/flip).
+        // Renderiza SOLO los bloques Map16 que el nivel usa (8 bytes = 4 teselas +
+        // su CCC/flip cada uno), compactados en una rejilla: la hoja de "ladrillos
+        // reales" lista para pintar, sin placeholders de bloques sin usar.
         val map16 = SMW_MAP16_FG_PC + delta
-        val cols = 16; val blocks = 512
-        val img = ArgbImage(cols * 16, (blocks / cols) * 16)
+        val cols = 16
+        val usedBlocks = (0 until 512).filter { map16Used106(it) && map16 + 8 * it + 8 <= rom.size }
+        if (usedBlocks.isEmpty()) return null
+        val rows = (usedBlocks.size + cols - 1) / cols
+        val img = ArgbImage(cols * 16, rows * 16)
         val subPos = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
-        for (blk in 0 until blocks) {
+        for ((pos, blk) in usedBlocks.withIndex()) {
             val o = map16 + 8 * blk
-            if (o + 8 > rom.size) break
-            val bx = (blk % cols) * 16; val by = (blk / cols) * 16
+            val bx = (pos % cols) * 16; val by = (pos / cols) * 16
             for (k in 0..3) {
                 val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
                 val e = SnesTilemap.decodeEntry(word)
