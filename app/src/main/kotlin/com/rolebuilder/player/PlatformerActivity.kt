@@ -84,7 +84,7 @@ class PlatformerActivity : ComponentActivity() {
                     return null
                 }
             val engine = ProjectPlatformer.engine(map, tileset, project.startX, project.startY)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario())
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies())
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -105,12 +105,17 @@ class PlatformerActivity : ComponentActivity() {
             Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
             return null
         }
-        return PlatformerRenderer(engine, null, loadMario())
+        return PlatformerRenderer(engine, null, loadMario(), loadEnemies())
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
-    private fun loadMario(): android.graphics.Bitmap? = runCatching {
-        assets.open("sprites/mario.png").use { android.graphics.BitmapFactory.decodeStream(it) }
+    private fun loadMario(): android.graphics.Bitmap? = loadSprite("sprites/mario.png")
+
+    /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
+    private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
+
+    private fun loadSprite(path: String): android.graphics.Bitmap? = runCatching {
+        assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }
     }.getOrNull()
 
     /** Extrae de la ROM lo necesario y monta el motor, o null si no es SMW jugable. */

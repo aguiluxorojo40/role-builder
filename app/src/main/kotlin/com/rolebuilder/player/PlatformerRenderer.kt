@@ -37,6 +37,7 @@ class PlatformerRenderer(
     private val engine: PlatformerEngine,
     private val world: PlatformerWorld? = null,
     private val marioBitmap: android.graphics.Bitmap? = null,
+    private val enemyBitmap: android.graphics.Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -51,6 +52,7 @@ class PlatformerRenderer(
     private lateinit var white: Texture
     private var tilesetTex: Texture? = null
     private var marioTex: Texture? = null
+    private var enemyTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
     private var lastNanos = 0L
@@ -64,6 +66,7 @@ class PlatformerRenderer(
         }
         animByTile = world?.tileset?.animations?.associateBy { it.baseTile } ?: emptyMap()
         marioTex = marioBitmap?.let { Texture(it) }
+        enemyTex = enemyBitmap?.let { Texture(it) }
         camera.tilesVisibleY = 15f
         lastNanos = 0L
         acc = 0f
@@ -155,15 +158,27 @@ class PlatformerRenderer(
             }
         }
 
-        // Enemigos (rectángulo por ahora), en casillas. Aplastados = franja fina.
+        // Enemigos: sprite REAL de SMW para los ids con gráfico curado; si no, un
+        // rectángulo. Aplastados = franja fina un instante al pisarlos.
+        val etex = enemyTex
         for (e in engine.enemies) {
             if (!e.alive && e.squashTimer <= 0) continue
             val ex = e.x / 16f
             val ew = e.width / 16f
-            if (e.alive) {
+            val frame = ENEMY_FRAME[e.id]
+            if (e.alive && etex != null && frame != null) {
+                // Sprite 16×16 centrado sobre la caja del enemigo, con los pies abajo.
+                val cx = (e.x + e.width / 2f) / 16f - 0.5f
+                val feet = (e.y + e.height) / 16f - 1f
+                val u0 = frame * ENEMY_UV
+                batch.draw(
+                    etex, cx, feet, 1f, 1f,
+                    u0 = u0, v0 = 0f, u1 = u0 + ENEMY_UV, v1 = 1f,
+                    flipX = e.vx > 0f,
+                )
+            } else if (e.alive) {
                 batch.draw(white, ex, e.y / 16f, ew, e.height / 16f, r = 0.65f, g = 0.20f, b = 0.55f, a = 1f)
             } else {
-                // Pisado: se dibuja aplanado contra el suelo un instante.
                 val fh = e.height / 16f * 0.3f
                 batch.draw(white, ex, (e.y + e.height * 0.7f) / 16f, ew, fh, r = 0.5f, g = 0.5f, b = 0.5f, a = 1f)
             }
@@ -200,6 +215,13 @@ class PlatformerRenderer(
         }
 
         batch.end()
+    }
+
+    companion object {
+        /** Enemigos con gráfico real horneado en enemies.png → su fotograma en el atlas. */
+        private val ENEMY_FRAME = mapOf(0x00 to 0, 0x01 to 1, 0x02 to 2, 0x03 to 3, 0x10 to 4)
+        /** Ancho UV de un fotograma en el atlas de enemigos (5 fotogramas de 16px). */
+        private const val ENEMY_UV = 1f / 5f
     }
 
     private fun colorOf(s: SmwSolidity): FloatArray = when (s) {

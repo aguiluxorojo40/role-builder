@@ -1417,6 +1417,20 @@ object SnesGameRecipes {
 
     private fun byte(rom: ByteArray, i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0
 
+    /**
+     * Descomprime el fichero GFX [file] (0x00..0x33) de SMW y devuelve sus bytes, o
+     * null si el fichero no existe o la descompresión falla. Reutiliza la localización
+     * robusta de la tabla de punteros de GFX ([findSmwGfxTable], que ya absorbe el delta
+     * de cabecera SMC) y el mapeo LoROM del juego. Lo usan las recetas que necesitan un
+     * fichero de gráficos concreto (p. ej. los sprites de enemigos, en los ficheros SP).
+     */
+    internal fun smwGfxFileData(rom: ByteArray, file: Int): ByteArray? {
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+        if (pc < 0x40000 || pc >= rom.size) return null
+        return runCatching { LcLz2.decompress(rom, pc).data }.getOrNull()
+    }
+
     private fun extractSmw(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
         val bases = findSmwGfxTable(rom) ?: return emptyList()
         val (bLo, bHi, bBank) = bases
