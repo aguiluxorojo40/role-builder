@@ -181,4 +181,38 @@ class PlatformerEngineTest {
         e.run(30)
         assertTrue(e.player.dead, "el contacto lateral mata al jugador")
     }
+
+    // ----------------------------------------------- contadores de eventos (audio)
+
+    @Test
+    fun `saltar incrementa jumpEvents una vez por salto`() {
+        val e = engine(10, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+        }
+        e.run(30)
+        assertEquals(0, e.jumpEvents)
+        e.setJumpHeld(true)
+        e.pressJump()
+        e.tick()
+        assertEquals(1, e.jumpEvents, "un flanco de salto = un evento")
+        e.run(10) // mantener pulsado en el aire no re-dispara
+        assertEquals(1, e.jumpEvents)
+    }
+
+    @Test
+    fun `pisar a un enemigo incrementa stompEvents`() {
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        e.run(60)
+        assertEquals(1, e.stompEvents, "un pisotón = un evento")
+    }
+
+    @Test
+    fun `morir incrementa deathEvents una sola vez`() {
+        val e = engine(10, 8, startCol = 2, startRow = 1) { /* sin suelo: cae al vacío */ }
+        e.run(200)
+        assertTrue(e.player.dead)
+        assertEquals(1, e.deathEvents, "la muerte se cuenta una vez, no en cada tick posterior")
+    }
 }

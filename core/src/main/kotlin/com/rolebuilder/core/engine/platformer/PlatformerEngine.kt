@@ -69,6 +69,26 @@ class PlatformerEngine(
     private var jumpHeld = false
     private var jumpPressedEdge = false
 
+    /**
+     * Contadores de eventos monótonos para el audio: cada vez que ocurre el evento
+     * se incrementa. La capa de presentación recuerda el último valor visto y suena
+     * el efecto por cada incremento (así no necesita callbacks ni acoplarse al motor).
+     */
+    var jumpEvents = 0
+        private set
+    var stompEvents = 0
+        private set
+    var deathEvents = 0
+        private set
+
+    /** Marca al jugador como muerto una sola vez y cuenta el evento. */
+    private fun killPlayer() {
+        if (!player.dead) {
+            player.dead = true
+            deathEvents++
+        }
+    }
+
     /** Marca la pulsación de salto (flanco). */
     fun pressJump() { jumpPressedEdge = true; jumpHeld = true }
     fun releaseJump() { jumpHeld = false }
@@ -115,6 +135,7 @@ class PlatformerEngine(
             p.vy = t.jumpSpeed
             p.onGround = false
             p.jumping = true
+            jumpEvents++
         }
         jumpPressedEdge = false
         if (p.vy >= 0f) p.jumping = false
@@ -131,7 +152,7 @@ class PlatformerEngine(
         handlePlayerEnemyContact()
 
         checkDeadly()
-        if (p.y > (rows + 2) * tileSize) p.dead = true // caído al vacío
+        if (p.y > (rows + 2) * tileSize) killPlayer() // caído al vacío
     }
 
     /** Gravedad, patrulla y colisión de cada enemigo con el terreno. */
@@ -205,8 +226,9 @@ class PlatformerEngine(
                 p.vy = tuning.jumpSpeed * 0.6f // rebote
                 p.onGround = false
                 p.jumping = false
+                stompEvents++
             } else {
-                p.dead = true
+                killPlayer()
                 return
             }
         }
@@ -283,7 +305,7 @@ class PlatformerEngine(
         val r0 = (p.y / tileSize).toInt()
         val r1 = ((p.y + h - 0.01f) / tileSize).toInt()
         for (r in r0..r1) for (c in c0..c1) {
-            if (solidity(c, r) == SmwSolidity.SPIKE) { p.dead = true; return }
+            if (solidity(c, r) == SmwSolidity.SPIKE) { killPlayer(); return }
         }
     }
 }

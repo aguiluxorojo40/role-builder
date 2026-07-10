@@ -416,4 +416,42 @@ object SmwMusic {
 
     /** `delta` de cabecera SMC a partir de la cabecera parseada de la ROM. */
     fun deltaOf(header: SnesHeader): Int = header.headerOffset - 0x7FC0
+
+    // --------------------------------------------------------- exportar a fichero
+
+    /**
+     * Escribe a [outFile] la imagen `.spc` de la [song] (id 1-based) del [musicBank].
+     * Es el puente hacia la RUTA (A) de reproducción: el `.spc` resultante es
+     * autocontenido (ARAM completa + directorio de muestras + registros DSP + PC del
+     * motor + puerto de canción precargado) y lo puede reproducir cualquier core
+     * SPC700+DSP (p. ej. snes_spc/blargg vía NDK). Devuelve `true` si se escribió.
+     *
+     * ### Plan de integración con un core SPC (NDK) — resumen accionable
+     * 1. Empaquetar un core SPC700+DSP nativo (snes_spc de blargg, C++ pequeño y
+     *    probado) como librería JNI en `app` (CMake/`externalNativeBuild`).
+     * 2. En Kotlin, obtener los bytes con [buildSpc] (no hace falta ni tocar disco).
+     * 3. Pasar esos bytes a `spc_load_spc(core, bytes, len)` por JNI; el core carga
+     *    ARAM + registros + PC. Fijar la frecuencia de salida (32000 Hz) y pedir
+     *    bloques con `spc_play(core, count, out16)` desde un hilo de [AudioTrack].
+     * 4. El *handshake* de puertos ya está resuelto: [buildSpc] precarga el id de
+     *    canción en el puerto de selección (ARAM `0xF6`) y el PC en `ENGINE_ENTRY`,
+     *    así que el motor arranca la canción solo al ejecutar.
+     * 5. Cambiar de canción = cargar otro `.spc` (otro id) o, con el core ya vivo,
+     *    escribir el nuevo id en el puerto y reiniciar la secuencia del motor.
+     *
+     * No se incluye el core aquí porque `core` es JVM puro y sin dependencias
+     * nativas; esta función deja lista la materia prima específica de SMW.
+     */
+    fun exportSpc(
+        rom: ByteArray,
+        delta: Int,
+        musicBank: NspcRegion,
+        song: Int,
+        outFile: java.io.File,
+        title: String = "Super Mario World",
+    ): Boolean {
+        val spc = buildSpc(rom, delta, musicBank, song, title) ?: return false
+        outFile.writeBytes(spc)
+        return true
+    }
 }

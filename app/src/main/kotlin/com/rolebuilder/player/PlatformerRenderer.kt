@@ -38,11 +38,17 @@ class PlatformerRenderer(
     private val world: PlatformerWorld? = null,
     private val marioBitmap: android.graphics.Bitmap? = null,
     private val enemyBitmap: android.graphics.Bitmap? = null,
+    private val audio: PlatformerAudio? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
     @Volatile var inRunning = false
     @Volatile var inJumpHeld = false
+
+    // Últimos contadores de eventos vistos, para sonar cada evento una sola vez.
+    private var lastJumpEvents = 0
+    private var lastStompEvents = 0
+    private var lastDeathEvents = 0
 
     /** Lo lee la UI para el aviso de "has muerto". */
     @Volatile var dead = false
@@ -96,6 +102,17 @@ class PlatformerRenderer(
             guard++
         }
         dead = engine.player.dead
+
+        // Audio: suena cada evento del motor (salto, pisotón, muerte) una vez por
+        // aparición, con las muestras reales de SMW resueltas por SmwSfxCatalog.
+        audio?.let { a ->
+            if (engine.jumpEvents > lastJumpEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.JUMP)
+            if (engine.stompEvents > lastStompEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP)
+            if (engine.deathEvents > lastDeathEvents) a.playDeath()
+            lastJumpEvents = engine.jumpEvents
+            lastStompEvents = engine.stompEvents
+            lastDeathEvents = engine.deathEvents
+        }
 
         // Cámara en casillas (16 px = 1 casilla), centrada en Mario.
         camera.x = engine.player.x / 16f
@@ -216,6 +233,9 @@ class PlatformerRenderer(
 
         batch.end()
     }
+
+    /** Libera los recursos de audio (SoundPool). Llamar al salir del nivel. */
+    fun releaseAudio() = audio?.release()
 
     companion object {
         /** id de sprite → su fotograma en enemies.png; en el MISMO orden que hornea el atlas. */

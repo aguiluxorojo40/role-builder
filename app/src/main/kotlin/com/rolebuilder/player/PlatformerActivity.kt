@@ -95,8 +95,14 @@ class PlatformerActivity : ComponentActivity() {
     private fun buildRomRenderer(): PlatformerRenderer? {
         val romPath = intent.getStringExtra(EXTRA_ROM_PATH) ?: return null
         val level = intent.getIntExtra(EXTRA_LEVEL, 0x106)
+        val rom = try {
+            File(romPath).readBytes()
+        } catch (e: Exception) {
+            Toast.makeText(this, "No se pudo leer la ROM: ${e.message}", Toast.LENGTH_LONG).show()
+            return null
+        }
         val engine = try {
-            buildEngine(File(romPath).readBytes(), level)
+            buildEngine(rom, level)
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el nivel: ${e.message}", Toast.LENGTH_LONG).show()
             return null
@@ -105,7 +111,9 @@ class PlatformerActivity : ComponentActivity() {
             Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
             return null
         }
-        return PlatformerRenderer(engine, null, loadMario(), loadEnemies())
+        // Audio con las muestras reales de SMW (o null si la ROM no lo permite).
+        val audio = PlatformerAudio.fromRom(this, rom)
+        return PlatformerRenderer(engine, null, loadMario(), loadEnemies(), audio)
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
@@ -186,7 +194,10 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
                 }
             }
             lifecycleOwner.lifecycle.addObserver(observer)
-            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+                renderer.releaseAudio()
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
