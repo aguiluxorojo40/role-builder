@@ -11,7 +11,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.rolebuilder.core.model.GameMode
 import com.rolebuilder.editor.EditorScreen
+import com.rolebuilder.project.ModeSelectScreen
 import com.rolebuilder.project.ProjectListScreen
 import com.rolebuilder.project.ProjectStore
 import java.io.File
@@ -60,12 +62,22 @@ fun RoleBuilderTheme(content: @Composable () -> Unit) {
 private fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "projects") {
-        composable("projects") {
+    NavHost(navController = navController, startDestination = "mode") {
+        composable("mode") {
+            ModeSelectScreen(
+                onSelect = { mode -> navController.navigate("projects/${mode.name}") },
+            )
+        }
+        composable("projects/{mode}") { backStackEntry ->
+            val mode = runCatching {
+                GameMode.valueOf(backStackEntry.arguments?.getString("mode").orEmpty())
+            }.getOrDefault(GameMode.ARPG)
             ProjectListScreen(
+                mode = mode,
                 onOpenProject = { dir ->
                     navController.navigate("editor/${URLEncoder.encode(dir.absolutePath, "UTF-8")}")
                 },
+                onBack = { navController.popBackStack() },
             )
         }
         composable("editor/{dir}") { backStackEntry ->

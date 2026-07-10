@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -48,12 +49,13 @@ import java.io.File
 import java.text.DateFormat
 import java.util.Date
 
-/** Pantalla inicial: lista de proyectos con crear/editar/jugar/borrar. */
+/** Lista de proyectos de un MODO (mundo) concreto: crear/editar/jugar/borrar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectListScreen(onOpenProject: (File) -> Unit) {
+fun ProjectListScreen(mode: GameMode, onOpenProject: (File) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
-    var projects by remember { mutableStateOf(ProjectStore.list(context)) }
+    fun load() = ProjectStore.list(context).filter { it.mode == mode }
+    var projects by remember(mode) { mutableStateOf(load()) }
     var showCreate by remember { mutableStateOf(false) }
     var toDelete by remember { mutableStateOf<ProjectSummary?>(null) }
     var exportingDir by remember { mutableStateOf<File?>(null) }
@@ -73,17 +75,23 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
         if (uri != null) {
             runCatching { ProjectStore.import(context, uri) }
                 .onSuccess { name ->
-                    projects = ProjectStore.list(context)
+                    projects = load()
                     Toast.makeText(context, "Importado: $name", Toast.LENGTH_SHORT).show()
                 }
                 .onFailure { Toast.makeText(context, "Error al importar: ${it.message}", Toast.LENGTH_LONG).show() }
         }
     }
 
+    val worldTitle = if (mode == GameMode.PLATFORMER) "🍄 Platform Builder" else "🗡️ Role Builder"
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Role Builder — Mis proyectos") },
+                title = { Text("$worldTitle — Mis proyectos") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cambiar de modo")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { importLauncher.launch("application/zip") }) {
                         Icon(Icons.Filled.FileDownload, contentDescription = "Importar proyecto (.zip)")
@@ -103,10 +111,14 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("Aún no tienes proyectos.", style = MaterialTheme.typography.titleMedium)
+                Text("Aún no tienes proyectos aquí.", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Pulsa + para crear tu primer RPG: incluye un mapa de ejemplo con NPC, cofre y enemigos.",
+                    if (mode == GameMode.PLATFORMER) {
+                        "Pulsa + para crear un proyecto de plataformas: importa niveles SMW como mapas jugables."
+                    } else {
+                        "Pulsa + para crear tu primer RPG: incluye un mapa de ejemplo con NPC, cofre y enemigos."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -155,32 +167,21 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
 
     if (showCreate) {
         var name by remember { mutableStateOf("") }
-        var mode by remember { mutableStateOf(GameMode.ARPG) }
         AlertDialog(
             onDismissRequest = { showCreate = false },
-            title = { Text("Nuevo proyecto") },
+            title = { Text("Nuevo proyecto — $worldTitle") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Nombre") },
-                        singleLine = true,
-                    )
-                    Text("Modo del motor:", style = MaterialTheme.typography.labelMedium)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        ModeChoice("🗡️ Role Builder", "acción RPG", mode == GameMode.ARPG, Modifier.weight(1f)) { mode = GameMode.ARPG }
-                        ModeChoice("🍄 Platform Builder", "plataformas", mode == GameMode.PLATFORMER, Modifier.weight(1f)) { mode = GameMode.PLATFORMER }
-                    }
-                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") },
+                    singleLine = true,
+                )
             },
             confirmButton = {
                 Button(onClick = {
                     val dir = ProjectStore.create(context, name, mode)
-                    projects = ProjectStore.list(context)
+                    projects = load()
                     showCreate = false
                     onOpenProject(dir)
                 }) { Text("Crear") }
@@ -199,7 +200,7 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
             confirmButton = {
                 Button(onClick = {
                     ProjectStore.delete(summary.dir)
-                    projects = ProjectStore.list(context)
+                    projects = load()
                     toDelete = null
                 }) { Text("Borrar") }
             },
@@ -207,31 +208,5 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
                 TextButton(onClick = { toDelete = null }) { Text("Cancelar") }
             },
         )
-    }
-}
-
-/** Botón-selector de modo del motor para el diálogo de creación de proyecto. */
-@Composable
-private fun ModeChoice(
-    label: String,
-    subtitle: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(label, style = MaterialTheme.typography.labelLarge)
-                Text(subtitle, style = MaterialTheme.typography.labelSmall)
-            }
-        }
-    } else {
-        TextButton(onClick = onClick, modifier = modifier) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(label, style = MaterialTheme.typography.labelLarge)
-                Text(subtitle, style = MaterialTheme.typography.labelSmall)
-            }
-        }
     }
 }
