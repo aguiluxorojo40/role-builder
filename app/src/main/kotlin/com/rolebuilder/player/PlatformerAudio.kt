@@ -21,7 +21,7 @@ import java.io.File
  */
 class PlatformerAudio private constructor(
     context: Context,
-    clips: Map<SmwSfxCatalog.Event, SmwSfxCatalog.PcmClip>,
+    wavByEvent: Map<SmwSfxCatalog.Event, ByteArray>,
 ) {
 
     private val soundPool = SoundPool.Builder()
@@ -41,9 +41,9 @@ class PlatformerAudio private constructor(
         soundPool.setOnLoadCompleteListener { _, sampleId, status ->
             if (status == 0) loaded.add(sampleId)
         }
-        for ((event, clip) in clips) {
+        for ((event, wavBytes) in wavByEvent) {
             val file = File(context.cacheDir, "smwsfx_${event.name.lowercase()}.wav")
-            file.writeBytes(wav(clip.pcm, clip.sampleRate))
+            file.writeBytes(wavBytes)
             ids[event] = soundPool.load(file.absolutePath, 1)
         }
     }
@@ -59,27 +59,6 @@ class PlatformerAudio private constructor(
 
     fun release() = soundPool.release()
 
-    /** Empaqueta PCM16 mono a [sampleRate] Hz en un contenedor WAV. */
-    private fun wav(pcm: ShortArray, sampleRate: Int): ByteArray {
-        val dataSize = pcm.size * 2
-        val buffer = java.nio.ByteBuffer.allocate(44 + dataSize).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        buffer.put("RIFF".toByteArray())
-        buffer.putInt(36 + dataSize)
-        buffer.put("WAVE".toByteArray())
-        buffer.put("fmt ".toByteArray())
-        buffer.putInt(16)
-        buffer.putShort(1) // PCM
-        buffer.putShort(1) // mono
-        buffer.putInt(sampleRate)
-        buffer.putInt(sampleRate * 2)
-        buffer.putShort(2)
-        buffer.putShort(16)
-        buffer.put("data".toByteArray())
-        buffer.putInt(dataSize)
-        for (sample in pcm) buffer.putShort(sample)
-        return buffer.array()
-    }
-
     companion object {
         /**
          * Construye el audio a partir de los bytes de la ROM de SMW. Devuelve `null`
@@ -92,7 +71,45 @@ class PlatformerAudio private constructor(
                 SmwSfxCatalog.build(rom, header)
             }.getOrNull() ?: return null
             if (clips.isEmpty()) return null
-            return PlatformerAudio(context, clips)
+            val wavs = clips.mapValues { (_, clip) -> wav(clip.pcm, clip.sampleRate) }
+            return PlatformerAudio(context, wavs)
+        }
+
+        /**
+         * Construye el audio desde los efectos EMPAQUETADOS (assets/sfx/<event>.wav,
+         * horneados de la ROM). Es la vía para los proyectos de plataformas, que se
+         * juegan sin ROM. Devuelve `null` si no hay ningún efecto empaquetado.
+         */
+        fun fromAssets(context: Context): PlatformerAudio? {
+            val wavs = mutableMapOf<SmwSfxCatalog.Event, ByteArray>()
+            for (event in SmwSfxCatalog.Event.values()) {
+                runCatching {
+                    context.assets.open("sfx/${event.name.lowercase()}.wav").use { it.readBytes() }
+                }.onSuccess { wavs[event] = it }
+            }
+            if (wavs.isEmpty()) return null
+            return PlatformerAudio(context, wavs)
+        }
+
+        /** Empaqueta PCM16 mono a [sampleRate] Hz en un contenedor WAV. */
+        private fun wav(pcm: ShortArray, sampleRate: Int): ByteArray {
+            val dataSize = pcm.size * 2
+            val buffer = java.nio.ByteBuffer.allocate(44 + dataSize).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.put("RIFF".toByteArray())
+            buffer.putInt(36 + dataSize)
+            buffer.put("WAVE".toByteArray())
+            buffer.put("fmt ".toByteArray())
+            buffer.putInt(16)
+            buffer.putShort(1) // PCM
+            buffer.putShort(1) // mono
+            buffer.putInt(sampleRate)
+            buffer.putInt(sampleRate * 2)
+            buffer.putShort(2)
+            buffer.putShort(16)
+            buffer.put("data".toByteArray())
+            buffer.putInt(dataSize)
+            for (sample in pcm) buffer.putShort(sample)
+            return buffer.array()
         }
     }
 }

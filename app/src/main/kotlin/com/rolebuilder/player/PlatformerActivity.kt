@@ -84,7 +84,7 @@ class PlatformerActivity : ComponentActivity() {
                     return null
                 }
             val engine = ProjectPlatformer.engine(map, tileset, project.startX, project.startY)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies())
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this))
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -112,7 +112,7 @@ class PlatformerActivity : ComponentActivity() {
             return null
         }
         // Audio con las muestras reales de SMW (o null si la ROM no lo permite).
-        val audio = PlatformerAudio.fromRom(this, rom)
+        val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
         return PlatformerRenderer(engine, null, loadMario(), loadEnemies(), audio)
     }
 
