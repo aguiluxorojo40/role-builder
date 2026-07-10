@@ -36,6 +36,24 @@ data class PlatformerTuning(
 ) {
     companion object {
         /**
+         * Físicas por defecto de un proyecto de plataformas (cuando no derivan de una
+         * ROM de SMW): un tacto genérico pero agradable —salto variable, algo de
+         * inercia y una velocidad de carrera clara—. Valores en px/fotograma a 60 fps.
+         */
+        fun default(): PlatformerTuning = PlatformerTuning(
+            jumpSpeed = -4.4f,
+            gravityFall = 0.32f,
+            gravityHold = 0.18f,
+            maxFallSpeed = 5.0f,
+            maxWalkSpeed = 1.4f,
+            maxRunSpeed = 2.8f,
+            runAccel = 0.11f,
+            friction = 0.14f,
+            playerWidth = 12f,
+            playerHeight = 14f,
+        )
+
+        /**
          * Deriva el ajuste de las físicas REALES de SMW ([SmwPhysics]). Las velocidades
          * de la ROM vienen en 1/16 px/fotograma → se dividen entre 16 para píxeles.
          *

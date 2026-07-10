@@ -3,12 +3,24 @@ package com.rolebuilder.player
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
+import com.rolebuilder.core.io.ProjectIo
+import com.rolebuilder.core.model.EMPTY_TILE
+import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.player.gl.Camera2D
 import com.rolebuilder.player.gl.SpriteBatch
 import com.rolebuilder.player.gl.Texture
+import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+
+/**
+ * Mundo de un proyecto para pintar tiles REALES en el motor de plataformas: el mapa
+ * dibujado en el editor y su tileset. Si es null, el renderer pinta la colisión por
+ * colores (modo ROM cruda).
+ */
+class PlatformerWorld(val projectDir: File, val map: GameMap, val tileset: Tileset)
 
 /**
  * Renderer del motor de plataformas: avanza el motor a 60 fps fijos (como SMW) y
@@ -21,7 +33,10 @@ import javax.microedition.khronos.opengles.GL10
  * La app escribe el input en [inMoveX]/[inRunning]/[inJumpHeld] desde otro hilo; el
  * hilo GL los aplica antes de cada tick.
  */
-class PlatformerRenderer(private val engine: PlatformerEngine) : GLSurfaceView.Renderer {
+class PlatformerRenderer(
+    private val engine: PlatformerEngine,
+    private val world: PlatformerWorld? = null,
+) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
     @Volatile var inRunning = false
@@ -33,6 +48,7 @@ class PlatformerRenderer(private val engine: PlatformerEngine) : GLSurfaceView.R
 
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
+    private var tilesetTex: Texture? = null
     private val camera = Camera2D()
     private var lastNanos = 0L
     private var acc = 0f
@@ -40,6 +56,9 @@ class PlatformerRenderer(private val engine: PlatformerEngine) : GLSurfaceView.R
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
         white = Texture.white()
+        tilesetTex = world?.let {
+            runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
+        }
         camera.tilesVisibleY = 15f
         lastNanos = 0L
         acc = 0f
@@ -87,12 +106,38 @@ class PlatformerRenderer(private val engine: PlatformerEngine) : GLSurfaceView.R
         val maxC = (camera.x + halfX).toInt().coerceAtMost(engine.cols - 1)
         val minR = (camera.y - halfY).toInt().coerceAtLeast(0)
         val maxR = (camera.y + halfY).toInt().coerceAtMost(engine.rows - 1)
-        for (r in minR..maxR) {
-            for (c in minC..maxC) {
-                val s = engine.solidity(c, r)
-                if (s == SmwSolidity.NONE) continue
-                val col = colorOf(s)
-                batch.draw(white, c.toFloat(), r.toFloat(), 1f, 1f, r = col[0], g = col[1], b = col[2], a = 1f)
+        val tex = tilesetTex
+        val w = world
+        if (tex != null && w != null) {
+            // Tiles reales del proyecto (capa 0 y luego 1) en las celdas visibles.
+            val ts = w.tileset
+            val map = w.map
+            for (layer in map.layers.indices) {
+                for (r in minR..maxR) {
+                    for (c in minC..maxC) {
+                        val tile = map.tileAt(layer, c, r)
+                        if (tile == EMPTY_TILE || tile < 0 || tile >= ts.tileCount) continue
+                        val tc = tile % ts.columns
+                        val tr = tile / ts.columns
+                        batch.draw(
+                            tex, c.toFloat(), r.toFloat(), 1f, 1f,
+                            u0 = tc / ts.columns.toFloat(),
+                            v0 = tr / ts.rows.toFloat(),
+                            u1 = (tc + 1) / ts.columns.toFloat(),
+                            v1 = (tr + 1) / ts.rows.toFloat(),
+                        )
+                    }
+                }
+            }
+        } else {
+            // Sin proyecto: pinta la colisión por colores (modo ROM cruda).
+            for (r in minR..maxR) {
+                for (c in minC..maxC) {
+                    val s = engine.solidity(c, r)
+                    if (s == SmwSolidity.NONE) continue
+                    val col = colorOf(s)
+                    batch.draw(white, c.toFloat(), r.toFloat(), 1f, 1f, r = col[0], g = col[1], b = col[2], a = 1f)
+                }
             }
         }
 

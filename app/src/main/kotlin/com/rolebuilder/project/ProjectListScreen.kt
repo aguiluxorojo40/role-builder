@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.model.GameMode
+import com.rolebuilder.player.PlatformerActivity
 import com.rolebuilder.player.PlayerActivity
 import java.io.File
 import java.text.DateFormat
@@ -142,7 +143,12 @@ fun ProjectListScreen(mode: GameMode, onOpenProject: (File) -> Unit, onBack: () 
                                 )
                             }
                             IconButton(onClick = {
-                                context.startActivity(PlayerActivity.intent(context, summary.dir))
+                                val intent = if (mode == GameMode.PLATFORMER) {
+                                    PlatformerActivity.intentForProject(context, summary.dir)
+                                } else {
+                                    PlayerActivity.intent(context, summary.dir)
+                                }
+                                context.startActivity(intent)
                             }) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = "Jugar")
                             }
