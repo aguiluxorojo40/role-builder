@@ -36,6 +36,7 @@ class PlatformerWorld(val projectDir: File, val map: GameMap, val tileset: Tiles
 class PlatformerRenderer(
     private val engine: PlatformerEngine,
     private val world: PlatformerWorld? = null,
+    private val marioBitmap: android.graphics.Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -49,6 +50,7 @@ class PlatformerRenderer(
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
     private var tilesetTex: Texture? = null
+    private var marioTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
     private var lastNanos = 0L
@@ -61,6 +63,7 @@ class PlatformerRenderer(
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
         animByTile = world?.tileset?.animations?.associateBy { it.baseTile } ?: emptyMap()
+        marioTex = marioBitmap?.let { Texture(it) }
         camera.tilesVisibleY = 15f
         lastNanos = 0L
         acc = 0f
@@ -166,13 +169,35 @@ class PlatformerRenderer(
             }
         }
 
-        // Mario (rectángulo por ahora), en casillas.
-        val w = engine.tuning.playerWidth / 16f
-        val h = engine.tuning.playerHeight / 16f
-        val mx = engine.player.x / 16f
-        val my = engine.player.y / 16f
-        val red = if (engine.player.dead) 0.4f else 1f
-        batch.draw(white, mx, my, w, h, r = red, g = 0.25f, b = 0.2f, a = 1f)
+        // Mario: sprite REAL de SMW (dos fotogramas: quieto / andando) o, si falta el
+        // asset, el rectángulo de reserva. El sprite es 16×16; se alinea centrado sobre
+        // la caja de colisión y con los pies al suelo.
+        val p = engine.player
+        val mtex = marioTex
+        if (mtex != null) {
+            val cx = (p.x + engine.tuning.playerWidth / 2f) / 16f - 0.5f // centrado horizontal
+            val feet = (p.y + engine.tuning.playerHeight) / 16f - 1f       // pies abajo
+            // Fotograma: andando alterna quieto/paso; en el aire, el paso; parado, quieto.
+            val moving = kotlin.math.abs(p.vx) > 0.3f
+            val frame = when {
+                !p.onGround -> 1
+                moving -> ((now / 110_000_000L) % 2L).toInt()
+                else -> 0
+            }
+            val u0 = frame * 0.5f
+            val tint = if (p.dead) 0.5f else 1f
+            batch.draw(
+                mtex, cx, feet, 1f, 1f,
+                u0 = u0, v0 = 0f, u1 = u0 + 0.5f, v1 = 1f,
+                r = tint, g = tint, b = tint, a = 1f,
+                flipX = !p.facingRight,
+            )
+        } else {
+            val w = engine.tuning.playerWidth / 16f
+            val h = engine.tuning.playerHeight / 16f
+            val red = if (p.dead) 0.4f else 1f
+            batch.draw(white, p.x / 16f, p.y / 16f, w, h, r = red, g = 0.25f, b = 0.2f, a = 1f)
+        }
 
         batch.end()
     }
