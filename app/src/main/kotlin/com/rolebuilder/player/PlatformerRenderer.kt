@@ -107,11 +107,11 @@ class PlatformerRenderer(
         val minR = (camera.y - halfY).toInt().coerceAtLeast(0)
         val maxR = (camera.y + halfY).toInt().coerceAtMost(engine.rows - 1)
         val tex = tilesetTex
-        val w = world
-        if (tex != null && w != null) {
+        val wld = world
+        if (tex != null && wld != null) {
             // Tiles reales del proyecto (capa 0 y luego 1) en las celdas visibles.
-            val ts = w.tileset
-            val map = w.map
+            val ts = wld.tileset
+            val map = wld.map
             for (layer in map.layers.indices) {
                 for (r in minR..maxR) {
                     for (c in minC..maxC) {
