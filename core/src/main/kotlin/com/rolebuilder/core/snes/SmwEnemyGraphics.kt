@@ -70,6 +70,8 @@ object SmwEnemyGraphics {
         0x05 to "Koopa", 0x0F to "Goomba", 0x10 to "Goomba", 0x11 to "Buzzy Beetle",
         0x1C to "Bob-omb", 0x29 to "Caparazon verde", 0x2A to "Caparazon rojo",
         0x2C to "Huevo de Yoshi", 0x4B to "Rex", 0x4D to "Topo", 0x4E to "Topo",
+        // Añadidos verificados contra la ROM (gráfico GLOBAL SP1/SP2 e imagen coherente):
+        0x1A to "Planta Piraña", 0x4F to "Planta Piraña saltarina", 0x3E to "Interruptor P",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -77,6 +79,19 @@ object SmwEnemyGraphics {
 
     /** ¿Tenemos gráfico curado para este id de sprite? */
     fun handles(spriteId: Int): Boolean = NAMES.containsKey(spriteId)
+
+    /**
+     * ¿Los gráficos de este sprite viven en SP1/SP2 (GFX00/GFX01), que TODO nivel sube a
+     * la VRAM? Si es así, el sprite se dibuja igual en cualquier nivel y es un candidato
+     * fiable para el roster; si usa SP3/SP4 (bit de página = 1) depende del nivel y solo
+     * se ve bien en los que suben esa hoja concreta. `null` si el id no está en la tabla.
+     */
+    fun isGlobalGraphic(rom: ByteArray, header: SnesHeader, spriteId: Int): Boolean? {
+        if (spriteId !in OAM_OFFSET.indices) return null
+        val behaviors = SmwSpriteBehaviorReader.read(rom, header) ?: return null
+        val page = behaviors[spriteId].b166e and 0x01
+        return page == 0
+    }
 
     /** Nombre legible del enemigo curado, o null. */
     fun nameOf(spriteId: Int): String? = NAMES[spriteId]
@@ -89,6 +104,21 @@ object SmwEnemyGraphics {
      */
     fun spriteImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
         if (!NAMES.containsKey(spriteId)) return null
+        return paint(rom, header, level, spriteId)
+    }
+
+    /**
+     * Renderiza CUALQUIER id que exista en la tabla OAM real del juego, esté o no en el
+     * catálogo curado [NAMES]. Pensado para herramientas de validación/descubrimiento:
+     * permite ver qué ids producen un sprite coherente (candidatos a añadir) y cuáles
+     * son ruido o usan una rutina de dibujo no genérica. En el juego, usa [spriteImage].
+     */
+    fun spriteImageAnyId(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
+        if (spriteId !in OAM_OFFSET.indices) return null
+        return paint(rom, header, level, spriteId)
+    }
+
+    private fun paint(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
         if (spriteId !in OAM_OFFSET.indices) return null
         val delta = header.headerOffset - 0x7FC0
 

@@ -31,4 +31,22 @@ class SmwEnemyGraphicsTest {
         assertEquals("Koopa amarillo", SmwEnemyGraphics.nameOf(0x03))
         assertEquals("Goomba", SmwEnemyGraphics.nameOf(0x10))
     }
+
+    @Test
+    fun `roster incluye los sprites nuevos verificados`() {
+        // Añadidos al final (no deben alterar el orden de los fotogramas ya horneados).
+        assertEquals("Planta Piraña", SmwEnemyGraphics.nameOf(0x1A))
+        assertEquals("Planta Piraña saltarina", SmwEnemyGraphics.nameOf(0x4F))
+        assertEquals("Interruptor P", SmwEnemyGraphics.nameOf(0x3E))
+        val ids = SmwEnemyGraphics.curatedIds
+        assertEquals(listOf(0x1A, 0x4F, 0x3E), ids.takeLast(3))
+    }
+
+    @Test
+    fun `spriteImageAnyId ignora ids fuera de la tabla OAM`() {
+        // Sin ROM válida no hay imagen, pero el contrato de rango es puro: un id fuera
+        // de la tabla real siempre es null (0x54 queda justo pasado el último id, 0x53).
+        val header = com.rolebuilder.core.snes.SnesDecoder.parseHeader(ByteArray(0x10000))
+        assertNull(SmwEnemyGraphics.spriteImageAnyId(ByteArray(0x10000), header, 0x105, 0x54))
+    }
 }

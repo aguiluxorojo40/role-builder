@@ -49,3 +49,25 @@ tasks.register<JavaExec>("extractSnesTileset") {
     mainClass.set("com.rolebuilder.core.tools.SnesExtractorKt")
     systemProperty("java.awt.headless", "true")
 }
+
+// Herramienta de validación de SFX y sprites de SMW contra la ROM real. Ejemplo:
+//   ./gradlew :core:probeSmw --args="--rom smw.sfc --out probe --level 0x105"
+tasks.register<JavaExec>("probeSmw") {
+    group = "rolebuilder"
+    description = "Valida SFX (voz real) y sprites (tabla OAM) de SMW desde una ROM (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwProbeKt")
+    systemProperty("java.awt.headless", "true")
+}
+
+// Rehornea el atlas de enemigos (assets/sprites/enemies.png) desde una ROM de SMW, en
+// el orden de SmwEnemyGraphics.curatedIds. Ejecútalo al ampliar el roster:
+//   ./gradlew :core:bakeSmwEnemies --args="--rom smw.sfc"
+tasks.register<JavaExec>("bakeSmwEnemies") {
+    group = "rolebuilder"
+    description = "Rehornea assets/sprites/enemies.png desde una ROM de SMW (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwEnemyAtlasBakerKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
