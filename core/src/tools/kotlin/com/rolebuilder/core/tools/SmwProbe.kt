@@ -44,7 +44,10 @@ fun main(args: Array<String>) {
     val doSprites = opts.containsKey("sprites") || !opts.containsKey("sfx")
 
     if (doSfx) probeSfx(rom, header, out)
-    if (doSprites) probeSprites(rom, header, level, out)
+    if (doSprites) {
+        val levels = opts["levels"]?.split(",")?.map { parseIntFlexible(it.trim()) } ?: listOf(level)
+        for (lv in levels) probeSprites(rom, header, lv, out)
+    }
 }
 
 /** Candidatos de SFX: nombre → (banco de puerto APU, id). Verificados en snesrev/smw. */
@@ -96,36 +99,37 @@ private fun probeSfx(rom: ByteArray, header: com.rolebuilder.core.snes.SnesHeade
 }
 
 private fun probeSprites(rom: ByteArray, header: com.rolebuilder.core.snes.SnesHeader, level: Int, out: File) {
-    println("\n=== SPRITES (todos los ids de la tabla OAM real, nivel 0x${level.toString(16).uppercase()}) ===")
-    val dir = File(out, "sprites").also { it.mkdirs() }
-    val painted = ArrayList<Int>()
+    val lvHex = level.toString(16).uppercase()
+    println("\n=== SPRITES (tabla OAM real, nivel 0x$lvHex) ===")
+    val painted = ArrayList<Pair<Int, java.awt.image.BufferedImage>>()
     for (id in 0x00..0x53) {
         val img = SmwEnemyGraphics.spriteImageAnyId(rom, header, level, id) ?: continue
-        painted.add(id)
-        val curated = if (SmwEnemyGraphics.handles(id)) " CURADO:${SmwEnemyGraphics.nameOf(id)}" else ""
+        val curated = SmwEnemyGraphics.handles(id)
         val global = SmwEnemyGraphics.isGlobalGraphic(rom, header, id) == true
-        val g = if (global) "GLOBAL" else "nivel "
-        println("  0x%02X %s%s".format(id, g, curated))
-        ImageIO.write(scale(toBI(img), 6), "png", File(dir, "spr_%02X.png".format(id)))
+        if (!curated) println("  0x%02X %s".format(id, if (global) "GLOBAL" else "nivel"))
+        painted.add(id to toBI(img))
     }
-    // Atlas contacto para inspección rápida.
-    if (painted.isNotEmpty()) {
-        val cols = 12
-        val cell = 16 * 4
-        val rows = (painted.size + cols - 1) / cols
-        val atlas = BufferedImage(cols * cell, rows * cell, BufferedImage.TYPE_INT_ARGB)
-        val g = atlas.createGraphics()
-        painted.forEachIndexed { idx, id ->
-            val img = SmwEnemyGraphics.spriteImageAnyId(rom, header, level, id) ?: return@forEachIndexed
-            val bi = scale(toBI(img), 4)
-            g.drawImage(bi, (idx % cols) * cell, (idx / cols) * cell, null)
-        }
-        g.dispose()
-        ImageIO.write(atlas, "png", File(out, "sprite_atlas.png"))
-        println("  ${painted.size} ids con píxeles. Atlas: ${File(out, "sprite_atlas.png").absolutePath}")
-    } else {
-        println("  Ningún id pintó (¿ROM no SMW vanilla o nivel sin datos?)")
+    if (painted.isEmpty()) { println("  Ningún id pintó (¿nivel sin datos?)"); return }
+    // Lámina de contacto etiquetada: id (y * si ya está en el roster) para inspección.
+    val cols = 12
+    val s = 4
+    val cell = 16 * s
+    val pad = 14
+    val rows = (painted.size + cols - 1) / cols
+    val sheet = BufferedImage(cols * cell, rows * (cell + pad), BufferedImage.TYPE_INT_ARGB)
+    val g = sheet.createGraphics()
+    g.color = java.awt.Color(40, 40, 40); g.fillRect(0, 0, sheet.width, sheet.height)
+    painted.forEachIndexed { idx, (id, bi) ->
+        val x = (idx % cols) * cell
+        val y = (idx / cols) * (cell + pad)
+        g.drawImage(scale(bi, s), x, y, null)
+        g.color = if (SmwEnemyGraphics.handles(id)) java.awt.Color(120, 220, 120) else java.awt.Color.WHITE
+        g.drawString("%02X%s".format(id, if (SmwEnemyGraphics.handles(id)) "*" else ""), x + 2, y + cell + 11)
     }
+    g.dispose()
+    val f = File(out, "sheet_%03X.png".format(level))
+    ImageIO.write(sheet, "png", f)
+    println("  ${painted.size} ids pintados. Lámina: ${f.absolutePath}")
 }
 
 private fun toBI(img: ArgbImage): BufferedImage {
