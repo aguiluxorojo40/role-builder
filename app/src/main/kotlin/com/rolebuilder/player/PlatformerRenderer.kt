@@ -218,10 +218,12 @@ class PlatformerRenderer(
     }
 
     companion object {
-        /** Enemigos con gráfico real horneado en enemies.png → su fotograma en el atlas. */
-        private val ENEMY_FRAME = mapOf(0x00 to 0, 0x01 to 1, 0x02 to 2, 0x03 to 3, 0x10 to 4)
-        /** Ancho UV de un fotograma en el atlas de enemigos (5 fotogramas de 16px). */
-        private const val ENEMY_UV = 1f / 5f
+        /** id de sprite → su fotograma en enemies.png; en el MISMO orden que hornea el atlas. */
+        private val ENEMY_FRAME: Map<Int, Int> =
+            com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.withIndex()
+                .associate { (frame, id) -> id to frame }
+        /** Ancho UV de un fotograma en el atlas de enemigos. */
+        private val ENEMY_UV = 1f / com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.size.toFloat()
     }
 
     private fun colorOf(s: SmwSolidity): FloatArray = when (s) {
