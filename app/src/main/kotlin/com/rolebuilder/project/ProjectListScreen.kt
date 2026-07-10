@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.rolebuilder.core.model.GameMode
 import com.rolebuilder.player.PlayerActivity
 import java.io.File
 import java.text.DateFormat
@@ -154,20 +155,31 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
 
     if (showCreate) {
         var name by remember { mutableStateOf("") }
+        var mode by remember { mutableStateOf(GameMode.ARPG) }
         AlertDialog(
             onDismissRequest = { showCreate = false },
             title = { Text("Nuevo proyecto") },
             text = {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nombre de tu RPG") },
-                    singleLine = true,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Nombre") },
+                        singleLine = true,
+                    )
+                    Text("Modo del motor:", style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ModeChoice("🗡️ Role Builder", "acción RPG", mode == GameMode.ARPG, Modifier.weight(1f)) { mode = GameMode.ARPG }
+                        ModeChoice("🍄 Platform Builder", "plataformas", mode == GameMode.PLATFORMER, Modifier.weight(1f)) { mode = GameMode.PLATFORMER }
+                    }
+                }
             },
             confirmButton = {
                 Button(onClick = {
-                    val dir = ProjectStore.create(context, name)
+                    val dir = ProjectStore.create(context, name, mode)
                     projects = ProjectStore.list(context)
                     showCreate = false
                     onOpenProject(dir)
@@ -195,5 +207,31 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
                 TextButton(onClick = { toDelete = null }) { Text("Cancelar") }
             },
         )
+    }
+}
+
+/** Botón-selector de modo del motor para el diálogo de creación de proyecto. */
+@Composable
+private fun ModeChoice(
+    label: String,
+    subtitle: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    if (selected) {
+        Button(onClick = onClick, modifier = modifier) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(label, style = MaterialTheme.typography.labelLarge)
+                Text(subtitle, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    } else {
+        TextButton(onClick = onClick, modifier = modifier) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(label, style = MaterialTheme.typography.labelLarge)
+                Text(subtitle, style = MaterialTheme.typography.labelSmall)
+            }
+        }
     }
 }

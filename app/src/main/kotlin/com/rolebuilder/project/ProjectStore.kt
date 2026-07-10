@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.io.ZipIo
+import com.rolebuilder.core.model.GameMode
 import java.io.File
 
 /** Resumen de un proyecto guardado en el dispositivo. */
@@ -11,6 +12,7 @@ data class ProjectSummary(
     val dir: File,
     val name: String,
     val lastModified: Long,
+    val mode: GameMode = GameMode.ARPG,
 )
 
 /**
@@ -31,16 +33,16 @@ object ProjectStore {
             .mapNotNull { dir ->
                 runCatching {
                     val project = ProjectIo.loadProject(dir)
-                    ProjectSummary(dir, project.name, dir.lastModified())
+                    ProjectSummary(dir, project.name, dir.lastModified(), project.mode)
                 }.getOrNull()
             }
             .sortedByDescending { it.lastModified }
 
-    /** Crea un proyecto nuevo desde la plantilla y le pone nombre. */
-    fun create(context: Context, name: String): File {
+    /** Crea un proyecto nuevo desde la plantilla, con nombre y modo de motor. */
+    fun create(context: Context, name: String, mode: GameMode = GameMode.ARPG): File {
         val dir = File(root(context), "p${System.currentTimeMillis()}")
         copyAssetDir(context, TEMPLATE_ASSET, dir)
-        val project = ProjectIo.loadProject(dir).copy(name = name.ifBlank { "Mi aventura" })
+        val project = ProjectIo.loadProject(dir).copy(name = name.ifBlank { "Mi aventura" }, mode = mode)
         ProjectIo.saveProject(dir, project)
         dir.setLastModified(System.currentTimeMillis())
         return dir
