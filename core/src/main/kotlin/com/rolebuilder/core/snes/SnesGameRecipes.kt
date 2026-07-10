@@ -719,6 +719,38 @@ object SnesGameRecipes {
     }
 
     /**
+     * Hoja de sprites de MARIO (GFX32) coloreada con la paleta de jugador REAL de la
+     * ROM (fila 8 de la CGRAM: col 1 blanco, cols 2-5 colores estándar, cols 6-F la
+     * paleta de Mario). Es 128×64 px = 16×8 teselas de 8×8; cada fotograma de Mario
+     * grande ocupa 2×3 teselas (16×24): columna 0 parado, 2/4 andando, 6 corriendo,
+     * 8 saltando. Devuelve null si no se pudo leer/descomprimir GFX32.
+     */
+    fun smwMarioSheet(rom: ByteArray, header: SnesHeader): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val mpc = lorom(
+            byte(rom, SMW_GFX32_LO_PC + delta),
+            byte(rom, SMW_GFX32_HI_PC + delta),
+            byte(rom, SMW_GFX32_BANK_PC + delta),
+        )
+        if (mpc < 0x40000 || mpc >= rom.size) return null
+        val mdata = runCatching { LcLz2.decompress(rom, mpc).data }.getOrNull() ?: return null
+        val mfmt = SnesGraphicFormat.SNES_4BPP
+        val mcount = minOf(SnesAssetExtractor.availableTiles(mdata.size, 0, mfmt), 128)
+        if (mcount < 16) return null
+        val tables = SmwPaletteTables(rom, delta)
+        val white = SnesDecoder.bgr15ToArgb(0x7FDD)
+        val fix8 = tables.fixedRow(8)
+        val pl = tables.player(0)
+        val marioPal = intArrayOf(
+            0, white, fix8[0], fix8[1], fix8[2], fix8[3],
+            pl[0], pl[1], pl[2], pl[3], pl[4], pl[5], pl[6], pl[7], pl[8], pl[9],
+        )
+        return runCatching {
+            SnesAssetExtractor.extractTileSheet(mdata, 0, mfmt, marioPal, mcount, 16).image
+        }.getOrNull()
+    }
+
+    /**
      * Datos de un nivel de SMW leídos de su cabecera primaria (5 bytes en el puntero
      * de Layer 1). Complementa a colisión/físicas/inicio con el "resto de la ficha"
      * del nivel: tamaño, modo, música, paletas y tiempo.

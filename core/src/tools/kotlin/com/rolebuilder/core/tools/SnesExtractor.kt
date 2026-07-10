@@ -184,6 +184,17 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --mario: vuelca la hoja de sprites de Mario (GFX32) coloreada de la ROM.
+    if (opts.containsKey("mario")) {
+        val img = com.rolebuilder.core.snes.SnesGameRecipes.smwMarioSheet(rom, header)
+        if (img == null) { println("No se pudo leer la hoja de Mario (¿ROM no SMW?)."); return }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "mario.png")
+        ImageIO.write(toBufferedImage(img), "png", png)
+        println("Hoja de Mario: ${img.width}x${img.height}px (${img.width / 8}x${img.height / 8} teselas) -> images/${png.name}")
+        return
+    }
+
     // Modo --powerups: lista los estados de powerup de Mario y qué cambian.
     if (opts.containsKey("powerups")) {
         println("Powerups de Mario (id · alto · agacha/rompe/fuego/vuela):")

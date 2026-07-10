@@ -1,8 +1,10 @@
 package com.rolebuilder.player
 
+import android.graphics.Bitmap
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
+import kotlin.math.abs
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
@@ -36,6 +38,8 @@ class PlatformerWorld(val projectDir: File, val map: GameMap, val tileset: Tiles
 class PlatformerRenderer(
     private val engine: PlatformerEngine,
     private val world: PlatformerWorld? = null,
+    /** Hoja de sprites de Mario (GFX32, 128×64) de la ROM; null = dibujar rectángulo. */
+    private val marioBitmap: Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -48,6 +52,8 @@ class PlatformerRenderer(
 
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
+    private var marioTex: Texture? = null
+    private var marioAnim = 0f
     private var tilesetTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
@@ -57,6 +63,7 @@ class PlatformerRenderer(
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         batch = SpriteBatch()
         white = Texture.white()
+        marioTex = marioBitmap?.let { Texture(it) }
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
@@ -166,15 +173,52 @@ class PlatformerRenderer(
             }
         }
 
-        // Mario (rectángulo por ahora), en casillas.
-        val w = engine.tuning.playerWidth / 16f
-        val h = engine.tuning.playerHeight / 16f
-        val mx = engine.player.x / 16f
-        val my = engine.player.y / 16f
-        val red = if (engine.player.dead) 0.4f else 1f
-        batch.draw(white, mx, my, w, h, r = red, g = 0.25f, b = 0.2f, a = 1f)
+        drawMario(dt)
 
         batch.end()
+    }
+
+    /**
+     * Dibuja a Mario. Con la hoja de la ROM ([marioTex]) pinta el SPRITE REAL: elige
+     * el fotograma por el estado (parado/andando/corriendo/saltando), lo voltea según
+     * hacia dónde mira y lo ancla por los pies. Sin hoja, cae al rectángulo.
+     */
+    private fun drawMario(dt: Float) {
+        val p = engine.player
+        val tex = marioTex
+        if (tex == null) {
+            val w = engine.tuning.playerWidth / 16f
+            val h = engine.tuning.playerHeight / 16f
+            val red = if (p.dead) 0.4f else 1f
+            batch.draw(white, p.x / 16f, p.y / 16f, w, h, r = red, g = 0.25f, b = 0.2f, a = 1f)
+            return
+        }
+        // Cada pose de Mario es una tesela 16×16 (2×2). Fotogramas limpios de lado
+        // (fila 0): 0 parado, 2/3 el ciclo de andar, 4 saltando/corriendo (lean).
+        val running = abs(p.vx) > 2.2f
+        if (p.onGround && abs(p.vx) > 0.2f) marioAnim += dt else if (p.onGround) marioAnim = 0f
+        val fc = when {
+            !p.onGround -> 4                                   // saltando (pose inclinada)
+            abs(p.vx) <= 0.2f -> 0                             // parado
+            else -> if ((marioAnim * (if (running) 14f else 9f)).toInt() % 2 == 0) 2 else 3
+        }
+        val sw = tex.width.toFloat()
+        val sh = tex.height.toFloat()
+        val u0 = fc * 16f / sw
+        val u1 = (fc * 16f + 16f) / sw
+        val v0 = 0f
+        val v1 = 16f / sh
+        // Sprite de 1 casilla, centrado en horizontal y anclado por los pies.
+        val dw = 1f
+        val dh = 1f
+        val cx = (p.x + engine.tuning.playerWidth / 2f) / 16f
+        val feetY = (p.y + engine.tuning.playerHeight) / 16f
+        // La hoja de GFX32 mira a la IZQUIERDA; se voltea al mirar a la derecha.
+        batch.draw(
+            tex, cx - dw / 2f, feetY - dh, dw, dh,
+            u0 = u0, v0 = v0, u1 = u1, v1 = v1,
+            flipX = p.facingRight,
+        )
     }
 
     private fun colorOf(s: SmwSolidity): FloatArray = when (s) {

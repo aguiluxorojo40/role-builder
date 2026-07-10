@@ -2,6 +2,7 @@ package com.rolebuilder.player
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.widget.Toast
@@ -91,21 +92,27 @@ class PlatformerActivity : ComponentActivity() {
         }
     }
 
-    /** Modo ROM: extrae el nivel de SMW y lo pinta por colisión de colores. */
+    /** Modo ROM: extrae el nivel de SMW (colisión de colores) y el sprite de Mario. */
     private fun buildRomRenderer(): PlatformerRenderer? {
         val romPath = intent.getStringExtra(EXTRA_ROM_PATH) ?: return null
         val level = intent.getIntExtra(EXTRA_LEVEL, 0x106)
-        val engine = try {
-            buildEngine(File(romPath).readBytes(), level)
+        val rom = try {
+            File(romPath).readBytes()
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el nivel: ${e.message}", Toast.LENGTH_LONG).show()
             return null
         }
+        val engine = buildEngine(rom, level)
         if (engine == null) {
             Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
             return null
         }
-        return PlatformerRenderer(engine)
+        // Sprite REAL de Mario (GFX32) coloreado de la ROM; si falla, se dibuja rectángulo.
+        val marioBmp = runCatching {
+            val img = SnesGameRecipes.smwMarioSheet(rom, SnesDecoder.parseHeader(rom)) ?: return@runCatching null
+            Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888)
+        }.getOrNull()
+        return PlatformerRenderer(engine, marioBitmap = marioBmp)
     }
 
     /** Extrae de la ROM lo necesario y monta el motor, o null si no es SMW jugable. */
