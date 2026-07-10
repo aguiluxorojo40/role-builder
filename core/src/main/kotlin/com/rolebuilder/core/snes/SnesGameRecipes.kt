@@ -97,16 +97,22 @@ object SnesGameRecipes {
         return runCatching { LcLz2.decompress(rom, mpc + g32.consumedBytes).data }.getOrNull()
     }
 
-    /** Rellena en [vram] las 19 teselas animadas (4 teselas cada una) con su frame 0. */
-    internal fun fillSmwAnimatedTiles(rom: ByteArray, delta: Int, tileset: Int, vram: Array<IntArray?>) {
+    /** Nº de fotogramas de la animación de teselas de SMW (monedas, bloques ?, agua). */
+    internal const val SMW_TILEANIM_FRAMES = 4
+    /** Fotogramas de juego (60 fps) que dura cada fotograma de la animación de teselas. */
+    internal const val SMW_TILEANIM_PERIOD = 8
+
+    /** Rellena en [vram] las 19 teselas animadas (4 teselas cada una) con el [frame] dado (0..3). */
+    internal fun fillSmwAnimatedTiles(rom: ByteArray, delta: Int, tileset: Int, vram: Array<IntArray?>, frame: Int = 0) {
         val g33 = decompressSmwGfx33(rom, delta) ?: return
         val fmt = SnesGraphicFormat.SNES_3BPP
         val avail = SnesAssetExtractor.availableTiles(g33.size, 0, fmt)
         val fdPc = SMW_TILEANIM_FRAMEDATA_PC + delta
         fun fd(i: Int) = byte(rom, fdPc + 2 * i) or (byte(rom, fdPc + 2 * i + 1) shl 8)
+        val fr = frame.coerceIn(0, SMW_TILEANIM_FRAMES - 1)
         for (s in SMW_ANIM_DEST.indices) {
             val v3 = if (SMW_ANIM_TYPE[s] == 2) SMW_ANIM_TS[tileset.coerceIn(0, SMW_ANIM_TS.size - 1)] + s else s
-            val source = fd(4 * v3) // frame 0 (R0_W = 0)
+            val source = fd(4 * v3 + fr)
             val tile0 = (source - SMW_ANIM_SRC_BASE) / 32
             val destTile = SMW_ANIM_DEST[s] / 16
             for (i in 0..3) {
@@ -324,7 +330,23 @@ object SnesGameRecipes {
         val solidity: List<Int> = emptyList(),
         /** Enemigos del nivel: (id de sprite, x, y) en celdas de 16px, ya recortados al mapa. */
         val enemies: List<Triple<Int, Int, Int>> = emptyList(),
+        /** Teselas animadas del atlas (monedas, bloques ?, agua). */
+        val animations: List<com.rolebuilder.core.model.TileAnimation> = emptyList(),
     )
+
+    /** ¿La definición del bloque Map16 usa alguna tesela de VRAM animada? */
+    private fun blockIsAnimated(rom: ByteArray, defs: IntArray, block: Int): Boolean {
+        if (block <= 0 || block >= 0x200) return false
+        val o = defs[block]
+        if (o + 8 > rom.size) return false
+        for (k in 0..3) {
+            val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
+            val e = SnesTilemap.decodeEntry(word)
+            if ((e.tileIndex and 0xFF) in 0xF8..0xFF) continue // slots que drawSmwBlock ignora
+            if (smwAnimatedVramTile(e.tileIndex)) return true
+        }
+        return false
+    }
 
     /** Convierte el [level] SMW en un [SmwLevelMap], o null si no es reconstruible. */
     fun extractSmwLevelAsMap(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = 256): SmwLevelMap? {
@@ -349,7 +371,11 @@ object SnesGameRecipes {
             }
         }
         if (vram.all { it == null }) return null
-        fillSmwAnimatedTiles(rom, delta, tm.tileset, vram)
+        // VRAM por fotograma de animación: copia estática (superficial: las teselas
+        // animadas se REASIGNAN, no se mutan) con las teselas animadas de ese fotograma.
+        val vramFrames = Array(SMW_TILEANIM_FRAMES) { f ->
+            vram.copyOf().also { fillSmwAnimatedTiles(rom, delta, tm.tileset, it, f) }
+        }
         val cgram = assembleSmwCgram(rom, delta, level)
         val defs = smwMap16DefTable(rom, delta, tm.tileset)
 
@@ -374,21 +400,47 @@ object SnesGameRecipes {
         if (orderedBlocks.isEmpty()) return null
 
         val columns = 16
-        val rows = (orderedBlocks.size + columns - 1) / columns
+        // Bloques que animan: sus fotogramas extra van APÉNDICE al final del atlas, así
+        // el frame 0 (la tesela base) mantiene su índice y el mapa no cambia si no se anima.
+        val animBlockIdx = orderedBlocks.indices.filter { blockIsAnimated(rom, defs, orderedBlocks[it]) }
+        val extraTiles = animBlockIdx.size * (SMW_TILEANIM_FRAMES - 1)
+        val totalTiles = orderedBlocks.size + extraTiles
+        val rows = (totalTiles + columns - 1) / columns
         val atlas = ArgbImage(columns * 16, rows * 16)
+        fun cell(i: Int) = (i % columns) * 16 to (i / columns) * 16
+        // Base (frame 0) de cada bloque.
         orderedBlocks.forEachIndexed { i, block ->
-            drawSmwBlock(rom, defs, block, vram, cgram, atlas, (i % columns) * 16, (i / columns) * 16)
+            val (cx, cy) = cell(i)
+            drawSmwBlock(rom, defs, block, vramFrames[0], cgram, atlas, cx, cy)
+        }
+        // Fotogramas extra de los bloques animados + metadatos de animación.
+        val animations = ArrayList<com.rolebuilder.core.model.TileAnimation>()
+        var nextIdx = orderedBlocks.size
+        for (bi in animBlockIdx) {
+            val block = orderedBlocks[bi]
+            val frameIdx = ArrayList<Int>(SMW_TILEANIM_FRAMES).apply { add(bi) } // frame 0 = tesela base
+            for (f in 1 until SMW_TILEANIM_FRAMES) {
+                val idx = nextIdx++
+                val (cx, cy) = cell(idx)
+                drawSmwBlock(rom, defs, block, vramFrames[f], cgram, atlas, cx, cy)
+                frameIdx.add(idx)
+            }
+            animations.add(com.rolebuilder.core.model.TileAnimation(bi, frameIdx, SMW_TILEANIM_PERIOD))
         }
         // Colisión REAL de la ROM por tesela: clasifica cada bloque Map16 con la misma
         // rutina que el juego ([SmwBlockCollision]), así el mapa importado se juega con
         // bordes de un sentido, cuestas y pinchos fieles —no todo sólido—. El atlas puede
-        // tener teselas de relleno al final (aire) que quedan como NONE/pasable.
+        // tener teselas de relleno al final (aire) que quedan como NONE/pasable. Los
+        // fotogramas extra heredan la solidez de su bloque base.
         val solidity = IntArray(columns * rows) { SmwSolidity.NONE.ordinal }
         val passable = BooleanArray(columns * rows) { true }
-        orderedBlocks.forEachIndexed { i, block ->
-            val s = SmwBlockCollision.classify(block)
-            solidity[i] = s.ordinal
-            passable[i] = s == SmwSolidity.NONE
+        fun setCollision(idx: Int, s: SmwSolidity) {
+            if (idx < solidity.size) { solidity[idx] = s.ordinal; passable[idx] = s == SmwSolidity.NONE }
+        }
+        orderedBlocks.forEachIndexed { i, block -> setCollision(i, SmwBlockCollision.classify(block)) }
+        for ((ai, bi) in animBlockIdx.withIndex()) {
+            val s = SmwBlockCollision.classify(orderedBlocks[bi])
+            for (f in 0 until SMW_TILEANIM_FRAMES - 1) setCollision(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, s)
         }
 
         // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible.
@@ -397,7 +449,7 @@ object SnesGameRecipes {
             ?.map { Triple(it.id, it.xTile, it.yTile) }
             .orEmpty()
 
-        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies)
+        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations)
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */

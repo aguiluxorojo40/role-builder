@@ -49,6 +49,7 @@ class PlatformerRenderer(
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
     private var tilesetTex: Texture? = null
+    private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
     private var lastNanos = 0L
     private var acc = 0f
@@ -59,6 +60,7 @@ class PlatformerRenderer(
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
+        animByTile = world?.tileset?.animations?.associateBy { it.baseTile } ?: emptyMap()
         camera.tilesVisibleY = 15f
         lastNanos = 0L
         acc = 0f
@@ -115,8 +117,17 @@ class PlatformerRenderer(
             for (layer in map.layers.indices) {
                 for (r in minR..maxR) {
                     for (c in minC..maxC) {
-                        val tile = map.tileAt(layer, c, r)
-                        if (tile == EMPTY_TILE || tile < 0 || tile >= ts.tileCount) continue
+                        val mapTile = map.tileAt(layer, c, r)
+                        if (mapTile == EMPTY_TILE || mapTile < 0 || mapTile >= ts.tileCount) continue
+                        // Si la tesela anima (monedas, bloques ?), sustituye por su fotograma.
+                        val anim = animByTile[mapTile]
+                        val tile = if (anim != null && anim.frames.isNotEmpty()) {
+                            val stepNs = (anim.periodFrames * 1_000_000_000L) / 60L
+                            anim.frames[((now / stepNs) % anim.frames.size).toInt()]
+                        } else {
+                            mapTile
+                        }
+                        if (tile < 0 || tile >= ts.tileCount) continue
                         val tc = tile % ts.columns
                         val tr = tile / ts.columns
                         batch.draw(
