@@ -46,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
+import com.rolebuilder.core.model.EMPTY_TILE
+import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesAutoExtractor
 import com.rolebuilder.core.snes.SnesDecoder
@@ -130,6 +133,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     var spriteTiles by remember { mutableStateOf(1) }
     // Modo fácil: si la ROM es un juego con receta, sus gráficos ya extraídos.
     var recipeFindings by remember(romBytes) { mutableStateOf<List<SnesAutoExtractor.Finding>>(emptyList()) }
+    // Modo fácil (mapas): niveles reconstruidos como mapas jugables (tileset + tilemap).
+    var recipeMaps by remember(romBytes) { mutableStateOf<List<Triple<Int, String, SnesGameRecipes.SmwLevelMap>>>(emptyList()) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     // Juego reconocido con receta (modo fácil), o null.
@@ -345,6 +350,66 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             }
                         }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text("🗺️ Niveles como MAPAS jugables", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Importa un nivel completo como MAPA (tileset de bloques Map16 + tilemap + " +
+                            "colisión), no una imagen. Aparece en tu lista de mapas para editarlo y jugarlo.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(onClick = {
+                        val rom = romBytes; val hdr = header
+                        if (rom != null && hdr != null) {
+                            recipeMaps = runCatching { SnesGameRecipes.extractSmwLevelMaps(rom, hdr) }.getOrDefault(emptyList())
+                            if (recipeMaps.isEmpty()) {
+                                Toast.makeText(context, "No hay niveles reconstruibles en esta ROM", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }) { Text("Buscar niveles importables") }
+                    recipeMaps.forEach { entry ->
+                        val name = entry.second
+                        val m = entry.third
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Image(
+                                bitmap = SnesImport.toBitmap(m.atlas).asImageBitmap(),
+                                contentDescription = name,
+                                filterQuality = FilterQuality.None,
+                                contentScale = ContentScale.FillHeight,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(32.dp)
+                                    .background(Color(0xFF202024), RoundedCornerShape(4.dp)),
+                            )
+                            TextButton(onClick = {
+                                runCatching {
+                                    val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
+                                    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
+                                    val tsId = state.nextTilesetId()
+                                    state.addTileset(
+                                        Tileset(
+                                            id = tsId, name = "$name (SMW)", image = fileName,
+                                            tileSize = 16, columns = m.columns, rows = m.rows, passable = m.passable,
+                                        )
+                                    )
+                                    state.addImportedMap(
+                                        GameMap(
+                                            id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
+                                            tilesetId = tsId,
+                                            layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
+                                        )
+                                    )
+                                    Toast.makeText(context, "Mapa creado: SMW $name", Toast.LENGTH_SHORT).show()
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }) { Text("Crear mapa") }
+                        }
+                    }
+
                     HorizontalDivider()
                     Text("— o ajústalo a mano (avanzado) —", style = MaterialTheme.typography.bodySmall)
                 }

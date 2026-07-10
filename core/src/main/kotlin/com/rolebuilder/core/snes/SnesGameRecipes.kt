@@ -311,7 +311,7 @@ object SnesGameRecipes {
      * luego en la base de datos). Es la vía para que un nivel reconstruido sea contenido
      * jugable, no una imagen troceada.
      */
-    internal class SmwLevelMap(
+    class SmwLevelMap(
         val atlas: ArgbImage,
         val columns: Int,
         val rows: Int,
@@ -322,7 +322,7 @@ object SnesGameRecipes {
     )
 
     /** Convierte el [level] SMW en un [SmwLevelMap], o null si no es reconstruible. */
-    internal fun extractSmwLevelAsMap(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = 256): SmwLevelMap? {
+    fun extractSmwLevelAsMap(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = 256): SmwLevelMap? {
         val delta = smwHeaderDelta(header)
         val tm = SmwLayer1.parse(rom, delta, level) ?: return null
         if (tm.totalObjects == 0 || tm.unknownObjects * 10 > tm.totalObjects) return null
@@ -380,7 +380,7 @@ object SnesGameRecipes {
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */
-    internal fun extractSmwLevelMaps(rom: ByteArray, header: SnesHeader): List<Triple<Int, String, SmwLevelMap>> =
+    fun extractSmwLevelMaps(rom: ByteArray, header: SnesHeader): List<Triple<Int, String, SmwLevelMap>> =
         SMW_SCENE_LEVELS.toList().mapNotNull { lv ->
             val m = extractSmwLevelAsMap(rom, header, lv) ?: return@mapNotNull null
             Triple<Int, String, SmwLevelMap>(lv, "Nivel ${lv.toString(16).uppercase()}", m)
