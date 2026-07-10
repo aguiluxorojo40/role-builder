@@ -1,0 +1,129 @@
+package com.rolebuilder.core
+
+import com.rolebuilder.core.engine.platformer.PlatformerEngine
+import com.rolebuilder.core.engine.platformer.PlatformerTuning
+import com.rolebuilder.core.snes.SmwPhysics
+import com.rolebuilder.core.snes.SmwSolidity
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * Tests del motor de plataformas: gravedad, salto, colisión por caja, plataformas
+ * de un sentido, pinchos y caída al vacío. Usa físicas fijas y deterministas y
+ * niveles sintéticos (rejilla de [SmwSolidity]).
+ */
+class PlatformerEngineTest {
+
+    private val tuning = PlatformerTuning(
+        jumpSpeed = -5f, gravityFall = 0.375f, gravityHold = 0.1875f, maxFallSpeed = 4f,
+        maxWalkSpeed = 1.5f, maxRunSpeed = 3f, runAccel = 0.2f, friction = 0.3f,
+    )
+
+    /** Construye un motor sobre una rejilla; [fill] pinta celdas sólidas. */
+    private fun engine(
+        cols: Int, rows: Int, startCol: Int, startRow: Int,
+        fill: (grid: Array<Array<SmwSolidity>>) -> Unit,
+    ): PlatformerEngine {
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        fill(grid)
+        return PlatformerEngine(
+            cols, rows,
+            solidityAt = { c, r -> grid[r][c] },
+            startPixelX = startCol * 16, startPixelY = startRow * 16,
+            tuning = tuning,
+        )
+    }
+
+    private fun PlatformerEngine.run(frames: Int) { repeat(frames) { tick() } }
+
+    @Test
+    fun `cae por gravedad y se posa sobre el suelo`() {
+        val e = engine(10, 10, startCol = 2, startRow = 1) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+        }
+        e.run(120)
+        assertTrue(e.player.onGround, "acaba en el suelo")
+        // Reposa justo sobre la fila 8: y = 8*16 - alto.
+        assertEquals(128f - tuning.playerHeight, e.player.y, 1f)
+        assertEquals(0f, e.player.vy, 0.001f)
+    }
+
+    @Test
+    fun `salta desde el suelo, sube y vuelve a caer`() {
+        val e = engine(10, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+        }
+        e.run(30) // que se pose
+        val restY = e.player.y
+        assertTrue(e.player.onGround)
+        e.setJumpHeld(true)
+        e.pressJump()
+        e.tick()
+        assertTrue(e.player.vy < 0f, "arranca subiendo")
+        var minY = e.player.y
+        repeat(60) { e.tick(); if (e.player.y < minY) minY = e.player.y }
+        assertTrue(minY < restY - 16f, "llegó a subir al menos una casilla")
+        e.setJumpHeld(false)
+        e.run(120)
+        assertTrue(e.player.onGround, "vuelve al suelo")
+        assertEquals(restY, e.player.y, 1f)
+    }
+
+    @Test
+    fun `un muro solido frena el avance horizontal`() {
+        val e = engine(12, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 12) g[8][c] = SmwSolidity.SOLID
+            for (r in 0 until 8) g[r][6] = SmwSolidity.SOLID // muro en la col 6
+        }
+        e.run(20)
+        e.moveX = 1f; e.running = true
+        e.run(120)
+        // El muro empieza en x=96; con ancho 12 el jugador se para antes de 96-12.
+        assertTrue(e.player.x <= 96f - tuning.playerWidth + 0.5f, "no atraviesa el muro (x=${e.player.x})")
+    }
+
+    @Test
+    fun `una plataforma de un sentido frena la caida pero se cruza de lado`() {
+        val e = engine(10, 12, startCol = 2, startRow = 1) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.LEDGE_TOP
+        }
+        e.run(120)
+        assertTrue(e.player.onGround, "se posa sobre el borde de un sentido")
+        assertEquals(128f - tuning.playerHeight, e.player.y, 1f)
+    }
+
+    @Test
+    fun `los pinchos matan al jugador`() {
+        val e = engine(10, 10, startCol = 2, startRow = 6) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+            g[7][2] = SmwSolidity.SPIKE
+        }
+        e.run(60)
+        assertTrue(e.player.dead, "muere al tocar los pinchos")
+    }
+
+    @Test
+    fun `caer al vacio mata al jugador`() {
+        val e = engine(10, 8, startCol = 2, startRow = 1) { /* sin suelo */ }
+        e.run(200)
+        assertTrue(e.player.dead, "cae fuera del nivel y muere")
+    }
+
+    @Test
+    fun `las fisicas reales de SMW dan un salto de -5 px por fotograma`() {
+        val phys = SmwPhysics(
+            jumpYSpeed = intArrayOf(-80), marioXAccel = IntArray(0), iceXAccel = IntArray(0),
+            maxXSpeed = IntArray(0), maxXSpeedExtra = IntArray(0),
+            friction1 = IntArray(0), friction2 = IntArray(0),
+            gravity = intArrayOf(6, 3), maxFallSpeed = intArrayOf(0x40),
+        )
+        val t = PlatformerTuning.fromSmw(phys)
+        assertEquals(-5f, t.jumpSpeed, 0.001f)
+        assertEquals(0.375f, t.gravityFall, 0.001f)
+        assertEquals(0.1875f, t.gravityHold, 0.001f)
+        assertEquals(4f, t.maxFallSpeed, 0.001f)
+        assertFalse(t.maxRunSpeed <= t.maxWalkSpeed)
+    }
+}

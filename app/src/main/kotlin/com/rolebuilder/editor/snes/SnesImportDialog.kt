@@ -304,6 +304,20 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         }
                     }) { Text("Extraer gráficos de $gameRecipe") }
 
+                    if (gameRecipe.contains("Mario World", ignoreCase = true)) {
+                        Button(onClick = {
+                            val rom = romBytes ?: return@Button
+                            runCatching {
+                                val tmp = java.io.File(context.cacheDir, "smw_play.sfc").apply { writeBytes(rom) }
+                                context.startActivity(
+                                    com.rolebuilder.player.PlatformerActivity.intent(context, tmp, 0x106),
+                                )
+                            }.onFailure {
+                                Toast.makeText(context, "No se pudo iniciar el nivel: ${it.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }) { Text("▶ Jugar un nivel (plataformas)") }
+                    }
+
                     if (recipeFindings.isNotEmpty()) {
                         Text(
                             "${recipeFindings.size} conjuntos de gráficos. Toca uno para importarlo como tileset:",

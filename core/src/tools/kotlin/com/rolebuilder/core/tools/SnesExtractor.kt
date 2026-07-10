@@ -107,6 +107,169 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --collision: extrae el MAPA DE COLISIÓN (solidez de cada celda 16×16) de un
+    // nivel de SMW, la pieza que faltaba para poder jugarlo. Imprime un mapa ASCII y
+    // vuelca una máscara PNG coloreada por clase de solidez.
+    if (opts.containsKey("collision")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val map = SnesGameRecipes.smwLevelCollision(rom, header, level)
+        if (map == null) {
+            println("El nivel 0x${level.toString(16).uppercase()} no tiene datos de colisión " +
+                "(¿vertical, sala de jefe o vacío?). Prueba otro --level.")
+            return
+        }
+        println("Colisión del nivel 0x${level.toString(16).uppercase()}: ${map.cols}×${map.rows} celdas.")
+        val counts = LinkedHashMap<String, Int>()
+        for (s in map.solidity) counts[s.name] = (counts[s.name] ?: 0) + 1
+        println("  Solidez: " + counts.entries.joinToString(", ") { "${it.key}=${it.value}" })
+        // Vista ASCII: '.' aire · '-' borde de un sentido · '#' sólido · '/' cuesta ·
+        // 'X' cuesta doble · '!' pinchos.
+        val glyph = mapOf(
+            "NONE" to '.', "LEDGE_TOP" to '-', "SOLID" to '#',
+            "SLOPE" to '/', "SLOPE_STEEP" to 'X', "SPIKE" to '!',
+        )
+        val sb = StringBuilder()
+        for (r in 0 until map.rows) {
+            for (c in 0 until map.cols) sb.append(glyph[map.solidityAt(c, r).name] ?: '?')
+            sb.append('\n')
+        }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        File(outDir, "collision_${level.toString(16)}.txt").writeText(sb.toString())
+        // Máscara PNG (4 px/celda) coloreada por clase.
+        val color = mapOf(
+            "NONE" to 0x00000000, "LEDGE_TOP" to 0xFF7FD07F.toInt(), "SOLID" to 0xFF8B5A2B.toInt(),
+            "SLOPE" to 0xFF5AA0FF.toInt(), "SLOPE_STEEP" to 0xFF2060C0.toInt(), "SPIKE" to 0xFFE03030.toInt(),
+        )
+        val cell = 4
+        val mask = ArgbImage(map.cols * cell, map.rows * cell)
+        for (r in 0 until map.rows) for (c in 0 until map.cols) {
+            val argb = color[map.solidityAt(c, r).name] ?: 0
+            for (yy in 0 until cell) for (xx in 0 until cell) mask.set(c * cell + xx, r * cell + yy, argb)
+        }
+        val png = File(imagesDir, "collision_${level.toString(16)}.png")
+        ImageIO.write(toBufferedImage(mask), "png", png)
+        val start = com.rolebuilder.core.snes.SmwLevelStartReader.read(rom, header, level)
+        if (start != null) {
+            println("  Inicio del jugador: píxel (${start.startPixelX}, ${start.startPixelY}) " +
+                "= casilla (${start.startTileX}, ${start.startTileY})")
+        }
+        println("  ASCII -> ${File(outDir, "collision_${level.toString(16)}.txt").name} · máscara -> images/${png.name}")
+        return
+    }
+
+    // Modo --physics: lee las TABLAS DE FÍSICAS reales del jugador de SMW (acelerar,
+    // correr, saltar, caer, gravedad, tope de caída) y las imprime en sus unidades.
+    if (opts.containsKey("physics")) {
+        val phys = com.rolebuilder.core.snes.SmwPhysicsReader.read(rom, header)
+        if (phys == null) {
+            println("No se pudieron leer las físicas: la ROM no parece SMW vanilla en las " +
+                "direcciones del banco $00 (¿otro juego o un hack que las reubica?).")
+            return
+        }
+        fun ppf(v: Int) = "%.2f".format(phys.toPixelsPerFrame(v))
+        println("Físicas del jugador (unidades: 1/16 px por fotograma; 60 fps):")
+        println("  Salto parado:        ${phys.baseJumpYSpeed}  (${ppf(phys.baseJumpYSpeed)} px/fotograma hacia arriba)")
+        println("  Gravedad (por def.): ${phys.defaultGravity}  (${ppf(phys.defaultGravity)} px/fotograma²)")
+        println("  Caída terminal:      ${phys.defaultMaxFall}  (${ppf(phys.defaultMaxFall)} px/fotograma)")
+        println("  Muerte (impulso):    ${com.rolebuilder.core.snes.SmwPhysics.DEATH_POP_YSPEED}  (${ppf(com.rolebuilder.core.snes.SmwPhysics.DEATH_POP_YSPEED)} px/fotograma)")
+        println("  Rebote pisar (salto mantenido / suelto): " +
+            "${com.rolebuilder.core.snes.SmwPhysics.STOMP_BOUNCE_JUMP_HELD} / ${com.rolebuilder.core.snes.SmwPhysics.STOMP_BOUNCE}")
+        println("  Tabla de salto ($00:D2BD):     " + phys.jumpYSpeed.joinToString(" "))
+        println("  Gravedad ($00:D7A5):           " + phys.gravity.joinToString(" "))
+        println("  Caída terminal ($00:D7AF):     " + phys.maxFallSpeed.joinToString(" "))
+        println("  Vel. máx. horizontal ($00:D535, primeros 16): " +
+            phys.maxXSpeed.take(16).joinToString(" "))
+        println("  Aceleración ($00:D345, primeros 8 words):     " +
+            phys.marioXAccel.take(8).joinToString(" "))
+        return
+    }
+
+    // Modo --powerups: lista los estados de powerup de Mario y qué cambian.
+    if (opts.containsKey("powerups")) {
+        println("Powerups de Mario (id · alto · agacha/rompe/fuego/vuela):")
+        for (pu in com.rolebuilder.core.snes.SmwPowerup.entries) {
+            println("  ${pu.id} ${pu.name.padEnd(6)}: ${pu.heightTiles} casilla(s) · " +
+                "agacha=${pu.canDuck} rompe=${pu.canBreakBlocks} fuego=${pu.canShootFire} capa=${pu.canFlyWithCape}")
+        }
+        return
+    }
+
+    // Modo --level-info: ficha del nivel (tamaño, modo, música, paletas, tiempo).
+    if (opts.containsKey("level-info")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val info = com.rolebuilder.core.snes.SnesGameRecipes.smwLevelInfo(rom, header, level)
+        if (info == null) { println("Sin cabecera válida para el nivel 0x${level.toString(16)}."); return }
+        println("Ficha del nivel 0x${level.toString(16).uppercase()}:")
+        println("  Tamaño: ${info.screens} pantallas (${info.widthTiles} casillas de ancho)")
+        println("  Modo: ${info.levelMode}  ·  Música: ${info.musicIndex}  ·  Tiempo: ${info.startTime}")
+        println("  Paletas → fondo ${info.bgPalette}, color de fondo ${info.backgroundColor}, " +
+            "FG ${info.fgPalette}, sprites ${info.spritePalette}")
+        println("  Gráficos → sprite-set ${info.spriteGfx}, tileset FG ${info.fgTileset}")
+        return
+    }
+
+    // Modo --sprite-behavior: lee las 6 tablas "tweaker" de COMPORTAMIENTO de sprites
+    // (cómo se mueve/choca/se pisa cada enemigo) y las vuelca por id de sprite.
+    if (opts.containsKey("sprite-behavior")) {
+        val list = com.rolebuilder.core.snes.SmwSpriteBehaviorReader.read(rom, header)
+        if (list == null) {
+            println("No se pudieron leer los tweakers de sprites: ¿ROM no SMW vanilla?")
+            return
+        }
+        println("Comportamiento de ${list.size} tipos de sprite (id: 1656 1662 166e 167a 1686 190f | hitbox):")
+        val show = opts["id"]?.let { listOf(parseInt(it)) } ?: (0..0x20)
+        for (id in show) {
+            val b = list.getOrNull(id) ?: continue
+            println("  %02X: %02x %02x %02x %02x %02x %02x | hitbox %02x".format(
+                b.id, b.b1656, b.b1662, b.b166e, b.b167a, b.b1686, b.b190f, b.spriteClipping))
+        }
+        return
+    }
+
+    // Modo --play-sim: integra TODO lo extraído (colisión + físicas + inicio) en el
+    // motor de plataformas y simula unos fotogramas, para probar que Mario aparece y
+    // se posa sobre el suelo REAL del nivel.
+    if (opts.containsKey("play-sim")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val frames = opts["frames"]?.let { parseInt(it) } ?: 180
+        val col = com.rolebuilder.core.snes.SnesGameRecipes.smwLevelCollision(rom, header, level)
+        val phys = com.rolebuilder.core.snes.SmwPhysicsReader.read(rom, header)
+        val start = com.rolebuilder.core.snes.SmwLevelStartReader.read(rom, header, level)
+        if (col == null || phys == null || start == null) {
+            println("Faltan datos para simular (colisión/físicas/inicio) del nivel 0x${level.toString(16)}.")
+            return
+        }
+        val powerup = when (opts["powerup"]?.lowercase()) {
+            "big", "grande" -> com.rolebuilder.core.snes.SmwPowerup.BIG
+            "cape", "capa" -> com.rolebuilder.core.snes.SmwPowerup.CAPE
+            "fire", "fuego" -> com.rolebuilder.core.snes.SmwPowerup.FIRE
+            else -> com.rolebuilder.core.snes.SmwPowerup.SMALL
+        }
+        val env = when (opts["env"]?.lowercase()) {
+            "ice", "hielo" -> com.rolebuilder.core.engine.platformer.PlatformerEnvironment.ICE
+            "water", "agua" -> com.rolebuilder.core.engine.platformer.PlatformerEnvironment.WATER
+            else -> com.rolebuilder.core.engine.platformer.PlatformerEnvironment.LAND
+        }
+        val engine = com.rolebuilder.core.engine.platformer.PlatformerEngine(
+            cols = col.cols, rows = col.rows,
+            solidityAt = { c, r -> col.solidityAt(c, r) },
+            startPixelX = start.startPixelX, startPixelY = start.startPixelY,
+            tuning = com.rolebuilder.core.engine.platformer.PlatformerTuning.fromSmw(phys, powerup, env),
+        )
+        println("Simulando ${frames} fotogramas del nivel 0x${level.toString(16)} " +
+            "(inicio casilla ${start.startTileX},${start.startTileY})…")
+        var landedAtFrame = -1
+        for (f in 0 until frames) {
+            engine.tick()
+            if (engine.player.onGround && landedAtFrame < 0) landedAtFrame = f
+        }
+        val p = engine.player
+        println("  Tras $frames fotogramas: píxel (%.1f, %.1f) = casilla (%d, %d), onGround=%b, dead=%b"
+            .format(p.x, p.y, (p.x / 16).toInt(), (p.y / 16).toInt(), p.onGround, p.dead))
+        if (landedAtFrame >= 0) println("  Mario se posó sobre el suelo en el fotograma $landedAtFrame.")
+        return
+    }
+
     // Modo --gallery: "modo fácil". Busca gráficos automáticamente y vuelca cada
     // hallazgo como una miniatura en color, sin pedir offsets ni formatos.
     if (opts.containsKey("gallery")) {
@@ -519,6 +682,17 @@ private fun printUsage() {
           --scan --sprites                    (busca HOJAS DE SPRITES/personajes, no fondos)
           [--decompress auto|lc_lz2]          (descomprime el bloque antes de extraer)
           --demo-compressed <dir>             (ROM de prueba con gráficos LC_LZ2)
+          --rom <ruta> --recipe               (modo fácil: vuelca los gráficos reales de un juego con receta)
+          --rom smw.sfc --collision [--level 0x106]
+                                              (MAPA DE COLISIÓN de un nivel de SMW: solidez por celda + máscara PNG)
+          --rom smw.sfc --physics             (TABLAS DE FÍSICAS del jugador: acelerar, correr, saltar, caer, gravedad)
+          --rom smw.sfc --sprite-behavior [--id 0x0C]
+                                              (TWEAKERS de comportamiento de enemigos: hitbox y banderas por id)
+          --rom smw.sfc --level-info [--level 0x106]
+                                              (FICHA del nivel: tamaño, modo, música, paletas, tiempo)
+          --rom smw.sfc --powerups            (estados de powerup de Mario: tamaño y habilidades)
+          --rom smw.sfc --play-sim [--level 0x106] [--frames 180] [--powerup big|cape|fire] [--env ice|water]
+                                              (SIMULA el nivel en el motor: colisión+físicas+inicio, con powerup/entorno)
         o bien:  --demo <dir>   (genera una ROM de prueba y la extrae)
         Si omites --offset, se autodetecta el mejor candidato de gráficos.
         """.trimIndent()

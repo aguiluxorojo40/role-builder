@@ -588,6 +588,117 @@ object SnesGameRecipes {
     internal fun smwHeaderDelta(header: SnesHeader): Int = header.headerOffset - 0x7FC0
 
     /**
+     * Mapa de COLISIÓN de un nivel de SMW: la solidez de cada celda 16×16, lista para
+     * que un motor de plataformas la use directamente. Es la pieza que faltaba para
+     * jugar un nivel extraído (los gráficos y la geometría ya se sacaban; esto dice
+     * dónde te paras, chocas, resbalas o mueres).
+     *
+     * Rejilla fila a fila (row-major) de [cols]×[rows] celdas. [block] guarda el
+     * número de bloque Map16 crudo de cada celda por si se quiere reclasificar o
+     * dibujar; [solidity] su clase de colisión ya resuelta ([SmwBlockCollision]).
+     */
+    class SmwCollisionMap(
+        val level: Int,
+        val cols: Int,
+        val rows: Int,
+        val blocks: IntArray,
+        val solidity: List<SmwSolidity>,
+    ) {
+        fun blockAt(col: Int, row: Int): Int = blocks[row * cols + col]
+
+        fun solidityAt(col: Int, row: Int): SmwSolidity = solidity[row * cols + col]
+    }
+
+    /**
+     * Extrae el mapa de colisión del nivel [level] de una ROM de SMW: parsea la
+     * geometría de Layer 1 ([SmwLayer1]) y clasifica cada bloque con la solidez real
+     * del juego ([SmwBlockCollision]). Recorta a las columnas con contenido (los
+     * niveles no llenan las 32 pantallas). Devuelve null si el nivel no tiene datos
+     * de Layer 1 (vertical, sala de jefe) o queda vacío.
+     */
+    fun smwLevelCollision(rom: ByteArray, header: SnesHeader, level: Int): SmwCollisionMap? {
+        val delta = smwHeaderDelta(header)
+        val tm = SmwLayer1.parse(rom, delta, level) ?: return null
+
+        // Última columna con algún bloque distinto de aire (0x25), como en las escenas.
+        val totalCols = tm.screens * 16
+        var lastCol = -1
+        for (c in 0 until totalCols) {
+            for (r in 0..26) {
+                val b = tm.block(c, r)
+                if (b > 0 && b != 0x25) { lastCol = c; break }
+            }
+        }
+        if (lastCol < 3) return null
+
+        val cols = minOf(lastCol + 2, totalCols)
+        val rows = 27 // 0x1B0 / 16: alto fijo de un nivel horizontal de SMW
+        val blocks = IntArray(cols * rows)
+        val solidity = ArrayList<SmwSolidity>(cols * rows)
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                val b = tm.block(c, r)
+                blocks[r * cols + c] = b
+                solidity.add(SmwBlockCollision.classify(b))
+            }
+        }
+        return SmwCollisionMap(level, cols, rows, blocks, solidity)
+    }
+
+    /**
+     * Datos de un nivel de SMW leídos de su cabecera primaria (5 bytes en el puntero
+     * de Layer 1). Complementa a colisión/físicas/inicio con el "resto de la ficha"
+     * del nivel: tamaño, modo, música, paletas y tiempo.
+     */
+    class SmwLevelInfo(
+        val level: Int,
+        /** Nº de pantallas de 16 casillas (ancho del nivel: ×16 casillas, ×256 px). */
+        val screens: Int,
+        /** Modo de nivel (horizontal/vertical/especial). */
+        val levelMode: Int,
+        /** Índice de MÚSICA del nivel (0-7): elige una de las pistas de nivel del juego. */
+        val musicIndex: Int,
+        val bgPalette: Int,
+        val backgroundColor: Int,
+        val fgPalette: Int,
+        val spritePalette: Int,
+        val spriteGfx: Int,
+        val fgTileset: Int,
+        /** Tiempo inicial (×100): 0 = sin tiempo, si no 200/300/400. */
+        val startTime: Int,
+    ) {
+        /** Ancho del nivel en casillas de 16 px. */
+        val widthTiles: Int get() = screens * 16
+    }
+
+    private val SMW_TIMER_TABLE = intArrayOf(0, 2, 3, 4)
+
+    /**
+     * Lee la ficha de un nivel de SMW (cabecera primaria de 5 bytes) EXACTAMENTE como
+     * `LoadLevelHeader` ($05:84E3, vía snesrev/smw). Devuelve null si el puntero de
+     * Layer 1 no es válido.
+     */
+    fun smwLevelInfo(rom: ByteArray, header: SnesHeader, level: Int): SmwLevelInfo? {
+        val delta = smwHeaderDelta(header)
+        val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
+        val h0 = byte(rom, lpc); val h1 = byte(rom, lpc + 1); val h2 = byte(rom, lpc + 2)
+        val h3 = byte(rom, lpc + 3); val h4 = byte(rom, lpc + 4)
+        return SmwLevelInfo(
+            level = level,
+            screens = (h0 and 0x1F) + 1,
+            levelMode = h1 and 0x1F,
+            musicIndex = (h2 shr 4) and 0x07,
+            bgPalette = h0 shr 5,
+            backgroundColor = h1 shr 5,
+            fgPalette = h3 and 0x07,
+            spritePalette = (h3 shr 3) and 0x07,
+            spriteGfx = h2 and 0x0F,
+            fgTileset = h4 and 0x0F,
+            startTime = SMW_TIMER_TABLE[(h3 shr 6) and 0x03] * 100,
+        )
+    }
+
+    /**
      * Selectores de paleta REALES de la cabecera primaria (5 bytes) de un nivel.
      * Decodificados EXACTAMENTE como la rutina de carga del juego (bank $00
      * CODE_0584E3 del disassembly SMWDisX):
