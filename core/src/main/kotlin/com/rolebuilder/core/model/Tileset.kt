@@ -24,6 +24,14 @@ data class Tileset(
      * ni lógica de juego.
      */
     val standingTiles: List<Int> = emptyList(),
+    /**
+     * Solidez de plataformas por índice de tile, para el motor de Platform Builder.
+     * Vacío = usar [passable] (no atravesable → suelo sólido). Cuando viene relleno
+     * (p. ej. de un nivel SMW extraído), conserva la colisión REAL del juego por
+     * casilla codificada como el ordinal de `SmwSolidity`:
+     * 0=aire, 1=borde de un sentido, 2=sólido, 3=cuesta, 4=cuesta doble, 5=pinchos.
+     */
+    val platformSolidity: List<Int> = emptyList(),
 ) {
     val tileCount: Int get() = columns * rows
 

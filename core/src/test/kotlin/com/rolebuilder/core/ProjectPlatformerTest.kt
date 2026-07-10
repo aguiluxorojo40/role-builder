@@ -57,6 +57,30 @@ class ProjectPlatformerTest {
     }
 
     @Test
+    fun `platformSolidity del tileset conserva la colision real de la ROM`() {
+        // Tileset con solidez REAL por tesela: tile 0 aire, 1 borde de un sentido,
+        // 2 sólido, 3 pinchos (ordinales de SmwSolidity).
+        val ts = Tileset(
+            id = 2, name = "smw", image = "s.png", columns = 2, rows = 2,
+            passable = listOf(true, true, true, true), // pasable no debe mandar aquí
+            platformSolidity = listOf(
+                SmwSolidity.NONE.ordinal, SmwSolidity.LEDGE_TOP.ordinal,
+                SmwSolidity.SOLID.ordinal, SmwSolidity.SPIKE.ordinal,
+            ),
+        )
+        val w = 4; val h = 2
+        fun mapOf(tile: Int): GameMap {
+            val l0 = MutableList(w * h) { EMPTY_TILE }
+            l0[0] = tile
+            return GameMap(id = 3, name = "m", width = w, height = h, tilesetId = 2, layers = listOf(l0, List(w * h) { EMPTY_TILE }))
+        }
+        assertEquals(SmwSolidity.LEDGE_TOP, ProjectPlatformer.solidityAt(mapOf(1), ts, 0, 0))
+        assertEquals(SmwSolidity.SOLID, ProjectPlatformer.solidityAt(mapOf(2), ts, 0, 0))
+        assertEquals(SmwSolidity.SPIKE, ProjectPlatformer.solidityAt(mapOf(3), ts, 0, 0))
+        assertEquals(SmwSolidity.NONE, ProjectPlatformer.solidityAt(mapOf(0), ts, 0, 0))
+    }
+
+    @Test
     fun `el jugador cae y se posa sobre el suelo del mapa`() {
         val map = mapWithFloorRow(floorRow = 3)
         val e = ProjectPlatformer.engine(map, tileset, startCol = 1, startRow = 0)

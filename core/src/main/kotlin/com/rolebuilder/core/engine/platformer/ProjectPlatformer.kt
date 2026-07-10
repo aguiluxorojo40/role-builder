@@ -21,14 +21,32 @@ object ProjectPlatformer {
     /** El motor de plataformas asume una rejilla de 16 px por celda. */
     const val TILE = 16
 
-    /** Solidez de la celda (col,row) del mapa a partir de la pasabilidad del tileset. */
+    private val SOLIDITY_VALUES = SmwSolidity.values()
+
+    /**
+     * Solidez de la celda (col,row) del mapa. Si el tileset trae la colisión REAL por
+     * casilla ([Tileset.platformSolidity], p. ej. de un nivel SMW extraído), la usa tal
+     * cual —bordes de un sentido, cuestas y pinchos incluidos—; si no, cae en la
+     * pasabilidad ([Tileset.isPassable]: no atravesable → sólido). Gana la capa más
+     * bloqueante de la celda.
+     */
     fun solidityAt(map: GameMap, tileset: Tileset, col: Int, row: Int): SmwSolidity {
         if (!map.inBounds(col, row)) return SmwSolidity.NONE
+        var result = SmwSolidity.NONE
         for (layer in map.layers.indices) {
             val tile = map.tileAt(layer, col, row)
-            if (tile != EMPTY_TILE && !tileset.isPassable(tile)) return SmwSolidity.SOLID
+            if (tile == EMPTY_TILE) continue
+            val s = tileSolidity(tileset, tile)
+            if (s != SmwSolidity.NONE && result == SmwSolidity.NONE) result = s
+            if (s == SmwSolidity.SPIKE) return SmwSolidity.SPIKE // los pinchos mandan
         }
-        return SmwSolidity.NONE
+        return result
+    }
+
+    private fun tileSolidity(tileset: Tileset, tile: Int): SmwSolidity {
+        val ord = tileset.platformSolidity.getOrNull(tile)
+        if (ord != null) return SOLIDITY_VALUES.getOrElse(ord) { SmwSolidity.NONE }
+        return if (tileset.isPassable(tile)) SmwSolidity.NONE else SmwSolidity.SOLID
     }
 
     /**

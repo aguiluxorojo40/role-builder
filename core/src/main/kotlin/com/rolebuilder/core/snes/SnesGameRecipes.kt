@@ -307,9 +307,10 @@ object SnesGameRecipes {
     /**
      * Un nivel SMW convertido en MAPA de Role Builder: un tileset (atlas de los bloques
      * Map16 DISTINTOS que usa el nivel, 16×16 cada uno) + el tilemap (índice de tesela por
-     * casilla, -1 = aire) + colisión (por ahora: aire pasable, bloques sólidos; editable
-     * luego en la base de datos). Es la vía para que un nivel reconstruido sea contenido
-     * jugable, no una imagen troceada.
+     * casilla, -1 = aire) + la colisión REAL de la ROM por tesela ([SmwBlockCollision]:
+     * bordes de un sentido, sólidos, cuestas y pinchos). Es la vía para que un nivel
+     * reconstruido sea contenido jugable —con su tacto de plataformas—, no una imagen
+     * troceada.
      */
     class SmwLevelMap(
         val atlas: ArgbImage,
@@ -319,6 +320,8 @@ object SnesGameRecipes {
         val mapWidth: Int,
         val mapHeight: Int,
         val tiles: List<Int>, // mapWidth*mapHeight, índice en el atlas o -1 (aire)
+        /** Solidez REAL por tesela del atlas (ordinal de [SmwSolidity]); para el motor de plataformas. */
+        val solidity: List<Int> = emptyList(),
     )
 
     /** Convierte el [level] SMW en un [SmwLevelMap], o null si no es reconstruible. */
@@ -374,9 +377,18 @@ object SnesGameRecipes {
         orderedBlocks.forEachIndexed { i, block ->
             drawSmwBlock(rom, defs, block, vram, cgram, atlas, (i % columns) * 16, (i / columns) * 16)
         }
-        // Colisión v1: cada bloque colocado es sólido (aire = -1 ya es pasable). Ajustable.
-        val passable = List(columns * rows) { false }
-        return SmwLevelMap(atlas, columns, rows, passable, w, h, tiles.toList())
+        // Colisión REAL de la ROM por tesela: clasifica cada bloque Map16 con la misma
+        // rutina que el juego ([SmwBlockCollision]), así el mapa importado se juega con
+        // bordes de un sentido, cuestas y pinchos fieles —no todo sólido—. El atlas puede
+        // tener teselas de relleno al final (aire) que quedan como NONE/pasable.
+        val solidity = IntArray(columns * rows) { SmwSolidity.NONE.ordinal }
+        val passable = BooleanArray(columns * rows) { true }
+        orderedBlocks.forEachIndexed { i, block ->
+            val s = SmwBlockCollision.classify(block)
+            solidity[i] = s.ordinal
+            passable[i] = s == SmwSolidity.NONE
+        }
+        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList())
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */

@@ -406,7 +406,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                     state.addTileset(
                                         Tileset(
                                             id = tsId, name = "$name (SMW)", image = fileName,
-                                            tileSize = 16, columns = m.columns, rows = m.rows, passable = m.passable,
+                                            tileSize = 16, columns = m.columns, rows = m.rows,
+                                            passable = m.passable, platformSolidity = m.solidity,
                                         )
                                     )
                                     state.addImportedMap(
