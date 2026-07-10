@@ -24,9 +24,36 @@ data class Tileset(
      * ni lógica de juego.
      */
     val standingTiles: List<Int> = emptyList(),
+    /**
+     * Animaciones de tiles: teselas que ciclan entre varios fotogramas (monedas,
+     * bloques ?, agua de SMW). El renderer sustituye la tesela base por el fotograma
+     * actual. Vacío = sin animación.
+     */
+    val animations: List<TileAnimation> = emptyList(),
+    /**
+     * Solidez de plataformas por índice de tile, para el motor de Platform Builder.
+     * Vacío = usar [passable] (no atravesable → suelo sólido). Cuando viene relleno
+     * (p. ej. de un nivel SMW extraído), conserva la colisión REAL del juego por
+     * casilla codificada como el ordinal de `SmwSolidity`:
+     * 0=aire, 1=borde de un sentido, 2=sólido, 3=cuesta, 4=cuesta doble, 5=pinchos.
+     */
+    val platformSolidity: List<Int> = emptyList(),
 ) {
     val tileCount: Int get() = columns * rows
 
     fun isPassable(tile: Int): Boolean =
         tile == EMPTY_TILE || passable.getOrElse(tile) { true }
 }
+
+/**
+ * Una tesela animada: [baseTile] es la tesela que aparece en el mapa; [frames] son
+ * los índices de tesela (en el mismo tileset) por los que cicla, y [periodFrames]
+ * cuántos fotogramas de juego (60 fps) dura cada uno. El primer frame suele ser la
+ * propia [baseTile].
+ */
+@Serializable
+data class TileAnimation(
+    val baseTile: Int,
+    val frames: List<Int>,
+    val periodFrames: Int = 8,
+)

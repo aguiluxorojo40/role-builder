@@ -106,6 +106,17 @@ class EditorState(val projectDir: File) {
         return map
     }
 
+    /** Añade un mapa ya construido (p. ej. importado de una ROM) y lo abre. */
+    fun addImportedMap(map: GameMap): GameMap {
+        val id = (project.mapIds.maxOrNull() ?: 0) + 1
+        val stored = map.copy(id = id)
+        maps[id] = stored
+        project = project.copy(mapIds = project.mapIds + id)
+        currentMapId = id
+        dirty = true
+        return stored
+    }
+
     fun deleteMap(id: Int) {
         if (project.mapIds.size <= 1) return
         maps.remove(id)

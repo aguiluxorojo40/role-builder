@@ -42,6 +42,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
+import com.rolebuilder.core.engine.platformer.ProjectPlatformer
+import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SmwPhysicsReader
 import com.rolebuilder.core.snes.SnesDecoder
@@ -60,25 +62,50 @@ class PlatformerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         hideSystemBars()
 
-        val romPath = intent.getStringExtra(EXTRA_ROM_PATH)
-        val level = intent.getIntExtra(EXTRA_LEVEL, 0x106)
-        if (romPath == null) { finish(); return }
+        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
+        val renderer = if (projectPath != null) {
+            buildProjectRenderer(File(projectPath)) ?: run { finish(); return }
+        } else {
+            buildRomRenderer() ?: run { finish(); return }
+        }
+        setContent { PlatformerScreen(renderer, onRestart = { recreate() }, onExit = { finish() }) }
+    }
 
+    /** Modo proyecto: juega el mapa del Platform Builder con sus tiles reales. */
+    private fun buildProjectRenderer(projectDir: File): PlatformerRenderer? {
+        return try {
+            val project = ProjectIo.loadProject(projectDir)
+            val database = ProjectIo.loadDatabase(projectDir)
+            val mapId = intent.getIntExtra(EXTRA_MAP_ID, project.startMapId)
+            val map = ProjectIo.loadMap(projectDir, mapId)
+            val tileset = database.tileset(map.tilesetId) ?: database.tilesets.firstOrNull()
+                ?: run {
+                    Toast.makeText(this, "El proyecto no tiene tileset.", Toast.LENGTH_LONG).show()
+                    return null
+                }
+            val engine = ProjectPlatformer.engine(map, tileset, project.startX, project.startY)
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset))
+        } catch (e: Exception) {
+            Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
+            null
+        }
+    }
+
+    /** Modo ROM: extrae el nivel de SMW y lo pinta por colisión de colores. */
+    private fun buildRomRenderer(): PlatformerRenderer? {
+        val romPath = intent.getStringExtra(EXTRA_ROM_PATH) ?: return null
+        val level = intent.getIntExtra(EXTRA_LEVEL, 0x106)
         val engine = try {
             buildEngine(File(romPath).readBytes(), level)
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el nivel: ${e.message}", Toast.LENGTH_LONG).show()
-            finish()
-            return
+            return null
         }
         if (engine == null) {
             Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
-            finish()
-            return
+            return null
         }
-
-        val renderer = PlatformerRenderer(engine)
-        setContent { PlatformerScreen(renderer, onRestart = { recreate() }, onExit = { finish() }) }
+        return PlatformerRenderer(engine)
     }
 
     /** Extrae de la ROM lo necesario y monta el motor, o null si no es SMW jugable. */
@@ -106,11 +133,19 @@ class PlatformerActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_ROM_PATH = "romPath"
         private const val EXTRA_LEVEL = "level"
+        private const val EXTRA_PROJECT_PATH = "projectPath"
+        private const val EXTRA_MAP_ID = "mapId"
 
         fun intent(context: Context, romFile: File, level: Int): Intent =
             Intent(context, PlatformerActivity::class.java)
                 .putExtra(EXTRA_ROM_PATH, romFile.absolutePath)
                 .putExtra(EXTRA_LEVEL, level)
+
+        /** Juega un proyecto de Platform Builder por su carpeta (mapa de inicio o [mapId]). */
+        fun intentForProject(context: Context, projectDir: File, mapId: Int? = null): Intent =
+            Intent(context, PlatformerActivity::class.java)
+                .putExtra(EXTRA_PROJECT_PATH, projectDir.absolutePath)
+                .apply { if (mapId != null) putExtra(EXTRA_MAP_ID, mapId) }
     }
 }
 

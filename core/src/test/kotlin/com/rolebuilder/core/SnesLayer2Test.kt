@@ -101,6 +101,17 @@ class SnesLayer2Test {
     }
 
     @Test
+    fun `extractSmwLevelAsMap no revienta sin datos`() {
+        val header = SnesHeader(
+            title = "SUPER MARIOWORLD", isFastRom = false, romTypeDescription = "",
+            romSizeBytes = 0, sramSizeBytes = 0, country = "", licensee = "", version = 0,
+            checksum = 0, checksumComplement = 0, isChecksumValid = true,
+            mapping = SnesMapping.LOROM, headerOffset = 0x7FC0,
+        )
+        assertTrue(SnesGameRecipes.extractSmwLevelAsMap(ByteArray(0x80000), header, 0x106) == null)
+    }
+
+    @Test
     fun `renderSmwBackground devuelve null cuando el nivel no tiene fondo`() {
         // Motor de escenas de fondo (base guardada): sin datos de fondo válidos, no
         // revienta, devuelve null.

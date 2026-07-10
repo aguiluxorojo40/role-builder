@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -42,17 +43,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.rolebuilder.core.model.GameMode
+import com.rolebuilder.player.PlatformerActivity
 import com.rolebuilder.player.PlayerActivity
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
 
-/** Pantalla inicial: lista de proyectos con crear/editar/jugar/borrar. */
+/** Lista de proyectos de un MODO (mundo) concreto: crear/editar/jugar/borrar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectListScreen(onOpenProject: (File) -> Unit) {
+fun ProjectListScreen(mode: GameMode, onOpenProject: (File) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
-    var projects by remember { mutableStateOf(ProjectStore.list(context)) }
+    fun load() = ProjectStore.list(context).filter { it.mode == mode }
+    var projects by remember(mode) { mutableStateOf(load()) }
     var showCreate by remember { mutableStateOf(false) }
     var toDelete by remember { mutableStateOf<ProjectSummary?>(null) }
     var exportingDir by remember { mutableStateOf<File?>(null) }
@@ -72,17 +76,23 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
         if (uri != null) {
             runCatching { ProjectStore.import(context, uri) }
                 .onSuccess { name ->
-                    projects = ProjectStore.list(context)
+                    projects = load()
                     Toast.makeText(context, "Importado: $name", Toast.LENGTH_SHORT).show()
                 }
                 .onFailure { Toast.makeText(context, "Error al importar: ${it.message}", Toast.LENGTH_LONG).show() }
         }
     }
 
+    val worldTitle = if (mode == GameMode.PLATFORMER) "🍄 Platform Builder" else "🗡️ Role Builder"
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Role Builder — Mis proyectos") },
+                title = { Text("$worldTitle — Mis proyectos") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cambiar de modo")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { importLauncher.launch("application/zip") }) {
                         Icon(Icons.Filled.FileDownload, contentDescription = "Importar proyecto (.zip)")
@@ -102,10 +112,14 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("Aún no tienes proyectos.", style = MaterialTheme.typography.titleMedium)
+                Text("Aún no tienes proyectos aquí.", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Pulsa + para crear tu primer RPG: incluye un mapa de ejemplo con NPC, cofre y enemigos.",
+                    if (mode == GameMode.PLATFORMER) {
+                        "Pulsa + para crear un proyecto de plataformas: importa niveles SMW como mapas jugables."
+                    } else {
+                        "Pulsa + para crear tu primer RPG: incluye un mapa de ejemplo con NPC, cofre y enemigos."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -129,7 +143,12 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
                                 )
                             }
                             IconButton(onClick = {
-                                context.startActivity(PlayerActivity.intent(context, summary.dir))
+                                val intent = if (mode == GameMode.PLATFORMER) {
+                                    PlatformerActivity.intentForProject(context, summary.dir)
+                                } else {
+                                    PlayerActivity.intent(context, summary.dir)
+                                }
+                                context.startActivity(intent)
                             }) {
                                 Icon(Icons.Filled.PlayArrow, contentDescription = "Jugar")
                             }
@@ -156,19 +175,19 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
         var name by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showCreate = false },
-            title = { Text("Nuevo proyecto") },
+            title = { Text("Nuevo proyecto — $worldTitle") },
             text = {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nombre de tu RPG") },
+                    label = { Text("Nombre") },
                     singleLine = true,
                 )
             },
             confirmButton = {
                 Button(onClick = {
-                    val dir = ProjectStore.create(context, name)
-                    projects = ProjectStore.list(context)
+                    val dir = ProjectStore.create(context, name, mode)
+                    projects = load()
                     showCreate = false
                     onOpenProject(dir)
                 }) { Text("Crear") }
@@ -187,7 +206,7 @@ fun ProjectListScreen(onOpenProject: (File) -> Unit) {
             confirmButton = {
                 Button(onClick = {
                     ProjectStore.delete(summary.dir)
-                    projects = ProjectStore.list(context)
+                    projects = load()
                     toDelete = null
                 }) { Text("Borrar") }
             },

@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.io.ZipIo
+import com.rolebuilder.core.model.EMPTY_TILE
+import com.rolebuilder.core.model.GameMode
 import java.io.File
 
 /** Resumen de un proyecto guardado en el dispositivo. */
@@ -11,6 +13,7 @@ data class ProjectSummary(
     val dir: File,
     val name: String,
     val lastModified: Long,
+    val mode: GameMode = GameMode.ARPG,
 )
 
 /**
@@ -31,19 +34,57 @@ object ProjectStore {
             .mapNotNull { dir ->
                 runCatching {
                     val project = ProjectIo.loadProject(dir)
-                    ProjectSummary(dir, project.name, dir.lastModified())
+                    ProjectSummary(dir, project.name, dir.lastModified(), project.mode)
                 }.getOrNull()
             }
             .sortedByDescending { it.lastModified }
 
-    /** Crea un proyecto nuevo desde la plantilla y le pone nombre. */
-    fun create(context: Context, name: String): File {
+    /** Crea un proyecto nuevo desde la plantilla, con nombre y modo de motor. */
+    fun create(context: Context, name: String, mode: GameMode = GameMode.ARPG): File {
         val dir = File(root(context), "p${System.currentTimeMillis()}")
         copyAssetDir(context, TEMPLATE_ASSET, dir)
-        val project = ProjectIo.loadProject(dir).copy(name = name.ifBlank { "Mi aventura" })
+        var project = ProjectIo.loadProject(dir).copy(name = name.ifBlank { "Mi aventura" }, mode = mode)
+        if (mode == GameMode.PLATFORMER) {
+            // La plantilla es un mapa cenital ARPG; para plataformas siembra un nivel
+            // de scroll lateral jugable (suelo firme + plataformas) sobre el que caer.
+            val start = seedPlatformerStarter(dir, project.startMapId)
+            project = project.copy(startX = start.first, startY = start.second)
+        }
         ProjectIo.saveProject(dir, project)
         dir.setLastModified(System.currentTimeMillis())
         return dir
+    }
+
+    /**
+     * Reescribe el mapa de inicio como un nivel de plataformas sencillo y jugable:
+     * suelo sólido abajo del todo y tres plataformas flotantes, con el tileset de la
+     * plantilla (tile 4 = sólido). Devuelve el punto de inicio (col, fila).
+     */
+    private fun seedPlatformerStarter(dir: File, mapId: Int): Pair<Int, Int> {
+        val w = 48
+        val h = 15
+        val ground = 4          // tile no atravesable del tileset "Campo"
+        val floorTop = h - 2    // dos filas de suelo abajo
+        val ground0 = MutableList(w * h) { EMPTY_TILE }
+        fun put(col: Int, row: Int, tile: Int) {
+            if (col in 0 until w && row in 0 until h) ground0[row * w + col] = tile
+        }
+        // Suelo continuo.
+        for (r in floorTop until h) for (c in 0 until w) put(c, r, ground)
+        // Plataformas flotantes.
+        for (c in 8..12) put(c, floorTop - 4, ground)
+        for (c in 16..19) put(c, floorTop - 7, ground)
+        for (c in 24..30) put(c, floorTop - 4, ground)
+
+        val base = ProjectIo.loadMap(dir, mapId)
+        val map = base.copy(
+            width = w, height = h,
+            layers = listOf(ground0, List(w * h) { EMPTY_TILE }),
+            events = emptyList(),
+            spawns = emptyList(),
+        )
+        ProjectIo.saveMap(dir, map)
+        return 3 to (floorTop - 3) // sobre el suelo, a la izquierda
     }
 
     fun delete(dir: File) {

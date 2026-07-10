@@ -16,6 +16,21 @@ class PlatformerBody(var x: Float, var y: Float) {
     var jumping = false
 }
 
+/** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
+class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
+
+/** Enemigo en ejecución (píxeles): camina, cae con gravedad y se puede pisar. */
+class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
+    val width = 14f
+    val height = 14f
+    var vx = -0.5f    // patrulla: arranca hacia la izquierda, como los Goomba de SMW
+    var vy = 0f
+    var onGround = false
+    var alive = true
+    /** Fotogramas que sigue visible "aplastado" tras el pisotón antes de desaparecer. */
+    var squashTimer = 0
+}
+
 /**
  * Motor de plataformas de scroll lateral (estilo SMW), independiente del dibujado.
  * Consume lo que la ROM nos entregó: la **solidez por celda** ([SmwSolidity], del
@@ -39,8 +54,13 @@ class PlatformerEngine(
     startPixelX: Int,
     startPixelY: Int,
     val tuning: PlatformerTuning,
+    enemySeeds: List<EnemySeed> = emptyList(),
 ) {
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat())
+
+    /** Enemigos vivos del nivel, instanciados de las semillas. */
+    val enemies: List<PlatformerEnemy> =
+        enemySeeds.map { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
 
     /** Input horizontal (-1 izquierda, +1 derecha) y botón de correr. */
     var moveX = 0f
@@ -107,8 +127,89 @@ class PlatformerEngine(
         moveHorizontal(p.vx)
         moveVertical(p.vy)
 
+        updateEnemies()
+        handlePlayerEnemyContact()
+
         checkDeadly()
         if (p.y > (rows + 2) * tileSize) p.dead = true // caído al vacío
+    }
+
+    /** Gravedad, patrulla y colisión de cada enemigo con el terreno. */
+    private fun updateEnemies() {
+        for (e in enemies) {
+            if (!e.alive) {
+                if (e.squashTimer > 0) e.squashTimer--
+                continue
+            }
+            e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+            moveEnemyVertical(e)
+            moveEnemyHorizontal(e)
+            if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+        }
+    }
+
+    private fun moveEnemyHorizontal(e: PlatformerEnemy) {
+        val nx = e.x + e.vx
+        val top = e.y
+        val bottom = e.y + e.height - 0.01f
+        val minRow = (top / tileSize).toInt()
+        val maxRow = (bottom / tileSize).toInt()
+        val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+        val wall = (minRow..maxRow).any { blocksSide(solidity(frontCol, it)) }
+        // Se da la vuelta en el borde de una plataforma (no se tira al vacío), como en SMW.
+        val footRow = ((e.y + e.height + 1f) / tileSize).toInt()
+        val ledge = e.onGround && !blocksFloor(solidity(frontCol, footRow))
+        if (wall || ledge) e.vx = -e.vx else e.x = nx
+    }
+
+    private fun moveEnemyVertical(e: PlatformerEnemy) {
+        var ny = e.y + e.vy
+        val left = e.x
+        val right = e.x + e.width - 0.01f
+        val minCol = (left / tileSize).toInt()
+        val maxCol = (right / tileSize).toInt()
+        e.onGround = false
+        if (e.vy > 0) {
+            val row = ((ny + e.height) / tileSize).toInt()
+            if ((minCol..maxCol).any { blocksFloor(solidity(it, row)) }) {
+                ny = row * tileSize - e.height - 0.01f
+                e.vy = 0f
+                e.onGround = true
+            }
+        } else if (e.vy < 0) {
+            val row = (ny / tileSize).toInt()
+            if ((minCol..maxCol).any { solidity(it, row) == SmwSolidity.SOLID }) {
+                ny = (row + 1) * tileSize + 0.01f
+                e.vy = 0f
+            }
+        }
+        e.y = ny
+    }
+
+    /** Pisotón (mata al enemigo y rebota) o contacto lateral (mata al jugador). */
+    private fun handlePlayerEnemyContact() {
+        val p = player
+        if (p.dead) return
+        val pw = tuning.playerWidth
+        val ph = tuning.playerHeight
+        for (e in enemies) {
+            if (!e.alive) continue
+            val overlap = p.x < e.x + e.width && p.x + pw > e.x &&
+                p.y < e.y + e.height && p.y + ph > e.y
+            if (!overlap) continue
+            // Viene cayendo y sus pies están cerca de la cabeza del enemigo → pisotón.
+            val stomp = p.vy > 0f && (p.y + ph) - e.y < e.height * 0.6f
+            if (stomp) {
+                e.alive = false
+                e.squashTimer = 12
+                p.vy = tuning.jumpSpeed * 0.6f // rebote
+                p.onGround = false
+                p.jumping = false
+            } else {
+                p.dead = true
+                return
+            }
+        }
     }
 
     private fun moveHorizontal(dx: Float) {

@@ -3,12 +3,22 @@ package com.rolebuilder.core.model
 import kotlinx.serialization.Serializable
 
 /**
+ * Modo del motor de un proyecto: decide qué "builder" y qué motor gráfico/jugable
+ * activa la app. Es la base del selector de arranque (ARPG = Role Builder top-down;
+ * PLATFORMER = Platform Builder, plataformas estilo SMW con gravedad y scroll lateral).
+ */
+@Serializable
+enum class GameMode { ARPG, PLATFORMER }
+
+/**
  * Metadatos de un proyecto RPG. Un proyecto es una carpeta con:
  *   project.json, database.json, maps/map_<id>.json e imágenes PNG en images/
  */
 @Serializable
 data class Project(
     val name: String,
+    /** Motor que usa el proyecto (selector de arranque). Por defecto ARPG. */
+    val mode: GameMode = GameMode.ARPG,
     val startMapId: Int = 1,
     val startX: Int = 5,
     val startY: Int = 5,
