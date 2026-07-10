@@ -1,5 +1,6 @@
 package com.rolebuilder.core
 
+import com.rolebuilder.core.engine.platformer.EnemySeed
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.snes.SmwPhysics
@@ -125,5 +126,59 @@ class PlatformerEngineTest {
         assertEquals(0.1875f, t.gravityHold, 0.001f)
         assertEquals(4f, t.maxFallSpeed, 0.001f)
         assertFalse(t.maxRunSpeed <= t.maxWalkSpeed)
+    }
+
+    /** Motor con enemigos: rejilla + suelo + semillas de enemigo. */
+    private fun engineEnemies(
+        cols: Int, rows: Int, startCol: Int, startRow: Int,
+        seeds: List<EnemySeed>,
+        fill: (grid: Array<Array<SmwSolidity>>) -> Unit,
+    ): PlatformerEngine {
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        fill(grid)
+        return PlatformerEngine(
+            cols, rows,
+            solidityAt = { c, r -> grid[r][c] },
+            startPixelX = startCol * 16, startPixelY = startRow * 16,
+            tuning = tuning, enemySeeds = seeds,
+        )
+    }
+
+    @Test
+    fun `el enemigo cae al suelo y patrulla dandose la vuelta en el borde`() {
+        // Suelo corto (columnas 3..6) en la fila 8; el enemigo empieza sobre él.
+        val e = engineEnemies(12, 10, startCol = 0, startRow = 0, seeds = listOf(EnemySeed(5 * 16, 6 * 16, 0))) { g ->
+            for (c in 3..6) g[8][c] = SmwSolidity.SOLID
+        }
+        val enemy = e.enemies.single()
+        e.run(30)
+        assertTrue(enemy.onGround, "el enemigo se posa en el suelo")
+        // Patrulla dentro de la plataforma: no se sale por el borde al vacío.
+        e.run(300)
+        assertTrue(enemy.alive, "no se cae de la plataforma")
+        assertTrue(enemy.x >= 3 * 16f - 1f && enemy.x <= 6 * 16f + 1f, "sigue sobre la plataforma (x=${enemy.x})")
+    }
+
+    @Test
+    fun `pisar al enemigo lo mata y el jugador rebota`() {
+        // Jugador justo encima del enemigo, ambos sobre el suelo.
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        val enemy = e.enemies.single()
+        e.run(60)
+        assertFalse(enemy.alive, "el jugador cae encima y lo pisa")
+        assertFalse(e.player.dead, "pisar no mata al jugador")
+    }
+
+    @Test
+    fun `chocar de lado con el enemigo mata al jugador`() {
+        // Jugador y enemigo a la misma altura sobre el suelo, pegados: contacto lateral.
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 8, seeds = listOf(EnemySeed(6 * 16, 8 * 16, 0))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        e.moveX = 1f // el jugador avanza hacia el enemigo
+        e.run(30)
+        assertTrue(e.player.dead, "el contacto lateral mata al jugador")
     }
 }

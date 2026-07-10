@@ -2,6 +2,7 @@ package com.rolebuilder.core.engine.platformer
 
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwSolidity
 
@@ -67,5 +68,10 @@ object ProjectPlatformer {
         startPixelX = startCol * TILE,
         startPixelY = startRow * TILE,
         tuning = tuning,
+        enemySeeds = map.platformEnemies.map { enemySeed(it) },
     )
+
+    /** Convierte un enemigo del mapa (celda) en semilla del motor (píxeles). */
+    private fun enemySeed(mark: PlatformEnemyMark): EnemySeed =
+        EnemySeed(mark.x * TILE, mark.y * TILE, mark.spriteId)
 }

@@ -322,6 +322,8 @@ object SnesGameRecipes {
         val tiles: List<Int>, // mapWidth*mapHeight, índice en el atlas o -1 (aire)
         /** Solidez REAL por tesela del atlas (ordinal de [SmwSolidity]); para el motor de plataformas. */
         val solidity: List<Int> = emptyList(),
+        /** Enemigos del nivel: (id de sprite, x, y) en celdas de 16px, ya recortados al mapa. */
+        val enemies: List<Triple<Int, Int, Int>> = emptyList(),
     )
 
     /** Convierte el [level] SMW en un [SmwLevelMap], o null si no es reconstruible. */
@@ -388,7 +390,14 @@ object SnesGameRecipes {
             solidity[i] = s.ordinal
             passable[i] = s == SmwSolidity.NONE
         }
-        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList())
+
+        // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible.
+        val enemies = SmwSprites.parse(rom, delta, level)?.sprites
+            ?.filter { it.xTile in 0 until w && it.yTile in 0 until h }
+            ?.map { Triple(it.id, it.xTile, it.yTile) }
+            .orEmpty()
+
+        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies)
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */

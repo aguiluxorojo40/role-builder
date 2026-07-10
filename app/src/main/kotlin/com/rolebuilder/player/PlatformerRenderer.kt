@@ -141,6 +141,20 @@ class PlatformerRenderer(
             }
         }
 
+        // Enemigos (rectángulo por ahora), en casillas. Aplastados = franja fina.
+        for (e in engine.enemies) {
+            if (!e.alive && e.squashTimer <= 0) continue
+            val ex = e.x / 16f
+            val ew = e.width / 16f
+            if (e.alive) {
+                batch.draw(white, ex, e.y / 16f, ew, e.height / 16f, r = 0.65f, g = 0.20f, b = 0.55f, a = 1f)
+            } else {
+                // Pisado: se dibuja aplanado contra el suelo un instante.
+                val fh = e.height / 16f * 0.3f
+                batch.draw(white, ex, (e.y + e.height * 0.7f) / 16f, ew, fh, r = 0.5f, g = 0.5f, b = 0.5f, a = 1f)
+            }
+        }
+
         // Mario (rectángulo por ahora), en casillas.
         val w = engine.tuning.playerWidth / 16f
         val h = engine.tuning.playerHeight / 16f

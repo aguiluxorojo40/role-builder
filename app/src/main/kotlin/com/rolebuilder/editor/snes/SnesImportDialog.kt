@@ -48,6 +48,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesAutoExtractor
@@ -415,6 +416,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                             id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
                                             tilesetId = tsId,
                                             layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
+                                            platformEnemies = m.enemies.map {
+                                                PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
+                                            },
                                         )
                                     )
                                     Toast.makeText(context, "Mapa creado: SMW $name", Toast.LENGTH_SHORT).show()

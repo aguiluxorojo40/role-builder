@@ -21,6 +21,11 @@ data class GameMap(
     val layers: List<List<Int>>,
     val events: List<MapEvent> = emptyList(),
     val spawns: List<EnemySpawn> = emptyList(),
+    /**
+     * Enemigos de plataformas colocados en el mapa (id de sprite SMW + celda de 16px).
+     * Los consume el motor de Platform Builder; el RPG los ignora.
+     */
+    val platformEnemies: List<PlatformEnemyMark> = emptyList(),
     /** Pista de música de fondo del mapa (ver MusicTracks); null = silencio. */
     val bgm: String? = null,
     /** Clima ambiental al entrar al mapa. */
@@ -117,6 +122,18 @@ data class ParallaxLayer(
 @Serializable
 data class EnemySpawn(
     val enemyId: Int,
+    val x: Int,
+    val y: Int,
+)
+
+/**
+ * Enemigo de plataformas: id de sprite de SMW (0x00..0xFF, como lo entrega
+ * [com.rolebuilder.core.snes.SmwSprites]) colocado en la celda (x,y) de 16px.
+ * El motor lo instancia como entidad con gravedad que patrulla y se puede pisar.
+ */
+@Serializable
+data class PlatformEnemyMark(
+    val spriteId: Int,
     val x: Int,
     val y: Int,
 )
