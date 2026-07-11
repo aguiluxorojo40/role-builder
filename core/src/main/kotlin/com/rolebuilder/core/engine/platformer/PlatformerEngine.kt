@@ -19,6 +19,18 @@ class PlatformerBody(var x: Float, var y: Float) {
 /** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
 class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
 
+/** Tipo de ítem del motor: moneda o meta. */
+enum class ItemKind { COIN, GOAL }
+
+/** Semilla de un ítem: posición en píxeles y tipo. */
+class ItemSeed(val xPixel: Int, val yPixel: Int, val kind: ItemKind)
+
+/** Ítem en ejecución (píxeles). Las monedas se recogen; la meta gana el nivel. */
+class PlatformerItem(val x: Float, val y: Float, val kind: ItemKind) {
+    val size = 16f
+    var collected = false
+}
+
 /** Enemigo en ejecución (píxeles): camina, cae con gravedad y se puede pisar. */
 class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     val width = 14f
@@ -55,12 +67,27 @@ class PlatformerEngine(
     startPixelY: Int,
     val tuning: PlatformerTuning,
     enemySeeds: List<EnemySeed> = emptyList(),
+    itemSeeds: List<ItemSeed> = emptyList(),
 ) {
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat())
 
     /** Enemigos vivos del nivel, instanciados de las semillas. */
     val enemies: List<PlatformerEnemy> =
         enemySeeds.map { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
+
+    /** Ítems del nivel (monedas y meta), instanciados de las semillas. */
+    val items: List<PlatformerItem> =
+        itemSeeds.map { PlatformerItem(it.xPixel.toFloat(), it.yPixel.toFloat(), it.kind) }
+
+    /** Monedas recogidas y si el nivel se ha completado (tocó la meta). */
+    var coinsCollected = 0
+        private set
+    var won = false
+        private set
+
+    /** Contador monótono para el sonido de moneda (ver [jumpEvents]). */
+    var coinEvents = 0
+        private set
 
     /** Input horizontal (-1 izquierda, +1 derecha) y botón de correr. */
     var moveX = 0f
@@ -150,9 +177,31 @@ class PlatformerEngine(
 
         updateEnemies()
         handlePlayerEnemyContact()
+        checkItems()
 
         checkDeadly()
         if (p.y > (rows + 2) * tileSize) killPlayer() // caído al vacío
+    }
+
+    /** Recoge monedas y completa el nivel al tocar la meta. */
+    private fun checkItems() {
+        val p = player
+        val pw = tuning.playerWidth
+        val ph = tuning.playerHeight
+        for (item in items) {
+            if (item.collected) continue
+            val overlap = p.x < item.x + item.size && p.x + pw > item.x &&
+                p.y < item.y + item.size && p.y + ph > item.y
+            if (!overlap) continue
+            when (item.kind) {
+                ItemKind.COIN -> {
+                    item.collected = true
+                    coinsCollected++
+                    coinEvents++
+                }
+                ItemKind.GOAL -> won = true
+            }
+        }
     }
 
     /** Gravedad, patrulla y colisión de cada enemigo con el terreno. */

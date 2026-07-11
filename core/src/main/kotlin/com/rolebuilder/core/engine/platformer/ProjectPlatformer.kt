@@ -3,6 +3,8 @@ package com.rolebuilder.core.engine.platformer
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.PlatformEnemyMark
+import com.rolebuilder.core.model.PlatformItemMark
+import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwSolidity
 
@@ -69,9 +71,21 @@ object ProjectPlatformer {
         startPixelY = startRow * TILE,
         tuning = tuning,
         enemySeeds = map.platformEnemies.map { enemySeed(it) },
+        itemSeeds = map.platformItems.map { itemSeed(it) },
     )
 
     /** Convierte un enemigo del mapa (celda) en semilla del motor (píxeles). */
     private fun enemySeed(mark: PlatformEnemyMark): EnemySeed =
         EnemySeed(mark.x * TILE, mark.y * TILE, mark.spriteId)
+
+    /** Convierte un ítem del mapa (celda) en semilla del motor (píxeles). */
+    private fun itemSeed(mark: PlatformItemMark): ItemSeed =
+        ItemSeed(
+            mark.x * TILE,
+            mark.y * TILE,
+            when (mark.type) {
+                PlatformItemType.COIN -> ItemKind.COIN
+                PlatformItemType.GOAL -> ItemKind.GOAL
+            },
+        )
 }

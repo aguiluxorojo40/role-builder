@@ -1,6 +1,8 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.engine.platformer.EnemySeed
+import com.rolebuilder.core.engine.platformer.ItemKind
+import com.rolebuilder.core.engine.platformer.ItemSeed
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.snes.SmwPhysics
@@ -214,5 +216,34 @@ class PlatformerEngineTest {
         e.run(200)
         assertTrue(e.player.dead)
         assertEquals(1, e.deathEvents, "la muerte se cuenta una vez, no en cada tick posterior")
+    }
+
+    @Test
+    fun `recoge una moneda al tocarla y suena una vez`() {
+        val e = PlatformerEngine(
+            cols = 10, rows = 10,
+            solidityAt = { _, r -> if (r == 8) SmwSolidity.SOLID else SmwSolidity.NONE },
+            startPixelX = 2 * 16, startPixelY = 7 * 16,
+            tuning = tuning,
+            itemSeeds = listOf(ItemSeed(2 * 16, 7 * 16, ItemKind.COIN)),
+        )
+        e.run(5)
+        assertEquals(1, e.coinsCollected, "recogió la moneda")
+        assertEquals(1, e.coinEvents, "la moneda suena una sola vez")
+        assertTrue(e.items.first().collected)
+    }
+
+    @Test
+    fun `tocar la meta completa el nivel`() {
+        val e = PlatformerEngine(
+            cols = 10, rows = 10,
+            solidityAt = { _, r -> if (r == 8) SmwSolidity.SOLID else SmwSolidity.NONE },
+            startPixelX = 2 * 16, startPixelY = 7 * 16,
+            tuning = tuning,
+            itemSeeds = listOf(ItemSeed(2 * 16, 7 * 16, ItemKind.GOAL)),
+        )
+        assertFalse(e.won)
+        e.run(5)
+        assertTrue(e.won, "alcanzó la meta")
     }
 }
