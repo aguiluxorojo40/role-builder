@@ -278,9 +278,69 @@ object SmwSfxCatalog {
         val effectiveSrcRate =
             if (pitch <= 0) sample.sampleRate.toFloat()
             else sample.sampleRate * (pitch.toFloat() / NATIVE_PITCH)
-        val pcm = resampleLinear(sample.pcm, effectiveSrcRate, outRate.toFloat())
+        // La muestra BRR cruda dura pocos ms; SMW la reproduce EN BUCLE (punto de loop
+        // del BRR) mientras suena el efecto. Sin eso el clip es un "clic" inaudible.
+        // La extendemos a una duración audible siguiendo el loop, con envolvente
+        // (ataque corto + caída) para que no chasquee al cortar.
+        val pcm = renderSfxWaveform(sample, effectiveSrcRate, outRate.toFloat(), durationSecFor(event))
         if (pcm.isEmpty()) return null
         return PcmClip(event, pcm, outRate)
+    }
+
+    /** Duración audible del efecto (s). Los sonidos "largos" de SMW se sostienen más. */
+    private fun durationSecFor(event: Event): Float = when (event) {
+        Event.POWERUP -> 0.45f
+        Event.COIN -> 0.25f
+        else -> 0.18f
+    }
+
+    /**
+     * Reproduce la [sample] durante [durationSec] a [outRate] Hz siguiendo su punto de
+     * bucle BRR (si lo tiene), con interpolación lineal al [srcRate] efectivo (tono) y
+     * una envolvente de ataque/caída para evitar chasquidos. Es lo que convierte una
+     * muestra de pocos ms en un efecto audible.
+     */
+    private fun renderSfxWaveform(
+        sample: SmwSoundFx.BrrSample,
+        srcRate: Float,
+        outRate: Float,
+        durationSec: Float,
+    ): ShortArray {
+        val src = sample.pcm
+        if (src.isEmpty()) return ShortArray(0)
+        val outLen = (outRate * durationSec).toInt().coerceAtLeast(1)
+        val step = srcRate / outRate                 // muestras fuente por muestra de salida
+        val loopStart = sample.loopStartSample.coerceIn(0, src.size - 1)
+        val loopLen = src.size - loopStart
+        val canLoop = sample.hasLoop && loopLen > 1
+        val attack = (outRate * 0.004f).coerceAtLeast(1f)   // 4 ms de ataque
+        val release = outLen * 0.35f                        // 35 % final en caída
+        val out = ShortArray(outLen)
+        var pos = 0f
+        for (i in 0 until outLen) {
+            // Posición fuente con bucle.
+            var p = pos
+            if (p >= loopStart) {
+                p = if (canLoop) loopStart + ((p - loopStart) % loopLen)
+                else if (p < src.size) p else Float.NaN
+            }
+            var s = 0f
+            if (!p.isNaN()) {
+                val i0 = p.toInt()
+                val frac = p - i0
+                val a = src[i0.coerceIn(0, src.size - 1)].toFloat()
+                val b = src[(i0 + 1).coerceIn(0, src.size - 1)].toFloat()
+                s = a + (b - a) * frac
+            }
+            // Envolvente (ataque + caída lineal).
+            var gain = 1f
+            if (i < attack) gain = i / attack
+            val fromEnd = outLen - i
+            if (fromEnd < release) gain *= fromEnd / release
+            out[i] = (s * gain).toInt().coerceIn(-32768, 32767).toShort()
+            pos += step
+        }
+        return out
     }
 
     /**
