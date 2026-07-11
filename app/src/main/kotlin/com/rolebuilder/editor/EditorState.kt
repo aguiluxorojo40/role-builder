@@ -134,6 +134,13 @@ class EditorState(val projectDir: File) {
         updateDatabase(database.copy(tilesets = database.tilesets + tileset))
     }
 
+    /** Reemplaza un tileset existente por su id (p. ej. al editar la colisión). */
+    fun updateTileset(tileset: com.rolebuilder.core.model.Tileset) {
+        updateDatabase(
+            database.copy(tilesets = database.tilesets.map { if (it.id == tileset.id) tileset else it }),
+        )
+    }
+
     fun save() {
         ProjectIo.saveProject(projectDir, project)
         ProjectIo.saveDatabase(projectDir, database)

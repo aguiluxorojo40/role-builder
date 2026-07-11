@@ -11,8 +11,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.remember
+import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.GameMode
 import com.rolebuilder.editor.EditorScreen
+import com.rolebuilder.editor.platform.PlatformEditorScreen
 import com.rolebuilder.project.ModeSelectScreen
 import com.rolebuilder.project.ProjectListScreen
 import com.rolebuilder.project.ProjectStore
@@ -83,10 +86,16 @@ private fun AppNavigation() {
         composable("editor/{dir}") { backStackEntry ->
             val encoded = backStackEntry.arguments?.getString("dir").orEmpty()
             val dir = File(URLDecoder.decode(encoded, "UTF-8"))
-            EditorScreen(
-                projectDir = dir,
-                onBack = { navController.popBackStack() },
-            )
+            // La interfaz depende del tipo de proyecto: Platform Builder (estilo
+            // Lunar Magic) para PLATFORMER, Role Builder (estilo RPG Maker) para ARPG.
+            val mode = remember(dir) {
+                runCatching { ProjectIo.loadProject(dir).mode }.getOrDefault(GameMode.ARPG)
+            }
+            if (mode == GameMode.PLATFORMER) {
+                PlatformEditorScreen(projectDir = dir, onBack = { navController.popBackStack() })
+            } else {
+                EditorScreen(projectDir = dir, onBack = { navController.popBackStack() })
+            }
         }
     }
 }
