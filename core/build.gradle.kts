@@ -60,6 +60,17 @@ tasks.register<JavaExec>("probeSmw") {
     systemProperty("java.awt.headless", "true")
 }
 
+// Renderer OAM fiel: compone un sprite de SMW desde sus entradas OAM reales (para
+// reconstruir sprites grandes tal y como los dibuja el juego). Ejemplo:
+//   ./gradlew :core:composeSmwSprite --args="--rom smw.sfc --level 0x106 --out spr.png --spec '0xA0,0,0,16,0x00'"
+tasks.register<JavaExec>("composeSmwSprite") {
+    group = "rolebuilder"
+    description = "Compone un sprite de SMW desde entradas OAM reales (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwOamComposerKt")
+    systemProperty("java.awt.headless", "true")
+}
+
 // Rehornea el atlas de enemigos (assets/sprites/enemies.png) desde una ROM de SMW, en
 // el orden de SmwEnemyGraphics.curatedIds. Ejecútalo al ampliar el roster:
 //   ./gradlew :core:bakeSmwEnemies --args="--rom smw.sfc"

@@ -167,4 +167,82 @@ object SmwEnemyGraphics {
         }
         return if (painted) img else null
     }
+
+    /**
+     * Una entrada OAM tal y como la escribe el juego para dibujar (parte de) un sprite:
+     * [charnum] nº de tesela de la tabla `_Tiles`; [dx]/[dy] desplazamiento CON SIGNO
+     * respecto al origen del sprite; [size] 8 (tesela 8×8) o 16 (16×16, de `_TileSize`
+     * 0→8 / 2→16); [prop] byte de propiedades OAM (bit7=Vflip, bit6=Hflip, bits3-1=paleta
+     * 0-7 → filas CGRAM 8-15, bit0=página SP1/2 vs SP3/4).
+     */
+    data class OamPart(val charnum: Int, val dx: Int, val dy: Int, val size: Int, val prop: Int)
+
+    /**
+     * Compone un sprite ENSAMBLANDO sus entradas OAM reales tal y como lo hace el PPU:
+     * cada [OamPart] toma su tesela del GFX de sprites del [level] y la CGRAM real, con
+     * su tamaño, volteo, paleta y página. Es la vía FIEL para reconstruir sprites de
+     * varias teselas (Koopa alado, para-goomba…): se transcriben sus tablas de dibujo de
+     * snesrev/smw a una lista de [parts]. `null` si la ROM no es SMW vanilla, faltan los
+     * GFX del nivel o la lista está vacía.
+     */
+    fun renderOam(rom: ByteArray, header: SnesHeader, level: Int, parts: List<OamPart>): ArgbImage? {
+        if (parts.isEmpty()) return null
+        val delta = header.headerOffset - 0x7FC0
+        val info = SnesGameRecipes.smwLevelInfo(rom, header, level) ?: return null
+        val slotBase = SnesGameRecipes.SMW_SPRITE_GFX_TABLE_PC + delta + 4 * (info.spriteGfx and 0x0F)
+        if (slotBase < 0 || slotBase + 4 > rom.size) return null
+        val spData = arrayOfNulls<ByteArray>(4)
+        for (s in 0..3) {
+            val file = rom[slotBase + s].toInt() and 0xFF
+            if (file != SnesGameRecipes.SMW_SLOT_EMPTY) spData[s] = SnesGameRecipes.smwGfxFileData(rom, file)
+        }
+        val cgram = SnesGameRecipes.assembleSmwCgram(rom, delta, level)
+
+        fun tileIndices(tile9: Int): IntArray? {
+            val slot = tile9 / TILES_PER_FILE
+            if (slot !in 0..3) return null
+            val data = spData[slot] ?: return null
+            val local = tile9 % TILES_PER_FILE
+            val off = local * FORMAT.bytesPerTile
+            if (off + FORMAT.bytesPerTile > data.size) return null
+            return SnesDecoder.decodeTile(data, off, FORMAT, local).pixelIndices
+        }
+
+        var minX = 0; var minY = 0; var maxX = 0; var maxY = 0
+        for (p in parts) {
+            minX = minOf(minX, p.dx); minY = minOf(minY, p.dy)
+            maxX = maxOf(maxX, p.dx + p.size); maxY = maxOf(maxY, p.dy + p.size)
+        }
+        val ox = -minX; val oy = -minY
+        val img = ArgbImage(maxX - minX, maxY - minY)
+        var painted = false
+        for (p in parts) {
+            val page = p.prop and 0x01
+            val palRow = (8 + ((p.prop shr 1) and 0x07)) * 16
+            val flipX = p.prop and 0x40 != 0
+            val flipY = p.prop and 0x80 != 0
+            val baseTile = p.charnum + page * 0x100
+            // OAM 16×16 = 4 teselas (N, N+1, N+0x10, N+0x11); 8×8 = solo N.
+            val quads = if (p.size == 16)
+                arrayOf(intArrayOf(0, 0, 0), intArrayOf(1, 1, 0), intArrayOf(0x10, 0, 1), intArrayOf(0x11, 1, 1))
+            else arrayOf(intArrayOf(0, 0, 0))
+            val span = if (p.size == 16) 1 else 0
+            for (q in quads) {
+                val px = tileIndices(baseTile + q[0]) ?: continue
+                val qcx = if (flipX) span - q[1] else q[1]
+                val qcy = if (flipY) span - q[2] else q[2]
+                for (y in 0..7) for (x in 0..7) {
+                    val ci = px[y * 8 + x]
+                    if (ci == 0) continue
+                    val dstX = ox + p.dx + qcx * 8 + (if (flipX) 7 - x else x)
+                    val dstY = oy + p.dy + qcy * 8 + (if (flipY) 7 - y else y)
+                    if (dstX in 0 until img.width && dstY in 0 until img.height) {
+                        img.set(dstX, dstY, cgram[palRow + (ci and 0x0F)])
+                        painted = true
+                    }
+                }
+            }
+        }
+        return if (painted) img else null
+    }
 }

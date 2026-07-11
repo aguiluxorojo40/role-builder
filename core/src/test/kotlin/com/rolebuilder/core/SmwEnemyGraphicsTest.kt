@@ -49,4 +49,14 @@ class SmwEnemyGraphicsTest {
         val header = com.rolebuilder.core.snes.SnesDecoder.parseHeader(ByteArray(0x10000))
         assertNull(SmwEnemyGraphics.spriteImageAnyId(ByteArray(0x10000), header, 0x105, 0x54))
     }
+
+    @Test
+    fun `renderOam exige entradas y ROM de SMW`() {
+        val header = com.rolebuilder.core.snes.SnesDecoder.parseHeader(ByteArray(0x10000))
+        // Lista vacía → null (contrato puro, sin depender de la ROM).
+        assertNull(SmwEnemyGraphics.renderOam(ByteArray(0x10000), header, 0x106, emptyList()))
+        // Con entradas pero ROM en blanco (sin datos de nivel SMW) → null.
+        val part = SmwEnemyGraphics.OamPart(charnum = 0xAA, dx = 0, dy = 0, size = 16, prop = 0x04)
+        assertNull(SmwEnemyGraphics.renderOam(ByteArray(0x10000), header, 0x106, listOf(part)))
+    }
 }
