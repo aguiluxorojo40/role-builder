@@ -110,6 +110,23 @@ cada 16px; `prop 0x05` (página 1 SP4=GFX09, paleta 2).
 ```
 Se ve: cactus del desierto amarillo, segmentos redondos apilados y cabeza con ojos/boca.
 
+### Bullet Bill (id 0x1C) · cualquier nivel (0x106) · ✅ verificado
+De `Spr01C_BulletBill`: UN tile 16×16 (`TilesOffset[0x1C]=0x47` → byte `0xA6`). Global
+(página 0). `Sprite166EVals[0x1C]=0x12` → prop `0x02`.
+```
+0xA6,0,0,16,0x02
+```
+Bala negra con ojo blanco y guante. (En el roster pequeño 0x1C figura como "Bob-omb"; la
+decomp confirma que es Bullet Bill — el sprite grande manda al dibujar.)
+
+### Bony Beetle (id 0x31) · nivel 0x101 · ✅ verificado
+De `Spr031_BonyBeetle`: UN tile 16×16 (`TilesOffset[0x31]=0xAA` → byte `0x8C`). Página 1
+(SP3/SP4, nivel de castillo). `Sprite166EVals[0x31]=0x13` → prop `0x03`.
+```
+0x8C,0,0,16,0x03
+```
+Koopa esqueleto: caparazón de hueso, ojos de calavera, patas. Andar alterna `0x8C`/`0xAA`.
+
 ### Thwimp (id 0x27) · ⏳ pendiente
 Rutina en `src/smw_01.c:3915`. No reconstruido (baja prioridad).
 

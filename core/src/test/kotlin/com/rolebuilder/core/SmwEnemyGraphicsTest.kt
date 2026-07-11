@@ -54,7 +54,7 @@ class SmwEnemyGraphicsTest {
     fun `catalogo de sprites grandes verificados`() {
         val ids = SmwEnemyGraphics.bigSprites.map { it.id }
         // Sprites grandes reconstruidos y verificados desde la ROM real.
-        assertEquals(listOf(0x10, 0x08, 0x1F, 0x26, 0x91, 0x9F, 0xBF, 0xA8, 0x70), ids)
+        assertEquals(listOf(0x10, 0x08, 0x1F, 0x26, 0x91, 0x9F, 0xBF, 0xA8, 0x70, 0x1C, 0x31), ids)
         // No debe haber ids duplicados en el catálogo grande.
         assertEquals(ids.size, ids.toSet().size)
         // Cada uno tiene receta OAM (al menos una parte) y un nivel de composición.

@@ -313,6 +313,12 @@ object SmwEnemyGraphics {
             OamPart(0xE8, 0, 16, 16, 0x05), OamPart(0xE8, 0, 32, 16, 0x05),
             OamPart(0xE8, 0, 48, 16, 0x05),
         )),
+        BigSprite(0x1C, "Bullet Bill", 0x106, listOf(
+            OamPart(0xA6, 0, 0, 16, 0x02),
+        )),
+        BigSprite(0x31, "Bony Beetle", 0x101, listOf(
+            OamPart(0x8C, 0, 0, 16, 0x03),
+        )),
     )
 
     /** El sprite grande para este id de sprite, o null si no hay receta grande. */
