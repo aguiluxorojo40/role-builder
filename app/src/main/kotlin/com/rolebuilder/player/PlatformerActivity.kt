@@ -58,6 +58,8 @@ import java.io.File
  */
 class PlatformerActivity : ComponentActivity() {
 
+    private var music: PlatformerMusic? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemBars()
@@ -68,7 +70,15 @@ class PlatformerActivity : ComponentActivity() {
         } else {
             buildRomRenderer() ?: run { finish(); return }
         }
+        // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming.
+        music = PlatformerMusic.fromAssets(this)?.also { it.start() }
         setContent { PlatformerScreen(renderer, onRestart = { recreate() }, onExit = { finish() }) }
+    }
+
+    override fun onDestroy() {
+        music?.stop()
+        music = null
+        super.onDestroy()
     }
 
     /** Modo proyecto: juega el mapa del Platform Builder con sus tiles reales. */

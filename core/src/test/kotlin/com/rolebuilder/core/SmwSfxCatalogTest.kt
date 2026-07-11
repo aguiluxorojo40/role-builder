@@ -171,9 +171,10 @@ class SmwSfxCatalogTest {
         assertEquals(SmwSfxCatalog.Event.COIN, clip.event)
         assertEquals(22050, clip.sampleRate)
         assertTrue(clip.pcm.isNotEmpty())
-        // pitch≈4284/4096 -> tono efectivo ≈ 32000*1.046 = 33473 Hz; a 22050 el clip
-        // se acorta respecto a las 256 muestras nativas.
-        assertTrue(clip.pcm.size < pcm.size, "re-muestreado a menor frecuencia acorta el clip")
+        // clipFor extiende la muestra (en bucle si tiene loop) a una duración AUDIBLE
+        // con envolvente: COIN dura 0.25 s → 22050*0.25 muestras, no un clip de pocos ms.
+        assertEquals((22050 * 0.25f).toInt(), clip.pcm.size, "duración audible de COIN")
+        assertTrue(clip.pcm.any { it.toInt() != 0 }, "el clip no es silencio")
     }
 
     @Test
