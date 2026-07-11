@@ -51,6 +51,20 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `catalogo de sprites grandes verificados`() {
+        val ids = SmwEnemyGraphics.bigSprites.map { it.id }
+        // Los 5 sprites grandes reconstruidos y verificados.
+        assertEquals(listOf(0x10, 0x08, 0x1F, 0x26, 0x91), ids)
+        // Cada uno tiene receta OAM (al menos una parte) y un nivel de composición.
+        for (bs in SmwEnemyGraphics.bigSprites) {
+            assertTrue(bs.parts.isNotEmpty(), "${bs.name} debería tener partes OAM")
+            assertTrue(bs.level > 0)
+        }
+        assertEquals("Thwomp", SmwEnemyGraphics.bigSpriteFor(0x26)?.name)
+        assertNull(SmwEnemyGraphics.bigSpriteFor(0x00)) // Koopa normal no es sprite grande
+    }
+
+    @Test
     fun `renderOam exige entradas y ROM de SMW`() {
         val header = com.rolebuilder.core.snes.SnesDecoder.parseHeader(ByteArray(0x10000))
         // Lista vacía → null (contrato puro, sin depender de la ROM).

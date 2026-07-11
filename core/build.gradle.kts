@@ -82,3 +82,14 @@ tasks.register<JavaExec>("bakeSmwEnemies") {
     systemProperty("java.awt.headless", "true")
     workingDir = rootDir
 }
+
+// Hornea los sprites GRANDES (multi-tesela) a assets/sprites/big/big_<id>.png:
+//   ./gradlew :core:bakeSmwBigSprites --args="--rom smw.sfc"
+tasks.register<JavaExec>("bakeSmwBigSprites") {
+    group = "rolebuilder"
+    description = "Hornea los sprites grandes de SMW a assets/sprites/big (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwBigSpriteBakerKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}

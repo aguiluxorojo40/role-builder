@@ -245,4 +245,45 @@ object SmwEnemyGraphics {
         }
         return if (painted) img else null
     }
+
+    /**
+     * Un sprite GRANDE de varias teselas, reconstruido fielmente desde las tablas de
+     * dibujo reales del juego (ver `docs/sprites_grandes_smw.md`). Se compone con
+     * [renderOam] a partir de sus entradas OAM. [level] es un nivel donde sus teselas
+     * están cargadas en el GFX de sprites (los de página 1 son específicos de nivel).
+     */
+    data class BigSprite(val id: Int, val name: String, val level: Int, val parts: List<OamPart>)
+
+    /** Catálogo de sprites grandes verificados (agente + verificación independiente). */
+    val bigSprites: List<BigSprite> = listOf(
+        BigSprite(0x10, "ParaGoomba", 0x106, listOf(
+            OamPart(0xAA, 0, 0, 16, 0x04), OamPart(0xC6, -11, -9, 16, 0x46), OamPart(0xC6, 11, -9, 16, 0x06),
+        )),
+        BigSprite(0x08, "Koopa alado", 0x106, listOf(
+            OamPart(0x82, 0, 0, 16, 0x0A), OamPart(0xA2, 0, 16, 16, 0x0A), OamPart(0xC6, 9, 3, 16, 0x06),
+        )),
+        BigSprite(0x1F, "Magikoopa", 0x101, listOf(
+            OamPart(0xA0, 0, 0, 16, 0x4F), OamPart(0xC0, 0, 16, 16, 0x4F), OamPart(0x99, 16, 16, 8, 0x4F),
+        )),
+        BigSprite(0x26, "Thwomp", 0x101, listOf(
+            OamPart(0x8E, -4, 0, 16, 0x03), OamPart(0x8E, 4, 0, 16, 0x43),
+            OamPart(0xAE, -4, 16, 16, 0x03), OamPart(0xAE, 4, 16, 16, 0x43),
+        )),
+        BigSprite(0x91, "Chargin' Chuck", 0x106, listOf(
+            OamPart(0x06, 0, -8, 16, 0x4B), OamPart(0x26, -4, 0, 16, 0x0B), OamPart(0x26, 4, 0, 16, 0x4B),
+        )),
+    )
+
+    /** El sprite grande para este id de sprite, o null si no hay receta grande. */
+    fun bigSpriteFor(spriteId: Int): BigSprite? = bigSprites.firstOrNull { it.id == spriteId }
+
+    /**
+     * Imagen ARGB a TAMAÑO NATIVO (puede exceder 16×16) del sprite grande [spriteId],
+     * compuesta desde su receta OAM real. `null` si no hay receta grande para ese id o la
+     * ROM no tiene los datos. Úsala en vez de [spriteImage] cuando [bigSpriteFor] no sea null.
+     */
+    fun bigSpriteImage(rom: ByteArray, header: SnesHeader, spriteId: Int): ArgbImage? {
+        val bs = bigSpriteFor(spriteId) ?: return null
+        return renderOam(rom, header, bs.level, bs.parts)
+    }
 }
