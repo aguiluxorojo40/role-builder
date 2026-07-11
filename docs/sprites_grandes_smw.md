@@ -45,23 +45,32 @@ Cuerpo por `GenericGFXRtDraw2Tiles16x16sStacked` (`TilesOffset[0x1F]=0x73`, par 
 Se ve: mago con sombrero puntiagudo, pico naranja, túnica magenta y estrella de la varita.
 (Color magenta = paleta estática de la ROM; el juego la recolorea en el fade-in.)
 
-## Recetas parciales / pendientes
-
-### Koopa alado / Paratroopa verde · ⚠️ fiel-parcial
-Cuerpo apilado (top `0x82` / bottom `0xa0`, paleta 5 → prop `0x0a`) + 2 alas de
-`kDrawWingTiles` (tile `0xc6` 16×16; YDisp del juego = −12). Los tiles del Koopa y las
-alas son globales (SP1/SP2), así que vale cualquier nivel (0x106).
+### Koopa alado / Paratroopa verde (id 0x08) · cualquier nivel (0x106) · ✅ verificado
+De `SprXXX_Generic_Spr0to13Gfx`: cuerpo apilado (`GenericGFXRtDraw2Tiles16x16sStacked`)
++ UNA sola ala (de perfil) por `DrawWingTiles_ParaKoopaEntry`. Frame con ala abierta:
+top `0x82` / bottom `0xa2`, paleta 5 → prop `0x0a`; ala `0xc6` 16×16 en (+9,+3), prop `0x06`.
+Tiles globales (SP1/SP2). Clave del ajuste: el cuerpo se dibuja subido 15px pero el ala no,
+así que el ala va relativa al top del cuerpo en `dy=+3` (no −12) → queda pegada al caparazón.
 ```
-0xc6,-9,-12,16,0x46 ; 0xc6,9,-12,16,0x06 ; 0x82,0,0,16,0x0a ; 0xa0,0,16,16,0x0a
+0x82,0,0,16,0x0a ; 0xa2,0,16,16,0x0a ; 0xc6,9,3,16,0x06
 ```
-Estado: sale un Koopa verde con las alas reales, pero queda un hueco entre alas y
-cuerpo. Falta fijar la tesela/frame de reposo exacto del cuerpo del Koopa volador (el
-agente se cortó por el límite de sesión). Revisar `Spr0..._FlyingKoopa`/`DrawWingTiles`.
+Se ve: Koopa naranja de perfil (izquierda), caparazón y patas verdes, un ala blanca con
+contorno azul barriendo hacia arriba, pegada al caparazón. Para mirar a la derecha, el
+juego espeja cuerpo+ala con Hflip (prop cuerpo `0x4a`, ala `0x46`, X del ala `−9`).
 
-### Thwomp (id 0x26) / Thwimp (0x27) · ⏳ pendiente
-Tablas `kSpr026_Thwomp_XDisp[5]={0xfc,0x4,0xfc,0x4,0x0}`, `_YDisp[5]={0x0,0x0,0x10,0x10,0x8}`
-(sprite ~32×32: 4 esquinas + centro). Falta transcribir sus `_Tiles/_TileSize/_Prop` y
-el nivel donde cargan sus teselas (SP3/SP4). No reconstruido aún.
+### Thwomp (id 0x26) · nivel 0x101 · ✅ verificado
+De `Spr026_Thwomp_Draw` (`src/smw_01.c`). En reposo dibuja 4 esquinas 16×16 (la tesela
+central de boca `0xc8` solo aparece al caer). `Sprite166EVals[0x26]=0x33` → prop base `0x03`
+(página 1 SP3/SP4, paleta 1); esquinas derechas con Hflip (`0x43`). Solo en niveles de
+castillo con su GFX (0x101; en 0x106 sale paleta rosa).
+```
+0x8e,-4,0,16,0x03 ; 0x8e,4,0,16,0x43 ; 0xae,-4,16,16,0x03 ; 0xae,4,16,16,0x43
+```
+Se ve: bloque de piedra gris con cara enfadada (cejas/ojos + boca de dientes apretados).
+Variante "cayendo": añadir la boca abierta `0xc8,0,8,16,0x03`.
+
+### Thwimp (id 0x27) · ⏳ pendiente
+Rutina en `src/smw_01.c:3915`. No reconstruido (baja prioridad).
 
 ## Integración pendiente (siguiente fase)
 Estas recetas aún NO están en el roster jugable. Para meterlas hace falta: un mapa
