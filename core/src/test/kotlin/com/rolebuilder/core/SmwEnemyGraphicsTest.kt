@@ -53,14 +53,18 @@ class SmwEnemyGraphicsTest {
     @Test
     fun `catalogo de sprites grandes verificados`() {
         val ids = SmwEnemyGraphics.bigSprites.map { it.id }
-        // Los 5 sprites grandes reconstruidos y verificados.
-        assertEquals(listOf(0x10, 0x08, 0x1F, 0x26, 0x91), ids)
+        // Sprites grandes reconstruidos y verificados desde la ROM real.
+        assertEquals(listOf(0x10, 0x08, 0x1F, 0x26, 0x91, 0x9F, 0xBF, 0xA8, 0x70), ids)
+        // No debe haber ids duplicados en el catálogo grande.
+        assertEquals(ids.size, ids.toSet().size)
         // Cada uno tiene receta OAM (al menos una parte) y un nivel de composición.
         for (bs in SmwEnemyGraphics.bigSprites) {
             assertTrue(bs.parts.isNotEmpty(), "${bs.name} debería tener partes OAM")
             assertTrue(bs.level > 0)
         }
         assertEquals("Thwomp", SmwEnemyGraphics.bigSpriteFor(0x26)?.name)
+        assertEquals("Banzai Bill", SmwEnemyGraphics.bigSpriteFor(0x9F)?.name)
+        assertEquals("Pokey", SmwEnemyGraphics.bigSpriteFor(0x70)?.name)
         assertNull(SmwEnemyGraphics.bigSpriteFor(0x00)) // Koopa normal no es sprite grande
     }
 

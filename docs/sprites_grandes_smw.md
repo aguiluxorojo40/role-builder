@@ -69,11 +69,53 @@ castillo con su GFX (0x101; en 0x106 sale paleta rosa).
 Se ve: bloque de piedra gris con cara enfadada (cejas/ojos + boca de dientes apretados).
 Variante "cayendo": añadir la boca abierta `0xc8,0,8,16,0x03`.
 
+### Banzai Bill (id 0x9F) · nivel 0x105 · ✅ verificado
+De `Spr09F_BanzaiBill_Draw` (`src/smw_02.c`) con sus tablas `_Tiles/_XDisp/_YDisp/_Prop`
+(banco $02): rejilla 4×4 de teselas 16×16 (64×64). `Prop=0x33` (página 1 SP4=GFX20,
+paleta 1); las 2 teselas de la cola llevan Vflip (`0xb3`). Se verifica en 0x105 (Yoshi's
+Island 2), donde de verdad aparece.
+```
+0x80,0,0,16,0x33 ; 0x82,16,0,16,0x33 ; 0x84,32,0,16,0x33 ; 0x86,48,0,16,0x33
+0xa0,0,16,16,0x33 ; 0x88,16,16,16,0x33 ; 0xce,32,16,16,0x33 ; 0xee,48,16,16,0x33
+0xc0,0,32,16,0x33 ; 0xc2,16,32,16,0x33 ; 0xce,32,32,16,0x33 ; 0xee,48,32,16,0x33
+0x8e,0,48,16,0x33 ; 0xae,16,48,16,0x33 ; 0x84,32,48,16,0xb3 ; 0x86,48,48,16,0xb3
+```
+Se ve: bala negra gigante, ojo blanco enfadado, boca roja con dientes y cola metálica.
+
+### Mega Mole (id 0xBF) · nivel 0x1D · ✅ verificado
+De `Spr0BF_MegaMole_Draw` (`src/smw_03.c`, `_Tiles/_TileDispX/_TileDispY`): 2×2 (32×32).
+Fotograma de andar (frame 0) mirando a la derecha (prop base 1, sin Hflip). Página 1
+(SP4=GFX20). El fotograma 1 usa 0xCA/0xCC/0xEA/0xEC (patas alternas).
+```
+0xc6,0,-16,16,0x01 ; 0xc8,16,-16,16,0x01 ; 0xe6,0,0,16,0x01 ; 0xe8,16,0,16,0x01
+```
+Se ve: topo marrón peludo, panza clara y garras.
+
+### Blargg (id 0xA8) · nivel 0x10A · ✅ verificado
+De `Spr0A8_Blargg_Draw` (`src/smw_03.c`, forma emergida `table00c2==4`,
+`_Tiles/_XDisp/_YDisp/_Prop`). Mirando a la derecha (r2=1 → `prop 0x05`, sin Hflip): 2
+teselas arriba + 3 abajo (la mandíbula se alarga a la derecha). Página 1 (SP4=GFX04),
+paleta 2.
+```
+0xa2,-8,-8,16,0x05 ; 0xa4,8,-8,16,0x05 ; 0xc2,-8,8,16,0x05 ; 0xc4,8,8,16,0x05 ; 0xa6,24,8,16,0x05
+```
+Se ve: cabeza de dinosaurio de lava rojo/naranja con boca abierta de dientes y ojo.
+
+### Pokey (id 0x70) · nivel 0xC7 · ✅ verificado
+De `Spr070_Pokey_Draw` (`src/smw_02.c`), que apila segmentos verticalmente (cabeza tesela
+0x8A con cara, cuerpo 0xE8). Reconstrucción estática de 5 segmentos (cabeza + 4 cuerpos)
+cada 16px; `prop 0x05` (página 1 SP4=GFX09, paleta 2).
+```
+0x8a,0,-16,16,0x05 ; 0xe8,0,0,16,0x05 ; 0xe8,0,16,16,0x05 ; 0xe8,0,32,16,0x05 ; 0xe8,0,48,16,0x05
+```
+Se ve: cactus del desierto amarillo, segmentos redondos apilados y cabeza con ojos/boca.
+
 ### Thwimp (id 0x27) · ⏳ pendiente
 Rutina en `src/smw_01.c:3915`. No reconstruido (baja prioridad).
 
-## Integración pendiente (siguiente fase)
-Estas recetas aún NO están en el roster jugable. Para meterlas hace falta: un mapa
-`id de sprite → List<OamPart>` en `SmwEnemyGraphics`, atlas de fotogramas de altura
-variable, y ajustar el renderer del motor de plataformas para dibujar sprites más
-grandes anclados por los pies.
+## Integración en el roster jugable
+Ya integradas: cada `BigSprite` de `SmwEnemyGraphics.bigSprites` se hornea con
+`:core:bakeSmwBigSprites` a `app/src/main/assets/sprites/big/big_<id>.png` a su tamaño
+nativo, y el motor de plataformas los carga por id (`PlatformerActivity`) y los dibuja
+anclados abajo-centro (`PlatformerRenderer`). Para añadir uno nuevo: mete su receta en
+`bigSprites`, rehornea, y aparece solo.

@@ -275,6 +275,44 @@ object SmwEnemyGraphics {
         BigSprite(0x91, "Chargin' Chuck", 0x106, listOf(
             OamPart(0x06, 0, -8, 16, 0x4B), OamPart(0x26, -4, 0, 16, 0x0B), OamPart(0x26, 4, 0, 16, 0x4B),
         )),
+        // Banzai Bill: bala GIGANTE 4×4 (de `Spr09F_BanzaiBill_Draw`, `_Tiles/_XDisp/_YDisp/_Prop`
+        // del banco $02). Página 1 (SP4=GFX20); aparece en 0x105 (Yoshi's Island 2), donde la
+        // paleta 1 le da su negro con cara blanca y boca roja. Las 2 teselas de la cola van
+        // con Vflip (prop 0xb3). ✅ verificado.
+        BigSprite(0x9F, "Banzai Bill", 0x105, listOf(
+            OamPart(0x80, 0, 0, 16, 0x33), OamPart(0x82, 16, 0, 16, 0x33),
+            OamPart(0x84, 32, 0, 16, 0x33), OamPart(0x86, 48, 0, 16, 0x33),
+            OamPart(0xA0, 0, 16, 16, 0x33), OamPart(0x88, 16, 16, 16, 0x33),
+            OamPart(0xCE, 32, 16, 16, 0x33), OamPart(0xEE, 48, 16, 16, 0x33),
+            OamPart(0xC0, 0, 32, 16, 0x33), OamPart(0xC2, 16, 32, 16, 0x33),
+            OamPart(0xCE, 32, 32, 16, 0x33), OamPart(0xEE, 48, 32, 16, 0x33),
+            OamPart(0x8E, 0, 48, 16, 0x33), OamPart(0xAE, 16, 48, 16, 0x33),
+            OamPart(0x84, 32, 48, 16, 0xB3), OamPart(0x86, 48, 48, 16, 0xB3),
+        )),
+        // Mega Mole: topo peludo 2×2 (32×32) de `Spr0BF_MegaMole_Draw` (`_Tiles`, `_TileDispX/Y`).
+        // Fotograma de andar (frame 0: 0xC6/0xC8/0xE6/0xE8), mirando a la derecha (prop base 1,
+        // sin Hflip). Página 1 (SP4=GFX20); aparece en 0x1D. ✅ verificado.
+        BigSprite(0xBF, "Mega Mole", 0x1D, listOf(
+            OamPart(0xC6, 0, -16, 16, 0x01), OamPart(0xC8, 16, -16, 16, 0x01),
+            OamPart(0xE6, 0, 0, 16, 0x01), OamPart(0xE8, 16, 0, 16, 0x01),
+        )),
+        // Blargg: cabeza de dinosaurio de lava de `Spr0A8_Blargg_Draw` (forma emergida, v2==4;
+        // `_Tiles/_XDisp/_YDisp/_Prop`). Mirando a la derecha (r2=1 → prop 5, sin Hflip): 2 teselas
+        // arriba + 3 abajo (la mandíbula se alarga a la derecha). Página 1 (SP4=GFX04); aparece en
+        // 0x10A. ✅ verificado.
+        BigSprite(0xA8, "Blargg", 0x10A, listOf(
+            OamPart(0xA2, -8, -8, 16, 0x05), OamPart(0xA4, 8, -8, 16, 0x05),
+            OamPart(0xC2, -8, 8, 16, 0x05), OamPart(0xC4, 8, 8, 16, 0x05),
+            OamPart(0xA6, 24, 8, 16, 0x05),
+        )),
+        // Pokey: cactus del desierto de `Spr070_Pokey_Draw` (pila vertical). Reconstrucción
+        // estática: cabeza (tesela 0x8A, con cara) arriba + 4 segmentos de cuerpo (0xE8) apilados
+        // cada 16px; prop 5 (página 1 SP4=GFX09, paleta 2). Aparece en 0xC7. ✅ verificado.
+        BigSprite(0x70, "Pokey", 0xC7, listOf(
+            OamPart(0x8A, 0, -16, 16, 0x05), OamPart(0xE8, 0, 0, 16, 0x05),
+            OamPart(0xE8, 0, 16, 16, 0x05), OamPart(0xE8, 0, 32, 16, 0x05),
+            OamPart(0xE8, 0, 48, 16, 0x05),
+        )),
     )
 
     /** El sprite grande para este id de sprite, o null si no hay receta grande. */
