@@ -35,7 +35,7 @@ Página 1 (SP3/SP4): solo en niveles que suben su GFX (0x106, 0x00A, 0x024, 0x1C
 Se ve: jugador con casco verde y visera, hombreras marrón-rojizas, torso blanco con
 cordones naranjas, guantes blancos.
 
-### Magikoopa / Kamek (id 0x1F) · nivel 0x101 · ✅ verificado
+### Magikoopa / Kamek (id 0x1F) · nivel 0x11C · ✅ verificado
 Cuerpo por `GenericGFXRtDraw2Tiles16x16sStacked` (`TilesOffset[0x1F]=0x73`, par de reposo
 0xA0/0xC0) + varita de `Spr01F_MagiKoopa_BE86`. `Sprite166EVals[0x1F]=0x4F`. Página 1
 (solo en niveles con su GFX; 0x101 confirmado).
@@ -58,7 +58,7 @@ Se ve: Koopa naranja de perfil (izquierda), caparazón y patas verdes, un ala bl
 contorno azul barriendo hacia arriba, pegada al caparazón. Para mirar a la derecha, el
 juego espeja cuerpo+ala con Hflip (prop cuerpo `0x4a`, ala `0x46`, X del ala `−9`).
 
-### Thwomp (id 0x26) · nivel 0x101 · ✅ verificado
+### Thwomp (id 0x26) · nivel 0xE0 · ✅ verificado
 De `Spr026_Thwomp_Draw` (`src/smw_01.c`). En reposo dibuja 4 esquinas 16×16 (la tesela
 central de boca `0xc8` solo aparece al caer). `Sprite166EVals[0x26]=0x33` → prop base `0x03`
 (página 1 SP3/SP4, paleta 1); esquinas derechas con Hflip (`0x43`). Solo en niveles de
@@ -119,7 +119,7 @@ De `Spr01C_BulletBill`: UN tile 16×16 (`TilesOffset[0x1C]=0x47` → byte `0xA6`
 Bala negra con ojo blanco y guante. (En el roster pequeño 0x1C figura como "Bob-omb"; la
 decomp confirma que es Bullet Bill — el sprite grande manda al dibujar.)
 
-### Bony Beetle (id 0x31) · nivel 0x101 · ✅ verificado
+### Bony Beetle (id 0x31) · nivel 0xE0 · ✅ verificado
 De `Spr031_BonyBeetle`: UN tile 16×16 (`TilesOffset[0x31]=0xAA` → byte `0x8C`). Página 1
 (SP3/SP4, nivel de castillo). `Sprite166EVals[0x31]=0x13` → prop `0x03`.
 ```

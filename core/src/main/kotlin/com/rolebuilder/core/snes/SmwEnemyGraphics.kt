@@ -265,10 +265,10 @@ object SmwEnemyGraphics {
         BigSprite(0x08, "Koopa alado", 0x106, listOf(
             OamPart(0xC6, 9, 3, 16, 0x06), OamPart(0x82, 0, 0, 16, 0x0A), OamPart(0xA2, 0, 16, 16, 0x0A),
         )),
-        BigSprite(0x1F, "Magikoopa", 0x101, listOf(
+        BigSprite(0x1F, "Magikoopa", 0x11C, listOf(
             OamPart(0xA0, 0, 0, 16, 0x4F), OamPart(0xC0, 0, 16, 16, 0x4F), OamPart(0x99, 16, 16, 8, 0x4F),
         )),
-        BigSprite(0x26, "Thwomp", 0x101, listOf(
+        BigSprite(0x26, "Thwomp", 0xE0, listOf(
             OamPart(0x8E, -4, 0, 16, 0x03), OamPart(0x8E, 4, 0, 16, 0x43),
             OamPart(0xAE, -4, 16, 16, 0x03), OamPart(0xAE, 4, 16, 16, 0x43),
         )),
@@ -316,13 +316,31 @@ object SmwEnemyGraphics {
         BigSprite(0x1C, "Bullet Bill", 0x106, listOf(
             OamPart(0xA6, 0, 0, 16, 0x02),
         )),
-        BigSprite(0x31, "Bony Beetle", 0x101, listOf(
+        BigSprite(0x31, "Bony Beetle", 0xE0, listOf(
             OamPart(0x8C, 0, 0, 16, 0x03),
         )),
     )
 
     /** El sprite grande para este id de sprite, o null si no hay receta grande. */
     fun bigSpriteFor(spriteId: Int): BigSprite? = bigSprites.firstOrNull { it.id == spriteId }
+
+    /**
+     * Niveles (0x000..0x1FF) cuya LISTA DE SPRITES contiene el [spriteId]. En esos niveles
+     * el juego carga de verdad su GFX y su PALETA reales, así que son los mejores candidatos
+     * para hornear el sprite con sus colores canónicos. Devuelve como mucho [max] niveles.
+     */
+    fun levelsWithSprite(rom: ByteArray, header: SnesHeader, spriteId: Int, max: Int = 20): List<Int> {
+        val delta = header.headerOffset - 0x7FC0
+        val out = ArrayList<Int>()
+        for (lv in 0x000..0x1FF) {
+            val list = SmwSprites.parse(rom, delta, lv) ?: continue
+            if (list.sprites.any { it.id == spriteId }) {
+                out.add(lv)
+                if (out.size >= max) break
+            }
+        }
+        return out
+    }
 
     /**
      * Imagen ARGB a TAMAÑO NATIVO (puede exceder 16×16) del sprite grande [spriteId],

@@ -83,6 +83,16 @@ tasks.register<JavaExec>("bakeSmwEnemies") {
     workingDir = rootDir
 }
 
+// Busca el mejor nivel de horneado (paleta canónica) para cada sprite grande:
+//   ./gradlew :core:scoutBigSpritePalettes --args="--rom smw.sfc --out scout [--only 0x9F]"
+tasks.register<JavaExec>("scoutBigSpritePalettes") {
+    group = "rolebuilder"
+    description = "Lámina por sprite grande con su render en los niveles donde aparece (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwBigSpritePaletteScoutKt")
+    systemProperty("java.awt.headless", "true")
+}
+
 // Hornea los sprites GRANDES (multi-tesela) a assets/sprites/big/big_<id>.png:
 //   ./gradlew :core:bakeSmwBigSprites --args="--rom smw.sfc"
 tasks.register<JavaExec>("bakeSmwBigSprites") {
