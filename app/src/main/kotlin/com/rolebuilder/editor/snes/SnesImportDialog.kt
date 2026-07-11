@@ -343,8 +343,11 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                             .border(1.dp, Color(0xFF555555), RoundedCornerShape(4.dp))
                                             .clickable {
                                                 runCatching {
-                                                    val fileName = SnesImport.sanitizeFileName("${gameRecipe}_${idx + 1}")
-                                                    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(f.image))
+                                                    // Hoja de GFX cruda → images/graphics/<juego>/
+                                                    val fileName = SnesImport.saveClassified(
+                                                        state.projectDir, SnesImport.Folder.GRAPHICS,
+                                                        gameRecipe, "${gameRecipe}_${idx + 1}", SnesImport.toBitmap(f.image),
+                                                    )
                                                     val sheet = SnesAssetExtractor.TileSheet(
                                                         f.image, f.columns, f.image.height / 8, 8,
                                                     )
@@ -401,8 +404,11 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             )
                             TextButton(onClick = {
                                 runCatching {
-                                    val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
-                                    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
+                                    // Tileset de bloques 16×16 del nivel → images/tilesets/smw/
+                                    val fileName = SnesImport.saveClassified(
+                                        state.projectDir, SnesImport.Folder.TILESETS,
+                                        "smw", "smw_${name}_tiles", SnesImport.toBitmap(m.atlas),
+                                    )
                                     val tsId = state.nextTilesetId()
                                     state.addTileset(
                                         Tileset(
@@ -648,9 +654,12 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     onClick = {
                         val sheet = preview?.sheet ?: return@Button
                         runCatching {
-                            val fileName = SnesImport.sanitizeFileName(name)
                             val bmp = SnesImport.toBitmap(sheet.image)
-                            SnesImport.saveTilesetPng(state.projectDir, fileName, bmp)
+                            // Clasifica por tamaño: 8×8 = gráficos crudos, 16×16 = tileset de bloques.
+                            val folder = if (sheet.tileSize >= 16) SnesImport.Folder.TILESETS else SnesImport.Folder.GRAPHICS
+                            val fileName = SnesImport.saveClassified(
+                                state.projectDir, folder, gameRecipe ?: "snes", name.ifBlank { "snes" }, bmp,
+                            )
                             val tileset = SnesAssetExtractor.toTileset(
                                 sheet, id = state.nextTilesetId(),
                                 name = name.ifBlank { "SNES" }, imageFileName = fileName,

@@ -28,7 +28,8 @@ object SnesImport {
 
     /**
      * Guarda [bitmap] como PNG en images/[fileName] del proyecto y devuelve el
-     * nombre de archivo (para referenciarlo desde el Tileset).
+     * nombre de archivo (para referenciarlo desde el Tileset). [fileName] puede
+     * incluir subcarpetas (p. ej. "graphics/smw/tiles.png"): se crean solas.
      */
     fun saveTilesetPng(projectDir: File, fileName: String, bitmap: Bitmap): String {
         val dest = ProjectIo.imageFile(projectDir, fileName)
@@ -37,12 +38,36 @@ object SnesImport {
         return fileName
     }
 
+    /**
+     * Carpetas donde se clasifican los assets extraídos, dentro de images/.
+     * Cada categoría agrupa por juego en una subcarpeta.
+     */
+    object Folder {
+        const val GRAPHICS = "graphics"      // hojas de GFX 8×8 crudas
+        const val TILESETS = "tilesets"      // tilesets de bloques 16×16 (niveles Map16)
+        const val SPRITES = "sprites"        // jugador y enemigos
+        const val BACKGROUNDS = "backgrounds" // fondos (Layer 2)
+        const val BLOCKS = "blocks"          // bloques compuestos en el editor Map16
+    }
+
+    /**
+     * Guarda [bitmap] clasificado en images/[folder]/[sub]/[baseName].png (la
+     * subcarpeta [sub] es opcional, típicamente el nombre del juego). Devuelve la
+     * ruta relativa para guardarla como `Tileset.image`.
+     */
+    fun saveClassified(projectDir: File, folder: String, sub: String, baseName: String, bitmap: Bitmap): String {
+        val subPath = if (sub.isBlank()) "" else sanitizePart(sub) + "/"
+        val relative = "$folder/$subPath${sanitizeFileName(baseName)}"
+        return saveTilesetPng(projectDir, relative, bitmap)
+    }
+
     /** Normaliza un nombre a un archivo PNG seguro (minúsculas, sin espacios). */
-    fun sanitizeFileName(name: String): String {
-        val base = name.trim().lowercase()
+    fun sanitizeFileName(name: String): String = "${sanitizePart(name)}.png"
+
+    /** Normaliza un fragmento de ruta (carpeta o base) a algo seguro. */
+    fun sanitizePart(name: String): String =
+        name.trim().lowercase()
             .replace(Regex("[^a-z0-9_-]+"), "_")
             .trim('_')
             .ifBlank { "snes" }
-        return "$base.png"
-    }
 }

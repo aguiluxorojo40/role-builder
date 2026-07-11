@@ -82,7 +82,7 @@ object Map16Baker {
         val index = usedBefore
         val newCount = index + 1
         val rows = (newCount + BLOCKS_COLUMNS - 1) / BLOCKS_COLUMNS
-        val imageName = blocks?.image ?: "blocks_$newTilesetId.png"
+        val imageName = blocks?.image ?: "blocks/blocks_$newTilesetId.png"
 
         val out = Bitmap.createBitmap(BLOCKS_COLUMNS * BLOCK_PX, rows * BLOCK_PX, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)

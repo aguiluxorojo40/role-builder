@@ -43,12 +43,19 @@ class EditorState(val projectDir: File) {
 
     val mapList: List<GameMap> get() = project.mapIds.mapNotNull { maps[it] }
 
-    /** Imágenes PNG disponibles en el proyecto (para sprites y tilesets). */
-    fun imageNames(): List<String> =
-        File(projectDir, ProjectIo.IMAGES_DIR).listFiles { f -> f.extension.lowercase() == "png" }
-            .orEmpty()
-            .map { it.name }
+    /**
+     * Imágenes PNG disponibles en el proyecto (para sprites y tilesets), incluidas
+     * las de subcarpetas (p. ej. images/graphics/smw/…). Devuelve rutas relativas a
+     * images/ con separador "/".
+     */
+    fun imageNames(): List<String> {
+        val imagesDir = File(projectDir, ProjectIo.IMAGES_DIR)
+        return imagesDir.walkTopDown()
+            .filter { it.isFile && it.extension.lowercase() == "png" }
+            .map { it.relativeTo(imagesDir).invariantSeparatorsPath }
             .sorted()
+            .toList()
+    }
 
     fun updateProject(newProject: Project) {
         project = newProject
