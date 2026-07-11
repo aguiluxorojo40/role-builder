@@ -39,6 +39,8 @@ class PlatformerRenderer(
     private val marioBitmap: android.graphics.Bitmap? = null,
     private val enemyBitmap: android.graphics.Bitmap? = null,
     private val audio: PlatformerAudio? = null,
+    /** id de sprite → bitmap del sprite GRANDE (assets/sprites/big/big_<id>.png). */
+    private val bigSpriteBitmaps: Map<Int, android.graphics.Bitmap> = emptyMap(),
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -59,6 +61,8 @@ class PlatformerRenderer(
     private var tilesetTex: Texture? = null
     private var marioTex: Texture? = null
     private var enemyTex: Texture? = null
+    /** id de sprite → textura y tamaño (px) del sprite grande. */
+    private var bigTex: Map<Int, Pair<Texture, android.graphics.Bitmap>> = emptyMap()
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
     private var lastNanos = 0L
@@ -73,6 +77,7 @@ class PlatformerRenderer(
         animByTile = world?.tileset?.animations?.associateBy { it.baseTile } ?: emptyMap()
         marioTex = marioBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
+        bigTex = bigSpriteBitmaps.mapValues { (_, bmp) -> Texture(bmp) to bmp }
         camera.tilesVisibleY = 15f
         lastNanos = 0L
         acc = 0f
@@ -183,7 +188,16 @@ class PlatformerRenderer(
             val ex = e.x / 16f
             val ew = e.width / 16f
             val frame = ENEMY_FRAME[e.id]
-            if (e.alive && etex != null && frame != null) {
+            val big = if (e.alive) bigTex[e.id] else null
+            if (big != null) {
+                // Sprite GRANDE (varias teselas) a tamaño nativo, anclado abajo-centro.
+                val (tex, bmp) = big
+                val wT = bmp.width / 16f
+                val hT = bmp.height / 16f
+                val cx = (e.x + e.width / 2f) / 16f - wT / 2f
+                val feet = (e.y + e.height) / 16f - hT
+                batch.draw(tex, cx, feet, wT, hT, u0 = 0f, v0 = 0f, u1 = 1f, v1 = 1f, flipX = e.vx > 0f)
+            } else if (e.alive && etex != null && frame != null) {
                 // Sprite 16×16 centrado sobre la caja del enemigo, con los pies abajo.
                 val cx = (e.x + e.width / 2f) / 16f - 0.5f
                 val feet = (e.y + e.height) / 16f - 1f

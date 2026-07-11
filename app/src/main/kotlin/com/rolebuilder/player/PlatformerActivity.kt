@@ -84,7 +84,7 @@ class PlatformerActivity : ComponentActivity() {
                     return null
                 }
             val engine = ProjectPlatformer.engine(map, tileset, project.startX, project.startY)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this))
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this), loadBigSprites())
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -113,7 +113,7 @@ class PlatformerActivity : ComponentActivity() {
         }
         // Audio con las muestras reales de SMW (o null si la ROM no lo permite).
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
-        return PlatformerRenderer(engine, null, loadMario(), loadEnemies(), audio)
+        return PlatformerRenderer(engine, null, loadMario(), loadEnemies(), audio, loadBigSprites())
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
@@ -121,6 +121,13 @@ class PlatformerActivity : ComponentActivity() {
 
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
     private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
+
+    /** Carga los sprites GRANDES empaquetados (assets/sprites/big/big_<id>.png), por id. */
+    private fun loadBigSprites(): Map<Int, android.graphics.Bitmap> = buildMap {
+        for (bs in com.rolebuilder.core.snes.SmwEnemyGraphics.bigSprites) {
+            loadSprite("sprites/big/big_%02x.png".format(bs.id))?.let { put(bs.id, it) }
+        }
+    }
 
     private fun loadSprite(path: String): android.graphics.Bitmap? = runCatching {
         assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }
