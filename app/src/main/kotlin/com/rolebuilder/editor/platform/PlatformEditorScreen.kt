@@ -74,6 +74,7 @@ import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
+import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwSolidity
@@ -96,6 +97,7 @@ private val Panel = Color(0xFF10261A)
 
 /** Herramientas del editor de plataformas. */
 private enum class PTool(val label: String) {
+    SELECT("Seleccionar"),
     TERRAIN("Primer plano"),
     DECOR("Fondo"),
     ERASE("Borrar"),
@@ -105,6 +107,12 @@ private enum class PTool(val label: String) {
     START("Inicio"),
     COLLISION("Colisión"),
 }
+
+/** Qué clase de objeto está seleccionado en el modo Seleccionar. */
+private enum class SelKind { ENEMY, ITEM, START }
+
+/** Un objeto seleccionado, identificado por su tipo y su celda actual. */
+private data class Selected(val kind: SelKind, val x: Int, val y: Int)
 
 /** Colores del recubrimiento de colisión (estilo "mostrar solidez" de Lunar Magic). */
 private fun solidityColor(s: SmwSolidity): Color = when (s) {
@@ -123,6 +131,57 @@ private fun solidityOfTile(tileset: Tileset?, tile: Int): SmwSolidity {
     val ord = tileset.platformSolidity.getOrNull(tile)
     if (ord != null) return SOLIDITY_VALUES.getOrElse(ord) { SmwSolidity.NONE }
     return if (tileset.isPassable(tile)) SmwSolidity.NONE else SmwSolidity.SOLID
+}
+
+// ---- Modo Seleccionar: encontrar, mover, borrar y editar objetos ----
+
+/** Devuelve el objeto en la celda (tx,ty), priorizando enemigo > ítem > inicio. */
+private fun hitTest(map: GameMap, project: Project, tx: Int, ty: Int): Selected? {
+    map.platformEnemies.firstOrNull { it.x == tx && it.y == ty }?.let { return Selected(SelKind.ENEMY, tx, ty) }
+    map.platformItems.firstOrNull { it.x == tx && it.y == ty }?.let { return Selected(SelKind.ITEM, tx, ty) }
+    if (project.startMapId == map.id && project.startX == tx && project.startY == ty) {
+        return Selected(SelKind.START, tx, ty)
+    }
+    return null
+}
+
+/** Mueve el objeto seleccionado a (nx,ny). Devuelve la nueva selección o null. */
+private fun moveSelected(state: EditorState, cur: GameMap, sel: Selected, nx: Int, ny: Int): Selected? {
+    if (!cur.inBounds(nx, ny)) return null
+    when (sel.kind) {
+        SelKind.ENEMY -> {
+            val e = cur.platformEnemies.firstOrNull { it.x == sel.x && it.y == sel.y } ?: return null
+            state.updateMap(cur.copy(platformEnemies = cur.platformEnemies - e + e.copy(x = nx, y = ny)))
+        }
+        SelKind.ITEM -> {
+            val i = cur.platformItems.firstOrNull { it.x == sel.x && it.y == sel.y } ?: return null
+            state.updateMap(cur.copy(platformItems = cur.platformItems - i + i.copy(x = nx, y = ny)))
+        }
+        SelKind.START -> state.updateProject(state.project.copy(startMapId = cur.id, startX = nx, startY = ny))
+    }
+    return Selected(sel.kind, nx, ny)
+}
+
+/** Borra el objeto seleccionado (el inicio del jugador no se puede borrar). */
+private fun deleteSelected(state: EditorState, cur: GameMap, sel: Selected) {
+    when (sel.kind) {
+        SelKind.ENEMY -> state.updateMap(cur.copy(platformEnemies = cur.platformEnemies.filterNot { it.x == sel.x && it.y == sel.y }))
+        SelKind.ITEM -> state.updateMap(cur.copy(platformItems = cur.platformItems.filterNot { it.x == sel.x && it.y == sel.y }))
+        SelKind.START -> Unit
+    }
+}
+
+/** Cambia el tipo de sprite del enemigo seleccionado. */
+private fun setSelectedEnemyType(state: EditorState, cur: GameMap, sel: Selected, spriteId: Int) {
+    val e = cur.platformEnemies.firstOrNull { it.x == sel.x && it.y == sel.y } ?: return
+    state.updateMap(cur.copy(platformEnemies = cur.platformEnemies - e + e.copy(spriteId = spriteId)))
+}
+
+/** Alterna moneda/meta del ítem seleccionado. */
+private fun toggleSelectedItem(state: EditorState, cur: GameMap, sel: Selected) {
+    val i = cur.platformItems.firstOrNull { it.x == sel.x && it.y == sel.y } ?: return
+    val newType = if (i.type == PlatformItemType.COIN) PlatformItemType.GOAL else PlatformItemType.COIN
+    state.updateMap(cur.copy(platformItems = cur.platformItems - i + i.copy(type = newType)))
 }
 
 /** Solidez efectiva de una celda del mapa (la capa más bloqueante). */
@@ -162,7 +221,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds).
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
 
-    var tool by remember { mutableStateOf(PTool.TERRAIN) }
+    var tool by remember { mutableStateOf(PTool.SELECT) }
+    var selected by remember(map?.id) { mutableStateOf<Selected?>(null) }
     var selectedTile by remember { mutableIntStateOf(0) }
     var selectedEnemyId by remember {
         mutableIntStateOf(SmwEnemyGraphics.curatedIds.firstOrNull() ?: 0x0F)
@@ -263,6 +323,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 val down = awaitFirstDown()
                                 var transform = false
                                 var lastCell: Pair<Int, Int>? = null
+                                // Estado del modo Seleccionar durante este gesto.
+                                var didHitTest = false
+                                var selDrag: Selected? = null
 
                                 fun applyAt(position: Offset) {
                                     val tx = floor((position.x - pan.x) / scale).toInt()
@@ -273,6 +336,20 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     if (!cur.inBounds(tx, ty)) return
                                     hover = tx to ty
                                     when (tool) {
+                                        PTool.SELECT -> {
+                                            if (!didHitTest) {
+                                                // Primer toque: selecciona el objeto bajo el dedo (o deselecciona).
+                                                didHitTest = true
+                                                selDrag = hitTest(cur, state.project, tx, ty)
+                                                selected = selDrag
+                                            } else if (selDrag != null) {
+                                                // Arrastre: mueve el objeto seleccionado a la celda nueva.
+                                                moveSelected(state, cur, selDrag!!, tx, ty)?.let {
+                                                    selDrag = it
+                                                    selected = it
+                                                }
+                                            }
+                                        }
                                         PTool.TERRAIN -> state.updateMap(cur.withTile(0, tx, ty, selectedTile))
                                         PTool.DECOR -> state.updateMap(cur.withTile(1, tx, ty, selectedTile))
                                         PTool.ERASE -> {
@@ -322,7 +399,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     }
                                 }
 
-                                val dragTool = tool == PTool.TERRAIN || tool == PTool.DECOR || tool == PTool.ERASE
+                                val dragTool = tool == PTool.TERRAIN || tool == PTool.DECOR ||
+                                    tool == PTool.ERASE || tool == PTool.SELECT
                                 if (dragTool) applyAt(down.position)
                                 var tapPos: Offset? = down.position
                                 while (true) {
@@ -357,6 +435,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         scale = scale,
                         showSolidity = tool == PTool.COLLISION,
                         start = if (state.project.startMapId == map.id) state.project.startX to state.project.startY else null,
+                        selected = selected.takeIf { tool == PTool.SELECT },
                     )
                 }
 
@@ -403,6 +482,13 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
             // ---------- paleta inferior ----------
             when (tool) {
+                PTool.SELECT -> SelectionPanel(
+                    selected = selected,
+                    enemyAtlas = enemyAtlas,
+                    onDelete = { selected?.let { deleteSelected(state, state.currentMap ?: map, it); selected = null } },
+                    onChangeEnemy = { id -> selected?.let { setSelectedEnemyType(state, state.currentMap ?: map, it, id) } },
+                    onToggleItem = { selected?.let { toggleSelectedItem(state, state.currentMap ?: map, it) } },
+                )
                 PTool.ENEMY -> EnemyPalette(enemyAtlas, selectedEnemyId) { selectedEnemyId = it }
                 PTool.COIN -> Hint("Toca para poner o quitar monedas. Se recogen al jugar y suman al contador.")
                 PTool.GOAL -> Hint("Toca para poner la meta (bandera). Al tocarla, el nivel se completa.")
@@ -478,6 +564,54 @@ private fun Hint(text: String) {
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.fillMaxWidth().background(Panel).padding(10.dp),
     )
+}
+
+/** Panel del modo Seleccionar: info del objeto elegido, mover (en el lienzo), editar y borrar. */
+@Composable
+private fun SelectionPanel(
+    selected: Selected?,
+    enemyAtlas: ImageBitmap?,
+    onDelete: () -> Unit,
+    onChangeEnemy: (Int) -> Unit,
+    onToggleItem: () -> Unit,
+) {
+    if (selected == null) {
+        Hint("Toca un objeto (enemigo, moneda, meta o inicio) para seleccionarlo; arrástralo para moverlo.")
+        return
+    }
+    Column(Modifier.fillMaxWidth().background(Panel)) {
+        Row(
+            Modifier.fillMaxWidth().padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                when (selected.kind) {
+                    SelKind.ENEMY -> "Enemigo — arrástralo para moverlo"
+                    SelKind.ITEM -> "Ítem — arrástralo para moverlo"
+                    SelKind.START -> "Inicio del jugador — arrástralo para moverlo"
+                },
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f),
+            )
+            if (selected.kind == SelKind.ITEM) {
+                TextButton(onClick = onToggleItem) { Text("Moneda/Meta", color = SkyBlue) }
+            }
+            if (selected.kind != SelKind.START) {
+                Button(onClick = onDelete) { Text("Borrar") }
+            }
+        }
+        if (selected.kind == SelKind.ENEMY) {
+            Text(
+                "Cambiar tipo:",
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+            EnemyPalette(enemyAtlas, -1) { onChangeEnemy(it) }
+        }
+    }
 }
 
 @Composable
@@ -702,6 +836,7 @@ private fun DrawScope.drawLevel(
     scale: Float,
     showSolidity: Boolean,
     start: Pair<Int, Int>?,
+    selected: Selected? = null,
 ) {
     val tilePx = scale
     val minX = floor(-pan.x / tilePx).toInt().coerceAtLeast(0)
@@ -807,5 +942,11 @@ private fun DrawScope.drawLevel(
             drawRect(Color(0xCC00E676), topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
             drawCircle(Color(0xFF00E676), radius = tilePx * 0.18f, center = topLeft + Offset(tilePx / 2f, tilePx / 2f))
         }
+    }
+
+    // Resaltado del objeto seleccionado (modo Seleccionar).
+    selected?.let { sel ->
+        val topLeft = Offset(pan.x + sel.x * tilePx, pan.y + sel.y * tilePx)
+        drawRect(Color(0xFFFFEB3B), topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
     }
 }
