@@ -256,11 +256,14 @@ object SmwEnemyGraphics {
 
     /** Catálogo de sprites grandes verificados (agente + verificación independiente). */
     val bigSprites: List<BigSprite> = listOf(
+        // Alas DETRÁS del cuerpo (se dibujan primero, el cuerpo encima) para que asomen
+        // por detrás con la perspectiva correcta, no tapando la cara. Posiciones exactas
+        // del juego; solo cambia la capa/orden de dibujo.
         BigSprite(0x10, "ParaGoomba", 0x106, listOf(
-            OamPart(0xAA, 0, 0, 16, 0x04), OamPart(0xC6, -11, -9, 16, 0x46), OamPart(0xC6, 11, -9, 16, 0x06),
+            OamPart(0xC6, -11, -9, 16, 0x46), OamPart(0xC6, 11, -9, 16, 0x06), OamPart(0xAA, 0, 0, 16, 0x04),
         )),
         BigSprite(0x08, "Koopa alado", 0x106, listOf(
-            OamPart(0x82, 0, 0, 16, 0x0A), OamPart(0xA2, 0, 16, 16, 0x0A), OamPart(0xC6, 9, 3, 16, 0x06),
+            OamPart(0xC6, 9, 3, 16, 0x06), OamPart(0x82, 0, 0, 16, 0x0A), OamPart(0xA2, 0, 16, 16, 0x0A),
         )),
         BigSprite(0x1F, "Magikoopa", 0x101, listOf(
             OamPart(0xA0, 0, 0, 16, 0x4F), OamPart(0xC0, 0, 16, 16, 0x4F), OamPart(0x99, 16, 16, 8, 0x4F),
