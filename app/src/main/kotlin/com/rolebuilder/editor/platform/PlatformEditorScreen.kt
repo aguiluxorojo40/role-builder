@@ -84,7 +84,6 @@ import com.rolebuilder.editor.snes.SnesImportDialog
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import com.rolebuilder.player.PlatformerActivity
-import com.rolebuilder.project.ProjectStore
 import java.io.File
 import kotlin.math.floor
 
@@ -152,10 +151,9 @@ private fun cellSolidity(map: GameMap, tileset: Tileset?, x: Int, y: Int): SmwSo
 @Composable
 fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val context = LocalContext.current
-    val state = remember(projectDir) {
-        runCatching { ProjectStore.ensureDefaultImages(context, projectDir) }
-        EditorState(projectDir)
-    }
+    // El Platform Builder NO copia los assets del ARPG: arranca limpio y se llena
+    // con lo que importes de la ROM de SMW.
+    val state = remember(projectDir) { EditorState(projectDir) }
     val map = state.currentMap
     val tileset = map?.let { state.database.tileset(it.tilesetId) } ?: state.database.tilesets.firstOrNull()
     val tilesetBitmap = remember(tileset?.image) {
@@ -165,7 +163,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
 
     var tool by remember { mutableStateOf(PTool.TERRAIN) }
-    var selectedTile by remember { mutableIntStateOf(4) }
+    var selectedTile by remember { mutableIntStateOf(0) }
     var selectedEnemyId by remember {
         mutableIntStateOf(SmwEnemyGraphics.curatedIds.firstOrNull() ?: 0x0F)
     }
@@ -378,6 +376,29 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                 )
+
+                // Primer arranque: proyecto sin gráficos → invita a importar de la ROM.
+                if (tileset == null) {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center).padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "🍄 Nivel vacío",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            "Importa los gráficos de tu ROM de SMW para llenar el editor.",
+                            color = Color.White.copy(alpha = 0.85f),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Button(
+                            onClick = { showRomImport = true },
+                            modifier = Modifier.padding(top = 10.dp),
+                        ) { Text("Importar de ROM") }
+                    }
+                }
             }
 
             // ---------- paleta inferior ----------
@@ -405,6 +426,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 else -> {
                     if (tileset != null && tilesetBitmap != null) {
                         TilePalette(tileset, tilesetBitmap, selectedTile) { selectedTile = it }
+                    } else {
+                        Hint("Este proyecto aún no tiene gráficos. Pulsa \"Importar de ROM\" y extrae los tiles de tu ROM de SMW para llenar la paleta.")
                     }
                 }
             }
@@ -413,7 +436,15 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
     // ---------- diálogos ----------
     if (showRomImport) {
-        SnesImportDialog(state = state, onDismiss = { showRomImport = false })
+        SnesImportDialog(state = state, onDismiss = {
+            showRomImport = false
+            // Si el nivel actual no tenía tileset válido, adopta el recién importado
+            // para que sus gráficos aparezcan en los selectores del editor.
+            val cur = state.currentMap
+            if (cur != null && state.database.tileset(cur.tilesetId) == null) {
+                state.database.tilesets.lastOrNull()?.let { state.updateMap(cur.copy(tilesetId = it.id)) }
+            }
+        })
     }
 
     if (showMap16) {

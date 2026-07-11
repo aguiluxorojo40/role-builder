@@ -39,52 +39,46 @@ object ProjectStore {
             }
             .sortedByDescending { it.lastModified }
 
-    /** Crea un proyecto nuevo desde la plantilla, con nombre y modo de motor. */
+    /** Crea un proyecto nuevo con nombre y modo de motor. */
     fun create(context: Context, name: String, mode: GameMode = GameMode.ARPG): File {
         val dir = File(root(context), "p${System.currentTimeMillis()}")
-        copyAssetDir(context, TEMPLATE_ASSET, dir)
-        var project = ProjectIo.loadProject(dir).copy(name = name.ifBlank { "Mi aventura" }, mode = mode)
         if (mode == GameMode.PLATFORMER) {
-            // La plantilla es un mapa cenital ARPG; para plataformas siembra un nivel
-            // de scroll lateral jugable (suelo firme + plataformas) sobre el que caer.
-            val start = seedPlatformerStarter(dir, project.startMapId)
-            project = project.copy(startX = start.first, startY = start.second)
+            // El Platform Builder arranca LIMPIO, sin los assets del ARPG: un nivel
+            // vacío y una base de datos sin tilesets. Los gráficos y tilesets de SMW
+            // se traen luego con "Importar de ROM" y rellenan los selectores.
+            createEmptyPlatformer(dir, name)
+        } else {
+            copyAssetDir(context, TEMPLATE_ASSET, dir)
+            val project = ProjectIo.loadProject(dir).copy(name = name.ifBlank { "Mi aventura" }, mode = mode)
+            ProjectIo.saveProject(dir, project)
         }
-        ProjectIo.saveProject(dir, project)
         dir.setLastModified(System.currentTimeMillis())
         return dir
     }
 
     /**
-     * Reescribe el mapa de inicio como un nivel de plataformas sencillo y jugable:
-     * suelo sólido abajo del todo y tres plataformas flotantes, con el tileset de la
-     * plantilla (tile 4 = sólido). Devuelve el punto de inicio (col, fila).
+     * Crea un proyecto de plataformas vacío: nivel sin tiles (rejilla ancha de
+     * scroll lateral), base de datos sin tilesets ni enemigos, y carpeta de
+     * imágenes vacía. El editor lo rellena al importar gráficos de la ROM de SMW.
      */
-    private fun seedPlatformerStarter(dir: File, mapId: Int): Pair<Int, Int> {
+    private fun createEmptyPlatformer(dir: File, name: String) {
         val w = 48
         val h = 15
-        val ground = 4          // tile no atravesable del tileset "Campo"
-        val floorTop = h - 2    // dos filas de suelo abajo
-        val ground0 = MutableList(w * h) { EMPTY_TILE }
-        fun put(col: Int, row: Int, tile: Int) {
-            if (col in 0 until w && row in 0 until h) ground0[row * w + col] = tile
-        }
-        // Suelo continuo.
-        for (r in floorTop until h) for (c in 0 until w) put(c, r, ground)
-        // Plataformas flotantes.
-        for (c in 8..12) put(c, floorTop - 4, ground)
-        for (c in 16..19) put(c, floorTop - 7, ground)
-        for (c in 24..30) put(c, floorTop - 4, ground)
-
-        val base = ProjectIo.loadMap(dir, mapId)
-        val map = base.copy(
-            width = w, height = h,
-            layers = listOf(ground0, List(w * h) { EMPTY_TILE }),
-            events = emptyList(),
-            spawns = emptyList(),
+        val map = com.rolebuilder.core.model.GameMap.empty(
+            id = 1, name = "Nivel 1", width = w, height = h, tilesetId = 1, fillTile = EMPTY_TILE,
         )
+        val project = com.rolebuilder.core.model.Project(
+            name = name.ifBlank { "Mi plataformas" },
+            mode = GameMode.PLATFORMER,
+            startMapId = 1,
+            startX = 2,
+            startY = h - 3,
+            mapIds = listOf(1),
+        )
+        ProjectIo.saveProject(dir, project)
+        ProjectIo.saveDatabase(dir, com.rolebuilder.core.model.Database())
         ProjectIo.saveMap(dir, map)
-        return 3 to (floorTop - 3) // sobre el suelo, a la izquierda
+        File(dir, ProjectIo.IMAGES_DIR).mkdirs()
     }
 
     fun delete(dir: File) {
