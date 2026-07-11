@@ -28,6 +28,11 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
         val minBuf = AudioTrack.getMinBufferSize(
             SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
         ).coerceAtLeast(4096)
+        // Colchón grande (~0,75 s): la síntesis del N-SPC+S-DSP va muestra a muestra y
+        // es pesada; con un buffer de decenas de ms cualquier pausa del planificador
+        // corta el sonido (underrun). Como write() bloquea, el hilo lo mantiene lleno.
+        val bytesPerSecond = SAMPLE_RATE * 2 /* canales */ * 2 /* bytes */
+        val bufBytes = (bytesPerSecond * 3 / 4).coerceAtLeast(minBuf * 2)
         val at = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -42,19 +47,29 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                     .build(),
             )
-            .setBufferSizeInBytes(minBuf * 2)
+            .setBufferSizeInBytes(bufBytes)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
         track = at
         running = true
         at.play()
         thread = Thread {
-            val frames = 1024
+            // Prioridad de audio urgente: evita cortes cuando el hilo del juego compite.
+            runCatching {
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO)
+            }
+            val frames = 2048
             val buf = ShortArray(frames * 2)
             while (running) {
                 renderer.renderInto(buf, 0, frames)
                 val t = track ?: break
-                t.write(buf, 0, buf.size)
+                // write() en MODE_STREAM puede escribir de forma parcial: reintenta.
+                var written = 0
+                while (written < buf.size && running) {
+                    val n = t.write(buf, written, buf.size - written)
+                    if (n <= 0) break
+                    written += n
+                }
             }
         }.apply { isDaemon = true; start() }
     }
