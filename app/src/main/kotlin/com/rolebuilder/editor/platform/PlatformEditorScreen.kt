@@ -175,6 +175,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var showLevelSettings by remember { mutableStateOf(false) }
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
+    var showMap16 by remember { mutableStateOf(false) }
 
     DisposableEffect(state) { onDispose { if (state.dirty) state.save() } }
 
@@ -245,6 +246,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             selectedLabelColor = Color.Black,
                         ),
                     )
+                }
+                TextButton(onClick = { showMap16 = true }) {
+                    Text("Bloques Map16", color = LeafGreen)
                 }
                 TextButton(onClick = { showRomImport = true }) {
                     Text("Importar de ROM", color = SkyBlue)
@@ -410,6 +414,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // ---------- diálogos ----------
     if (showRomImport) {
         SnesImportDialog(state = state, onDismiss = { showRomImport = false })
+    }
+
+    if (showMap16) {
+        Map16EditorDialog(state = state, onDismiss = { showMap16 = false })
     }
 
     if (showNewLevel) {
