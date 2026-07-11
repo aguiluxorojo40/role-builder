@@ -106,6 +106,31 @@ class EditorState(val projectDir: File) {
         return map
     }
 
+    /**
+     * Crea un nivel de plataformas nuevo: rejilla vacía con dos filas de suelo
+     * ([groundTile]) abajo y el inicio a la izquierda, sobre el suelo. Devuelve el
+     * nivel y lo abre.
+     */
+    fun addPlatformLevel(name: String, width: Int, height: Int, tilesetId: Int, groundTile: Int): GameMap {
+        val id = (project.mapIds.maxOrNull() ?: 0) + 1
+        val floorTop = height - 2
+        val ground = MutableList(width * height) { com.rolebuilder.core.model.EMPTY_TILE }
+        for (r in floorTop until height) for (c in 0 until width) ground[r * width + c] = groundTile
+        val map = GameMap(
+            id = id,
+            name = name.ifBlank { "Nivel $id" },
+            width = width,
+            height = height,
+            tilesetId = tilesetId,
+            layers = listOf(ground, List(width * height) { com.rolebuilder.core.model.EMPTY_TILE }),
+        )
+        maps[id] = map
+        project = project.copy(mapIds = project.mapIds + id, startMapId = id, startX = 2, startY = floorTop - 1)
+        currentMapId = id
+        dirty = true
+        return map
+    }
+
     /** Añade un mapa ya construido (p. ej. importado de una ROM) y lo abre. */
     fun addImportedMap(map: GameMap): GameMap {
         val id = (project.mapIds.maxOrNull() ?: 0) + 1

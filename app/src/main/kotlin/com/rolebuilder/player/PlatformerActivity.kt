@@ -12,17 +12,22 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -182,6 +187,17 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
     val lifecycleOwner = LocalLifecycleOwner.current
     var glView by remember { mutableStateOf<GLSurfaceView?>(null) }
 
+    // Lee el estado del motor (monedas, victoria) cada frame para el HUD.
+    var coins by remember { mutableIntStateOf(0) }
+    var won by remember { mutableStateOf(false) }
+    LaunchedEffect(renderer) {
+        while (true) {
+            coins = renderer.coins
+            won = renderer.won
+            androidx.compose.runtime.withFrameNanos { }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
             factory = { context ->
@@ -232,6 +248,39 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
             }
             TextButton(onClick = onExit, modifier = Modifier.align(Alignment.TopStart)) {
                 Text("Salir", color = Color.White.copy(alpha = 0.8f))
+            }
+
+            // HUD de monedas.
+            Text(
+                "🪙 × $coins",
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 6.dp)
+                    .background(Color(0xAA000000), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
+            )
+        }
+
+        // Pantalla de nivel completado.
+        if (won) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color(0xCC0B1E12)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("¡Nivel completado!", color = Color(0xFF7CFC8A), fontSize = 30.sp, fontWeight = FontWeight.Bold)
+                    Text("Monedas: $coins", color = Color.White, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp))
+                    Row(
+                        modifier = Modifier.padding(top = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Button(onClick = onRestart) { Text("Reiniciar") }
+                        Button(onClick = onExit) { Text("Salir") }
+                    }
+                }
             }
         }
     }

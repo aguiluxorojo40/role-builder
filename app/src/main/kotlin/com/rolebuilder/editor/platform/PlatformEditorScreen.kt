@@ -26,9 +26,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
@@ -70,6 +72,8 @@ import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.PlatformEnemyMark
+import com.rolebuilder.core.model.PlatformItemMark
+import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwSolidity
@@ -77,6 +81,7 @@ import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.loadAssetImageBitmap
 import com.rolebuilder.editor.loadImageBitmap
 import com.rolebuilder.editor.snes.SnesImportDialog
+import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import com.rolebuilder.player.PlatformerActivity
 import com.rolebuilder.project.ProjectStore
@@ -96,6 +101,8 @@ private enum class PTool(val label: String) {
     DECOR("Fondo"),
     ERASE("Borrar"),
     ENEMY("Enemigo"),
+    COIN("Moneda"),
+    GOAL("Meta"),
     START("Inicio"),
     COLLISION("Colisión"),
 }
@@ -167,6 +174,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var hover by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
     var showLevelSettings by remember { mutableStateOf(false) }
     var showRomImport by remember { mutableStateOf(false) }
+    var showNewLevel by remember { mutableStateOf(false) }
 
     DisposableEffect(state) { onDispose { if (state.dirty) state.save() } }
 
@@ -214,6 +222,19 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                DropdownField(
+                    label = "Nivel",
+                    options = state.mapList,
+                    selected = map,
+                    optionLabel = { "${it.id}: ${it.name}" },
+                    onSelect = { state.selectMap(it.id) },
+                )
+                IconButton(onClick = { showNewLevel = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Nuevo nivel", tint = Color.White)
+                }
+                IconButton(onClick = { showLevelSettings = true }) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes del nivel", tint = Color.White)
+                }
                 PTool.entries.forEach { t ->
                     FilterChip(
                         selected = tool == t,
@@ -224,9 +245,6 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             selectedLabelColor = Color.Black,
                         ),
                     )
-                }
-                IconButton(onClick = { showLevelSettings = true }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes del nivel", tint = Color.White)
                 }
                 TextButton(onClick = { showRomImport = true }) {
                     Text("Importar de ROM", color = SkyBlue)
@@ -256,12 +274,14 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                         PTool.TERRAIN -> state.updateMap(cur.withTile(0, tx, ty, selectedTile))
                                         PTool.DECOR -> state.updateMap(cur.withTile(1, tx, ty, selectedTile))
                                         PTool.ERASE -> {
-                                            state.updateMap(cur.withTile(1, tx, ty, EMPTY_TILE)
-                                                .withTile(0, tx, ty, EMPTY_TILE))
-                                            state.updateMap(state.currentMap!!.copy(
-                                                platformEnemies = state.currentMap!!.platformEnemies
-                                                    .filterNot { it.x == tx && it.y == ty },
-                                            ))
+                                            state.updateMap(
+                                                cur.withTile(1, tx, ty, EMPTY_TILE)
+                                                    .withTile(0, tx, ty, EMPTY_TILE)
+                                                    .copy(
+                                                        platformEnemies = cur.platformEnemies.filterNot { it.x == tx && it.y == ty },
+                                                        platformItems = cur.platformItems.filterNot { it.x == tx && it.y == ty },
+                                                    ),
+                                            )
                                         }
                                         PTool.ENEMY -> {
                                             val existing = cur.platformEnemies.firstOrNull { it.x == tx && it.y == ty }
@@ -271,6 +291,19 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                 } else {
                                                     cur.copy(platformEnemies = cur.platformEnemies +
                                                         PlatformEnemyMark(selectedEnemyId, tx, ty))
+                                                },
+                                            )
+                                        }
+                                        PTool.COIN, PTool.GOAL -> {
+                                            val kind = if (tool == PTool.COIN) PlatformItemType.COIN else PlatformItemType.GOAL
+                                            val existing = cur.platformItems.firstOrNull { it.x == tx && it.y == ty }
+                                            state.updateMap(
+                                                if (existing != null && existing.type == kind) {
+                                                    cur.copy(platformItems = cur.platformItems - existing)
+                                                } else {
+                                                    cur.copy(platformItems = cur.platformItems
+                                                        .filterNot { it.x == tx && it.y == ty } +
+                                                        PlatformItemMark(kind, tx, ty))
                                                 },
                                             )
                                         }
@@ -346,6 +379,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             // ---------- paleta inferior ----------
             when (tool) {
                 PTool.ENEMY -> EnemyPalette(enemyAtlas, selectedEnemyId) { selectedEnemyId = it }
+                PTool.COIN -> Hint("Toca para poner o quitar monedas. Se recogen al jugar y suman al contador.")
+                PTool.GOAL -> Hint("Toca para poner la meta (bandera). Al tocarla, el nivel se completa.")
                 PTool.START -> Hint("Toca el nivel para fijar dónde aparece el jugador.")
                 PTool.COLLISION -> CollisionPanel(
                     tileset = tileset,
@@ -377,16 +412,21 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         SnesImportDialog(state = state, onDismiss = { showRomImport = false })
     }
 
+    if (showNewLevel) {
+        NewLevelDialog(
+            onDismiss = { showNewLevel = false },
+            onCreate = { name, w, h ->
+                state.addPlatformLevel(name, w, h, tilesetId = map.tilesetId, groundTile = selectedTile)
+                showNewLevel = false
+            },
+        )
+    }
+
     if (showLevelSettings) {
         LevelSettingsDialog(
+            state = state,
             map = map,
             onDismiss = { showLevelSettings = false },
-            onApply = { name, w, h ->
-                var updated = (state.map(map.id) ?: map).copy(name = name)
-                if (w != map.width || h != map.height) updated = updated.resized(w, h)
-                state.updateMap(updated)
-                showLevelSettings = false
-            },
         )
     }
 }
@@ -521,17 +561,13 @@ private fun solidityLabel(s: SmwSolidity): String = when (s) {
 }
 
 @Composable
-private fun LevelSettingsDialog(
-    map: GameMap,
-    onDismiss: () -> Unit,
-    onApply: (String, Int, Int) -> Unit,
-) {
-    var name by remember(map.id) { mutableStateOf(map.name) }
-    var width by remember(map.id) { mutableIntStateOf(map.width) }
-    var height by remember(map.id) { mutableIntStateOf(map.height) }
+private fun NewLevelDialog(onDismiss: () -> Unit, onCreate: (String, Int, Int) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var width by remember { mutableIntStateOf(48) }
+    var height by remember { mutableIntStateOf(15) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ajustes del nivel") },
+        title = { Text("Nuevo nivel") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
@@ -540,12 +576,80 @@ private fun LevelSettingsDialog(
                     IntField("Alto", height, { height = it.coerceIn(8, 60) }, Modifier.weight(1f))
                 }
                 Text(
-                    "Los niveles de plataformas suelen ser anchos (scroll lateral) y de poca altura.",
+                    "Se crea con dos filas de suelo (el tile seleccionado) y el inicio a la izquierda.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
         },
-        confirmButton = { Button(onClick = { onApply(name, width, height) }) { Text("Aplicar") } },
+        confirmButton = { Button(onClick = { onCreate(name, width, height) }) { Text("Crear") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+// Colores de cielo predefinidos (etiqueta a ARGB).
+private val SKY_PRESETS: List<Pair<String, Long>> = listOf(
+    "Cielo (por defecto)" to 0xFF5C94FCL,
+    "Atardecer" to 0xFFF08030L,
+    "Noche" to 0xFF101830L,
+    "Cueva" to 0xFF000000L,
+    "Nieve" to 0xFFB0D0F0L,
+    "Lava" to 0xFF801010L,
+)
+
+@Composable
+private fun LevelSettingsDialog(
+    state: EditorState,
+    map: GameMap,
+    onDismiss: () -> Unit,
+) {
+    var name by remember(map.id) { mutableStateOf(map.name) }
+    var width by remember(map.id) { mutableIntStateOf(map.width) }
+    var height by remember(map.id) { mutableIntStateOf(map.height) }
+    var tilesetId by remember(map.id) { mutableIntStateOf(map.tilesetId) }
+    var sky by remember(map.id) { mutableStateOf(map.skyColor ?: SKY_PRESETS.first().second) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Ajustes del nivel") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IntField("Ancho", width, { width = it.coerceIn(8, 400) }, Modifier.weight(1f))
+                    IntField("Alto", height, { height = it.coerceIn(8, 60) }, Modifier.weight(1f))
+                }
+                DropdownField(
+                    label = "Tileset",
+                    options = state.database.tilesets.map { it.id },
+                    selected = tilesetId,
+                    optionLabel = { id -> state.database.tileset(id)?.name ?: "Tileset $id" },
+                    onSelect = { tilesetId = it },
+                )
+                DropdownField(
+                    label = "Color de cielo",
+                    options = SKY_PRESETS.map { it.second },
+                    selected = sky,
+                    optionLabel = { c -> SKY_PRESETS.firstOrNull { it.second == c }?.first ?: "Personalizado" },
+                    onSelect = { sky = it },
+                )
+                if (state.mapList.size > 1) {
+                    TextButton(onClick = {
+                        state.deleteMap(map.id)
+                        onDismiss()
+                    }) { Text("Borrar este nivel", color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                var updated = (state.map(map.id) ?: map).copy(name = name, tilesetId = tilesetId, skyColor = sky)
+                if (width != map.width || height != map.height) updated = updated.resized(width, height)
+                state.updateMap(updated)
+                onDismiss()
+            }) { Text("Aplicar") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     )
 }
@@ -634,6 +738,26 @@ private fun DrawScope.drawLevel(
                 topLeft = Offset(dst.x.toFloat(), dst.y.toFloat()),
                 size = Size(tilePx, tilePx),
             )
+        }
+    }
+
+    // Ítems: monedas (dorado) y meta (poste + banderín verde).
+    for (item in map.platformItems) {
+        if (item.x < minX - 1 || item.x > maxX + 1) continue
+        val ox = pan.x + item.x * tilePx
+        val oy = pan.y + item.y * tilePx
+        when (item.type) {
+            PlatformItemType.COIN -> {
+                drawRect(
+                    Color(0xFFFFD54F),
+                    topLeft = Offset(ox + tilePx * 0.28f, oy + tilePx * 0.14f),
+                    size = Size(tilePx * 0.44f, tilePx * 0.72f),
+                )
+            }
+            PlatformItemType.GOAL -> {
+                drawRect(Color(0xFFE0E0E0), topLeft = Offset(ox + tilePx * 0.44f, oy - tilePx), size = Size(tilePx * 0.12f, tilePx * 2f))
+                drawRect(Color(0xFF35C759), topLeft = Offset(ox + tilePx * 0.56f, oy - tilePx), size = Size(tilePx * 0.5f, tilePx * 0.4f))
+            }
         }
     }
 

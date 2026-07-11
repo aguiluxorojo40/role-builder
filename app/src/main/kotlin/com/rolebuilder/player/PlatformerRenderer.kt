@@ -49,9 +49,16 @@ class PlatformerRenderer(
     private var lastJumpEvents = 0
     private var lastStompEvents = 0
     private var lastDeathEvents = 0
+    private var lastCoinEvents = 0
 
     /** Lo lee la UI para el aviso de "has muerto". */
     @Volatile var dead = false
+        private set
+
+    /** Monedas recogidas y si el nivel se ha completado (lo lee el HUD). */
+    @Volatile var coins = 0
+        private set
+    @Volatile var won = false
         private set
 
     private lateinit var batch: SpriteBatch
@@ -102,15 +109,19 @@ class PlatformerRenderer(
             guard++
         }
         dead = engine.player.dead
+        coins = engine.coinsCollected
+        won = engine.won
 
-        // Audio: suena cada evento del motor (salto, pisotón, muerte) una vez por
-        // aparición, con las muestras reales de SMW resueltas por SmwSfxCatalog.
+        // Audio: suena cada evento del motor (salto, pisotón, moneda, muerte) una vez
+        // por aparición, con las muestras reales de SMW resueltas por SmwSfxCatalog.
         audio?.let { a ->
             if (engine.jumpEvents > lastJumpEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.JUMP)
             if (engine.stompEvents > lastStompEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP)
+            if (engine.coinEvents > lastCoinEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.COIN)
             if (engine.deathEvents > lastDeathEvents) a.playDeath()
             lastJumpEvents = engine.jumpEvents
             lastStompEvents = engine.stompEvents
+            lastCoinEvents = engine.coinEvents
             lastDeathEvents = engine.deathEvents
         }
 
@@ -119,7 +130,18 @@ class PlatformerRenderer(
         camera.y = engine.player.y / 16f
         camera.update(engine.cols, engine.rows)
 
-        GLES30.glClearColor(0.42f, 0.62f, 1.0f, 1f) // cielo
+        // Cielo: color del nivel si lo define, o el azul por defecto.
+        val sky = world?.map?.skyColor
+        if (sky != null) {
+            GLES30.glClearColor(
+                ((sky shr 16) and 0xFF) / 255f,
+                ((sky shr 8) and 0xFF) / 255f,
+                (sky and 0xFF) / 255f,
+                1f,
+            )
+        } else {
+            GLES30.glClearColor(0.42f, 0.62f, 1.0f, 1f)
+        }
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
         batch.begin(camera.mvp)
@@ -171,6 +193,25 @@ class PlatformerRenderer(
                     if (s == SmwSolidity.NONE) continue
                     val col = colorOf(s)
                     batch.draw(white, c.toFloat(), r.toFloat(), 1f, 1f, r = col[0], g = col[1], b = col[2], a = 1f)
+                }
+            }
+        }
+
+        // Ítems: monedas (moneda amarilla) y meta (poste + bandera verde).
+        for (item in engine.items) {
+            if (item.collected) continue
+            val ix = item.x / 16f
+            val iy = item.y / 16f
+            when (item.kind) {
+                com.rolebuilder.core.engine.platformer.ItemKind.COIN -> {
+                    // Moneda: cuadrado dorado centrado y algo más pequeño que la celda.
+                    val blink = 0.85f + 0.15f * kotlin.math.sin(now / 120_000_000.0).toFloat()
+                    batch.draw(white, ix + 0.28f, iy + 0.15f, 0.44f, 0.7f, r = 0.98f * blink, g = 0.82f * blink, b = 0.16f, a = 1f)
+                }
+                com.rolebuilder.core.engine.platformer.ItemKind.GOAL -> {
+                    // Meta: poste alto de 2 celdas con banderín arriba.
+                    batch.draw(white, ix + 0.44f, iy - 1f, 0.12f, 2f, r = 0.85f, g = 0.85f, b = 0.9f, a = 1f)
+                    batch.draw(white, ix + 0.56f, iy - 1f, 0.5f, 0.4f, r = 0.15f, g = 0.8f, b = 0.3f, a = 1f)
                 }
             }
         }
