@@ -680,13 +680,13 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 }
 
 /** Nº máximo de niveles que importa el modo automático (evita proyectos enormes). */
-private const val AUTO_MAX_LEVELS = 8
+internal const val AUTO_MAX_LEVELS = 8
 
 /**
  * Importa un nivel de SMW como MAPA jugable del proyecto, clasificando el tileset y
  * colocando los enemigos automáticamente. Devuelve el id del tileset creado.
  */
-private fun importSmwLevelMap(
+internal fun importSmwLevelMap(
     state: com.rolebuilder.editor.EditorState,
     name: String,
     m: SnesGameRecipes.SmwLevelMap,

@@ -1,6 +1,8 @@
 package com.rolebuilder.editor.platform
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -78,10 +80,15 @@ import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwSolidity
+import com.rolebuilder.core.snes.SnesDecoder
+import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.loadAssetImageBitmap
 import com.rolebuilder.editor.loadImageBitmap
+import com.rolebuilder.editor.snes.AUTO_MAX_LEVELS
+import com.rolebuilder.editor.snes.SnesImport
 import com.rolebuilder.editor.snes.SnesImportDialog
+import com.rolebuilder.editor.snes.importSmwLevelMap
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import com.rolebuilder.player.PlatformerActivity
@@ -131,6 +138,34 @@ private fun solidityOfTile(tileset: Tileset?, tile: Int): SmwSolidity {
     val ord = tileset.platformSolidity.getOrNull(tile)
     if (ord != null) return SOLIDITY_VALUES.getOrElse(ord) { SmwSolidity.NONE }
     return if (tileset.isPassable(tile)) SmwSolidity.NONE else SmwSolidity.SOLID
+}
+
+/**
+ * Auto-importa una ROM de SMW: extrae los niveles como mapas jugables (tiles con
+ * gráficos reales, colisión y enemigos ya colocados), selecciona el primero y borra
+ * el nivel de arranque vacío si no se había tocado. Devuelve el nº de niveles, 0 si
+ * no hay niveles reconocibles, o lanza si la ROM no es válida.
+ */
+internal fun autoImportSmwRom(state: EditorState, romBytes: ByteArray): Int {
+    val header = SnesDecoder.parseHeader(romBytes)
+    val maps = SnesGameRecipes.extractSmwLevelMaps(romBytes, header).take(AUTO_MAX_LEVELS)
+    if (maps.isEmpty()) return 0
+    val starterId = state.currentMapId
+    val starter = state.currentMap
+    var firstId: Int? = null
+    maps.forEach { (_, nm, m) ->
+        importSmwLevelMap(state, nm, m)
+        if (firstId == null) firstId = state.currentMapId
+    }
+    firstId?.let { state.selectMap(it) }
+    // Limpia el nivel de arranque vacío (sin tiles, enemigos ni ítems).
+    if (starter != null && starter.id == starterId &&
+        starter.platformEnemies.isEmpty() && starter.platformItems.isEmpty() &&
+        starter.layers.all { layer -> layer.all { it == EMPTY_TILE } }
+    ) {
+        state.deleteMap(starterId)
+    }
+    return maps.size
 }
 
 // ---- Modo Seleccionar: encontrar, mover, borrar y editar objetos ----
@@ -221,6 +256,24 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds).
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
 
+    // Selector de ROM: al elegir un .sfc, auto-importa los niveles con gráficos reales.
+    val romPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val bytes = SnesImport.readRomBytes(context, uri)
+            if (bytes == null) {
+                Toast.makeText(context, "No se pudo leer la ROM", Toast.LENGTH_LONG).show()
+            } else {
+                val n = runCatching { autoImportSmwRom(state, bytes) }.getOrElse { -1 }
+                val msg = when {
+                    n > 0 -> "Cargados $n niveles de la ROM (tiles, colisión y enemigos)"
+                    n == 0 -> "No se encontraron niveles. ¿Es una ROM de Super Mario World?"
+                    else -> "No se pudo cargar la ROM"
+                }
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     var tool by remember { mutableStateOf(PTool.SELECT) }
     var selected by remember(map?.id) { mutableStateOf<Selected?>(null) }
     var selectedTile by remember { mutableIntStateOf(0) }
@@ -271,7 +324,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // ---------- barra de herramientas ----------
+            // ---------- fila 1: nivel y acciones ----------
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -294,6 +347,27 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 IconButton(onClick = { showLevelSettings = true }) {
                     Icon(Icons.Filled.Settings, contentDescription = "Ajustes del nivel", tint = Color.White)
                 }
+                Button(
+                    onClick = { romPicker.launch("*/*") },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black),
+                ) { Text("⚡ Cargar ROM") }
+                TextButton(onClick = { showMap16 = true }) {
+                    Text("Bloques Map16", color = LeafGreen)
+                }
+                TextButton(onClick = { showRomImport = true }) {
+                    Text("Avanzado", color = SkyBlue)
+                }
+            }
+            // ---------- fila 2: herramientas de edición ----------
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Panel.copy(alpha = 0.85f))
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 PTool.entries.forEach { t ->
                     FilterChip(
                         selected = tool == t,
@@ -304,12 +378,6 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             selectedLabelColor = Color.Black,
                         ),
                     )
-                }
-                TextButton(onClick = { showMap16 = true }) {
-                    Text("Bloques Map16", color = LeafGreen)
-                }
-                TextButton(onClick = { showRomImport = true }) {
-                    Text("Importar de ROM", color = SkyBlue)
                 }
             }
 
@@ -463,19 +531,24 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            "🍄 Nivel vacío",
+                            "🍄 Proyecto vacío",
                             color = Color.White,
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
-                            "Importa los gráficos de tu ROM de SMW para llenar el editor.",
-                            color = Color.White.copy(alpha = 0.85f),
+                            "Carga tu ROM de Super Mario World y sus niveles se importan solos:\n" +
+                                "gráficos reales, colisión y enemigos ya colocados.",
+                            color = Color.White.copy(alpha = 0.9f),
                             style = MaterialTheme.typography.bodySmall,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
                         Button(
-                            onClick = { showRomImport = true },
-                            modifier = Modifier.padding(top = 10.dp),
-                        ) { Text("Importar de ROM") }
+                            onClick = { romPicker.launch("*/*") },
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = LeafGreen, contentColor = Color.Black,
+                            ),
+                            modifier = Modifier.padding(top = 12.dp),
+                        ) { Text("⚡ Cargar ROM de SMW") }
                     }
                 }
             }
@@ -513,7 +586,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     if (tileset != null && tilesetBitmap != null) {
                         TilePalette(tileset, tilesetBitmap, selectedTile) { selectedTile = it }
                     } else {
-                        Hint("Este proyecto aún no tiene gráficos. Pulsa \"Importar de ROM\" y extrae los tiles de tu ROM de SMW para llenar la paleta.")
+                        Hint("Este nivel no tiene gráficos todavía. Pulsa \"⚡ Cargar ROM\" para importar los niveles de tu ROM de SMW con sus tiles.")
                     }
                 }
             }
