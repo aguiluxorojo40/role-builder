@@ -290,10 +290,35 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
             if (romBytes != null) {
                 if (gameRecipe != null) {
                     HorizontalDivider()
-                    Text("✨ Modo fácil", style = MaterialTheme.typography.titleSmall)
+                    Text("⚡ Automático", style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "Reconocido: $gameRecipe. Extrae sus gráficos de un toque " +
-                            "(sin tocar nada técnico) y luego toca las imágenes que quieras guardar.",
+                        "Reconocido: $gameRecipe. Carga la ROM de un toque: extrae los niveles " +
+                            "como mapas jugables con sus tiles, colisión y enemigos ya colocados.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(onClick = {
+                        val rom = romBytes ?: return@Button
+                        val hdr = header ?: return@Button
+                        runCatching {
+                            val maps = SnesGameRecipes.extractSmwLevelMaps(rom, hdr).take(AUTO_MAX_LEVELS)
+                            maps.forEach { (_, nm, m) -> importSmwLevelMap(state, nm, m) }
+                            maps.size
+                        }.onSuccess { n ->
+                            if (n > 0) {
+                                Toast.makeText(context, "Cargados $n niveles con tiles, colisión y enemigos", Toast.LENGTH_LONG).show()
+                                onDismiss()
+                            } else {
+                                Toast.makeText(context, "No se encontraron niveles importables en esta ROM", Toast.LENGTH_LONG).show()
+                            }
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo cargar: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }) { Text("⚡ Cargar todo de la ROM") }
+
+                    HorizontalDivider()
+                    Text("✨ Manual (avanzado)", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "O extrae solo los gráficos y toca las imágenes que quieras guardar.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Button(onClick = {
@@ -404,30 +429,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             )
                             TextButton(onClick = {
                                 runCatching {
-                                    // Tileset de bloques 16×16 del nivel → images/tilesets/smw/
-                                    val fileName = SnesImport.saveClassified(
-                                        state.projectDir, SnesImport.Folder.TILESETS,
-                                        "smw", "smw_${name}_tiles", SnesImport.toBitmap(m.atlas),
-                                    )
-                                    val tsId = state.nextTilesetId()
-                                    state.addTileset(
-                                        Tileset(
-                                            id = tsId, name = "$name (SMW)", image = fileName,
-                                            tileSize = 16, columns = m.columns, rows = m.rows,
-                                            passable = m.passable, platformSolidity = m.solidity,
-                                            animations = m.animations,
-                                        )
-                                    )
-                                    state.addImportedMap(
-                                        GameMap(
-                                            id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
-                                            tilesetId = tsId,
-                                            layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
-                                            platformEnemies = m.enemies.map {
-                                                PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
-                                            },
-                                        )
-                                    )
+                                    importSmwLevelMap(state, name, m)
                                     Toast.makeText(context, "Mapa creado: SMW $name", Toast.LENGTH_SHORT).show()
                                 }.onFailure {
                                     Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
@@ -675,4 +677,41 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+/** Nº máximo de niveles que importa el modo automático (evita proyectos enormes). */
+private const val AUTO_MAX_LEVELS = 8
+
+/**
+ * Importa un nivel de SMW como MAPA jugable del proyecto, clasificando el tileset y
+ * colocando los enemigos automáticamente. Devuelve el id del tileset creado.
+ */
+private fun importSmwLevelMap(
+    state: com.rolebuilder.editor.EditorState,
+    name: String,
+    m: SnesGameRecipes.SmwLevelMap,
+): Int {
+    val fileName = SnesImport.saveClassified(
+        state.projectDir, SnesImport.Folder.TILESETS, "smw", "smw_${name}_tiles",
+        SnesImport.toBitmap(m.atlas),
+    )
+    val tsId = state.nextTilesetId()
+    state.addTileset(
+        Tileset(
+            id = tsId, name = "$name (SMW)", image = fileName,
+            tileSize = 16, columns = m.columns, rows = m.rows,
+            passable = m.passable, platformSolidity = m.solidity, animations = m.animations,
+        ),
+    )
+    state.addImportedMap(
+        GameMap(
+            id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
+            tilesetId = tsId,
+            layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
+            platformEnemies = m.enemies.map {
+                PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
+            },
+        ),
+    )
+    return tsId
 }
