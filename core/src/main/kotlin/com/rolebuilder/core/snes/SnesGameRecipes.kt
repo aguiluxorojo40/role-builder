@@ -612,8 +612,9 @@ object SnesGameRecipes {
     // Los fondos de Layer 2 sí llevan un tilemap ESTÁTICO: por eso son la vía asequible
     // al color por tesela. Cadena: puntero $05E600 → (si banco 0xFF) banco $0C → RLE1 →
     // índices de bloque Map16 → tabla Map16 de Layer 2 → 4 palabras [tile#][YXPCCCTT]
-    // que SnesTilemap ya sabe leer. OFFSETS [PROBABLE] pendientes de validar en ROM real
-    // (por eso el render va con gate de cordura y es aditivo).
+    // que SnesTilemap ya sabe leer. Offsets Map16/umbral CONFIRMADOS 1:1 contra snesrev/smw
+    // (BufferBGTilemap usa kMap16Data+0x1100 = $0D:9100; el bit de página del is_bg es
+    // addr>=0xE8FE, add_packed_level_bg). El render aún lleva gate por la VRAM/formato de GFX.
 
     /** Tabla de punteros de Layer 2: SNES $05E600 → PC 0x2E600 (0x200 × 3 bytes). */
     internal const val SMW_LAYER2_PTR_PC = 0x2E600
@@ -621,9 +622,10 @@ object SnesGameRecipes {
     internal const val SMW_BG_BANK_PC = 0x60000
     /** Byte de banco que marca "este Layer 2 es un FONDO (tilemap), no objetos". */
     internal const val SMW_BG_IS_BACKGROUND = 0xFF
-    /** Tabla de definiciones Map16 de Layer 2: SNES $0D9100 → PC 0x69100 [PROBABLE]. */
+    /** Tabla Map16 de FONDO de Layer 2: SNES $0D:9100 → PC 0x69100 (= kMap16Data+0x1100,
+     *  BufferBGTilemap $05:8126, verificado 1:1 contra snesrev/smw). */
     internal const val SMW_MAP16_L2_PC = 0x69100
-    /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000 [PROBABLE]. */
+    /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D:8000 → PC 0x68000 (kMap16Data). */
     internal const val SMW_MAP16_FG_PC = 0x68000
 
     // -------------------- Mario (GFX32): puntero especial + paleta REAL --------------------
@@ -637,7 +639,8 @@ object SnesGameRecipes {
     internal const val SMW_GFX32_HI_PC = 0x38D9
     internal const val SMW_GFX32_BANK_PC = 0x3890
 
-    /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
+    /** Umbral PC de la página del Map16 de fondo: addr $0C < 0xE8FE → página 0, si no página 1
+     *  (= PC 0x668FE). Confirmado: `is_bg` bit4 = (addr>=0xE8FE) en add_packed_level_bg. */
     internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
     internal const val SMW_SLOT_ENTRIES = 16
@@ -1173,8 +1176,8 @@ object SnesGameRecipes {
      *
      * Es la vía al color REAL por tesela de los fondos: cada entrada trae el `CCC`
      * (sub-paleta) de esa tesela. Función pura para poder testearla con datos
-     * sintéticos. Los offsets Map16/umbral son [PROBABLE]; el consumidor aplica un
-     * gate de cordura sobre la concentración de sub-paletas.
+     * sintéticos. Los offsets Map16/umbral están CONFIRMADOS contra snesrev/smw; el gate
+     * del render restante es por la VRAM/formato de GFX, no por estos offsets.
      */
     /**
      * Descompresor EXACTO del fondo de Layer 2 (port 1:1 de BufferBGTilemap, $05:8126):

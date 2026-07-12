@@ -26,10 +26,10 @@ que extraemos y documentamos. Estado: ✅ completo · ⚠️ parcial · ❌ falt
 | Nombre de nivel (`kLevelNames`) | $04:A0FC (2B×256) | ✅ | **decodificado**: ensamblado de 3 trozos (`SmwLevelNames`), texto por nivel en `niveles_smw.md` |
 | Música de nivel | (índice en cabecera) | ✅ | índice 0-7 + reproductor N-SPC/S-DSP real |
 
-¹ `SmwLayer1` ahora parsea niveles **horizontales Y verticales** (tabla de layout por modo:
-0x1B0/pantalla horizontal, 0x200/pantalla vertical, + intercambio de nibbles de posición). Los
-slopes específicos de nivel vertical (ext 0x91/0x93/0x95) aún no se portan y se cuentan como no
-reconocidos. Salas de jefe / modos sin Layer 1 (modos 9/11/16) no tienen objetos, es correcto.
+¹ `SmwLayer1` parsea niveles **horizontales Y verticales** (tabla de layout por modo:
+0x1B0/pantalla horizontal, 0x200/pantalla vertical, + intercambio de nibbles de posición),
+incluidos los slopes específicos de nivel vertical (ext 0x91/0x93/0x95). Salas de jefe / modos
+sin Layer 1 (modos 9/11/16) no tienen objetos, es correcto.
 
 ## Datos GLOBALES (no por nivel) — usados o documentados
 
@@ -45,13 +45,17 @@ reconocidos. Salas de jefe / modos sin Layer 1 (modos 9/11/16) no tienen objetos
 
 ## Resquicios HONESTOS que quedan (nada crítico para construir)
 
-1. **Tilemap del fondo de Layer 2 en píxeles**: clasificamos el Layer 2 (fondo vs objetos),
-   la fuente en $0C y el nº de bloques Map16 del tilemap descomprimido; el render a color por
-   tesela (`renderSmwBackground`) sigue con offsets Map16 [PROBABLE] y gate de cordura.
+1. **Render del fondo de Layer 2 a píxeles**: la cadena de datos (puntero → RLE1 → índices
+   Map16 → entradas de tilemap) está CONFIRMADA 1:1 contra snesrev/smw (Map16 $0D:9100, umbral
+   de página addr≥0xE8FE). Lo que queda con gate/heurística es solo el paso a PÍXEL: la VRAM
+   de GFX se decodifica con detección de formato y se omite el fondo si la mayoría de teselas
+   caen en GFX no mapeable (animadas/FG3). No es un offset por validar, es el render.
 
 **Resuelto** en esta ronda (antes pendiente):
 - **Slopes de nivel vertical** (ext 0x91/0x93/0x95): portados 1:1 (`SmwLayer1`); el nivel 0x108
   (Star Road vertical), cuyos únicos objetos eran esos slopes, pasa de vacío a colisión real.
+- **Offsets Map16 del fondo de Layer 2**: eran [PROBABLE], ahora verificados contra el decomp
+  (BufferBGTilemap + add_packed_level_bg). Constantes y comentarios marcados como confirmados.
 - **Nombre de nivel en texto**: se decodifica (`SmwLevelNames`, 91 nombres en `niveles_smw.md`).
   Se ensambla de 3 trozos de un pool ($04:9AC5) vía tres tablas de offsets ($04:9C91/9CCF/9CED);
   el word por translevel ($04:A0FC) empaqueta i1=byte alto, i2/i3=nibbles del byte bajo. La
