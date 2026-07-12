@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -211,6 +212,19 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
         }
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            // Marcador de monedas (HUD): sondea el contador del renderer.
+            var coinCount by remember { mutableStateOf(0) }
+            LaunchedEffect(Unit) {
+                while (true) { coinCount = renderer.coins; kotlinx.coroutines.delay(120) }
+            }
+            Text(
+                "🪙 $coinCount",
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+
             // Movimiento horizontal con el joystick (solo el eje X).
             VirtualJoystick(
                 modifier = Modifier.align(Alignment.BottomStart).padding(24.dp),

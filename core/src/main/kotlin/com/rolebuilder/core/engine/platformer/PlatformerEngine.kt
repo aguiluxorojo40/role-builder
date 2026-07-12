@@ -19,6 +19,18 @@ class PlatformerBody(var x: Float, var y: Float) {
 /** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
 class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
 
+/**
+ * Acción interactiva de una celda del mapa, a nivel de motor (independiente de la
+ * clasificación de bloques Map16 de SMW, que se mapea a esto al montar el nivel):
+ *  - [NONE]: sin interacción.
+ *  - [COIN]: se recoge al tocarla (suma moneda y desaparece).
+ *  - [PRIZE]: bloque `?`: sólido; al golpearlo desde abajo suelta una moneda y queda
+ *    "usado" (sigue sólido pero ya no premia).
+ */
+enum class BlockAction { NONE, COIN, PRIZE }
+
+private val BLOCK_ACTIONS = BlockAction.values()
+
 /** Enemigo en ejecución (píxeles): camina, cae con gravedad y se puede pisar. */
 class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     val width = 14f
@@ -55,12 +67,40 @@ class PlatformerEngine(
     startPixelY: Int,
     val tuning: PlatformerTuning,
     enemySeeds: List<EnemySeed> = emptyList(),
+    blockActions: IntArray? = null,
 ) {
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat())
 
     /** Enemigos vivos del nivel, instanciados de las semillas. */
     val enemies: List<PlatformerEnemy> =
         enemySeeds.map { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
+
+    /**
+     * Rejilla MUTABLE de acciones de celda (ordinal de [BlockAction], cols*rows) o null
+     * si el nivel no tiene bloques interactivos. El motor la modifica al recoger monedas
+     * o golpear bloques `?`; la capa de dibujo la lee para no pintar lo ya consumido.
+     */
+    private val actions: IntArray? = blockActions?.copyOf()
+
+    /** Acción interactiva de la celda (col,row), o [BlockAction.NONE] fuera de rango. */
+    fun blockActionAt(col: Int, row: Int): BlockAction {
+        val a = actions ?: return BlockAction.NONE
+        if (col < 0 || col >= cols || row < 0 || row >= rows) return BlockAction.NONE
+        return BLOCK_ACTIONS[a[row * cols + col]]
+    }
+
+    private fun setAction(col: Int, row: Int, value: BlockAction) {
+        val a = actions ?: return
+        if (col in 0 until cols && row in 0 until rows) a[row * cols + col] = value.ordinal
+    }
+
+    /** Monedas recogidas (monedas sueltas + premios de bloques `?`). */
+    var coins = 0
+        private set
+
+    /** Contador monótono de "moneda conseguida" para el audio (SFX de moneda). */
+    var coinEvents = 0
+        private set
 
     /** Input horizontal (-1 izquierda, +1 derecha) y botón de correr. */
     var moveX = 0f
@@ -150,9 +190,29 @@ class PlatformerEngine(
 
         updateEnemies()
         handlePlayerEnemyContact()
+        collectCoins()
 
         checkDeadly()
         if (p.y > (rows + 2) * tileSize) killPlayer() // caído al vacío
+    }
+
+    /** Recoge las monedas sueltas que solape la caja del jugador. */
+    private fun collectCoins() {
+        if (actions == null) return
+        val p = player
+        val w = tuning.playerWidth
+        val h = tuning.playerHeight
+        val c0 = (p.x / tileSize).toInt()
+        val c1 = ((p.x + w - 0.01f) / tileSize).toInt()
+        val r0 = (p.y / tileSize).toInt()
+        val r1 = ((p.y + h - 0.01f) / tileSize).toInt()
+        for (r in r0..r1) for (c in c0..c1) {
+            if (blockActionAt(c, r) == BlockAction.COIN) {
+                setAction(c, r, BlockAction.NONE)
+                coins++
+                coinEvents++
+            }
+        }
     }
 
     /** Gravedad, patrulla y colisión de cada enemigo con el terreno. */
@@ -288,9 +348,20 @@ class PlatformerEngine(
         } else if (dy < 0) {
             // Subiendo: golpe de cabeza solo contra sólidos (no los de un sentido).
             val row = (ny / tileSize).toInt()
-            if ((minCol..maxCol).any { solidity(it, row) == SmwSolidity.SOLID }) {
+            val hitCols = (minCol..maxCol).filter { solidity(it, row) == SmwSolidity.SOLID }
+            if (hitCols.isNotEmpty()) {
                 ny = (row + 1) * tileSize + 0.01f
                 p.vy = 0f
+                // Bloque '?': el golpe desde abajo suelta una moneda y lo deja "usado"
+                // (sigue sólido; su solidez no cambia). Un cabezazo = un bloque.
+                for (c in hitCols) {
+                    if (blockActionAt(c, row) == BlockAction.PRIZE) {
+                        setAction(c, row, BlockAction.NONE)
+                        coins++
+                        coinEvents++
+                        break
+                    }
+                }
             }
         }
         p.y = ny

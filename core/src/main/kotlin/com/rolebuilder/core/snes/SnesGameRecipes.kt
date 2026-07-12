@@ -332,6 +332,8 @@ object SnesGameRecipes {
         val enemies: List<Triple<Int, Int, Int>> = emptyList(),
         /** Teselas animadas del atlas (monedas, bloques ?, agua). */
         val animations: List<com.rolebuilder.core.model.TileAnimation> = emptyList(),
+        /** Acción interactiva por tesela del atlas (ordinal de [SmwBlockAction]): moneda… */
+        val blockActions: List<Int> = emptyList(),
     )
 
     /** ¿La definición del bloque Map16 usa alguna tesela de VRAM animada? */
@@ -443,13 +445,26 @@ object SnesGameRecipes {
             for (f in 0 until SMW_TILEANIM_FRAMES - 1) setCollision(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, s)
         }
 
+        // Acción interactiva por tesela ([SmwBlockBehavior]): las monedas se recogen. Los
+        // fotogramas extra de un bloque animado heredan la acción de su bloque base (una
+        // moneda anima, y todos sus fotogramas siguen siendo "moneda").
+        val blockActions = IntArray(columns * rows) { SmwBlockAction.NONE.ordinal }
+        fun setAction(idx: Int, block: Int) {
+            if (idx < blockActions.size) blockActions[idx] = SmwBlockBehavior.classify(block).ordinal
+        }
+        orderedBlocks.forEachIndexed { i, block -> setAction(i, block) }
+        for ((ai, bi) in animBlockIdx.withIndex()) {
+            val block = orderedBlocks[bi]
+            for (f in 0 until SMW_TILEANIM_FRAMES - 1) setAction(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, block)
+        }
+
         // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible.
         val enemies = SmwSprites.parse(rom, delta, level)?.sprites
             ?.filter { it.xTile in 0 until w && it.yTile in 0 until h }
             ?.map { Triple(it.id, it.xTile, it.yTile) }
             .orEmpty()
 
-        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations)
+        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations, blockActions.toList())
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */

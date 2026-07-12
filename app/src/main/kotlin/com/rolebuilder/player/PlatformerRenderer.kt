@@ -49,9 +49,14 @@ class PlatformerRenderer(
     private var lastJumpEvents = 0
     private var lastStompEvents = 0
     private var lastDeathEvents = 0
+    private var lastCoinEvents = 0
 
     /** Lo lee la UI para el aviso de "has muerto". */
     @Volatile var dead = false
+        private set
+
+    /** Monedas recogidas; lo lee la UI para el marcador (HUD). */
+    @Volatile var coins = 0
         private set
 
     private lateinit var batch: SpriteBatch
@@ -102,6 +107,7 @@ class PlatformerRenderer(
             guard++
         }
         dead = engine.player.dead
+        coins = engine.coins
 
         // Audio: suena cada evento del motor (salto, pisotón, muerte) una vez por
         // aparición, con las muestras reales de SMW resueltas por SmwSfxCatalog.
@@ -109,9 +115,11 @@ class PlatformerRenderer(
             if (engine.jumpEvents > lastJumpEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.JUMP)
             if (engine.stompEvents > lastStompEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP)
             if (engine.deathEvents > lastDeathEvents) a.playDeath()
+            if (engine.coinEvents > lastCoinEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.COIN)
             lastJumpEvents = engine.jumpEvents
             lastStompEvents = engine.stompEvents
             lastDeathEvents = engine.deathEvents
+            lastCoinEvents = engine.coinEvents
         }
 
         // Cámara en casillas (16 px = 1 casilla), centrada en Mario.
@@ -142,6 +150,10 @@ class PlatformerRenderer(
                     for (c in minC..maxC) {
                         val mapTile = map.tileAt(layer, c, r)
                         if (mapTile == EMPTY_TILE || mapTile < 0 || mapTile >= ts.tileCount) continue
+                        // Moneda ya recogida: el motor la marcó consumida → no la pintes.
+                        if (ts.platformBlockActions.getOrNull(mapTile) == com.rolebuilder.core.snes.SmwBlockAction.COIN.ordinal &&
+                            engine.blockActionAt(c, r) == com.rolebuilder.core.engine.platformer.BlockAction.NONE
+                        ) continue
                         // Si la tesela anima (monedas, bloques ?), sustituye por su fotograma.
                         val anim = animByTile[mapTile]
                         val tile = if (anim != null && anim.frames.isNotEmpty()) {
