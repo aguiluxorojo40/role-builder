@@ -61,3 +61,22 @@ Layer 1 (modos 9/11/16) tampoco tienen objetos, es correcto.
 Todo lo demás relevante para **construir y contrastar niveles** (direcciones, cabeceras,
 GFX/paletas, colisión, entrada, salidas→sublevels, enemigos con posición y extra bits, sprites
 grandes) está cubierto y en `docs/niveles_smw.md` + `docs/enemigos_por_nivel.md`.
+
+## Fuera del alcance actual (otro dominio, no "datos de nivel")
+
+Repasado el inventario COMPLETO de la ROM, lo único no documentado son cosas que NO son
+datos por nivel:
+
+- **OVERWORLD / mapa del mundo**: tilemaps de submapa (`kMap16Data_OverworldLayer1`,
+  `OverworldLayer2Tilemap`), caminos y **eventos** (`kLmEventStuff1-4`,
+  `kLoadOverworldLayer1AndEvents`, `kLoadLevel_DATA_05D608` = evento por nivel), sprites de
+  mapa (`kLoadOverworldSprites`), warps del Star Road (`kOwStarPipeWarp_*`), paletas OW. Es un
+  dominio propio (qué casilla del mapa es cada nivel, cómo se conectan, switch palaces…).
+- **Niveles especiales / edge**: 6 salas de entrada (`kEntranceData`), Chocolate Island 2
+  especial (`kChoclateIsland2`), pantalla de créditos y roll-call (`kRollCallData`,
+  `kGameMode25_ShowEnemyRollcallScreen`).
+- **Animación de teselas de nivel** (`kLevelTileAnimations_FrameData`, monedas/bloques/agua):
+  ya soportada en el motor (teselas animadas), no volcada en el informe por nivel.
+
+Conclusión: para **datos de nivel + enemigos** no queda nada; los 4 puntos de arriba están
+acotados y lo pendiente de verdad es el **overworld**, que es harina de otro costal.
