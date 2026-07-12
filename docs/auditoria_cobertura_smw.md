@@ -23,7 +23,7 @@ que extraemos y documentamos. Estado: ✅ completo · ⚠️ parcial · ❌ falt
 | Salidas de pantalla (ExtObj00) | (en objetos de Layer 1) | ✅ | pantalla → nivel/sublevel destino (+ 2ª entrada) |
 | GFX de sprites SP1-4 | $00:A8C3 + 4·setting | ✅ | los 4 ficheros GFX |
 | GFX FG/BG [FG1 FG2 BG1 FG3] | $00:A92B + 4·tileset | ✅ | los 4 ficheros GFX |
-| Nombre de nivel (`kLevelNames`) | $04:A0FC (2B×256) | ⚠️ | dirección + valor crudo; **texto no decodificado** |
+| Nombre de nivel (`kLevelNames`) | $04:A0FC (2B×256) | ✅ | **decodificado**: ensamblado de 3 trozos (`SmwLevelNames`), texto por nivel en `niveles_smw.md` |
 | Música de nivel | (índice en cabecera) | ✅ | índice 0-7 + reproductor N-SPC/S-DSP real |
 
 ¹ Limitación: **niveles VERTICALES** — `SmwLayer1` solo parsea horizontales; en verticales
@@ -45,18 +45,20 @@ Layer 1 (modos 9/11/16) tampoco tienen objetos, es correcto.
 
 ## Resquicios HONESTOS que quedan (nada crítico para construir)
 
-1. **Nombre de nivel en texto** (`kLevelNames` → cadena): el nombre se ensambla de 3 tablas de
-   cadenas ($04:9C91/9CCF/9CED → índices en `kUpdateLevelName_LevelNameStrings` $04:9AC5); esas
-   se leen (direcciones + tiles crudos), pero convertir tesela→letra necesita la FUENTE gráfica
-   del nombre (no es una tabla de código), así que el texto legible queda pendiente. Sí resuelto:
-   **qué niveles son de MAPA** (translevel 0x00-0x5F → leveldata 0x000-0x024 y 0x101-0x13B, los
-   **96** con salida) vs **sublevels**, marcado por nivel en `niveles_smw.md` (campo "Tipo").
-2. **Contenido de Layer 2 de fondo**: documentamos puntero y tipo (fondo/nivel), no el tilemap
+1. **Contenido de Layer 2 de fondo**: documentamos puntero y tipo (fondo/nivel), no el tilemap
    del fondo en sí.
-3. **Niveles verticales**: identificados, pero su Layer 1 (colisión/salidas) aún no se parsea
+2. **Niveles verticales**: identificados, pero su Layer 1 (colisión/salidas) aún no se parsea
    (otra disposición de pantallas).
-4. **Comportamiento por sprite** (tweaker `$166E`): se usa para la paleta; no se vuelca entero
+3. **Comportamiento por sprite** (tweaker `$166E`): se usa para la paleta; no se vuelca entero
    por enemigo en el informe.
+
+**Resuelto** (antes pendiente): el **nombre de nivel en texto** ya se decodifica. No hacía falta
+la fuente gráfica: el nombre se ensambla de 3 trozos de un pool ($04:9AC5) vía tres tablas de
+offsets ($04:9C91/9CCF/9CED), y el word por translevel ($04:A0FC) empaqueta los tres índices
+(i1=byte alto, i2/i3=nibbles del byte bajo). El mapa tesela→carácter es directo (0x00-0x19=A-Z,
+0x1F=espacio, 0x5A='#', 0x5D=apóstrofo, 0x63-0x6C=0-9). Implementado en `SmwLevelNames` y volcado
+por nivel en `niveles_smw.md` (94 nombres). El bloqueo anterior ("hace falta la fuente") era falso:
+venía del bug SNES→PC que daba teselas basura.
 
 Todo lo demás relevante para **construir y contrastar niveles** (direcciones, cabeceras,
 GFX/paletas, colisión, entrada, salidas→sublevels, enemigos con posición y extra bits, sprites

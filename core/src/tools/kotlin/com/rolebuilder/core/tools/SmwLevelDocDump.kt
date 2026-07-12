@@ -2,6 +2,7 @@ package com.rolebuilder.core.tools
 
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwLayer1
+import com.rolebuilder.core.snes.SmwLevelNames
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.core.snes.SmwSprites
@@ -101,7 +102,9 @@ fun main(args: Array<String>) {
             "nivel de MAPA (translevel ${hx(translevel)})"
         else "sublevel / sala secundaria (no aparece en el mapa; se entra por salida de pantalla)"
 
-        perLevel.appendLine("### Nivel ${hx(level, 3)}")
+        val levelName = SmwLevelNames.nameOf(rom, delta, level)
+        perLevel.appendLine("### Nivel ${hx(level, 3)}${if (levelName != null) " — $levelName" else ""}")
+        perLevel.appendLine("- **Nombre (overworld)**: ${levelName ?: "— (sublevel, sin nombre de mapa)"}")
         perLevel.appendLine("- **Tipo**: $tipo")
         perLevel.appendLine("- **Direcciones**: L1ptr ${hx(addr.layer1PtrTablePc, 5)} → header ${hx(addr.headerPc, 5)}" +
             " · SprPtr ${hx(addr.spritePtrTablePc, 5)} → stream ${hx(addr.spriteStreamPc, 5)}" +
