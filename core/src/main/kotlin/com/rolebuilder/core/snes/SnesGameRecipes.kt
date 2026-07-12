@@ -786,6 +786,14 @@ object SnesGameRecipes {
         val spriteGfxSlotPc: Int?,
         /** Los 4 nº de fichero GFX que el nivel sube a SP1..SP4 (0x7F = ranura vacía). */
         val spriteGfxFiles: IntArray?,
+        /** Entrada de 4 bytes [FG1,FG2,BG1,FG3] en la tabla de GFX FG/BG, según fgTileset. */
+        val fgbgGfxSlotPc: Int?,
+        /** Los 4 nº de fichero GFX FG/BG que el nivel sube [FG1, FG2, BG1, FG3]. */
+        val fgbgGfxFiles: IntArray?,
+        /** Entrada de 3 bytes de este nivel en la tabla de punteros de Layer 2 ($05:E600). */
+        val layer2PtrTablePc: Int,
+        /** ¿El Layer 2 de este nivel es un FONDO (imagen) en vez de objetos de nivel? */
+        val layer2IsBackground: Boolean,
     )
 
     /** Reúne las direcciones ROM de [level] (0..0x1FF) para documentación. */
@@ -795,6 +803,11 @@ object SnesGameRecipes {
         val slotPc = info?.let { SMW_SPRITE_GFX_TABLE_PC + delta + 4 * (it.spriteGfx and 0x0F) }
         val files = slotPc?.takeIf { it >= 0 && it + 4 <= rom.size }
             ?.let { IntArray(4) { s -> byte(rom, slotPc + s) } }
+        val fgbgPc = info?.let { SMW_FGBG_GFX_TABLE_PC + delta + 4 * (it.fgTileset and 0x0F) }
+        val fgbgFiles = fgbgPc?.takeIf { it >= 0 && it + 4 <= rom.size }
+            ?.let { IntArray(4) { s -> byte(rom, fgbgPc + s) } }
+        val l2Ptr = SMW_LAYER2_PTR_PC + delta + 3 * level
+        val l2IsBg = l2Ptr + 2 < rom.size && byte(rom, l2Ptr + 2) == SMW_BG_IS_BACKGROUND
         return SmwLevelAddresses(
             level = level,
             layer1PtrTablePc = SMW_LAYER1_PTR_PC + delta + 3 * level,
@@ -803,6 +816,10 @@ object SnesGameRecipes {
             spriteStreamPc = SmwSprites.dataStreamPc(rom, delta, level),
             spriteGfxSlotPc = slotPc,
             spriteGfxFiles = files,
+            fgbgGfxSlotPc = fgbgPc,
+            fgbgGfxFiles = fgbgFiles,
+            layer2PtrTablePc = l2Ptr,
+            layer2IsBackground = l2IsBg,
         )
     }
 

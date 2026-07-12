@@ -1,6 +1,8 @@
 package com.rolebuilder.core.tools
 
 import com.rolebuilder.core.snes.SmwEnemyGraphics
+import com.rolebuilder.core.snes.SmwLevelStartReader
+import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.core.snes.SmwSprites
 import com.rolebuilder.core.snes.SmwSpriteNames
 import com.rolebuilder.core.snes.SnesDecoder
@@ -60,19 +62,37 @@ fun main(args: Array<String>) {
         if (placements.isEmpty() && info.screens <= 1) continue
         count++
         val addr = SnesGameRecipes.smwLevelAddresses(rom, header, level)
-        val gfx = addr.spriteGfxFiles?.joinToString(" ") {
+        fun files(a: IntArray?) = a?.joinToString(" ") {
             if (it == 0x7F) "--" else it.toString(16).uppercase().padStart(2, '0')
         } ?: "—"
+
+        // Colisión (decodifica Layer 1): dimensiones + histograma de solidez.
+        val col = runCatching { SnesGameRecipes.smwLevelCollision(rom, header, level) }.getOrNull()
+        val colTxt = if (col == null) "— (sin colisión reconstruible)" else {
+            val h = col.solidity.groupingBy { it }.eachCount()
+            val nonEmpty = SmwSolidity.entries.filter { it != SmwSolidity.NONE && (h[it] ?: 0) > 0 }
+                .joinToString(" ") { "${it.name}=${h[it]}" }
+            "${col.cols}×${col.rows} casillas · $nonEmpty"
+        }
+        // Entrada (posición de inicio) desde la cabecera secundaria.
+        val start = runCatching { SmwLevelStartReader.read(rom, header, level) }.getOrNull()
+        val startTxt = if (start == null) "—" else
+            "casilla (${start.startTileX},${start.startTileY}) = px (${start.startPixelX},${start.startPixelY})"
 
         perLevel.appendLine("### Nivel ${hx(level, 3)}")
         perLevel.appendLine("- **Direcciones**: L1ptr ${hx(addr.layer1PtrTablePc, 5)} → header ${hx(addr.headerPc, 5)}" +
             " · SprPtr ${hx(addr.spritePtrTablePc, 5)} → stream ${hx(addr.spriteStreamPc, 5)}" +
-            " · GFXslot ${hx(addr.spriteGfxSlotPc, 5)}")
-        perLevel.appendLine("- **GFX sprites (SP1-4)**: `$gfx`  ·  spriteGfx=${info.spriteGfx}")
+            " · L2ptr ${hx(addr.layer2PtrTablePc, 5)} · GFXslot ${hx(addr.spriteGfxSlotPc, 5)}" +
+            " · FGBGslot ${hx(addr.fgbgGfxSlotPc, 5)}")
+        perLevel.appendLine("- **GFX sprites (SP1-4)**: `${files(addr.spriteGfxFiles)}` (spriteGfx=${info.spriteGfx}) · " +
+            "**GFX FG/BG [FG1 FG2 BG1 FG3]**: `${files(addr.fgbgGfxFiles)}` (tilesetFG=${info.fgTileset})")
         perLevel.appendLine("- **Propiedades**: ancho ${info.screens} pantallas (${info.widthTiles} casillas)" +
             " · modo ${hx(info.levelMode)} · música ${info.musicIndex} · tiempo ${info.startTime}" +
+            " · Layer2 ${if (addr.layer2IsBackground) "fondo" else "nivel"}" +
             " · paletas BG=${info.bgPalette} FG=${info.fgPalette} SPR=${info.spritePalette}" +
-            " backArea=${info.backgroundColor} · tilesetFG=${info.fgTileset}")
+            " backArea=${info.backgroundColor}")
+        perLevel.appendLine("- **Colisión**: $colTxt")
+        perLevel.appendLine("- **Entrada**: $startTxt")
         // Enemigos agregados por id, con posiciones.
         val byId = placements.groupBy { it.id }
         val big = byId.keys.filter { it in bigIds }
