@@ -807,6 +807,11 @@ object SnesGameRecipes {
         val fgbgFiles = fgbgPc?.takeIf { it >= 0 && it + 4 <= rom.size }
             ?.let { IntArray(4) { s -> byte(rom, fgbgPc + s) } }
         val l2Ptr = SMW_LAYER2_PTR_PC + delta + 3 * level
+        // Regla REAL del juego (extractor de assets de snesrev/smw, add_packed_level_bg): el
+        // Layer 2 es IMAGEN de FONDO si y solo si el BYTE DE BANCO (3er byte) es 0xFF; entonces
+        // el puntero se remapea al banco $0C. Con cualquier otro banco es una 2ª capa de OBJETOS
+        // (puntero de 24 bits, se parsea como Layer 1). El `is_bg & 2` interno es una bandera
+        // DERIVADA que solo vale 2 cuando el banco era 0xFF, no un test del byte crudo.
         val l2IsBg = l2Ptr + 2 < rom.size && byte(rom, l2Ptr + 2) == SMW_BG_IS_BACKGROUND
         return SmwLevelAddresses(
             level = level,
@@ -1173,11 +1178,48 @@ object SnesGameRecipes {
         return ByteArray(out.size) { out[it] }
     }
 
+    /**
+     * Ficha del Layer 2 de un nivel para documentación: si es imagen de FONDO o 2ª capa de
+     * OBJETOS, el byte de tipo crudo, la dirección fuente y —para fondos— cuántos bloques Map16
+     * tiene el tilemap descomprimido (BufferBGTilemap). Distintos niveles con el mismo
+     * [backgroundSourceSnes] comparten fondo (id de fondo).
+     */
+    class SmwLayer2Info(
+        val level: Int,
+        val isBackground: Boolean,
+        val typeByte: Int,
+        /** Dirección de 16 bits del puntero de Layer 2 (fondo: en banco $0C; objetos: en su banco). */
+        val addrSnes: Int,
+        /** Banco del puntero de objetos (solo cuando NO es fondo); los fondos viven en banco $0C. */
+        val objectBank: Int,
+        /** SNES completa de la fuente del FONDO ($0C:addr), para agrupar niveles con igual fondo. */
+        val backgroundSourceSnes: Int?,
+        /** Bloques Map16 del tilemap de fondo descomprimido (0 si no es fondo o falla). */
+        val backgroundBlockCount: Int,
+    )
+
+    /** Ficha del Layer 2 de [level] (0..0x1FF), leída de la ROM. */
+    fun smwLayer2Info(rom: ByteArray, header: SnesHeader, level: Int): SmwLayer2Info {
+        val delta = smwHeaderDelta(header)
+        val p = SMW_LAYER2_PTR_PC + delta + 3 * level
+        val typeByte = if (p + 2 < rom.size) byte(rom, p + 2) else 0
+        val addr = if (p + 1 < rom.size) byte(rom, p) or (byte(rom, p + 1) shl 8) else 0
+        val isBg = typeByte == SMW_BG_IS_BACKGROUND // banco 0xFF → fondo (remapeado a $0C)
+        if (isBg) {
+            val srcSnes = 0x0C0000 or addr
+            val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)
+            val blocks = if (addr >= 0x8000 && dataPc in rom.indices)
+                decompressSmwBackground(rom, dataPc).size else 0
+            return SmwLayer2Info(level, true, typeByte, addr, 0, srcSnes, blocks)
+        }
+        return SmwLayer2Info(level, false, typeByte, addr, typeByte, null, 0)
+    }
+
     internal fun layer2BgEntries(rom: ByteArray, delta: Int, level: Int): List<SnesTilemap.TilemapEntry> {
         val p = SMW_LAYER2_PTR_PC + delta + 3 * level
         if (p < 0 || p + 2 >= rom.size) return emptyList()
         val isBg = byte(rom, p + 2)
-        if (isBg and 2 == 0) return emptyList() // bit1: Layer 2 de imagen; si no, son objetos
+        if (isBg != SMW_BG_IS_BACKGROUND) return emptyList() // banco 0xFF = fondo; otro = objetos
         val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
         if (addr < 0x8000) return emptyList()
         val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)

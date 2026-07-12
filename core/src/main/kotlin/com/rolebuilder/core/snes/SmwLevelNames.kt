@@ -33,6 +33,12 @@ object SmwLevelNames {
     private const val T3 = 0x049CED          // offsets parte 3
     private const val BLANK = 0x01CB         // offset centinela = trozo vacío / fin del pool
 
+    // Nº de entradas de cada tabla de offsets (índice 0 = trozo vacío). Fijos en la ROM vanilla:
+    // T1 abarca [9C91,9CCF)=31 words, T2 [9CCF,9CED)=15, T3 13 (hasta que empieza el código).
+    private const val T1_COUNT = 31
+    private const val T2_COUNT = 15
+    private const val T3_COUNT = 13
+
     private const val MAX_TRANSLEVEL = 0x5F
 
     /** SNES(LoROM)→PC con el delta de cabecera de la ROM. */
@@ -46,7 +52,12 @@ object SmwLevelNames {
         val b = tile and 0x7F
         return when {
             b in 0x00..0x19 -> 'A' + b
+            b == 0x1C -> '-'                                     // guión ("CHOCO-GHOST HOUSE")
             b == 0x1F -> ' '
+            // Teselas del LOGO estilizado de "ILLUSION" (I L L U S I) — spelling fijo del gráfico.
+            b in 0x32..0x37 -> "ILLUSI"[b - 0x32]
+            // Teselas del logo estilizado "GREEN" (G R E E N) del switch palace duplicado.
+            b in 0x38..0x3C -> "GREEN"[b - 0x38]
             b == 0x5A -> '#'
             b == 0x5D -> '\''
             b in 0x63..0x6C -> '0' + (b - 0x63)
@@ -56,12 +67,33 @@ object SmwLevelNames {
         }
     }
 
-    /** Trozo `idx` de la tabla de offsets en [tableSnes]: pool[T[idx] .. T[idx+1]). */
-    private fun part(rom: ByteArray, delta: Int, tableSnes: Int, idx: Int): String {
-        val t = pc(tableSnes, delta)
-        val off = u16(rom, t + 2 * idx)
+    /**
+     * Conjunto ORDENADO de todos los offsets del pool (las 3 tablas ∪ {fin del pool}). Los tres
+     * grupos de fragmentos comparten el mismo pool, así que la longitud de un fragmento llega
+     * hasta el SIGUIENTE límite entre TODOS los offsets, no solo el de su propia tabla (usar el
+     * de la propia tabla desbordaba el último fragmento de cada tabla hasta el fin del pool).
+     */
+    private fun boundaries(rom: ByteArray, delta: Int): IntArray {
+        val set = sortedSetOf(BLANK)
+        for ((t, n) in listOf(T1 to T1_COUNT, T2 to T2_COUNT, T3 to T3_COUNT)) {
+            val base = pc(t, delta)
+            for (i in 0 until n) { val o = u16(rom, base + 2 * i); if (o != BLANK) set.add(o) }
+        }
+        return set.toIntArray()
+    }
+
+    /** Fin de un fragmento: el menor límite estrictamente mayor que [off] (o fin del pool). */
+    private fun endOf(bounds: IntArray, off: Int): Int {
+        for (b in bounds) if (b > off) return b
+        return BLANK
+    }
+
+    /** Trozo `idx` de la tabla [tableSnes] (o null si el índice se sale del nº de entradas). */
+    private fun part(rom: ByteArray, delta: Int, tableSnes: Int, count: Int, idx: Int, bounds: IntArray): String? {
+        if (idx < 0 || idx >= count) return null // índice fuera de rango: translevel sin nombre real
+        val off = u16(rom, pc(tableSnes, delta) + 2 * idx)
         if (off == BLANK) return "" // índice 0: trozo vacío
-        val end = u16(rom, t + 2 * idx + 2) // el centinela BLANK vale como fin del pool
+        val end = endOf(bounds, off)
         val poolPc = pc(POOL, delta)
         val sb = StringBuilder()
         for (o in off until end) sb.append(glyph(rom[poolPc + o].toInt() and 0xFF))
@@ -78,8 +110,11 @@ object SmwLevelNames {
         val i1 = w shr 8
         val i2 = (w shr 4) and 0xF
         val i3 = w and 0xF
-        val name = (part(rom, delta, T1, i1) + part(rom, delta, T2, i2) + part(rom, delta, T3, i3)).trim()
-        return name.ifEmpty { null }
+        val bounds = boundaries(rom, delta)
+        val p1 = part(rom, delta, T1, T1_COUNT, i1, bounds) ?: return null
+        val p2 = part(rom, delta, T2, T2_COUNT, i2, bounds) ?: return null
+        val p3 = part(rom, delta, T3, T3_COUNT, i3, bounds) ?: return null
+        return (p1 + p2 + p3).trim().ifEmpty { null }
     }
 
     /** Convierte un leveldata (0x000..0x1FF) al translevel del mapa, o null si es sublevel. */

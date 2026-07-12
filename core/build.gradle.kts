@@ -94,6 +94,17 @@ tasks.register<JavaExec>("dumpOverworldDoc") {
     workingDir = rootDir
 }
 
+// Documenta el Layer 2 (fondos y 2ª capa de objetos) a docs/fondos_layer2_smw.md:
+//   ./gradlew :core:dumpLayer2Doc --args="--rom smw.sfc"
+tasks.register<JavaExec>("dumpLayer2Doc") {
+    group = "rolebuilder"
+    description = "Documenta el Layer 2 de SMW: fondos compartidos y capas de objetos (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwLayer2DocKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Vuelca el comportamiento (tweaker) de cada sprite a docs/comportamiento_sprites.md:
 //   ./gradlew :core:dumpSpriteTweaker --args="--rom smw.sfc"
 tasks.register<JavaExec>("dumpSpriteTweaker") {

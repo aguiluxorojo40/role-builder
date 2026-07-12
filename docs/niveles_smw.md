@@ -31,6 +31,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E000 → header 0x30654 · SprPtr 0x2EC00 → stream 0x3C407 · L2ptr 0x2E600 · GFXslot 0x028DB · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=6) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 7 · tiempo 0 · Layer2 fondo · paletas BG=5 FG=0 SPR=4 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0x7 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -45,6 +46,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E003 → header 0x33A69 · SprPtr 0x2EC02 → stream 0x3CE1C · L2ptr 0x2E603 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=6 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=238 SOLID=123 SLOPE=72 SLOPE_STEEP=78
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -67,6 +69,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E006 → header 0x33C33 · SprPtr 0x2EC04 → stream 0x3CEBF · L2ptr 0x2E606 · GFXslot 0x028D3 · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 256×27 casillas · SOLID=14
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · no-Yoshi · L2scroll 1 L3 2 L1y 2 L2y 2 · secHdr [0x19 0x80 0x8A 0x80]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -87,6 +90,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E009 → header 0x308BF · SprPtr 0x2EC06 → stream 0x3C4C5 · L2ptr 0x2E609 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · LEDGE_TOP=16 SOLID=5
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x1 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -101,6 +105,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E00C → header 0x31807 · SprPtr 0x2EC08 → stream 0x3C7B5 · L2ptr 0x2E60C · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=4 SPR=5 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 110×27 casillas · SOLID=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x7 (memoria 0x7, buoyancy 0x0)
@@ -116,6 +121,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E00F → header 0x31961 · SprPtr 0x2EC0A → stream 0x3C7D9 · L2ptr 0x2E60F · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=1 SPR=2 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · LEDGE_TOP=41 SOLID=40
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x1 0xAA 0x80]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -140,6 +146,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E012 → header 0x31BB5 · SprPtr 0x2EC0C → stream 0x3C844 · L2ptr 0x2E612 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=292 SOLID=155 SLOPE=32 SLOPE_STEEP=41
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xAA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -168,6 +175,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E015 → header 0x31DC0 · SprPtr 0x2EC0E → stream 0x3C904 · L2ptr 0x2E615 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=47 SOLID=9
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -183,6 +191,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E018 → header 0x3076E · SprPtr 0x2EC10 → stream 0x3C49D · L2ptr 0x2E618 · GFXslot 0x028C3 · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · SOLID=58
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x27 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -200,6 +209,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E01B → header 0x3162D · SprPtr 0x2EC12 → stream 0x3C751 · L2ptr 0x2E61B · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=2 SPR=4 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x956D · tipo 0x6
 - **Colisión**: 192×27 casillas · LEDGE_TOP=100 SOLID=189 SLOPE=42 SLOPE_STEEP=50
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 3 L3 3 L1y 2 L2y 2 · secHdr [0x37 0xC0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -218,6 +228,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E01E → header 0x32134 · SprPtr 0x2EC14 → stream 0x3C948 · L2ptr 0x2E61E · GFXslot 0x028D3 · FGBGslot 0x0294F
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0D 1A` (tilesetFG=9)
 - **Propiedades**: ancho 13 pantallas (208 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=2 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDAB9 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 194×27 casillas · LEDGE_TOP=26 SOLID=135 SLOPE=3 SLOPE_STEEP=19
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x18 0x38 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -238,6 +249,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E021 → header 0x33D0F · SprPtr 0x2EC16 → stream 0x3CF06 · L2ptr 0x2E621 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=2 SPR=1 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 127×27 casillas · SOLID=22
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x39 0xA 0x0]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -256,6 +268,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E024 → header 0x35000 · SprPtr 0x2EC18 → stream 0x3D1F5 · L2ptr 0x2E624 · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 191×27 casillas · SOLID=47
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x0 0xA 0x80]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -275,6 +288,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E027 → header 0x350F4 · SprPtr 0x2EC1A → stream 0x3D25A · L2ptr 0x2E627 · GFXslot 0x028D7 · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=0 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · LEDGE_TOP=11 SOLID=24
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -299,6 +313,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E02A → header 0x343A3 · SprPtr 0x2EC1C → stream 0x3D0D7 · L2ptr 0x2E62A · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x1 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=0 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xC46E · tipo 0x6
 - **Colisión**: 95×27 casillas · SOLID=11
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x29 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -315,6 +330,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E02D → header 0x33EAD · SprPtr 0x2EC1E → stream 0x3CFAF · L2ptr 0x2E62D · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 22 pantallas (352 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 337×27 casillas · SOLID=20
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0x1 (memoria 0x1, buoyancy 0x0)
@@ -333,6 +349,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E030 → header 0x341C4 · SprPtr 0x2EC20 → stream 0x3D043 · L2ptr 0x2E630 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 21 pantallas (336 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 336×27 casillas · LEDGE_TOP=412 SOLID=216 SLOPE=20 SLOPE_STEEP=27
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x7 (memoria 0x7, buoyancy 0x0)
@@ -356,6 +373,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E033 → header 0x34783 · SprPtr 0x2EC22 → stream 0x3D157 · L2ptr 0x2E633 · GFXslot 0x028D3 · FGBGslot 0x0294F
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0D 1A` (tilesetFG=9)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=4 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDAB9 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 192×27 casillas · LEDGE_TOP=4 SOLID=77 SLOPE_STEEP=29
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 5 L3 3 L1y 2 L2y 2 · secHdr [0x58 0xF8 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -371,6 +389,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E036 → header 0x30000 · SprPtr 0x2EC24 → stream 0x3E76D · L2ptr 0x2E636 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,11) px (16,176) · pantalla entrada 4 · **VERTICAL** · L2scroll 0 L3 0 L1y 0 L2y 2 · secHdr [0x5 0x0 0x2 0x64]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -378,12 +397,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
-### Nivel 0x013 — DONUT SECRET HOUSE ?BAAIANAXA?A?A?A?A?A?A?A2A?A?ADAHAMA?A?A?A?A?A?A2A!A?AIBTB?B?B?B?B?B?B?B?B?B?B4B9B?BABKBPBVB?B?B?B B?B?B?B?B?B?B?B?B?B??D??Y6?AFCY6EAP?D??A? ?D???L ?D??B??AK??R????????D??????A??A?????????????? ?D??????A?PAK??????????1C?I??B???A??? BD???????I1C?O?? BD??? CD?55??Q3???N?Q??N?B???N?F??N?N?DN?T??N????Y??NQL?CN?N??N??T????Y??N?BN?N???NN?N??NN?N??NFZ??NN?NN?TN?Y??NN?N???F????O????N?R N?T??T?CN?N?KN?T??N???NQ??CN?N??N??NY?? AN?N?? A?L??T??N?BN?N??DN?T??!??M??????????AG?T?H?P?!??!??F?F?EN!????!???AFA??N?Z ?2A?Z ?2??D??????NR?A?KQF6K?A!?Q?QAQ?QAQ?QAI?M??EE??QAQ?I?I?QAQ?E?QAQQIQEQEIEMMEEEEIQ????EQ??EQ??M?QAAQAQQAQA?I?IAQQ?Q??EE??QAQ?QQEQAEQEE??EEQIM?AQ?QQAEQQ?AQAQ?QQAAQAQAQAQAQAQE?EEEEAQAQQAQA?Q?EBABABABABABAABABABABBABAABBABABAABBABABABABABABABABABAABABBAABBAABBABABABABABAABBABABABAABABBABABABABABABAABBABABABABABABABABABABABABABABABABABAABBABABABABABABAABEEEEEEEAAAAAAAAAEAAEEEEAAAAAAAEAAAEAAEEIIIMMIIIIIMMIIIIMIIIMIMUUUEAAAAAAAAAAAEEIAHJKNORXZ??? ????????????I??I?I?I?IEAIEEIEIEAEIEA?IAA?I?IEAEAAAI?IEIE?II?EA??IA????EA??EAIA??EAEAEAIAIAEA????AAAAIAEAEAEA??EAEAEAIA????EAEAEAAAAAEAEAEA??EAIA??????EA??IACCCCCACCCACACACCAAACCCCCAA?N?NAM?K?K?K?E?L?K?KQNBRCR?GHSAUAT?C?K?O?K?C?EAY?E?IQW?W?W?CQV?HAX?W?W?W?D?B?BQB?B?B?N?C?NDN?K?CA?A??Z?JQZAA?Z?Z?Z?Z?WCNENBN?P?F?V?V?V?V?Q!V?V?CLAKAJAIA?CA?A?A??A?C?C?C?C?C?C?C?C?C?C?C???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????A????????????????????????????????????ABS?????T???ABS?????U??'??U???ABS?????T???ABS???????????????AB????AB?9??AB???CABV??JABX??OABW???ABX???ABV???ABW???ABW???ABV???ABW???ABV??BABX???ABW??BABV???ABW???ABX???ABV???ABV??AABX?? ABW???ABV??7ABV???ABW??.ABV??GABW??RABV???ABX???ABV????G?????G?????G?????G???HABP????B?B.???B?B.???AQB?B.?U?ABBCBBFCR????S?CQDRB?BRB?DR?Q?R?BQRJ?BRQJ?EBCDCBC?B??D?BKB?BKBRQJ?A?C?A?C?B??D?BKB?BKB??J?AAB?B??B?BQAD?ARF?BRQI?BR?C6D?R??B?C6AAB?ARD?A?I?BR?B6E??R??B?B6B?6B?A?D?AQJ?ARB?ARC?C???C6B?B6?C6B?.G?B??H?BARD?A?B?D6B?.G?D? GFFDB??D?ARB?A?C6B??E?EBC? ?B?C???B?B?D6D?R?RC?B?QE?O??? ???????R?6?D6A?D?CQ??E?E??? ?B?G????R??E6A?C6D?.?6D?FQR?? ?B?H?????R??E6A?B6D?.?6C?GQR??? ?C?C???B?B?E?????C6D?.?6C?F??? 12E?B?A?D?E??R??B6D?.?6C?D??12B?A?B8F??????BKB?OB?HR??????6C?BARB?B??D5E??R?RBKJ?KP???????B?C?G??RP???B8F?R?A6AB?I?P?0????QC?C?C??RB?B?RC?EA6???B?E???P9B5B9?C?C?CAR?B?JR??6???R?RB?D??K?D5A9CDB?DQR??B?B??C?ARF?DQRK?E5B?A?B?D??12BKBRQH?DQD??B?A9C5D9RA6B?D????BKB??G?AQBPL?0??????R?6?B?DAR12B?CRARE?PQ???O??0??0R?6?6B?D????B?C??RE?E??0?OC?D?0??C6A?B?D????B?A?D?AQBDKR???????R??C6H???R?AR?B?BRQC?A?B?J??0?0??0??C6D?R????A???B?QV?D?2?.D?C?RQQ?HBCDFE???D?DR?RQN?CBCRC?E????BC?BQDBRAQL?BQRE?F???#RQB?B?CQ??L?C??'E5A'C?A?B?C?B?L?B??G5B?BRAB?B?CQRAH?BBCBDCAR'E5E'?R??B?F?QR??QF?BQRC?E?????B?F????6?B?F???6??F?B??BKDR?6?H6B?B?B?B6B??B?B??B?B??BKCR??H6K?6?Q??6??R?F?B??B?D?R??H6B?BRQB?A?BRBACCDFCB??P?B?BR?B?A?D6E?6???B?BRC??RC?BRDAR??D?C?RAE6K?????R??6??C6H????????B?C???D6L??R?????A6??C?C???B6A?E6B?C6L??R???6?6?6?F?C?6?E6C?6?C?ARB?D????B6D?6?RD?BR?B6A?E6C???B?BJB?HRA6?6??RE?DR?6?E6B??BJB?BZBJA?B?B6B?RG?ER????D?ARBZB?BJBZG????6?RI?DR???BJB??BJBPJZYJ????R?RK?CQR?BZBJBZYCJBZC???C?BQD?BQC?BQRBJE?JYZJCYAZBJC??RCDCRARB?AQBRCDER?ZYJBZAJDYAJBZC???C?B?CR??C?CR??CJBYZBJFZA?BJBRQB6B?C.A?B6D??R?CZDYJZYGJBZB??B6B?C.A?C6D???RBJBZBJYBZBYCZBJB??B6B?C?A?B6A?C6A?BZBJBZYBJBYGJ?JYZRAB6F??R?R?C6A?B6G???ZYJZDYBZJBYCJ??C?ARB?ARD?D???RCJCYCZBYJDZB??H?EIHGFRB?EZAYCJBZBJJ?????R????B?B?RCDARB?B?0C?I?0R?6?6?RD?FR?ARP?E?A'B5A'C?D??R?B?C??RF?GA??????BKB?'B5A'D?FR??6?RG?BQRB?DR?O?BKB??B?B?D??R?B6B??B?B??D?BARB?DRA??B?C?0?B?DR???B6I??R??????B?B??B?D???0B?A?B?D?R??D6E?R???B?B??B?B?6B?M6??????????6?C6D?R??F?B?B?6B?A6C?E6A?B6A?B6E?R???F?B?B?6B?D6?6?D6A?C6F???R??H?B?B?6B?A6B?F6E?6??RB?B??H?B?B?6B?D6???D6D???RD?B??H?B?B?6B?C6?RF?ARF?B??H?B?B?6B?I6?DEDEDCBH?B??G?D?Q??B?D????C?C??QG?D????D?E?????B?D??? C?C? ?I?K?????????R?B?D?R? C?C12?L?B??C?C?R?B?F?R? ??B?B??Q?C??RB?GR?12? ?B?A?D?B?K?AAB?ARD?D?12RB?AAD?C?R?D?C?D?C?B?B6?G?A?B6A?D?A?BRA?B?D?R??BDA?B?B6AB?F?????AB6A?D?D????BDGR?????RB?A6B?E6B?B6B?RC?D?R??C?I?????R??6B?E6B?B6B?RB?B?RE?H???????RB?B?E6B?B?ARC?C?R?D?C???C?C?CR??E6C??RE?M?????????????D?ARG?ARF?M?R???????????S?E?R???B?F??????N?R???????R??????????N?E?????B?F?R??R?BRB?ARM?F??????C?A?B?B?6B?B6A?J?I?????????D?B6B?6B?B6A?J?B??E?C???C?B6B?6B?B6A?G?EQR???C8D?BOZBYAZBPFZYJ???G?D????D5D?BOJBYAJB?FJYZRARG?E????'B5A'EJCYAZB?BZCR??H?D??A?B?B?HZC??PBJC?6?H?B??B?B?C???C8D?I??JYZ?6?RG?DARQRB?B??D5D?KOJYZRA6?R??E?D??RQB?CR?'B5B'?CJAYBZH????R???E?E?6?RDBQB??B?B?JCYAZB?DR??RB?B?B??B?BR?B6A?CRB??B?A?DZD?R??B?ARB?B?B??B?BR?C6B??J?G??6?6?RB?B?B??C?BR?D6A?H6A?C6C??RC?B?B??D?A?D?C?6?B?A?D6A?B6B??D?C???E?A?C?D?#6#BKA?C6A?C6B?RD?C???E?B??B?D?#6#BKA?B6H?????QDQC?A?B?C?D?B?H?R?????AB?AAB?HA?AR?A?AF?L??RD?????R??D?B?C?B?C?6?F?L??????R?????D?B?C?B?C?6?C?A?BDL???????????RD?BR?C?F?R?6?RB?P??????????????R?B?A?BRC?BRD?6?RB?PR???????????R??RB?KR?R???R?R?RC?N?????????????RBDA?D?CR?RH?R????????????????R?N?T?????????????????RD?L?T??????????????????R?B?B??H?X????????????????????????H?W??????????????????R????I?T??????????????????R?L?J?????????RD?HR??R????C?B??E?J??????????D6A?BRA?B?G???????E?B??B?BRD?R??D6A?B?C?E?????G?B??B6B?D6???D6F?D????H?B6?B6B?D6???D6E?C???J?D?D?6??B?G??6????M?B?D?D?6??B?G??6?E? CDEFGH??E?B?B?F???6??B?H??6??? ?B?E???? E?B?B?F? ????B?H?????? ?B?E?12? E?B?B?F? ????B?H????R?4?B?C?C14?D?B?H?K? ?34?B?H?43?R1? B?B?E??12KC?B?H??12R?!?B?Q?!?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?BQ?BQC?Q?BQF??????D?EYC?YYE?DQA?CQE?AYE?AYC?DYU??D?FQA?BQB?AQC?A?E?A?B?DYU??C?KQD?EQB?YC?DYU??C?JQB?BQFQB?A?B?DYU??C?FQA?EQB??BQA?DQA?BQE?YU??C?B?QBQB?QDYCQ??CQA?BQAQB?BQC?U?BUC?A?BQD?QQ?CQE?QQ??BQCQ?QB?CQA?C?C?A?CQC?Q?CQBQ?BUH??YQQ?Q?BYBQ?C?C?A?CQA?B?C??YCUB??BUA?CQDYAQC?B?EQB?EUF?BQBQQEYBQAQB?EQC?H?BQ?DQA?CYCQ?QC?DQDQ?Q?G?BQ?IQB?B??B?B?QCQD??QUE?DQA?DQBYQB?B?YC?A?DQB?BUE?DQA?EQB?C?A?B?A?DQB?D?AQB?HQB?A?C?BUE????QBQC?C?DQAYDQDYQ?YC?BUB?Y??AY??BY?V?DQD?AQB?Q?HQD?BQQB?N?JQB??B?CQB?L?BQE?DQB?B?B?CQQ?L?CQEYA?CQA?B?C?BQ?L?BQQFYA?B?B?QB?B?CQ?QH?DYA?BQEYB?QB?AYB?B?QB?BY?F?EYA?HQB?B?YB?FQQ??Y?IYE?????B?F?B?YB?B?YB?BY?GYBYA?B?BY?B?E?HY?Y?????BYA?F?CYB?YC?B?F?B?YB?A?CYB?YDQB?BYA?CYA?CYA?D?EY?YQ?CYB?BY?DQE??YY?DYCY?YE?A?BQA?BYEY??Y?C?BQA?HYB?YD?AYCQB?YBYCY?YDUB?A?B?A?E?B?YC?DQB?F???Y?YF?C??YE?CY?YHQB?YB?BY?BUD?B??B?A?E?A?CQC?Q?BQF?Q???YBUAYD?B?B?YE?AYBQF?Q?Q?QB?BYB?BYUG?C?A?GQF?Q?Q?QB?DYU??BUB?YF?CY?UCQA?CQC??QBQC?CY??BUB?EYD?DQC?Q?BQH?Q?Q?Q?UC?CQ??CYBQ?C?CQA?BQB?CQ?QB?EQ?Q?UC?BQAUBYBQB?QB?DQN?Q?Q?Q?Q?Q?Q??CQA?BUBYQDQCQB?QB?HQ?Q?Q?Q?BQC?B?BYCUA?B?AYBQBQA?BQA?BQK?Q?Q?Q?Q?Q?B?BYCUA?C?A?CQEQ?Q?QB?BQB?FQ?Q?Q?B?BYCUA?B?AYC?BQC?Q?BQG?Q?Q?UQB?B?QC?BUCY??C?A?B?EQA?BQB?QB?CQ?QB?CYU?BUBY?F?DQG?Q?Q?Q?BQD?Q?QB?AYH?D?DQC?Q?BQG?Q?Q?Q?BQC?Y?B?A?CQB?QD?JQB?C???BUD?E???Q?GQBYA?EQB?B?YCUF?A?BQB??CQC?QQBYA?DQB?BY?BUG?DQB?A?BQA?HQB?B?B?UB?BUD?B?QBQA?DQA?EQB?QB?B?AYHUB?A?CQB?YCQA?DQB?A?D?BUA?BUB?BUB?F??Y??YGQB?C???B?DUF?B?E??Y??BYA?E?A?B?A?B?BUA?BUF?B?H??Y??Y??D?BY?B?A?EUH?B?E??Y??BYB??D?B??CUB?BUH?B?H??Y??Y??D?AYCUD?BUH?B?G??Y??Y?GUF?BUH?B?F??Y??YEQB?H?BUG?C?Q?BQB?AYGQA?G?DUD?DU?Q?BQB?HQA?I?BUA?BUJ?U?Q??Y?YQGQA?L?BUC?AQB?BY?IQA?Q?BQA?KQA?D?BY?K?A?CQGQA?BQAQD?AYB?D?BYA?C?B?A?HQA?B?AYD?BYB?B?FYA?B?B??GQAQB?AYD?A?KYA?B?A?B?E?BYB?BYUC?LYB?B??B?E?BYB?BUB?MYB??BUB?E?BYCUC?BYKYC?B?A?E?AYBUE?A?LYD?A?HUF?MYS?BYKYN?BUA?BUA?BYJYN?EUB?BYBYA?BYA?CYM?EUD?CYD??Y?B?AYJ?BUA?FUD?B?DY?Y?B?AYJ?BUE?CUC?B?DY??YB?A?G?DQD?GQC?CQD?Q?UG?DQDYEQGQ?Q?Q?QB?C?QUG?DQAQBYH?Q?Q?Q?QB?DQ?Q?B?AYH?CQCQCQK?Q?Q?Q?Q?QQB?B?YH?HQ?U??YQQD?DQC?QQC?C?YUG?D?Q??BUB?QDYEQAQB?C?Q?DUE?A?BQA?B?C?QQBYA?BQH?Q?Q?Q?YBUA?BUE?B??BQB?DQA?BQB?QB?BQB?BYUB?B?BUB?B??B?BQA?DQA?BQD?Q?QC?C?YUB?B?BUB?B?C?LQB?C?Y?BUB?B?BUC?B?D?A?H?AYC?AYBUC?B?BUD?EYB??CQA?D?A?B?BYUD?A?BUE?EYB??BQB?C?AYC?BUD?CUE?DYCY??BQB??B?BYA?BUBQA?C?AUB?BYA?B?BYCYC?U?BQAQBUH?YYU??QQF?BYB?YB?CYB?A?B?BYB?B?AYB?C??YF?IYC?Y?B?BYB?B?AYB?C??YC?LYC?Y?B?BYBU?B?GY????YUB?LYB?YB?B?YBUA?B?BYUB?A?BUB?LYB?B??CUA?B?A?BUB??BUC?MYA?BYA?D?A?BUH?PYB?N?QYC?Y?L?RYB?B?BUH?RYC?Y?CUH?RYB?A?BUI?RYB?L?IYA?EYBYB?AYBUC?BUE?IYA?D?BYB?BYGUE?BYCYA?BYBY?D?C?Y?CYA?DUG?BY?B?CY??BYA?D?B?DYDUI?AYB?C?Y?BYA?D?B?CYCUJ?DUA?DQC?BQAUBYMUBQDUA?DQC?CQBYFQBYEUBQBUBYA?DQC?CQBYBQB?QDYEUBQBUBYA?DQD?BQBYBQB?QDYEUBQBUBYA?DQB?DQ?QQCYBQ?CQCYDUBQBUQBYA?BQBQB?B?BQCYFQBYA?CUBQBUQBYB?CQC?CQCYAQB?BQ?CQA?CUBQCU?QBQB?BQB?BQFYC?BQ?BQA?CUBQCU?QBYB??BQB?BQQGYB?EQ?Q?QCUBQCU?QBYB?BQB?BQFYCQAQC?DUBQB??DQA?BQB?QHYDQC?DUBQB?CQA?BQC?QQBYAQDYBQHYQ?QQ?UUBUBQIU?Q?QQQ?QBQE?BYHQ?Q?QQY?DUBQBUBQEQ?Q?QFQA?BYBQ?BQDQYQ?DUB?BUDQB?QBYA?EQBYBQ?BQBQB?DUB?BUA?BUBQA?BYA?CQB?QBYDQ?Y?HUB?BUA?BUBQF?Q?Q?QC?FQ?Q?Q?HUB?CU??BUCQQ?BQFQB?DQ?Q?DUAUCUB?AUC?BU?OQAQHUB?CUB?UB?OQHUB?EUB?OQHUB?AQB?GQA?IQA?DQA?BQB?LQA?DQA?GQA?CQC?EQB?QDQE?Q?Q?HQD?BQB?EQA?DQB?BQ?EQA?FQB?BQB?CQB?QB?CQA?BQA?DQBQ?DQA?BQE?DQC?CQA?BQA?BYIQC?QQD?EQC?FQBYGQDQB?QC?GQA?CQA?BQCY??EQCQBQB?QC?FQA?CQB?BQB?A?GQCQC?Q?GQA?HQC?U?EQC?Q?BQA?HQB?FQD???UB?IQA?LQA?WQBUFQB?VQBUBQ?EQA?VQBUBQ?BQCQA?RQB?BQBUBQ?BQD?SQA?BQBUBQ?BQA?B?AQOYGQBUCQB?B?AQOYB?QEQBUBQB?BQB?QOYA?CQCQBUBQB?BQB?QGYA?EYB?YC?AQC?BUBQB?BQB?QGYA?DYB?H?BUBQB?BQD?QY?EYA?CYB?BUG?BUCQA?BQD?QY?DYFYB?UB?F?BUBQB?QB?CYA?DYBY?BYBY?B?BYB?D?BUC?AQEYA?KYA?DYA?C?BUC?AQEYA?EYA?CYA?CYA?FYBUD?Q?QBYBYBY?DYBYCYA?CYA?BYA?CYBUE?Q?Q?BYGYBY?KYB?AYBUC?CQU?CYBQ?GYBQ?BYEQ?YQ?CYBUE?Q?QYB?A?BQB?BYEQA?CQA?BQA?CYBUC?DQUY?DQA?NQA?CQBUC?Q?BUAYXQBU?QB??QB??QB??QB??QB?CQAUBQBUBQCUBQAUBQAUBQAUBQAUIQIUQUQUQUQUCQKUQUQUQUQUQUIQAUCQEUQUQUCQAUCQGUQUQUQUJQAUBQDUQUQCUBQUCQBUQCUBQUKQBUQBUBQAUCQAUCQGUQUQUQUIQEUQUQUCQAUCQKUQUQUQUQUQUGQBQHQCYB?A?DUB?A?BQA?IQA?DQFYA?FYB?CQQ?HQB?KYAUFYCQA?HQB?IYA?BUFYCQA?IQB?FYD?Y?UGYCQA?JQB?DYDY?Y?HYDQA?JQD?YQ?BYB?YB?GYBQQBQA?JQA?BQB?FY?YQ??BYFQB?QOQA?DQA?HQB?Q?QCQHQB?A?B?B?B?B?AQB?B?BQ?B?B?B?B?BQ?BQB?CQB?B?B?B?AQB?B?BQ?B?B?B?B?BQ?BQD?B?A?B?B?B?AQB?B?BQ?B?B?B?A?B?B?AQD?B?EQA?GQA?B?B?CQB?B?AQD?B?B?B?BQ?CQG?Q?Q?Q?BQB?B?D???QD?B?B?B?EQI?Q?Q?Q?Q?B?B?DQD?B?B?B?CQC?Q?GQA?B?B?B?B?QD?B?B?B?CQC?Q?B?B?DQ?Q?B?B?B?B?QD?B?B?B?CQC?Q?B?B?DQ?Q?B?B?B?B?QD?B?B?B?CQC?Q?B?B?DQB?B?DQD?A?B?B?BQA?CQC?Q?BQJ?QU?Q?Q?Q?BQB?CQB?B?BQA?CQC?Q?BQJ?QU?Q?Q?Q?BQBYB?B?A?B?DQA?DQA?BQA?CQA?B?B?DQB?B?BQ?EQA?BQC?Q?BQA?CQA?B?B?DQB?B?FQ?Q?Q?DQA?BQA?BQA?B?B?A?B?BQBYBQ?B?B?DQ?Q?B?B?CQA?BQA?B?B?BQA?EQA?B?B?DQ?Q?B?B?DQ?Q?B?B?A?B?BQA?FQB?B?DQ?Q?B?B?DQ?Q?B?B?BQ?B?B?FQA?CQC?Q?BQA?B?B?BQB?B?BQ?B?B?BQBYBQA?CQC?Q?BQA?B?B?BQ?B?B?BQ?B?B?BQBYAQB?B?BQB?B?AQB?B?BQ?B?B?BQ?HQDUA?DQC?BQPUEQAUBQAUCQCUBQAUBQFUQUQUQCUCQBQ?QB?UDQB?UDQB?UDQB?ULQB?UDQB?UDQB?UDQB?U?QC?BQ?DQB?UDQB?UDQB?UHQAQC?BQ?DQB?UDQB?UDQB?U?QD?AUI?BY?B?B?UJ?BQB?BUG?IU?YQ????UC?AUF?BQA?CUC?B?UC?AYBQB?A?L?BQA?CUC?B?UC?BQAQBQD???UD?B?UC?BQK?AYCQA?BQA?F?B?UC?BQC?HYEQC?Q?GYA?C?BQC?U?BQA?EQA?EQC?Q?EQB?C?BQF?U?QQ?EQA?FQBQ?EQB??C?BQC?A?HQAYDQAYEQC?Q?D?BQE?U??QFQAYFQAYCQD?Q??D?BQC?C?Q?CQC?QYFQAYCQBQ?F?BQCYA?BQAQBQA?BQAYDQAYBQGQ?Q????CYEQC?Q?IQA?DQA?BQA?C?CYDQGY?Q?Q?QEQAQEQA?BQB??B?EQBYBQ?BQB?QFQB?QB?FQC???CYCQBYD?Q?QFQB??CQB?FQA?PQF?????QBQAQB?CQC?Q?HQBQ?BQA?B?D?A?BQB??BQB?DQ?Q?DQAYEQC???C?A?B?A?CQD?AQCQA?DQBYBQB?C???C?A?B?CQA?DQA?BQB??FQC?Q?G?A?B?A?GQA?BQB?JQA?WQBUA??????A?????????????AAAAAA?AA?A??A?QAA?AAA???????A?AA??AAAA???A???????Q?AAAAA?????AA?????AA??AA????AAAAAAAAAAAAA??1????F?F??CCF???N????A??R ?PA?K??AF??ACF???IF??HA??3???Y6QAF???B?4??F?1???Z1????F?F????ANV??W???NX??G??#E?Q??Q.??N????R ?F??NT??CNL?8 A?? ??? ??? Q?? ??? ??? ??? ??? A?? ??? ??? Q#? ??? ?'? ??? ??? A0? ?1? ?3? Q5? ?6? ?8? ??? ??? A?? ??? ??? Q?? ?!? ??? ??? ???5????AA???AFN??FO??FP?AFK??FL??FM?AFE??FF??FG?BAEA??H?AXKXNIQ??AA??E??QR?B?N?AXN????EXK3A??AI?01P??#3P?P?????AAAAAA6E?E?EJE?A2A?A?AFA?A?A?A?A?AHCAA?CSFIG0E?E?G9EMG?G?GAA?E?A?B?B?B?BAA?BEB?BAAAA?G.G?G?G.GAAAA?G?G?GAAEDAAAA?F!F?F?FAA?FAA?FAAAAAAAAAAAA?DAAAAAA?C?CAA?CAAAAAA?E?EAAAAAAAAAAAAAA?F?FAAAAHHAA?B5D2D?DAA?H?H?H?HZHWHTHRHAAAAAAAAAAAA?S?W?S?S???K?K???K?S?W?#?#?K?OAA?O?E?Q?G?Q?U?Y?Y???UAA?A??????????AA???I??AAAA?U???Q?Y??AAAA?I?U?IAA?IAAAA????????AA??AA??AAAAAAAAAAAA??AAAAAA????AA??AAAAAA?A?AAAAAAAAAAAAAAA????AAAA?OAA???Q?K??AA????????????????AAAAAA???????????D??#.??????3456789????????!?0??A????P??A?????P?HA????C ??1E?????A?FE?P??AK??'?E??VA????FG?E??#E?G?Q!??#??#EXE?VA?D?XE?P?!3?Q?G??P??6?I?7??8BYA??A????Q?AFD?A?Q??A A??55?DQ??6#?D??FD??A A??55?DQ.?1OQ?????5???GAY???????????Y???A?AHAAA????FAAA????M??N?Y?I?NN???M?'I?QT?P?Y?Q?NP???U?'Q????M?NN??U?NP??5?K?CA?OM??D?T????Q?KFA?O?Y6A8?A??O????A??1AQD??AZ?E?YF55II??????F???F??AN N???N????R ??C?EN?Z?U?A??NDH?BNEH?DI?GNAG?5??CDEGHJF?5??EN?T??N?????N?R????MY?B??R 'R ?O?R ????EN??????RSTUVWX????N????R ??C?EN?Z?RN?Z?HN?Z?DF??Q?AAK?????B?????A?FA?AA?A??P?AY6IAFA55?AE?9L??H??!?A???M??????8????'?????FA???EFC?Q?A?EO?AA???#?????FA???BA?AA??#???AFP??13P?P?????A??QIECBI?Q???A?G2?FF4?AAGA?5??FB????N????A????R ?H?BY6EFB?A?A??FC???A??FD?CKKK??A??AKK???AFC5K?APFC??2 A1????2 ?1????2 C1????2 ?1???3A?A?????5????Q???ANEC?MFE?AA???'??????C?FF?A?P?C AA??5?FQ??D'?F??FF?C AA?5?FQ!????C??????AJ??EJM?IJ??MJO?QJ??UJQ?MBC??BC??BC??K???K???KG??KE?AJ1??J???J??YJ???J???J9??J??ML??QL9??J9??J5??J1??J???JQQ?J?Q?JMQ?JMH?JMH?JMG?JUQ?JUH?J?H?JMGEJMF?JOF5J?G5J?GYJIG9JSF?J?E?JSEAA?E?AYE?A?D9A?DQA?D?A?DQFYF?J?F?LUH?J?F1J7F5J?F9J?G?J?G?J?F?J?F5B?H?K?P?A?H?A?H?B?H?B?H?J?G?JUG?JUGAJUFEJYHIJ?H?J?HMJ?QQJ?QUJ1Q?J?QYJE??JY?EJ???J???J???J???JO??JQ??J???JM??JM??JM??J???J???J???J??AK1?EK??IK??YJ??YJ???J???J9??J???J???J???J???J???J???J???J???J???J??YJ???J???JM?1JM??JE??J???J??YJ?BML?B?LIJ?L?JQKKJQK?JMKMJMK?JQKOJQK?JMKQJMKYJQKSJQKWJUK?J?D?IYK?J?K?J?J?K?K?K?K?L?K?L?K?M?J?M?K?N?KYK?K?KULQLYLQL?K?L?K?L?K?L?K3L?K5K?J5K?K???K5??K5?YJ???J???J5??K???J???KY??K???K??YJ???JY??K???K???K5?UJ???J???J???J???K???K???K??YJ??YJ??YJ???K#??KY??KY??K???J??1K???JY??JY??JY??JY??JY??K???K???J???J???J???K??YJ??YJ???KQ??KW?9KS??K???KQ??JQ??JQ??K???K??YJU??JY?YJ??YJ??YJ???KQ??J???JQ??JQ??KQ??KO??KK??KC??J???K???JM?YJI?YJE?YJA?QKSYUK??YK???K??UK??YK???K1??K??YKY?YKW?YKU??KQ??K???K???KQ??KQ??KS?YKU?YKW?YKY??K???KQ??LQ??LU??LY??K???K???K???K1??K???K1??KQ??JM??K???K#??K???JY??KQ??KM??JM??KK??KG??KE??JE??K???KM??JI??JE??KA??J?W?J?W?J?W?J?W?J?W?K?V?K?V?K?T?J?U?K?U?K?T?K?T?K?S?B?R?C?R?C?R1C?RIC?R?C?R?C?R?C?RYD?R?D?R?D?R?D?R?KQ??K??1KM?5K??9KU??K???KY??K#?YJ??YJ??YJ??YJ??9J???K5?AL??1K9?1K???K???LQ??LU??LY?EL??IL??ILU?IL??ILM?9JI??B?H?J?Z?L???D???D??UE???E???E??AE???E???E??9E???K???L???L???LY??JU??JU??JU??KU??L???J??YJQ?YJU??JY?YJ??YJ???J??YJ??YJ???J??YJ??YJ???J??YJ??YJ???J??YJ??YJ???JY?YJU?YJQ??JM?YJI??JE?AAAANANAQAVAYA?A?A?A?A?A?A?A?A?A?A?A?A?A?A?A?A?A'A?A4A7A9A?A?A?A!A!ADADAEAOAQASAYAYAYA?A?A?A?A?A?A?A?A?A?A?A?A?A?A2A4A5A?A?A?A?A?A?AABABABABABCBIBPBSBUBWBXB?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B2B5B8B?B?B?B?B?B?B?B?B?B?B?B?B?B?BA??QIECB???P?H??P?????C ??1E?B??PK?????0EN8???0EN???8??Q?W1???8??8????????????8?KK??N'E??P'EFE????FI?MFL???AAFG?AAFJ?AJQG??1??1??2????BAFA?E?BAFM???J A??5?G A???5??K??A?K?K???Y6AI??MQ??E?Y6?AFE??H?KK???Y6AQFE?AQ???FAFA?E?FAFM???J A??5?G A???5??K??A?K?K???Y6AI??MQ??E?Y6?AFE??H?KK???Y6AQFE?AQ???G???GA?288?3?3?7?98896???#?????U???U?Y?O???????Y?????M!????FGAQAFGBBBZE?A?G?B?B?A?G?G?F?F?F?C?CSCYDGDGP???????????C????'0!??A??N?C?D?7??6????7????W?7??H??7??????C ??1E???H?32??T?O??T??N?N?PN?N??Q4?FN?T?AN?N??G??7??!3YKKKKNC?Y??ND???NE???T?Y?F??N???G??C?F?WN????????X??2E?J?Q!?CNG??O?TKK???FM???A?FK??2E????EA?K??2E?G?Q!?E3KN?T?DA?O??2EXK??YY6QA?????2EXK??G??7?K?????0EN8???0EN???8????G?G??G????7??FO???8?KK??N'ENE??P'EFA?? ?Y6A?8FC?A???????ND??A??KKNC????A?FM???FK?E??AJQG?94??4??5??A ?D?KP?D??W1???VN???G???BAFG??D???C ?D?55?AD?D? AFI??A?2IFI?BA?G?IK?8?Y ?D?55?BAFE?A?M?K ?D?55??Y??A???E??IY???Y6AI??C8???Y6AE8 ?D?55?IK?8 ?D?55?EQ??C8Y6?A8FC?A?Y6?AFA??H??Y???Y6AQFA?C8?6?A? ?Y6AI8FC?G?D?.4??FAFG??D???C ?D?55?AL?D? AFI??A?2IFI?GA?O?IK?8??GA?2IFIY ?D?55?FAFE?A?M?K ?D?55??Y??A???E??IY???Y6AI??C8???Y6AE8 ?D?55?IK?8 ?D?55?EQ??C8Y6?A8FC?A?Y6?AFA??H??Y???Y6AQFA?C8?6?A? ?Y6AI8FC?G?D??5?GGGGGGGGUUUUU????SSS????????????BP??9PP????'AAAAAABBABBBBBBBABBAABBBBBBBBABAABBBBBAAAAAAVC?C?C?C2C?CURUQ?A?F?F?H?G?B?B?B?AA?A?QF?B?Y?Y?Z?Z?Z?Y?Y?YXF9??FSCU?????W?U??G?B?BEDED?C5A?A?A?AAABA?J?J3A?J?J?J?JYJYJ?J3A?J?J3A5AAKEKIKYJYJUJYJMK3AED3A?A?K?J?J?J?K6A?A?A?A?A?A?7?FP???15E???Q!?G????G???T?7??H??7??????C  ?1EZC ?? ?6??#?Q6EFCKK????U6EFA??6EFE?C?BA?K?Q?A??1?#7???Q?E?A A??????P??6?VU?UU???DH?HJ??J?Q????Q?DH?HJ?I?.K?6Q?Q?????ANFJ???N!J???6J?DNAG??VU??Q??G?????W1???8??8???????F?DNG???49???MA?GA?E??AJQG?MA?CAGF????FFD?AFC?BZ?D?AAMZ?D?AA???FE?AA????FEJRZ?D?CZ?DY6I5IIII?D???BY6IFB??????Q????E?Q??I??N?R ?D?C?BEK?VU?G?A?K???L7?R?V?R?U?R?U.Q?T!P?S?O!R?N?Q?M?N?K?LBHBHAIAI??RS??QR??QR??PQ??OP??MN??LL??KKAAIIBBHHAAII.?.?.?.??.?.?.?.??????????????????????????????????????????????E?QE?G???E??G??B?Z?Q?F??D?5????#8FC?49????9?Y?F????5????????8FC?49?DFD?A?AY??8ZAC?BY?C8ZBC?CZCC??8ZDC????5?DQ#??E??E??E??E??C??2?FA?D?Y2?FB???FP???A?FN?7???AK??'?E??VA???N??#E?L?Q!?Q?HNG?????BN???G??7???K??'?EKKKKNC??'?E??ND???NE??GZGZG?G?WZWZW?W?G?G?G'G'W?W?W'W'GZGZG?G?WZWZW?W?G?G?G'G'W?W?W'W'IVYVJVZV?R?R?R?R?RQR?RRR?R?R?R?R?R?R?R?RCZSZDZTZ?Z?Z?Z?ZA?Q?B?Q?AUQUBUQ??R?R?R?RC?S?D?T?GZGZG?G?GZGZG?G??R?R?R?R??FP???A?FN?7???AK??'?E??VA???N??#E?D??!??GO?7???AK????EFA?'?E?#?O????#E? A???EFM????9FK?OKKK???D???A ?D?Y6A? FD??AD ?D? HD??K BD????K JD????K DD????K LD???A ND?KY6QAP?D????????FO???8?KK??P'EFA?? ?Y6A?8FC?A?FM???FK?N'E?AJQG?94?8???5??A ?D?KP?D?????BC??BD??BCU?BDU7B7B7?7?7B7B7?7??B?B?B?BKV?VLV?V????FP?EFM???A?FN???FK??T??AK??H2EFA??D????T??A?DA??KKK??A ?D?Y6A? FD?8Y6?A8FA?AD ?D? HD??K BD????K JD????K DD????K LD?KY6QA???T??A?CAQGKKK?AD??A?3???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????A??????A???AA?????U?MQE??T???U???I?5??N???HFA??U??N?X  ????Y  A???Z  ?????  ????A ??? ????A?A? ????I? Y???? ???5?AQ???QR??UY6???QC?AN?U?AO?U?QN?U??U??U??UFP?A#?A????X??X??????Y6B?G??QC?? ???????8??????Y2CFC??8FB???P8Z?D?AZ?D?3Z?D??T?KJ?Z?DY????CZ?E?PY6E??QC?AFP59?UQT??U?FQE??QI?KY6??#????KKKKY?5?? 5??????I?????A?QDJ?I???? ???8Y?A?? A??8??????A?6IAZAA????????GA??V?T?V???V???V????A???N???H?1?1?1?? N?E?5A?A??N??NQB5OK??I??J??T?E???H??H??H?E??ES??D?I?H??I?A??Y?R?ENJ?Y6A8?Q??B????E??E??Q.?Q?J???J??????A??J?????Z?F?QFII??Q??BH????F????V????????E???????C???????????AJW?K???S?Y???AJV???S?Q?S??LAF??A?A??UAF??A?A??PAD??????AD??????ADF?F6??ADF?F6???????????????????NN?N?Q?O??N??NN?N?T?A???N???J??N???????BK?B?9K??F?YNL?OK?K?B???N?V?T??N??QM?Z?N??N??N???????N?C?Q?N?C?K?N?C?K?N?C???CN?EN?E???F??YY??D?P?D????? ?D??IQ?5????N?L??? ?D? ?D???N?L??? ?D? ?D????L??L??Y???K?K????D? ?D??H? ?D??L? ?D??P? ?D?????N?O.KY6K???N?#??XA??C???? ?D?Y  D??AAB?AAAB?AG?B?AH?AKBA?A?AIIBYAJ?B??AAAABA?A?BDAAAAK?AYAK?A?AK?B?B?AABQ??A??QAB?AL???M???W.?5N?B?E?C?F????O?X.??O?Y.?5O?Z.??O??.??OY?6F??Q??N??O??????O?2.?O?N???5???5?QQ0?8???????????A?A????AA??AA?A?B?B?A?B?B?A?B????Y???HFGHEGHF?!?C????? ???T?Q??? ????I!?H???.N? ?A!M? ?IN? ?YN???? QI?? ?EN? YK??BG?C?CG???DG??H?EG??H?FG?GGKY6ENBG?C?2N???F?2N????H???.??OYK?????Y??.????O8?2O????Y?5.????O8??O?Q??EK??N?Q??EGAGB?A??N??OFC??OFD?B??N??O8??O???C??QN#?A??N??N5Z?N????A?????N?N?!O?P???N?I??O?D??O?FQIO?N???AM#??N?O?N?????Q???????!?!!AA??Z??DLU??N??H ???????????????1??????2N??GA????????????Y?????????A??QIEC?2N???FA??T?K?H?5??B?R??N????R ?????A?C?B?BBDBBBBCMMSSSSMMQAIA?A?AQA?AIAQAB?Q?Q??Q?Y?A???????CFE??????G?Q?B5GG?AY???FAQC3B?EY???FC?F6AFD??8??????G??Q???N?????8??????VO?D????FO?B???OY?????O????I?FO?B?FO?????N?EOK?AQK?G?????A?Q?EO?CKQI?I????AA??QO'FO?FO????G??NKY6Q???NK?T???N?FOKK?A?B??VOY???????D?VO?????IHEHABEBBHJHY?A???????A?B?B??VOY???????D?VO??N?Z ??O?? ??O?Q???????VO?CJ??8?????58???????D?????VO?D???Y2AFAQC3B???Y2CFCQC3D???Y??????ABA?P?AAB??0???N????T?6??D????????O????2O?????O?????O????7???JS??N????O?ON???P??O???O??O?1?D????Q???O??O?D??N?????N?I??OQE???Q8Y???T?C??Y?G?????6IFC?C?D??8??O????#????????????AY6IAFA???.85Y?K?????????????I?C????8Y????Z?C8Z?C?B???AZ?C?D?YI?CZ?CY???#??K?DZ?E?IIII??C?VO????O?Q???????AY6?A??B?J?CY6AA??B??QD?2N???!????AY6QAFA????8?????N?K?M?N?A???Q?BBB??PBABICPA??N????T?6??D?'?N.O??O?F????I???O?L??2O?O???O?R???O?C??N???VO??O?????O???FO?????N??O?P?V??N??N?E?VO????O?T????FO?C??Y8?7?G?????FJAN!O??A5AKB7ABCDEDCBABCDEDCBA????????????!!.???N????R K??????O? ??2O?????O?????O?T?P?N??N??MQC?A??N?DFE?TFG1H?????N?##??N?????HY???Y2CFC?C?D?AY???FAQC3BKY6M?Q?P?QG?H6MFH??8???GY6KFG???C??Y?????E????N?????EFE??FF????T??GJ?8?F????A?6IFA?F?E?3?HHDD??B?B?B?B?B?Y5K.I?D?B??Q????????A?VO?C??8?5?G??VO?VO????FOJC?K6Q??????N?VOY?Q??VO????EY?B?Y??N??N??Q?????????N?R ???P?J?H ?S?CGDKK????AY??.FA?CY??.FC?????VO?C??8???G???OFA??OKY6???I???KY6Q??G????E??N??G??A?L???AAAABCCCAABBCCDDIIIIHGFFAAOOMMKK3E????????O???????EQF??Y6IEF?EG?AY???FAQC3B????????#?G?AY???FAQC3B???8?EK?F?K??CY??OFCQC3D??TY????KY6Q??C?????N?C???OFC?C?D?A?2O8??O?????AZAA???KY6???????OQD??OK?6Q??????N?VOKKKKY??O??O?VOI?????A?QDJ?I??O??OY?2O?2O?????G?IA?F?I?IA??K?DN!O??2O8??O??Y6IA??N??X FAQE????FG????O8??O??Y6IA??N??Z FCQE????FI?????G?I????O?FK1F?E?I?E?C?I?G?E?A?G?B?S?VO?VO??O??O????O?EM?E1M?E??A??E??GNF??GANG?777777???U???????B?D???VA??Q???N?A?VO?C??O?E??O?????????????????????????????????????????????????????????????????????????????????LA?A?A?A0A0A??LA?A?A?A??LA0A?I???Q?AA?? A?? A??5?AC????Z?7?????Q?AA?5??5QD?BA?AAY A?? A??5?AC???MF7??Z??Z?A?GN????B???AA?A??D?????C?AC????Z??D???AB??QE???C?8I????Z?????F?F???H??F???F??CCF????9IF??JF??HA??3?3???????????GA???BK??HAFA?.HFZ?P??Y6IA?AQ?????Z??Z??????NN??N????NN??N???????F?F?F?F??8I???AAEDEF????FP???Q?D?5FH???ED???A? ?H??FH?5???ED?F??XN??HQ!??EF?IB???D???5???ED?F??XN???EF???HQ????D???5??????5???????ARFA?AA?A??P?AY6IAFA55?AE?9?????????????????AAAAAAAAAAAAAAAAA?A?????????AAD??????????????????????ZK??FFP?AFE??N?U??N?U????2FC?AAFFA?AAFC??BFN1E1J1L?Q?AA????NFMGMQS???C??P?CY6IAFC??C???A??P?AY6IAFA??553J3L?L?I??1L???A????Z?E?H????N?UN?U????2FC??BK???KFA?DA?AZ?PY6IAFA???Q??9BK??DA?AZ?PY6IAFA???Q???? A?? A?? A?? A?? A?? A?? A?? A?? A?? A#? A?? A?? A?? A?? A1? A3? A5? A7? A9? A?? A?? A?? A?? A.? A?? A?? A?? A??5? A?? A?? A?? A?? A?? A?? A?? A?? A?? A#? A?? A?? A?? A?? A1? A3? A5? A7? A9? A?? A?? A?? A?? A.? A?? A?? A?? A??5?I????Z?0E??B??Z?J???L???Q???A?2???D??F????Z???K???M???N???O???R????????Z??Z?C?X?5Y6FF2?66AF3?7F4??Z??D??Z??AAABBCCDDABAABAAAAAAAAAAAAAAAAAAVVXVVVXVXVVVVVEEVXVVVVVVVVVVVVBCCCACCCACAACACCTTAACCCCCCCCCCCCWV????????????????????????????????AAAAAAAAA?AAAAAA?AAAAAAAAAAAAAAA????????????????????????????????ACDECGBIHDFS?A?2?? ?F'K?????N?Z??2? N?Z???EFF1??EFN?N??EFN?N?!EFF??XEFN?N?XEFF???'?BQD??BF?G??2?????N?Z??2FA??PN?ZK?????H???EF?#NQCJA?#N?CJ?N#N?A?A????JBF???2FA?????????U?N??EFN?P??P??P?A?HN?Z?A?????N?Z??2?PN?ZN?Z?2??K??N?T?2???????D?F?RU?ANSU?2Y6FF2?36AF3??#?G???CQ??K?PFA?L?PFB?K??FBFK?L??FAFL????A?2FK??2FL??2F??YY22F2?36AF3?L????F#?K???F#F#????Z?B??B?D??F?K?PKKKKF??L?PF?F?????Z??AK????AFD???AFG??Z? AK????AFFFI?DFA?GFN??DFB?GFO?AFCFP?K?AK??ZN?ZN??KY??Z??AF8?NF???AF9?NF???AF??NF??K?Q?E393??#?G?0G??G?7G???Q?AA?2???D??F????A?N????P?N?I????H?????B?U??????A????????????H??????A?????????TV?K?CA????V???IF??H?????C?U??????A???????????1H??????A?????????QV?K?CA????V??DIF?8?K?E?K?LI?????B????????????6IAF?YY6XAF??????????????GA???BK??HAFA?.HFZ?P??Y6IA?AQ???H??????????6IAF?YY6XAF??????C?Z??????????6IAF?YY6XAF??YI??????????6IAF?YY6XAF???????Z??GA?JF?JF?JF?KF?KF?JF?JF?KF?KF?KF?KF?KF?JF?KF?JF?JF?KF?JF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?JF?JF????Z??GA?MFNLFNLFNLFNLF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MFNLF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MFNLF????Z??GA?JF?JF?JF?KF?KF?JF?JF?KF?KF?KF?KF?KF?JF?KF?JF?JF?KF?JF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?JF?JF????Z??GA?NFNLFNLFNLFNLF?MF?MF?MF?MF?MF?NF?MF?NF?NF?NFNLF?MF?NF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?NFNLFAA?A?AQAIAEACABAI????Z??AK??????AFK???AFL???AFN???AFO?AFMFP??????PKN2???A???Q?D??AYN1???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAFI?AA?I?8??AFA??FB?AK???PFK?AA?K?3????K?5????K?3????K?5?5555?IY6QAFI??BQ??8I????Z??AK??????AFK???AFL???AFN???AFO?AFMFP?????A???Q?D??AYFA?????DFAN1????DKKKKKKN2???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAKKKKFI?AA?I?8??AFA??FB?AK???PFK?AA?K?3????K?3?55???K?3????K?3?55?I?Y6BAFI?PA?KY???Y6ABFI?I?PB???8I????Z??AK????AA??Z?D?D?AQED?5?AFK?6?AFL?5?AFN?6?AFO?AFMFP??????PKN4???A???Q?D??AYN3???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAFI?AA?I?8??AFA??FB?AK???PFK?AA?KFD?5????KFD?7????KFD?5????KFD?7?5555?IY6QAFI??BQ??8I????Z??AK????AA??Z?D?D?AQED?5?AFK?6?AFL?5?AFN?6?AFO?AFMFP?????A???Q?D??AYFA?????DFAN3????DKKKKKKN4???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAKKKKFI?AA?I?8??AFA??FB?AK???PFK?AA?KFD?5????KFD?5?55???KFD?5????KFD?5?55?I?Y6BAFI?PA?KY???Y6ABFI?I?PB???8I????Z?PKN4?????Z?Q?C??YN3????A?F8?A?F??ARFK??Z??A?Q?8Y6?BF8??Y6?BF?????F???F??NEM????Z?PAFI?AA?I?8??AFA??FB?AKKK??K?5????K?7????K?5????K?7?5555?IY6QAFI??BQ??8????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????VF?VFHQF?VFUSF??F?VF?VFHQF?VF?VF??F?VF?VFHQF?VF?VF?VF?VF?VFHQF?VF?VFHQF?VF?VFHQF?VF?VFX?F?VF?VFHQF?VF?VFHQF?VF?VFHQF?VF?VF?VF?VF?VF??F?GADH?I??SADH?I???ADX?Y???ADH?I???ADX?Y???ADH?I???ADF?G???ADX?Y???ADF?G???ADX?Y??3ADV?W??9ADV?W???ADV?W???ADV?W??EA?A?B?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?B?A???A?Q?R?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?R?Q???ATD?D?D?D?D?D?D?D?D?D???ATE?E?E?E?E?E?E?E?E?E????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU??#ATD?D?D?D?D?D?D?D?D?D???ATE?E?E?E?E?E?E?E?E?E?#EA?Q?R?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?R?Q?#?A?A?B?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?B?A????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A???????????0?1?2?3?4?5?6?7?8?9????????4A?'?????????????????????????????????'???AA?????????????????????????????????????????????????????????????????????O??AA?????????????????????????????????????????????????????????????????????O????AD??????AB?????M????AD??????AB?????M?????I???2AB???7AL??????????????AB?????G???A?I???FAB???KAL??????????????AB?????G????AP????P?P???????????AP??????
-- **Nombre (overworld)**: DONUT SECRET HOUSE ?BAAIANAXA?A?A?A?A?A?A?A2A?A?ADAHAMA?A?A?A?A?A?A2A!A?AIBTB?B?B?B?B?B?B?B?B?B?B4B9B?BABKBPBVB?B?B?B B?B?B?B?B?B?B?B?B?B??D??Y6?AFCY6EAP?D??A? ?D???L ?D??B??AK??R????????D??????A??A?????????????? ?D??????A?PAK??????????1C?I??B???A??? BD???????I1C?O?? BD??? CD?55??Q3???N?Q??N?B???N?F??N?N?DN?T??N????Y??NQL?CN?N??N??T????Y??N?BN?N???NN?N??NN?N??NFZ??NN?NN?TN?Y??NN?N???F????O????N?R N?T??T?CN?N?KN?T??N???NQ??CN?N??N??NY?? AN?N?? A?L??T??N?BN?N??DN?T??!??M??????????AG?T?H?P?!??!??F?F?EN!????!???AFA??N?Z ?2A?Z ?2??D??????NR?A?KQF6K?A!?Q?QAQ?QAQ?QAI?M??EE??QAQ?I?I?QAQ?E?QAQQIQEQEIEMMEEEEIQ????EQ??EQ??M?QAAQAQQAQA?I?IAQQ?Q??EE??QAQ?QQEQAEQEE??EEQIM?AQ?QQAEQQ?AQAQ?QQAAQAQAQAQAQAQE?EEEEAQAQQAQA?Q?EBABABABABABAABABABABBABAABBABABAABBABABABABABABABABABAABABBAABBAABBABABABABABAABBABABABAABABBABABABABABABAABBABABABABABABABABABABABABABABABABABAABBABABABABABABAABEEEEEEEAAAAAAAAAEAAEEEEAAAAAAAEAAAEAAEEIIIMMIIIIIMMIIIIMIIIMIMUUUEAAAAAAAAAAAEEIAHJKNORXZ??? ????????????I??I?I?I?IEAIEEIEIEAEIEA?IAA?I?IEAEAAAI?IEIE?II?EA??IA????EA??EAIA??EAEAEAIAIAEA????AAAAIAEAEAEA??EAEAEAIA????EAEAEAAAAAEAEAEA??EAIA??????EA??IACCCCCACCCACACACCAAACCCCCAA?N?NAM?K?K?K?E?L?K?KQNBRCR?GHSAUAT?C?K?O?K?C?EAY?E?IQW?W?W?CQV?HAX?W?W?W?D?B?BQB?B?B?N?C?NDN?K?CA?A??Z?JQZAA?Z?Z?Z?Z?WCNENBN?P?F?V?V?V?V?Q!V?V?CLAKAJAIA?CA?A?A??A?C?C?C?C?C?C?C?C?C?C?C???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????A????????????????????????????????????ABS?????T???ABS?????U??'??U???ABS?????T???ABS???????????????AB????AB?9??AB???CABV??JABX??OABW???ABX???ABV???ABW???ABW???ABV???ABW???ABV??BABX???ABW??BABV???ABW???ABX???ABV???ABV??AABX?? ABW???ABV??7ABV???ABW??.ABV??GABW??RABV???ABX???ABV????G?????G?????G?????G???HABP????B?B.???B?B.???AQB?B.?U?ABBCBBFCR????S?CQDRB?BRB?DR?Q?R?BQRJ?BRQJ?EBCDCBC?B??D?BKB?BKBRQJ?A?C?A?C?B??D?BKB?BKB??J?AAB?B??B?BQAD?ARF?BRQI?BR?C6D?R??B?C6AAB?ARD?A?I?BR?B6E??R??B?B6B?6B?A?D?AQJ?ARB?ARC?C???C6B?B6?C6B?.G?B??H?BARD?A?B?D6B?.G?D? GFFDB??D?ARB?A?C6B??E?EBC? ?B?C???B?B?D6D?R?RC?B?QE?O??? ???????R?6?D6A?D?CQ??E?E??? ?B?G????R??E6A?C6D?.?6D?FQR?? ?B?H?????R??E6A?B6D?.?6C?GQR??? ?C?C???B?B?E?????C6D?.?6C?F??? 12E?B?A?D?E??R??B6D?.?6C?D??12B?A?B8F??????BKB?OB?HR??????6C?BARB?B??D5E??R?RBKJ?KP???????B?C?G??RP???B8F?R?A6AB?I?P?0????QC?C?C??RB?B?RC?EA6???B?E???P9B5B9?C?C?CAR?B?JR??6???R?RB?D??K?D5A9CDB?DQR??B?B??C?ARF?DQRK?E5B?A?B?D??12BKBRQH?DQD??B?A9C5D9RA6B?D????BKB??G?AQBPL?0??????R?6?B?DAR12B?CRARE?PQ???O??0??0R?6?6B?D????B?C??RE?E??0?OC?D?0??C6A?B?D????B?A?D?AQBDKR???????R??C6H???R?AR?B?BRQC?A?B?J??0?0??0??C6D?R????A???B?QV?D?2?.D?C?RQQ?HBCDFE???D?DR?RQN?CBCRC?E????BC?BQDBRAQL?BQRE?F???#RQB?B?CQ??L?C??'E5A'C?A?B?C?B?L?B??G5B?BRAB?B?CQRAH?BBCBDCAR'E5E'?R??B?F?QR??QF?BQRC?E?????B?F????6?B?F???6??F?B??BKDR?6?H6B?B?B?B6B??B?B??B?B??BKCR??H6K?6?Q??6??R?F?B??B?D?R??H6B?BRQB?A?BRBACCDFCB??P?B?BR?B?A?D6E?6???B?BRC??RC?BRDAR??D?C?RAE6K?????R??6??C6H????????B?C???D6L??R?????A6??C?C???B6A?E6B?C6L??R???6?6?6?F?C?6?E6C?6?C?ARB?D????B6D?6?RD?BR?B6A?E6C???B?BJB?HRA6?6??RE?DR?6?E6B??BJB?BZBJA?B?B6B?RG?ER????D?ARBZB?BJBZG????6?RI?DR???BJB??BJBPJZYJ????R?RK?CQR?BZBJBZYCJBZC???C?BQD?BQC?BQRBJE?JYZJCYAZBJC??RCDCRARB?AQBRCDER?ZYJBZAJDYAJBZC???C?B?CR??C?CR??CJBYZBJFZA?BJBRQB6B?C.A?B6D??R?CZDYJZYGJBZB??B6B?C.A?C6D???RBJBZBJYBZBYCZBJB??B6B?C?A?B6A?C6A?BZBJBZYBJBYGJ?JYZRAB6F??R?R?C6A?B6G???ZYJZDYBZJBYCJ??C?ARB?ARD?D???RCJCYCZBYJDZB??H?EIHGFRB?EZAYCJBZBJJ?????R????B?B?RCDARB?B?0C?I?0R?6?6?RD?FR?ARP?E?A'B5A'C?D??R?B?C??RF?GA??????BKB?'B5A'D?FR??6?RG?BQRB?DR?O?BKB??B?B?D??R?B6B??B?B??D?BARB?DRA??B?C?0?B?DR???B6I??R??????B?B??B?D???0B?A?B?D?R??D6E?R???B?B??B?B?6B?M6??????????6?C6D?R??F?B?B?6B?A6C?E6A?B6A?B6E?R???F?B?B?6B?D6?6?D6A?C6F???R??H?B?B?6B?A6B?F6E?6??RB?B??H?B?B?6B?D6???D6D???RD?B??H?B?B?6B?C6?RF?ARF?B??H?B?B?6B?I6?DEDEDCBH?B??G?D?Q??B?D????C?C??QG?D????D?E?????B?D??? C?C? ?I?K?????????R?B?D?R? C?C12?L?B??C?C?R?B?F?R? ??B?B??Q?C??RB?GR?12? ?B?A?D?B?K?AAB?ARD?D?12RB?AAD?C?R?D?C?D?C?B?B6?G?A?B6A?D?A?BRA?B?D?R??BDA?B?B6AB?F?????AB6A?D?D????BDGR?????RB?A6B?E6B?B6B?RC?D?R??C?I?????R??6B?E6B?B6B?RB?B?RE?H???????RB?B?E6B?B?ARC?C?R?D?C???C?C?CR??E6C??RE?M?????????????D?ARG?ARF?M?R???????????S?E?R???B?F??????N?R???????R??????????N?E?????B?F?R??R?BRB?ARM?F??????C?A?B?B?6B?B6A?J?I?????????D?B6B?6B?B6A?J?B??E?C???C?B6B?6B?B6A?G?EQR???C8D?BOZBYAZBPFZYJ???G?D????D5D?BOJBYAJB?FJYZRARG?E????'B5A'EJCYAZB?BZCR??H?D??A?B?B?HZC??PBJC?6?H?B??B?B?C???C8D?I??JYZ?6?RG?DARQRB?B??D5D?KOJYZRA6?R??E?D??RQB?CR?'B5B'?CJAYBZH????R???E?E?6?RDBQB??B?B?JCYAZB?DR??RB?B?B??B?BR?B6A?CRB??B?A?DZD?R??B?ARB?B?B??B?BR?C6B??J?G??6?6?RB?B?B??C?BR?D6A?H6A?C6C??RC?B?B??D?A?D?C?6?B?A?D6A?B6B??D?C???E?A?C?D?#6#BKA?C6A?C6B?RD?C???E?B??B?D?#6#BKA?B6H?????QDQC?A?B?C?D?B?H?R?????AB?AAB?HA?AR?A?AF?L??RD?????R??D?B?C?B?C?6?F?L??????R?????D?B?C?B?C?6?C?A?BDL???????????RD?BR?C?F?R?6?RB?P??????????????R?B?A?BRC?BRD?6?RB?PR???????????R??RB?KR?R???R?R?RC?N?????????????RBDA?D?CR?RH?R????????????????R?N?T?????????????????RD?L?T??????????????????R?B?B??H?X????????????????????????H?W??????????????????R????I?T??????????????????R?L?J?????????RD?HR??R????C?B??E?J??????????D6A?BRA?B?G???????E?B??B?BRD?R??D6A?B?C?E?????G?B??B6B?D6???D6F?D????H?B6?B6B?D6???D6E?C???J?D?D?6??B?G??6????M?B?D?D?6??B?G??6?E? CDEFGH??E?B?B?F???6??B?H??6??? ?B?E???? E?B?B?F? ????B?H?????? ?B?E?12? E?B?B?F? ????B?H????R?4?B?C?C14?D?B?H?K? ?34?B?H?43?R1? B?B?E??12KC?B?H??12R?!?B?Q?!?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?BQ?BQC?Q?BQF??????D?EYC?YYE?DQA?CQE?AYE?AYC?DYU??D?FQA?BQB?AQC?A?E?A?B?DYU??C?KQD?EQB?YC?DYU??C?JQB?BQFQB?A?B?DYU??C?FQA?EQB??BQA?DQA?BQE?YU??C?B?QBQB?QDYCQ??CQA?BQAQB?BQC?U?BUC?A?BQD?QQ?CQE?QQ??BQCQ?QB?CQA?C?C?A?CQC?Q?CQBQ?BUH??YQQ?Q?BYBQ?C?C?A?CQA?B?C??YCUB??BUA?CQDYAQC?B?EQB?EUF?BQBQQEYBQAQB?EQC?H?BQ?DQA?CYCQ?QC?DQDQ?Q?G?BQ?IQB?B??B?B?QCQD??QUE?DQA?DQBYQB?B?YC?A?DQB?BUE?DQA?EQB?C?A?B?A?DQB?D?AQB?HQB?A?C?BUE????QBQC?C?DQAYDQDYQ?YC?BUB?Y??AY??BY?V?DQD?AQB?Q?HQD?BQQB?N?JQB??B?CQB?L?BQE?DQB?B?B?CQQ?L?CQEYA?CQA?B?C?BQ?L?BQQFYA?B?B?QB?B?CQ?QH?DYA?BQEYB?QB?AYB?B?QB?BY?F?EYA?HQB?B?YB?FQQ??Y?IYE?????B?F?B?YB?B?YB?BY?GYBYA?B?BY?B?E?HY?Y?????BYA?F?CYB?YC?B?F?B?YB?A?CYB?YDQB?BYA?CYA?CYA?D?EY?YQ?CYB?BY?DQE??YY?DYCY?YE?A?BQA?BYEY??Y?C?BQA?HYB?YD?AYCQB?YBYCY?YDUB?A?B?A?E?B?YC?DQB?F???Y?YF?C??YE?CY?YHQB?YB?BY?BUD?B??B?A?E?A?CQC?Q?BQF?Q???YBUAYD?B?B?YE?AYBQF?Q?Q?QB?BYB?BYUG?C?A?GQF?Q?Q?QB?DYU??BUB?YF?CY?UCQA?CQC??QBQC?CY??BUB?EYD?DQC?Q?BQH?Q?Q?Q?UC?CQ??CYBQ?C?CQA?BQB?CQ?QB?EQ?Q?UC?BQAUBYBQB?QB?DQN?Q?Q?Q?Q?Q?Q??CQA?BUBYQDQCQB?QB?HQ?Q?Q?Q?BQC?B?BYCUA?B?AYBQBQA?BQA?BQK?Q?Q?Q?Q?Q?B?BYCUA?C?A?CQEQ?Q?QB?BQB?FQ?Q?Q?B?BYCUA?B?AYC?BQC?Q?BQG?Q?Q?UQB?B?QC?BUCY??C?A?B?EQA?BQB?QB?CQ?QB?CYU?BUBY?F?DQG?Q?Q?Q?BQD?Q?QB?AYH?D?DQC?Q?BQG?Q?Q?Q?BQC?Y?B?A?CQB?QD?JQB?C???BUD?E???Q?GQBYA?EQB?B?YCUF?A?BQB??CQC?QQBYA?DQB?BY?BUG?DQB?A?BQA?HQB?B?B?UB?BUD?B?QBQA?DQA?EQB?QB?B?AYHUB?A?CQB?YCQA?DQB?A?D?BUA?BUB?BUB?F??Y??YGQB?C???B?DUF?B?E??Y??BYA?E?A?B?A?B?BUA?BUF?B?H??Y??Y??D?BY?B?A?EUH?B?E??Y??BYB??D?B??CUB?BUH?B?H??Y??Y??D?AYCUD?BUH?B?G??Y??Y?GUF?BUH?B?F??Y??YEQB?H?BUG?C?Q?BQB?AYGQA?G?DUD?DU?Q?BQB?HQA?I?BUA?BUJ?U?Q??Y?YQGQA?L?BUC?AQB?BY?IQA?Q?BQA?KQA?D?BY?K?A?CQGQA?BQAQD?AYB?D?BYA?C?B?A?HQA?B?AYD?BYB?B?FYA?B?B??GQAQB?AYD?A?KYA?B?A?B?E?BYB?BYUC?LYB?B??B?E?BYB?BUB?MYB??BUB?E?BYCUC?BYKYC?B?A?E?AYBUE?A?LYD?A?HUF?MYS?BYKYN?BUA?BUA?BYJYN?EUB?BYBYA?BYA?CYM?EUD?CYD??Y?B?AYJ?BUA?FUD?B?DY?Y?B?AYJ?BUE?CUC?B?DY??YB?A?G?DQD?GQC?CQD?Q?UG?DQDYEQGQ?Q?Q?QB?C?QUG?DQAQBYH?Q?Q?Q?QB?DQ?Q?B?AYH?CQCQCQK?Q?Q?Q?Q?QQB?B?YH?HQ?U??YQQD?DQC?QQC?C?YUG?D?Q??BUB?QDYEQAQB?C?Q?DUE?A?BQA?B?C?QQBYA?BQH?Q?Q?Q?YBUA?BUE?B??BQB?DQA?BQB?QB?BQB?BYUB?B?BUB?B??B?BQA?DQA?BQD?Q?QC?C?YUB?B?BUB?B?C?LQB?C?Y?BUB?B?BUC?B?D?A?H?AYC?AYBUC?B?BUD?EYB??CQA?D?A?B?BYUD?A?BUE?EYB??BQB?C?AYC?BUD?CUE?DYCY??BQB??B?BYA?BUBQA?C?AUB?BYA?B?BYCYC?U?BQAQBUH?YYU??QQF?BYB?YB?CYB?A?B?BYB?B?AYB?C??YF?IYC?Y?B?BYB?B?AYB?C??YC?LYC?Y?B?BYBU?B?GY????YUB?LYB?YB?B?YBUA?B?BYUB?A?BUB?LYB?B??CUA?B?A?BUB??BUC?MYA?BYA?D?A?BUH?PYB?N?QYC?Y?L?RYB?B?BUH?RYC?Y?CUH?RYB?A?BUI?RYB?L?IYA?EYBYB?AYBUC?BUE?IYA?D?BYB?BYGUE?BYCYA?BYBY?D?C?Y?CYA?DUG?BY?B?CY??BYA?D?B?DYDUI?AYB?C?Y?BYA?D?B?CYCUJ?DUA?DQC?BQAUBYMUBQDUA?DQC?CQBYFQBYEUBQBUBYA?DQC?CQBYBQB?QDYEUBQBUBYA?DQD?BQBYBQB?QDYEUBQBUBYA?DQB?DQ?QQCYBQ?CQCYDUBQBUQBYA?BQBQB?B?BQCYFQBYA?CUBQBUQBYB?CQC?CQCYAQB?BQ?CQA?CUBQCU?QBQB?BQB?BQFYC?BQ?BQA?CUBQCU?QBYB??BQB?BQQGYB?EQ?Q?QCUBQCU?QBYB?BQB?BQFYCQAQC?DUBQB??DQA?BQB?QHYDQC?DUBQB?CQA?BQC?QQBYAQDYBQHYQ?QQ?UUBUBQIU?Q?QQQ?QBQE?BYHQ?Q?QQY?DUBQBUBQEQ?Q?QFQA?BYBQ?BQDQYQ?DUB?BUDQB?QBYA?EQBYBQ?BQBQB?DUB?BUA?BUBQA?BYA?CQB?QBYDQ?Y?HUB?BUA?BUBQF?Q?Q?QC?FQ?Q?Q?HUB?CU??BUCQQ?BQFQB?DQ?Q?DUAUCUB?AUC?BU?OQAQHUB?CUB?UB?OQHUB?EUB?OQHUB?AQB?GQA?IQA?DQA?BQB?LQA?DQA?GQA?CQC?EQB?QDQE?Q?Q?HQD?BQB?EQA?DQB?BQ?EQA?FQB?BQB?CQB?QB?CQA?BQA?DQBQ?DQA?BQE?DQC?CQA?BQA?BYIQC?QQD?EQC?FQBYGQDQB?QC?GQA?CQA?BQCY??EQCQBQB?QC?FQA?CQB?BQB?A?GQCQC?Q?GQA?HQC?U?EQC?Q?BQA?HQB?FQD???UB?IQA?LQA?WQBUFQB?VQBUBQ?EQA?VQBUBQ?BQCQA?RQB?BQBUBQ?BQD?SQA?BQBUBQ?BQA?B?AQOYGQBUCQB?B?AQOYB?QEQBUBQB?BQB?QOYA?CQCQBUBQB?BQB?QGYA?EYB?YC?AQC?BUBQB?BQB?QGYA?DYB?H?BUBQB?BQD?QY?EYA?CYB?BUG?BUCQA?BQD?QY?DYFYB?UB?F?BUBQB?QB?CYA?DYBY?BYBY?B?BYB?D?BUC?AQEYA?KYA?DYA?C?BUC?AQEYA?EYA?CYA?CYA?FYBUD?Q?QBYBYBY?DYBYCYA?CYA?BYA?CYBUE?Q?Q?BYGYBY?KYB?AYBUC?CQU?CYBQ?GYBQ?BYEQ?YQ?CYBUE?Q?QYB?A?BQB?BYEQA?CQA?BQA?CYBUC?DQUY?DQA?NQA?CQBUC?Q?BUAYXQBU?QB??QB??QB??QB??QB?CQAUBQBUBQCUBQAUBQAUBQAUBQAUIQIUQUQUQUQUCQKUQUQUQUQUQUIQAUCQEUQUQUCQAUCQGUQUQUQUJQAUBQDUQUQCUBQUCQBUQCUBQUKQBUQBUBQAUCQAUCQGUQUQUQUIQEUQUQUCQAUCQKUQUQUQUQUQUGQBQHQCYB?A?DUB?A?BQA?IQA?DQFYA?FYB?CQQ?HQB?KYAUFYCQA?HQB?IYA?BUFYCQA?IQB?FYD?Y?UGYCQA?JQB?DYDY?Y?HYDQA?JQD?YQ?BYB?YB?GYBQQBQA?JQA?BQB?FY?YQ??BYFQB?QOQA?DQA?HQB?Q?QCQHQB?A?B?B?B?B?AQB?B?BQ?B?B?B?B?BQ?BQB?CQB?B?B?B?AQB?B?BQ?B?B?B?B?BQ?BQD?B?A?B?B?B?AQB?B?BQ?B?B?B?A?B?B?AQD?B?EQA?GQA?B?B?CQB?B?AQD?B?B?B?BQ?CQG?Q?Q?Q?BQB?B?D???QD?B?B?B?EQI?Q?Q?Q?Q?B?B?DQD?B?B?B?CQC?Q?GQA?B?B?B?B?QD?B?B?B?CQC?Q?B?B?DQ?Q?B?B?B?B?QD?B?B?B?CQC?Q?B?B?DQ?Q?B?B?B?B?QD?B?B?B?CQC?Q?B?B?DQB?B?DQD?A?B?B?BQA?CQC?Q?BQJ?QU?Q?Q?Q?BQB?CQB?B?BQA?CQC?Q?BQJ?QU?Q?Q?Q?BQBYB?B?A?B?DQA?DQA?BQA?CQA?B?B?DQB?B?BQ?EQA?BQC?Q?BQA?CQA?B?B?DQB?B?FQ?Q?Q?DQA?BQA?BQA?B?B?A?B?BQBYBQ?B?B?DQ?Q?B?B?CQA?BQA?B?B?BQA?EQA?B?B?DQ?Q?B?B?DQ?Q?B?B?A?B?BQA?FQB?B?DQ?Q?B?B?DQ?Q?B?B?BQ?B?B?FQA?CQC?Q?BQA?B?B?BQB?B?BQ?B?B?BQBYBQA?CQC?Q?BQA?B?B?BQ?B?B?BQ?B?B?BQBYAQB?B?BQB?B?AQB?B?BQ?B?B?BQ?HQDUA?DQC?BQPUEQAUBQAUCQCUBQAUBQFUQUQUQCUCQBQ?QB?UDQB?UDQB?UDQB?ULQB?UDQB?UDQB?UDQB?U?QC?BQ?DQB?UDQB?UDQB?UHQAQC?BQ?DQB?UDQB?UDQB?U?QD?AUI?BY?B?B?UJ?BQB?BUG?IU?YQ????UC?AUF?BQA?CUC?B?UC?AYBQB?A?L?BQA?CUC?B?UC?BQAQBQD???UD?B?UC?BQK?AYCQA?BQA?F?B?UC?BQC?HYEQC?Q?GYA?C?BQC?U?BQA?EQA?EQC?Q?EQB?C?BQF?U?QQ?EQA?FQBQ?EQB??C?BQC?A?HQAYDQAYEQC?Q?D?BQE?U??QFQAYFQAYCQD?Q??D?BQC?C?Q?CQC?QYFQAYCQBQ?F?BQCYA?BQAQBQA?BQAYDQAYBQGQ?Q????CYEQC?Q?IQA?DQA?BQA?C?CYDQGY?Q?Q?QEQAQEQA?BQB??B?EQBYBQ?BQB?QFQB?QB?FQC???CYCQBYD?Q?QFQB??CQB?FQA?PQF?????QBQAQB?CQC?Q?HQBQ?BQA?B?D?A?BQB??BQB?DQ?Q?DQAYEQC???C?A?B?A?CQD?AQCQA?DQBYBQB?C???C?A?B?CQA?DQA?BQB??FQC?Q?G?A?B?A?GQA?BQB?JQA?WQBUA??????A?????????????AAAAAA?AA?A??A?QAA?AAA???????A?AA??AAAA???A???????Q?AAAAA?????AA?????AA??AA????AAAAAAAAAAAAA??1????F?F??CCF???N????A??R ?PA?K??AF??ACF???IF??HA??3???Y6QAF???B?4??F?1???Z1????F?F????ANV??W???NX??G??#E?Q??Q.??N????R ?F??NT??CNL?8 A?? ??? ??? Q?? ??? ??? ??? ??? A?? ??? ??? Q#? ??? ?'? ??? ??? A0? ?1? ?3? Q5? ?6? ?8? ??? ??? A?? ??? ??? Q?? ?!? ??? ??? ???5????AA???AFN??FO??FP?AFK??FL??FM?AFE??FF??FG?BAEA??H?AXKXNIQ??AA??E??QR?B?N?AXN????EXK3A??AI?01P??#3P?P?????AAAAAA6E?E?EJE?A2A?A?AFA?A?A?A?A?AHCAA?CSFIG0E?E?G9EMG?G?GAA?E?A?B?B?B?BAA?BEB?BAAAA?G.G?G?G.GAAAA?G?G?GAAEDAAAA?F!F?F?FAA?FAA?FAAAAAAAAAAAA?DAAAAAA?C?CAA?CAAAAAA?E?EAAAAAAAAAAAAAA?F?FAAAAHHAA?B5D2D?DAA?H?H?H?HZHWHTHRHAAAAAAAAAAAA?S?W?S?S???K?K???K?S?W?#?#?K?OAA?O?E?Q?G?Q?U?Y?Y???UAA?A??????????AA???I??AAAA?U???Q?Y??AAAA?I?U?IAA?IAAAA????????AA??AA??AAAAAAAAAAAA??AAAAAA????AA??AAAAAA?A?AAAAAAAAAAAAAAA????AAAA?OAA???Q?K??AA????????????????AAAAAA???????????D??#.??????3456789????????!?0??A????P??A?????P?HA????C ??1E?????A?FE?P??AK??'?E??VA????FG?E??#E?G?Q!??#??#EXE?VA?D?XE?P?!3?Q?G??P??6?I?7??8BYA??A????Q?AFD?A?Q??A A??55?DQ??6#?D??FD??A A??55?DQ.?1OQ?????5???GAY???????????Y???A?AHAAA????FAAA????M??N?Y?I?NN???M?'I?QT?P?Y?Q?NP???U?'Q????M?NN??U?NP??5?K?CA?OM??D?T????Q?KFA?O?Y6A8?A??O????A??1AQD??AZ?E?YF55II??????F???F??AN N???N????R ??C?EN?Z?U?A??NDH?BNEH?DI?GNAG?5??CDEGHJF?5??EN?T??N?????N?R????MY?B??R 'R ?O?R ????EN??????RSTUVWX????N????R ??C?EN?Z?RN?Z?HN?Z?DF??Q?AAK?????B?????A?FA?AA?A??P?AY6IAFA55?AE?9L??H??!?A???M??????8????'?????FA???EFC?Q?A?EO?AA???#?????FA???BA?AA??#???AFP??13P?P?????A??QIECBI?Q???A?G2?FF4?AAGA?5??FB????N????A????R ?H?BY6EFB?A?A??FC???A??FD?CKKK??A??AKK???AFC5K?APFC??2 A1????2 ?1????2 C1????2 ?1???3A?A?????5????Q???ANEC?MFE?AA???'??????C?FF?A?P?C AA??5?FQ??D'?F??FF?C AA?5?FQ!????C??????AJ??EJM?IJ??MJO?QJ??UJQ?MBC??BC??BC??K???K???KG??KE?AJ1??J???J??YJ???J???J9??J??ML??QL9??J9??J5??J1??J???JQQ?J?Q?JMQ?JMH?JMH?JMG?JUQ?JUH?J?H?JMGEJMF?JOF5J?G5J?GYJIG9JSF?J?E?JSEAA?E?AYE?A?D9A?DQA?D?A?DQFYF?J?F?LUH?J?F1J7F5J?F9J?G?J?G?J?F?J?F5B?H?K?P?A?H?A?H?B?H?B?H?J?G?JUG?JUGAJUFEJYHIJ?H?J?HMJ?QQJ?QUJ1Q?J?QYJE??JY?EJ???J???J???J???JO??JQ??J???JM??JM??JM??J???J???J???J??AK1?EK??IK??YJ??YJ???J???J9??J???J???J???J???J???J???J???J???J???J??YJ???J???JM?1JM??JE??J???J??YJ?BML?B?LIJ?L?JQKKJQK?JMKMJMK?JQKOJQK?JMKQJMKYJQKSJQKWJUK?J?D?IYK?J?K?J?J?K?K?K?K?L?K?L?K?M?J?M?K?N?KYK?K?KULQLYLQL?K?L?K?L?K?L?K3L?K5K?J5K?K???K5??K5?YJ???J???J5??K???J???KY??K???K??YJ???JY??K???K???K5?UJ???J???J???J???K???K???K??YJ??YJ??YJ???K#??KY??KY??K???J??1K???JY??JY??JY??JY??JY??K???K???J???J???J???K??YJ??YJ???KQ??KW?9KS??K???KQ??JQ??JQ??K???K??YJU??JY?YJ??YJ??YJ???KQ??J???JQ??JQ??KQ??KO??KK??KC??J???K???JM?YJI?YJE?YJA?QKSYUK??YK???K??UK??YK???K1??K??YKY?YKW?YKU??KQ??K???K???KQ??KQ??KS?YKU?YKW?YKY??K???KQ??LQ??LU??LY??K???K???K???K1??K???K1??KQ??JM??K???K#??K???JY??KQ??KM??JM??KK??KG??KE??JE??K???KM??JI??JE??KA??J?W?J?W?J?W?J?W?J?W?K?V?K?V?K?T?J?U?K?U?K?T?K?T?K?S?B?R?C?R?C?R1C?RIC?R?C?R?C?R?C?RYD?R?D?R?D?R?D?R?KQ??K??1KM?5K??9KU??K???KY??K#?YJ??YJ??YJ??YJ??9J???K5?AL??1K9?1K???K???LQ??LU??LY?EL??IL??ILU?IL??ILM?9JI??B?H?J?Z?L???D???D??UE???E???E??AE???E???E??9E???K???L???L???LY??JU??JU??JU??KU??L???J??YJQ?YJU??JY?YJ??YJ???J??YJ??YJ???J??YJ??YJ???J??YJ??YJ???J??YJ??YJ???JY?YJU?YJQ??JM?YJI??JE?AAAANANAQAVAYA?A?A?A?A?A?A?A?A?A?A?A?A?A?A?A?A?A'A?A4A7A9A?A?A?A!A!ADADAEAOAQASAYAYAYA?A?A?A?A?A?A?A?A?A?A?A?A?A?A2A4A5A?A?A?A?A?A?AABABABABABCBIBPBSBUBWBXB?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B?B2B5B8B?B?B?B?B?B?B?B?B?B?B?B?B?B?BA??QIECB???P?H??P?????C ??1E?B??PK?????0EN8???0EN???8??Q?W1???8??8????????????8?KK??N'E??P'EFE????FI?MFL???AAFG?AAFJ?AJQG??1??1??2????BAFA?E?BAFM???J A??5?G A???5??K??A?K?K???Y6AI??MQ??E?Y6?AFE??H?KK???Y6AQFE?AQ???FAFA?E?FAFM???J A??5?G A???5??K??A?K?K???Y6AI??MQ??E?Y6?AFE??H?KK???Y6AQFE?AQ???G???GA?288?3?3?7?98896???#?????U???U?Y?O???????Y?????M!????FGAQAFGBBBZE?A?G?B?B?A?G?G?F?F?F?C?CSCYDGDGP???????????C????'0!??A??N?C?D?7??6????7????W?7??H??7??????C ??1E???H?32??T?O??T??N?N?PN?N??Q4?FN?T?AN?N??G??7??!3YKKKKNC?Y??ND???NE???T?Y?F??N???G??C?F?WN????????X??2E?J?Q!?CNG??O?TKK???FM???A?FK??2E????EA?K??2E?G?Q!?E3KN?T?DA?O??2EXK??YY6QA?????2EXK??G??7?K?????0EN8???0EN???8????G?G??G????7??FO???8?KK??N'ENE??P'EFA?? ?Y6A?8FC?A???????ND??A??KKNC????A?FM???FK?E??AJQG?94??4??5??A ?D?KP?D??W1???VN???G???BAFG??D???C ?D?55?AD?D? AFI??A?2IFI?BA?G?IK?8?Y ?D?55?BAFE?A?M?K ?D?55??Y??A???E??IY???Y6AI??C8???Y6AE8 ?D?55?IK?8 ?D?55?EQ??C8Y6?A8FC?A?Y6?AFA??H??Y???Y6AQFA?C8?6?A? ?Y6AI8FC?G?D?.4??FAFG??D???C ?D?55?AL?D? AFI??A?2IFI?GA?O?IK?8??GA?2IFIY ?D?55?FAFE?A?M?K ?D?55??Y??A???E??IY???Y6AI??C8???Y6AE8 ?D?55?IK?8 ?D?55?EQ??C8Y6?A8FC?A?Y6?AFA??H??Y???Y6AQFA?C8?6?A? ?Y6AI8FC?G?D??5?GGGGGGGGUUUUU????SSS????????????BP??9PP????'AAAAAABBABBBBBBBABBAABBBBBBBBABAABBBBBAAAAAAVC?C?C?C2C?CURUQ?A?F?F?H?G?B?B?B?AA?A?QF?B?Y?Y?Z?Z?Z?Y?Y?YXF9??FSCU?????W?U??G?B?BEDED?C5A?A?A?AAABA?J?J3A?J?J?J?JYJYJ?J3A?J?J3A5AAKEKIKYJYJUJYJMK3AED3A?A?K?J?J?J?K6A?A?A?A?A?A?7?FP???15E???Q!?G????G???T?7??H??7??????C  ?1EZC ?? ?6??#?Q6EFCKK????U6EFA??6EFE?C?BA?K?Q?A??1?#7???Q?E?A A??????P??6?VU?UU???DH?HJ??J?Q????Q?DH?HJ?I?.K?6Q?Q?????ANFJ???N!J???6J?DNAG??VU??Q??G?????W1???8??8???????F?DNG???49???MA?GA?E??AJQG?MA?CAGF????FFD?AFC?BZ?D?AAMZ?D?AA???FE?AA????FEJRZ?D?CZ?DY6I5IIII?D???BY6IFB??????Q????E?Q??I??N?R ?D?C?BEK?VU?G?A?K???L7?R?V?R?U?R?U.Q?T!P?S?O!R?N?Q?M?N?K?LBHBHAIAI??RS??QR??QR??PQ??OP??MN??LL??KKAAIIBBHHAAII.?.?.?.??.?.?.?.??????????????????????????????????????????????E?QE?G???E??G??B?Z?Q?F??D?5????#8FC?49????9?Y?F????5????????8FC?49?DFD?A?AY??8ZAC?BY?C8ZBC?CZCC??8ZDC????5?DQ#??E??E??E??E??C??2?FA?D?Y2?FB???FP???A?FN?7???AK??'?E??VA???N??#E?L?Q!?Q?HNG?????BN???G??7???K??'?EKKKKNC??'?E??ND???NE??GZGZG?G?WZWZW?W?G?G?G'G'W?W?W'W'GZGZG?G?WZWZW?W?G?G?G'G'W?W?W'W'IVYVJVZV?R?R?R?R?RQR?RRR?R?R?R?R?R?R?R?RCZSZDZTZ?Z?Z?Z?ZA?Q?B?Q?AUQUBUQ??R?R?R?RC?S?D?T?GZGZG?G?GZGZG?G??R?R?R?R??FP???A?FN?7???AK??'?E??VA???N??#E?D??!??GO?7???AK????EFA?'?E?#?O????#E? A???EFM????9FK?OKKK???D???A ?D?Y6A? FD??AD ?D? HD??K BD????K JD????K DD????K LD???A ND?KY6QAP?D????????FO???8?KK??P'EFA?? ?Y6A?8FC?A?FM???FK?N'E?AJQG?94?8???5??A ?D?KP?D?????BC??BD??BCU?BDU7B7B7?7?7B7B7?7??B?B?B?BKV?VLV?V????FP?EFM???A?FN???FK??T??AK??H2EFA??D????T??A?DA??KKK??A ?D?Y6A? FD?8Y6?A8FA?AD ?D? HD??K BD????K JD????K DD????K LD?KY6QA???T??A?CAQGKKK?AD??A?3???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????A??????A???AA?????U?MQE??T???U???I?5??N???HFA??U??N?X  ????Y  A???Z  ?????  ????A ??? ????A?A? ????I? Y???? ???5?AQ???QR??UY6???QC?AN?U?AO?U?QN?U??U??U??UFP?A#?A????X??X??????Y6B?G??QC?? ???????8??????Y2CFC??8FB???P8Z?D?AZ?D?3Z?D??T?KJ?Z?DY????CZ?E?PY6E??QC?AFP59?UQT??U?FQE??QI?KY6??#????KKKKY?5?? 5??????I?????A?QDJ?I???? ???8Y?A?? A??8??????A?6IAZAA????????GA??V?T?V???V???V????A???N???H?1?1?1?? N?E?5A?A??N??NQB5OK??I??J??T?E???H??H??H?E??ES??D?I?H??I?A??Y?R?ENJ?Y6A8?Q??B????E??E??Q.?Q?J???J??????A??J?????Z?F?QFII??Q??BH????F????V????????E???????C???????????AJW?K???S?Y???AJV???S?Q?S??LAF??A?A??UAF??A?A??PAD??????AD??????ADF?F6??ADF?F6???????????????????NN?N?Q?O??N??NN?N?T?A???N???J??N???????BK?B?9K??F?YNL?OK?K?B???N?V?T??N??QM?Z?N??N??N???????N?C?Q?N?C?K?N?C?K?N?C???CN?EN?E???F??YY??D?P?D????? ?D??IQ?5????N?L??? ?D? ?D???N?L??? ?D? ?D????L??L??Y???K?K????D? ?D??H? ?D??L? ?D??P? ?D?????N?O.KY6K???N?#??XA??C???? ?D?Y  D??AAB?AAAB?AG?B?AH?AKBA?A?AIIBYAJ?B??AAAABA?A?BDAAAAK?AYAK?A?AK?B?B?AABQ??A??QAB?AL???M???W.?5N?B?E?C?F????O?X.??O?Y.?5O?Z.??O??.??OY?6F??Q??N??O??????O?2.?O?N???5???5?QQ0?8???????????A?A????AA??AA?A?B?B?A?B?B?A?B????Y???HFGHEGHF?!?C????? ???T?Q??? ????I!?H???.N? ?A!M? ?IN? ?YN???? QI?? ?EN? YK??BG?C?CG???DG??H?EG??H?FG?GGKY6ENBG?C?2N???F?2N????H???.??OYK?????Y??.????O8?2O????Y?5.????O8??O?Q??EK??N?Q??EGAGB?A??N??OFC??OFD?B??N??O8??O???C??QN#?A??N??N5Z?N????A?????N?N?!O?P???N?I??O?D??O?FQIO?N???AM#??N?O?N?????Q???????!?!!AA??Z??DLU??N??H ???????????????1??????2N??GA????????????Y?????????A??QIEC?2N???FA??T?K?H?5??B?R??N????R ?????A?C?B?BBDBBBBCMMSSSSMMQAIA?A?AQA?AIAQAB?Q?Q??Q?Y?A???????CFE??????G?Q?B5GG?AY???FAQC3B?EY???FC?F6AFD??8??????G??Q???N?????8??????VO?D????FO?B???OY?????O????I?FO?B?FO?????N?EOK?AQK?G?????A?Q?EO?CKQI?I????AA??QO'FO?FO????G??NKY6Q???NK?T???N?FOKK?A?B??VOY???????D?VO?????IHEHABEBBHJHY?A???????A?B?B??VOY???????D?VO??N?Z ??O?? ??O?Q???????VO?CJ??8?????58???????D?????VO?D???Y2AFAQC3B???Y2CFCQC3D???Y??????ABA?P?AAB??0???N????T?6??D????????O????2O?????O?????O????7???JS??N????O?ON???P??O???O??O?1?D????Q???O??O?D??N?????N?I??OQE???Q8Y???T?C??Y?G?????6IFC?C?D??8??O????#????????????AY6IAFA???.85Y?K?????????????I?C????8Y????Z?C8Z?C?B???AZ?C?D?YI?CZ?CY???#??K?DZ?E?IIII??C?VO????O?Q???????AY6?A??B?J?CY6AA??B??QD?2N???!????AY6QAFA????8?????N?K?M?N?A???Q?BBB??PBABICPA??N????T?6??D?'?N.O??O?F????I???O?L??2O?O???O?R???O?C??N???VO??O?????O???FO?????N??O?P?V??N??N?E?VO????O?T????FO?C??Y8?7?G?????FJAN!O??A5AKB7ABCDEDCBABCDEDCBA????????????!!.???N????R K??????O? ??2O?????O?????O?T?P?N??N??MQC?A??N?DFE?TFG1H?????N?##??N?????HY???Y2CFC?C?D?AY???FAQC3BKY6M?Q?P?QG?H6MFH??8???GY6KFG???C??Y?????E????N?????EFE??FF????T??GJ?8?F????A?6IFA?F?E?3?HHDD??B?B?B?B?B?Y5K.I?D?B??Q????????A?VO?C??8?5?G??VO?VO????FOJC?K6Q??????N?VOY?Q??VO????EY?B?Y??N??N??Q?????????N?R ???P?J?H ?S?CGDKK????AY??.FA?CY??.FC?????VO?C??8???G???OFA??OKY6???I???KY6Q??G????E??N??G??A?L???AAAABCCCAABBCCDDIIIIHGFFAAOOMMKK3E????????O???????EQF??Y6IEF?EG?AY???FAQC3B????????#?G?AY???FAQC3B???8?EK?F?K??CY??OFCQC3D??TY????KY6Q??C?????N?C???OFC?C?D?A?2O8??O?????AZAA???KY6???????OQD??OK?6Q??????N?VOKKKKY??O??O?VOI?????A?QDJ?I??O??OY?2O?2O?????G?IA?F?I?IA??K?DN!O??2O8??O??Y6IA??N??X FAQE????FG????O8??O??Y6IA??N??Z FCQE????FI?????G?I????O?FK1F?E?I?E?C?I?G?E?A?G?B?S?VO?VO??O??O????O?EM?E1M?E??A??E??GNF??GANG?777777???U???????B?D???VA??Q???N?A?VO?C??O?E??O?????????????????????????????????????????????????????????????????????????????????LA?A?A?A0A0A??LA?A?A?A??LA0A?I???Q?AA?? A?? A??5?AC????Z?7?????Q?AA?5??5QD?BA?AAY A?? A??5?AC???MF7??Z??Z?A?GN????B???AA?A??D?????C?AC????Z??D???AB??QE???C?8I????Z?????F?F???H??F???F??CCF????9IF??JF??HA??3?3???????????GA???BK??HAFA?.HFZ?P??Y6IA?AQ?????Z??Z??????NN??N????NN??N???????F?F?F?F??8I???AAEDEF????FP???Q?D?5FH???ED???A? ?H??FH?5???ED?F??XN??HQ!??EF?IB???D???5???ED?F??XN???EF???HQ????D???5??????5???????ARFA?AA?A??P?AY6IAFA55?AE?9?????????????????AAAAAAAAAAAAAAAAA?A?????????AAD??????????????????????ZK??FFP?AFE??N?U??N?U????2FC?AAFFA?AAFC??BFN1E1J1L?Q?AA????NFMGMQS???C??P?CY6IAFC??C???A??P?AY6IAFA??553J3L?L?I??1L???A????Z?E?H????N?UN?U????2FC??BK???KFA?DA?AZ?PY6IAFA???Q??9BK??DA?AZ?PY6IAFA???Q???? A?? A?? A?? A?? A?? A?? A?? A?? A?? A#? A?? A?? A?? A?? A1? A3? A5? A7? A9? A?? A?? A?? A?? A.? A?? A?? A?? A??5? A?? A?? A?? A?? A?? A?? A?? A?? A?? A#? A?? A?? A?? A?? A1? A3? A5? A7? A9? A?? A?? A?? A?? A.? A?? A?? A?? A??5?I????Z?0E??B??Z?J???L???Q???A?2???D??F????Z???K???M???N???O???R????????Z??Z?C?X?5Y6FF2?66AF3?7F4??Z??D??Z??AAABBCCDDABAABAAAAAAAAAAAAAAAAAAVVXVVVXVXVVVVVEEVXVVVVVVVVVVVVBCCCACCCACAACACCTTAACCCCCCCCCCCCWV????????????????????????????????AAAAAAAAA?AAAAAA?AAAAAAAAAAAAAAA????????????????????????????????ACDECGBIHDFS?A?2?? ?F'K?????N?Z??2? N?Z???EFF1??EFN?N??EFN?N?!EFF??XEFN?N?XEFF???'?BQD??BF?G??2?????N?Z??2FA??PN?ZK?????H???EF?#NQCJA?#N?CJ?N#N?A?A????JBF???2FA?????????U?N??EFN?P??P??P?A?HN?Z?A?????N?Z??2?PN?ZN?Z?2??K??N?T?2???????D?F?RU?ANSU?2Y6FF2?36AF3??#?G???CQ??K?PFA?L?PFB?K??FBFK?L??FAFL????A?2FK??2FL??2F??YY22F2?36AF3?L????F#?K???F#F#????Z?B??B?D??F?K?PKKKKF??L?PF?F?????Z??AK????AFD???AFG??Z? AK????AFFFI?DFA?GFN??DFB?GFO?AFCFP?K?AK??ZN?ZN??KY??Z??AF8?NF???AF9?NF???AF??NF??K?Q?E393??#?G?0G??G?7G???Q?AA?2???D??F????A?N????P?N?I????H?????B?U??????A????????????H??????A?????????TV?K?CA????V???IF??H?????C?U??????A???????????1H??????A?????????QV?K?CA????V??DIF?8?K?E?K?LI?????B????????????6IAF?YY6XAF??????????????GA???BK??HAFA?.HFZ?P??Y6IA?AQ???H??????????6IAF?YY6XAF??????C?Z??????????6IAF?YY6XAF??YI??????????6IAF?YY6XAF???????Z??GA?JF?JF?JF?KF?KF?JF?JF?KF?KF?KF?KF?KF?JF?KF?JF?JF?KF?JF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?JF?JF????Z??GA?MFNLFNLFNLFNLF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MFNLF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MFNLF????Z??GA?JF?JF?JF?KF?KF?JF?JF?KF?KF?KF?KF?KF?JF?KF?JF?JF?KF?JF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?KF?JF?JF????Z??GA?NFNLFNLFNLFNLF?MF?MF?MF?MF?MF?NF?MF?NF?NF?NFNLF?MF?NF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?MF?NFNLFAA?A?AQAIAEACABAI????Z??AK??????AFK???AFL???AFN???AFO?AFMFP??????PKN2???A???Q?D??AYN1???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAFI?AA?I?8??AFA??FB?AK???PFK?AA?K?3????K?5????K?3????K?5?5555?IY6QAFI??BQ??8I????Z??AK??????AFK???AFL???AFN???AFO?AFMFP?????A???Q?D??AYFA?????DFAN1????DKKKKKKN2???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAKKKKFI?AA?I?8??AFA??FB?AK???PFK?AA?K?3????K?3?55???K?3????K?3?55?I?Y6BAFI?PA?KY???Y6ABFI?I?PB???8I????Z??AK????AA??Z?D?D?AQED?5?AFK?6?AFL?5?AFN?6?AFO?AFMFP??????PKN4???A???Q?D??AYN3???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAFI?AA?I?8??AFA??FB?AK???PFK?AA?KFD?5????KFD?7????KFD?5????KFD?7?5555?IY6QAFI??BQ??8I????Z??AK????AA??Z?D?D?AQED?5?AFK?6?AFL?5?AFN?6?AFO?AFMFP?????A???Q?D??AYFA?????DFAN3????DKKKKKKN4???????B????FAKY2A??KF8?NF??????KF??NF??Q?N??Z?Q?C?FEM?????PAKKKKFI?AA?I?8??AFA??FB?AK???PFK?AA?KFD?5????KFD?5?55???KFD?5????KFD?5?55?I?Y6BAFI?PA?KY???Y6ABFI?I?PB???8I????Z?PKN4?????Z?Q?C??YN3????A?F8?A?F??ARFK??Z??A?Q?8Y6?BF8??Y6?BF?????F???F??NEM????Z?PAFI?AA?I?8??AFA??FB?AKKK??K?5????K?7????K?5????K?7?5555?IY6QAFI??BQ??8????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????VF?VFHQF?VFUSF??F?VF?VFHQF?VF?VF??F?VF?VFHQF?VF?VF?VF?VF?VFHQF?VF?VFHQF?VF?VFHQF?VF?VFX?F?VF?VFHQF?VF?VFHQF?VF?VFHQF?VF?VF?VF?VF?VF??F?GADH?I??SADH?I???ADX?Y???ADH?I???ADX?Y???ADH?I???ADF?G???ADX?Y???ADF?G???ADX?Y??3ADV?W??9ADV?W???ADV?W???ADV?W??EA?A?B?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?B?A???A?Q?R?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?R?Q???ATD?D?D?D?D?D?D?D?D?D???ATE?E?E?E?E?E?E?E?E?E????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU????ST????SU??#ATD?D?D?D?D?D?D?D?D?D???ATE?E?E?E?E?E?E?E?E?E?#EA?Q?R?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?C?R?Q?#?A?A?B?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?S?B?A????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A L?M??????????????????????????????5A ?????????????????????????????????IA J?K???????????????????????????????A Z?????????????????????????????????A???????????0?1?2?3?4?5?6?7?8?9????????4A?'?????????????????????????????????'???AA?????????????????????????????????????????????????????????????????????O??AA?????????????????????????????????????????????????????????????????????O????AD??????AB?????M????AD??????AB?????M?????I???2AB???7AL??????????????AB?????G???A?I???FAB???KAL??????????????AB?????G????AP????P?P???????????AP??????
+### Nivel 0x013 — DONUT SECRET HOUSE
+- **Nombre (overworld)**: DONUT SECRET HOUSE
 - **Tipo**: nivel de MAPA (translevel 0x13)
 - **Direcciones**: L1ptr 0x2E039 → header 0x322F2 · SprPtr 0x2EC26 → stream 0x3C9CA · L2ptr 0x2E639 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 79×27 casillas · SOLID=2 SLOPE=16 SLOPE_STEEP=16
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -396,12 +416,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [s] **PSwitch** (0x3E) ×1: (2,46,23)
     - [ ] **Sprite 0xE3** (0xE3) ×1: (1,26,20)
 
-### Nivel 0x014 — ????? SWITCH PALACE 3
-- **Nombre (overworld)**: ????? SWITCH PALACE 3
+### Nivel 0x014 — GREEN SWITCH PALACE 3
+- **Nombre (overworld)**: GREEN SWITCH PALACE 3
 - **Tipo**: nivel de MAPA (translevel 0x14)
 - **Direcciones**: L1ptr 0x2E03C → header 0x3068D · SprPtr 0x2EC28 → stream 0x3C446 · L2ptr 0x2E63C · GFXslot 0x028C3 · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · SOLID=36
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -416,6 +437,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E03F → header 0x311E5 · SprPtr 0x2EC2A → stream 0x3C6D5 · L2ptr 0x2E63F · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=418 SOLID=151 SLOPE=1 SLOPE_STEEP=8
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -440,6 +462,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E042 → header 0x311E5 · SprPtr 0x2EC2C → stream 0x3C6D5 · L2ptr 0x2E642 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=418 SOLID=151 SLOPE=1 SLOPE_STEEP=8
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -464,6 +487,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E045 → header 0x311E5 · SprPtr 0x2EC2E → stream 0x3C6D5 · L2ptr 0x2E645 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=418 SOLID=151 SLOPE=1 SLOPE_STEEP=8
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -488,6 +512,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E048 → header 0x38C14 · SprPtr 0x2EC30 → stream 0x3DC2D · L2ptr 0x2E648 · GFXslot 0x028D3 · FGBGslot 0x0295F
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0D 07` (tilesetFG=13)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0xE · música 4 · tiempo 400 · Layer2 fondo · paletas BG=4 FG=4 SPR=3 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDAB9 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 46×27 casillas · SOLID=26
 - **Entrada**: casilla (1,3) px (16,48) · pantalla entrada 0 · L2scroll 5 L3 3 L1y 0 L2y 3 · secHdr [0x51 0xF8 0x3 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -502,6 +527,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E04B → header 0x30000 · SprPtr 0x2EC32 → stream 0x3E76D · L2ptr 0x2E64B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -515,6 +541,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E04E → header 0x389CC · SprPtr 0x2EC34 → stream 0x3DBBB · L2ptr 0x2E64E · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0x8B1D · tipo 0x7
 - **Colisión**: 192×27 casillas · LEDGE_TOP=163 SOLID=59 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x4B 0xC0 0xBA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -533,6 +560,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E051 → header 0x36E36 · SprPtr 0x2EC36 → stream 0x3D95E · L2ptr 0x2E651 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 9 pantallas (144 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=1 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 144×27 casillas · LEDGE_TOP=95 SOLID=73 SLOPE_STEEP=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x8A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -552,6 +580,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E054 → header 0x386E3 · SprPtr 0x2EC38 → stream 0x3DB0F · L2ptr 0x2E654 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 17 pantallas (272 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=7 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE7C0 (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
 - **Colisión**: 272×27 casillas · LEDGE_TOP=154 SOLID=307 SLOPE=2 SLOPE_STEEP=12
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0x7 0x0 0xBA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -579,6 +608,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E057 → header 0x38100 · SprPtr 0x2EC3A → stream 0x3DA93 · L2ptr 0x2E657 · GFXslot 0x028E3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 240×27 casillas · LEDGE_TOP=34 SOLID=830 SLOPE=427 SLOPE_STEEP=490
 - **Entrada**: casilla (8,6) px (128,96) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 0 L2y 0 · secHdr [0x52 0x1 0x0 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -599,6 +629,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E05A → header 0x30000 · SprPtr 0x2EC3C → stream 0x3E76D · L2ptr 0x2E65A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -612,6 +643,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E05D → header 0x3620A · SprPtr 0x2EC3E → stream 0x3D648 · L2ptr 0x2E65D · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=1 backArea=4
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 96×27 casillas · LEDGE_TOP=67 SOLID=34 SLOPE_STEEP=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 2 L1y 2 L2y 2 · secHdr [0x1B 0x80 0xA 0x0]
 - **Cabecera sprites**: 0xF (memoria 0xF, buoyancy 0x0)
@@ -629,6 +661,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E060 → header 0x359D9 · SprPtr 0x2EC40 → stream 0x3D4CD · L2ptr 0x2E660 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 217×27 casillas · SOLID=53
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -644,12 +677,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **Sprite 0xB6** (0xB6) ×8: (3,55,20) (4,78,15) (5,80,21) (5,83,15) (5,88,21) (13,210,25) …
     - [ ] **BowserStatue** (0xBC) ×4: (11,189,14) (12,197,21) (13,215,21) (14,231,21)
 
-### Nivel 0x021 — CHOCO?GHOST HOUSE
-- **Nombre (overworld)**: CHOCO?GHOST HOUSE
+### Nivel 0x021 — CHOCO-GHOST HOUSE
+- **Nombre (overworld)**: CHOCO-GHOST HOUSE
 - **Tipo**: nivel de MAPA (translevel 0x21)
 - **Direcciones**: L1ptr 0x2E063 → header 0x367A2 · SprPtr 0x2EC42 → stream 0x3D74C · L2ptr 0x2E663 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 14 pantallas (224 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 218×27 casillas · SOLID=1 SLOPE=12 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x11 (memoria 0x11, buoyancy 0x0)
@@ -668,6 +702,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E066 → header 0x36444 · SprPtr 0x2EC44 → stream 0x3D6D9 · L2ptr 0x2E666 · GFXslot 0x028EB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 23` (spriteGfx=10) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=190 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -692,6 +727,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E069 → header 0x36CC9 · SprPtr 0x2EC46 → stream 0x3D8BE · L2ptr 0x2E669 · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 24 pantallas (384 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=1 SPR=2 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE7C0 (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
 - **Colisión**: 369×27 casillas · SOLID=99
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -711,6 +747,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E06C → header 0x36897 · SprPtr 0x2EC48 → stream 0x3D7BF · L2ptr 0x2E66C · GFXslot 0x028EB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 23` (spriteGfx=10) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=0 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=98 SOLID=76 SLOPE=62 SLOPE_STEEP=68
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -728,6 +765,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E06F → header 0x30000 · SprPtr 0x2EC4A → stream 0x3E76D · L2ptr 0x2E66F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -741,6 +779,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E072 → header 0x30000 · SprPtr 0x2EC4C → stream 0x3E76D · L2ptr 0x2E672 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -754,6 +793,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E075 → header 0x30000 · SprPtr 0x2EC4E → stream 0x3E76D · L2ptr 0x2E675 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -767,6 +807,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E078 → header 0x30000 · SprPtr 0x2EC50 → stream 0x3E76D · L2ptr 0x2E678 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -780,6 +821,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E07B → header 0x30000 · SprPtr 0x2EC52 → stream 0x3E76D · L2ptr 0x2E67B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -793,6 +835,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E07E → header 0x30000 · SprPtr 0x2EC54 → stream 0x3E76D · L2ptr 0x2E67E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -806,6 +849,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E081 → header 0x30000 · SprPtr 0x2EC56 → stream 0x3E76D · L2ptr 0x2E681 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -819,6 +863,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E084 → header 0x30000 · SprPtr 0x2EC58 → stream 0x3E76D · L2ptr 0x2E684 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -832,6 +877,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E087 → header 0x30000 · SprPtr 0x2EC5A → stream 0x3E76D · L2ptr 0x2E687 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -845,6 +891,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E08A → header 0x30000 · SprPtr 0x2EC5C → stream 0x3E76D · L2ptr 0x2E68A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -858,6 +905,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E08D → header 0x30000 · SprPtr 0x2EC5E → stream 0x3E76D · L2ptr 0x2E68D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -871,6 +919,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E090 → header 0x30000 · SprPtr 0x2EC60 → stream 0x3E76D · L2ptr 0x2E690 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -884,6 +933,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E093 → header 0x30000 · SprPtr 0x2EC62 → stream 0x3E76D · L2ptr 0x2E693 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -897,6 +947,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E096 → header 0x30000 · SprPtr 0x2EC64 → stream 0x3E76D · L2ptr 0x2E696 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -910,6 +961,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E099 → header 0x30000 · SprPtr 0x2EC66 → stream 0x3E76D · L2ptr 0x2E699 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -923,6 +975,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E09C → header 0x30000 · SprPtr 0x2EC68 → stream 0x3E76D · L2ptr 0x2E69C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -936,6 +989,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E09F → header 0x30000 · SprPtr 0x2EC6A → stream 0x3E76D · L2ptr 0x2E69F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -949,6 +1003,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0A2 → header 0x30000 · SprPtr 0x2EC6C → stream 0x3E76D · L2ptr 0x2E6A2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -962,6 +1017,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0A5 → header 0x30000 · SprPtr 0x2EC6E → stream 0x3E76D · L2ptr 0x2E6A5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -975,6 +1031,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0A8 → header 0x30000 · SprPtr 0x2EC70 → stream 0x3E76D · L2ptr 0x2E6A8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -988,6 +1045,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0AB → header 0x30000 · SprPtr 0x2EC72 → stream 0x3E76D · L2ptr 0x2E6AB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1001,6 +1059,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0AE → header 0x30000 · SprPtr 0x2EC74 → stream 0x3E76D · L2ptr 0x2E6AE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1014,6 +1073,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0B1 → header 0x30000 · SprPtr 0x2EC76 → stream 0x3E76D · L2ptr 0x2E6B1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1027,6 +1087,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0B4 → header 0x30000 · SprPtr 0x2EC78 → stream 0x3E76D · L2ptr 0x2E6B4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1040,6 +1101,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0B7 → header 0x30000 · SprPtr 0x2EC7A → stream 0x3E76D · L2ptr 0x2E6B7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1053,6 +1115,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0BA → header 0x30000 · SprPtr 0x2EC7C → stream 0x3E76D · L2ptr 0x2E6BA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1066,6 +1129,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0BD → header 0x30000 · SprPtr 0x2EC7E → stream 0x3E76D · L2ptr 0x2E6BD · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1079,6 +1143,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0C0 → header 0x30000 · SprPtr 0x2EC80 → stream 0x3E76D · L2ptr 0x2E6C0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1092,6 +1157,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0C3 → header 0x30000 · SprPtr 0x2EC82 → stream 0x3E76D · L2ptr 0x2E6C3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1105,6 +1171,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0C6 → header 0x30000 · SprPtr 0x2EC84 → stream 0x3E76D · L2ptr 0x2E6C6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1118,6 +1185,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0C9 → header 0x30000 · SprPtr 0x2EC86 → stream 0x3E76D · L2ptr 0x2E6C9 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1131,6 +1199,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0CC → header 0x30000 · SprPtr 0x2EC88 → stream 0x3E76D · L2ptr 0x2E6CC · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1144,6 +1213,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0CF → header 0x30000 · SprPtr 0x2EC8A → stream 0x3E76D · L2ptr 0x2E6CF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1157,6 +1227,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0D2 → header 0x30000 · SprPtr 0x2EC8C → stream 0x3E76D · L2ptr 0x2E6D2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1170,6 +1241,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0D5 → header 0x30000 · SprPtr 0x2EC8E → stream 0x3E76D · L2ptr 0x2E6D5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1183,6 +1255,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0D8 → header 0x30000 · SprPtr 0x2EC90 → stream 0x3E76D · L2ptr 0x2E6D8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1196,6 +1269,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0DB → header 0x30000 · SprPtr 0x2EC92 → stream 0x3E76D · L2ptr 0x2E6DB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1209,6 +1283,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0DE → header 0x30000 · SprPtr 0x2EC94 → stream 0x3E76D · L2ptr 0x2E6DE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1222,6 +1297,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0E1 → header 0x30000 · SprPtr 0x2EC96 → stream 0x3E76D · L2ptr 0x2E6E1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1235,6 +1311,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0E4 → header 0x30000 · SprPtr 0x2EC98 → stream 0x3E76D · L2ptr 0x2E6E4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1248,6 +1325,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0E7 → header 0x30000 · SprPtr 0x2EC9A → stream 0x3E76D · L2ptr 0x2E6E7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1261,6 +1339,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0EA → header 0x30000 · SprPtr 0x2EC9C → stream 0x3E76D · L2ptr 0x2E6EA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1274,6 +1353,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0ED → header 0x30000 · SprPtr 0x2EC9E → stream 0x3E76D · L2ptr 0x2E6ED · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1287,6 +1367,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0F0 → header 0x30000 · SprPtr 0x2ECA0 → stream 0x3E76D · L2ptr 0x2E6F0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1300,6 +1381,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0F3 → header 0x30000 · SprPtr 0x2ECA2 → stream 0x3E76D · L2ptr 0x2E6F3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1313,6 +1395,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0F6 → header 0x30000 · SprPtr 0x2ECA4 → stream 0x3E76D · L2ptr 0x2E6F6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1326,6 +1409,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0F9 → header 0x30000 · SprPtr 0x2ECA6 → stream 0x3E76D · L2ptr 0x2E6F9 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1339,6 +1423,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0FC → header 0x30000 · SprPtr 0x2ECA8 → stream 0x3E76D · L2ptr 0x2E6FC · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1352,6 +1437,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E0FF → header 0x30000 · SprPtr 0x2ECAA → stream 0x3E76D · L2ptr 0x2E6FF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1365,6 +1451,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E102 → header 0x30000 · SprPtr 0x2ECAC → stream 0x3E76D · L2ptr 0x2E702 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1378,6 +1465,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E105 → header 0x30000 · SprPtr 0x2ECAE → stream 0x3E76D · L2ptr 0x2E705 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1391,6 +1479,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E108 → header 0x30000 · SprPtr 0x2ECB0 → stream 0x3E76D · L2ptr 0x2E708 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1404,6 +1493,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E10B → header 0x30000 · SprPtr 0x2ECB2 → stream 0x3E76D · L2ptr 0x2E70B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1417,6 +1507,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E10E → header 0x30000 · SprPtr 0x2ECB4 → stream 0x3E76D · L2ptr 0x2E70E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1430,6 +1521,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E111 → header 0x30000 · SprPtr 0x2ECB6 → stream 0x3E76D · L2ptr 0x2E711 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1443,6 +1535,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E114 → header 0x30000 · SprPtr 0x2ECB8 → stream 0x3E76D · L2ptr 0x2E714 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1456,6 +1549,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E117 → header 0x30000 · SprPtr 0x2ECBA → stream 0x3E76D · L2ptr 0x2E717 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1469,6 +1563,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E11A → header 0x30000 · SprPtr 0x2ECBC → stream 0x3E76D · L2ptr 0x2E71A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1482,6 +1577,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E11D → header 0x30000 · SprPtr 0x2ECBE → stream 0x3E76D · L2ptr 0x2E71D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1495,6 +1591,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E120 → header 0x30000 · SprPtr 0x2ECC0 → stream 0x3E76D · L2ptr 0x2E720 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1508,6 +1605,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E123 → header 0x30000 · SprPtr 0x2ECC2 → stream 0x3E76D · L2ptr 0x2E723 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1521,6 +1619,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E126 → header 0x30000 · SprPtr 0x2ECC4 → stream 0x3E76D · L2ptr 0x2E726 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1534,6 +1633,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E129 → header 0x30000 · SprPtr 0x2ECC6 → stream 0x3E76D · L2ptr 0x2E729 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1547,6 +1647,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E12C → header 0x30000 · SprPtr 0x2ECC8 → stream 0x3E76D · L2ptr 0x2E72C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1560,6 +1661,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E12F → header 0x30000 · SprPtr 0x2ECCA → stream 0x3E76D · L2ptr 0x2E72F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1573,6 +1675,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E132 → header 0x30000 · SprPtr 0x2ECCC → stream 0x3E76D · L2ptr 0x2E732 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1586,6 +1689,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E135 → header 0x30000 · SprPtr 0x2ECCE → stream 0x3E76D · L2ptr 0x2E735 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1599,6 +1703,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E138 → header 0x30000 · SprPtr 0x2ECD0 → stream 0x3E76D · L2ptr 0x2E738 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1612,6 +1717,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E13B → header 0x30000 · SprPtr 0x2ECD2 → stream 0x3E76D · L2ptr 0x2E73B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1625,6 +1731,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E13E → header 0x30000 · SprPtr 0x2ECD4 → stream 0x3E76D · L2ptr 0x2E73E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1638,6 +1745,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E141 → header 0x30000 · SprPtr 0x2ECD6 → stream 0x3E76D · L2ptr 0x2E741 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1651,6 +1759,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E144 → header 0x30000 · SprPtr 0x2ECD8 → stream 0x3E76D · L2ptr 0x2E744 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1664,6 +1773,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E147 → header 0x30000 · SprPtr 0x2ECDA → stream 0x3E76D · L2ptr 0x2E747 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1677,6 +1787,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E14A → header 0x30000 · SprPtr 0x2ECDC → stream 0x3E76D · L2ptr 0x2E74A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1690,6 +1801,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E14D → header 0x30000 · SprPtr 0x2ECDE → stream 0x3E76D · L2ptr 0x2E74D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1703,6 +1815,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E150 → header 0x30000 · SprPtr 0x2ECE0 → stream 0x3E76D · L2ptr 0x2E750 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1716,6 +1829,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E153 → header 0x30000 · SprPtr 0x2ECE2 → stream 0x3E76D · L2ptr 0x2E753 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1729,6 +1843,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E156 → header 0x30000 · SprPtr 0x2ECE4 → stream 0x3E76D · L2ptr 0x2E756 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1742,6 +1857,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E159 → header 0x30000 · SprPtr 0x2ECE6 → stream 0x3E76D · L2ptr 0x2E759 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1755,6 +1871,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E15C → header 0x30000 · SprPtr 0x2ECE8 → stream 0x3E76D · L2ptr 0x2E75C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1768,6 +1885,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E15F → header 0x30000 · SprPtr 0x2ECEA → stream 0x3E76D · L2ptr 0x2E75F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1781,6 +1899,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E162 → header 0x30000 · SprPtr 0x2ECEC → stream 0x3E76D · L2ptr 0x2E762 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1794,6 +1913,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E165 → header 0x30000 · SprPtr 0x2ECEE → stream 0x3E76D · L2ptr 0x2E765 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1807,6 +1927,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E168 → header 0x30000 · SprPtr 0x2ECF0 → stream 0x3E76D · L2ptr 0x2E768 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1820,6 +1941,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E16B → header 0x30000 · SprPtr 0x2ECF2 → stream 0x3E76D · L2ptr 0x2E76B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1833,6 +1955,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E16E → header 0x30000 · SprPtr 0x2ECF4 → stream 0x3E76D · L2ptr 0x2E76E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1846,6 +1969,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E171 → header 0x30000 · SprPtr 0x2ECF6 → stream 0x3E76D · L2ptr 0x2E771 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1859,6 +1983,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E174 → header 0x30000 · SprPtr 0x2ECF8 → stream 0x3E76D · L2ptr 0x2E774 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1872,6 +1997,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E177 → header 0x30000 · SprPtr 0x2ECFA → stream 0x3E76D · L2ptr 0x2E777 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1885,6 +2011,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E17A → header 0x30000 · SprPtr 0x2ECFC → stream 0x3E76D · L2ptr 0x2E77A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1898,6 +2025,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E17D → header 0x30000 · SprPtr 0x2ECFE → stream 0x3E76D · L2ptr 0x2E77D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1911,6 +2039,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E180 → header 0x30000 · SprPtr 0x2ED00 → stream 0x3E76D · L2ptr 0x2E780 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1924,6 +2053,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E183 → header 0x30000 · SprPtr 0x2ED02 → stream 0x3E76D · L2ptr 0x2E783 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1937,6 +2067,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E186 → header 0x30000 · SprPtr 0x2ED04 → stream 0x3E76D · L2ptr 0x2E786 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1950,6 +2081,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E189 → header 0x30000 · SprPtr 0x2ED06 → stream 0x3E76D · L2ptr 0x2E789 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1963,6 +2095,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E18C → header 0x30000 · SprPtr 0x2ED08 → stream 0x3E76D · L2ptr 0x2E78C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1976,6 +2109,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E18F → header 0x30000 · SprPtr 0x2ED0A → stream 0x3E76D · L2ptr 0x2E78F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -1989,6 +2123,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E192 → header 0x30000 · SprPtr 0x2ED0C → stream 0x3E76D · L2ptr 0x2E792 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2002,6 +2137,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E195 → header 0x30000 · SprPtr 0x2ED0E → stream 0x3E76D · L2ptr 0x2E795 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2015,6 +2151,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E198 → header 0x30000 · SprPtr 0x2ED10 → stream 0x3E76D · L2ptr 0x2E798 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2028,6 +2165,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E19B → header 0x30000 · SprPtr 0x2ED12 → stream 0x3E76D · L2ptr 0x2E79B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2041,6 +2179,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E19E → header 0x30000 · SprPtr 0x2ED14 → stream 0x3E76D · L2ptr 0x2E79E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2054,6 +2193,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1A1 → header 0x30000 · SprPtr 0x2ED16 → stream 0x3E76D · L2ptr 0x2E7A1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2067,6 +2207,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1A4 → header 0x30000 · SprPtr 0x2ED18 → stream 0x3E76D · L2ptr 0x2E7A4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2080,6 +2221,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1A7 → header 0x30000 · SprPtr 0x2ED1A → stream 0x3E76D · L2ptr 0x2E7A7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2093,6 +2235,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1AA → header 0x30000 · SprPtr 0x2ED1C → stream 0x3E76D · L2ptr 0x2E7AA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2106,6 +2249,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1AD → header 0x30000 · SprPtr 0x2ED1E → stream 0x3E76D · L2ptr 0x2E7AD · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2119,6 +2263,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1B0 → header 0x30000 · SprPtr 0x2ED20 → stream 0x3E76D · L2ptr 0x2E7B0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2132,6 +2277,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1B3 → header 0x30000 · SprPtr 0x2ED22 → stream 0x3E76D · L2ptr 0x2E7B3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2145,6 +2291,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1B6 → header 0x30000 · SprPtr 0x2ED24 → stream 0x3E76D · L2ptr 0x2E7B6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2158,6 +2305,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1B9 → header 0x30561 · SprPtr 0x2ED26 → stream 0x3C3DB · L2ptr 0x2E7B9 · GFXslot 0x028F7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 0A 22` (spriteGfx=13) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -2173,6 +2321,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1BC → header 0x3058B · SprPtr 0x2ED28 → stream 0x3C3E3 · L2ptr 0x2E7BC · GFXslot 0x028F7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 0A 22` (spriteGfx=13) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -2188,6 +2337,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1BF → header 0x30258 · SprPtr 0x2ED2A → stream 0x3C367 · L2ptr 0x2E7BF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -2202,6 +2352,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1C2 → header 0x3025E · SprPtr 0x2ED2C → stream 0x3C359 · L2ptr 0x2E7C2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x92 (memoria 0x12, buoyancy 0x80)
@@ -2217,6 +2368,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1C5 → header 0x3025E · SprPtr 0x2ED2E → stream 0x3C354 · L2ptr 0x2E7C5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x92 (memoria 0x12, buoyancy 0x80)
@@ -2231,6 +2383,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1C8 → header 0x30258 · SprPtr 0x2ED30 → stream 0x3C34F · L2ptr 0x2E7C8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2245,6 +2398,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1CB → header 0x30258 · SprPtr 0x2ED32 → stream 0x3C34A · L2ptr 0x2E7CB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2259,6 +2413,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1CE → header 0x30258 · SprPtr 0x2ED34 → stream 0x3C345 · L2ptr 0x2E7CE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2273,6 +2428,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1D1 → header 0x30252 · SprPtr 0x2ED36 → stream 0x3C340 · L2ptr 0x2E7D1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x10 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x10 (memoria 0x10, buoyancy 0x0)
@@ -2287,6 +2443,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1D4 → header 0x30000 · SprPtr 0x2ED38 → stream 0x3E76D · L2ptr 0x2E7D4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2300,6 +2457,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1D7 → header 0x30000 · SprPtr 0x2ED3A → stream 0x3E76D · L2ptr 0x2E7D7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2313,6 +2471,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1DA → header 0x30000 · SprPtr 0x2ED3C → stream 0x3E76D · L2ptr 0x2E7DA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2326,6 +2485,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1DD → header 0x30000 · SprPtr 0x2ED3E → stream 0x3E76D · L2ptr 0x2E7DD · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2339,6 +2499,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1E0 → header 0x30000 · SprPtr 0x2ED40 → stream 0x3E76D · L2ptr 0x2E7E0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2352,6 +2513,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1E3 → header 0x30000 · SprPtr 0x2ED42 → stream 0x3E76D · L2ptr 0x2E7E3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2365,6 +2527,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1E6 → header 0x30000 · SprPtr 0x2ED44 → stream 0x3E76D · L2ptr 0x2E7E6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2378,6 +2541,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1E9 → header 0x30000 · SprPtr 0x2ED46 → stream 0x3E76D · L2ptr 0x2E7E9 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2391,6 +2555,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1EC → header 0x30000 · SprPtr 0x2ED48 → stream 0x3E76D · L2ptr 0x2E7EC · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2404,6 +2569,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1EF → header 0x30000 · SprPtr 0x2ED4A → stream 0x3E76D · L2ptr 0x2E7EF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2417,6 +2583,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1F2 → header 0x30000 · SprPtr 0x2ED4C → stream 0x3E76D · L2ptr 0x2E7F2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2430,6 +2597,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1F5 → header 0x30000 · SprPtr 0x2ED4E → stream 0x3E76D · L2ptr 0x2E7F5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2443,6 +2611,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1F8 → header 0x30000 · SprPtr 0x2ED50 → stream 0x3E76D · L2ptr 0x2E7F8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2456,6 +2625,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1FB → header 0x30000 · SprPtr 0x2ED52 → stream 0x3E76D · L2ptr 0x2E7FB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2469,6 +2639,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E1FE → header 0x30000 · SprPtr 0x2ED54 → stream 0x3E76D · L2ptr 0x2E7FE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2482,6 +2653,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E201 → header 0x30000 · SprPtr 0x2ED56 → stream 0x3E76D · L2ptr 0x2E801 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2495,6 +2667,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E204 → header 0x30000 · SprPtr 0x2ED58 → stream 0x3E76D · L2ptr 0x2E804 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2508,6 +2681,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E207 → header 0x30000 · SprPtr 0x2ED5A → stream 0x3E76D · L2ptr 0x2E807 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2521,6 +2695,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E20A → header 0x30000 · SprPtr 0x2ED5C → stream 0x3E76D · L2ptr 0x2E80A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2534,6 +2709,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E20D → header 0x30000 · SprPtr 0x2ED5E → stream 0x3E76D · L2ptr 0x2E80D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2547,6 +2723,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E210 → header 0x30000 · SprPtr 0x2ED60 → stream 0x3E76D · L2ptr 0x2E810 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2560,6 +2737,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E213 → header 0x30000 · SprPtr 0x2ED62 → stream 0x3E76D · L2ptr 0x2E813 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2573,6 +2751,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E216 → header 0x30000 · SprPtr 0x2ED64 → stream 0x3E76D · L2ptr 0x2E816 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2586,6 +2765,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E219 → header 0x30000 · SprPtr 0x2ED66 → stream 0x3E76D · L2ptr 0x2E819 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2599,6 +2779,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E21C → header 0x30000 · SprPtr 0x2ED68 → stream 0x3E76D · L2ptr 0x2E81C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2612,6 +2793,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E21F → header 0x30000 · SprPtr 0x2ED6A → stream 0x3E76D · L2ptr 0x2E81F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2625,6 +2807,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E222 → header 0x30000 · SprPtr 0x2ED6C → stream 0x3E76D · L2ptr 0x2E822 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2638,6 +2821,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E225 → header 0x30000 · SprPtr 0x2ED6E → stream 0x3E76D · L2ptr 0x2E825 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2651,6 +2835,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E228 → header 0x30000 · SprPtr 0x2ED70 → stream 0x3E76D · L2ptr 0x2E828 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2664,6 +2849,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E22B → header 0x30000 · SprPtr 0x2ED72 → stream 0x3E76D · L2ptr 0x2E82B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2677,6 +2863,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E22E → header 0x30000 · SprPtr 0x2ED74 → stream 0x3E76D · L2ptr 0x2E82E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2690,6 +2877,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E231 → header 0x30000 · SprPtr 0x2ED76 → stream 0x3E76D · L2ptr 0x2E831 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2703,6 +2891,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E234 → header 0x30000 · SprPtr 0x2ED78 → stream 0x3E76D · L2ptr 0x2E834 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2716,6 +2905,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E23A → header 0x3676E · SprPtr 0x2ED7C → stream 0x3D741 · L2ptr 0x2E83A · GFXslot 0x028D3 · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=1 SPR=3 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 63×27 casillas · SOLID=77
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 1 L3 2 L1y 2 L2y 2 · secHdr [0x18 0xA0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -2731,6 +2921,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E23D → header 0x34199 · SprPtr 0x2ED7E → stream 0x3D02F · L2ptr 0x2E83D · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 63×27 casillas · SOLID=80
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2747,6 +2938,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E240 → header 0x388CB · SprPtr 0x2ED80 → stream 0x3DB95 · L2ptr 0x2E840 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=7 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=32 SOLID=70 SLOPE_STEEP=1
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -2761,6 +2953,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E243 → header 0x34375 · SprPtr 0x2ED82 → stream 0x3D0CF · L2ptr 0x2E843 · GFXslot 0x028D3 · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=1 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 52×27 casillas · SOLID=48
 - **Entrada**: casilla (1,3) px (16,48) · pantalla entrada 3 · L2scroll 5 L3 2 L1y 2 L2y 2 · secHdr [0x51 0xA0 0xA 0x3]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -2775,6 +2968,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E246 → header 0x32270 · SprPtr 0x2ED84 → stream 0x3C9AA · L2ptr 0x2E846 · GFXslot 0x028C3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,25) px (16,400) · pantalla entrada 4 · **VERTICAL** · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xD 0x18 0xA 0x64]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2789,6 +2983,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E249 → header 0x31D83 · SprPtr 0x2ED86 → stream 0x3C8EA · L2ptr 0x2E849 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=26 SOLID=18
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2804,6 +2999,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E24C → header 0x3194F · SprPtr 0x2ED88 → stream 0x3C3F5 · L2ptr 0x2E84C · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=4 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2819,6 +3015,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E24F → header 0x30603 · SprPtr 0x2ED8A → stream 0x3C441 · L2ptr 0x2E84F · GFXslot 0x028E7 · FGBGslot 0x02947
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 15` (tilesetFG=7)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · LEDGE_TOP=16
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 1 · secHdr [0x5B 0x1 0x9 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2833,6 +3030,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E252 → header 0x34949 · SprPtr 0x2ED8C → stream 0x3C3F0 · L2ptr 0x2E852 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE472 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=26 SOLID=17 SLOPE_STEEP=1
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2847,6 +3045,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E255 → header 0x305B5 · SprPtr 0x2ED8E → stream 0x3C427 · L2ptr 0x2E855 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=2 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=124 SOLID=1 SLOPE=11 SLOPE_STEEP=10
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2867,6 +3066,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E258 → header 0x3977C · SprPtr 0x2ED90 → stream 0x3DDCF · L2ptr 0x2E858 · GFXslot 0x028CB · FGBGslot 0x02943
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 16` (tilesetFG=6)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=2 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE684 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 95×27 casillas · SOLID=65
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 6 L3 0 L1y 2 L2y 2 · secHdr [0x6B 0x1 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2882,6 +3082,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E25B → header 0x3087D · SprPtr 0x2ED92 → stream 0x3C4C0 · L2ptr 0x2E85B · GFXslot 0x028EF · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 0D 14` (spriteGfx=11) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2896,6 +3097,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E25E → header 0x307AE · SprPtr 0x2ED94 → stream 0x3C44B · L2ptr 0x2E85E · GFXslot 0x028EF · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 0D 14` (spriteGfx=11) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2910,6 +3112,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E261 → header 0x33CEE · SprPtr 0x2ED96 → stream 0x3C3F0 · L2ptr 0x2E861 · GFXslot 0x028D3 · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 17×27 casillas · SOLID=4
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x18 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2924,6 +3127,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E264 → header 0x30636 · SprPtr 0x2ED98 → stream 0x3D51D · L2ptr 0x2E864 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2938,6 +3142,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E267 → header 0x36C24 · SprPtr 0x2ED9A → stream 0x3D899 · L2ptr 0x2E867 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=33 SOLID=34
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2953,6 +3158,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E26A → header 0x36B0B · SprPtr 0x2ED9C → stream 0x3D84B · L2ptr 0x2E86A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=0 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=23 SOLID=122 SLOPE_STEEP=3
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -2967,6 +3173,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E26D → header 0x36985 · SprPtr 0x2ED9E → stream 0x3D7E5 · L2ptr 0x2E86D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=4 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 112×27 casillas · LEDGE_TOP=21 SOLID=136 SLOPE=1 SLOPE_STEEP=3
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -2981,6 +3188,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E270 → header 0x36444 · SprPtr 0x2EDA0 → stream 0x3D6D9 · L2ptr 0x2E870 · GFXslot 0x028EB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 23` (spriteGfx=10) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=190 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 16 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x31 0x9A 0x10]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3005,6 +3213,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E273 → header 0x36444 · SprPtr 0x2EDA2 → stream 0x3D6D9 · L2ptr 0x2E873 · GFXslot 0x028EB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 23` (spriteGfx=10) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=190 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 7 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x30 0x9A 0x7]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3029,6 +3238,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E276 → header 0x31D4C · SprPtr 0x2EDA4 → stream 0x3C8CD · L2ptr 0x2E876 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=21 SOLID=53 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3043,6 +3253,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E279 → header 0x38BEA · SprPtr 0x2EDA6 → stream 0x3DC22 · L2ptr 0x2E879 · GFXslot 0x028F7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 0A 22` (spriteGfx=13) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -3058,6 +3269,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E27C → header 0x38B4A · SprPtr 0x2EDA8 → stream 0x3DBF9 · L2ptr 0x2E87C · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0x8BB7 · tipo 0x7
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 3 · secHdr [0x49 0xC0 0xB 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3076,6 +3288,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E27F → header 0x30636 · SprPtr 0x2EDAA → stream 0x3C414 · L2ptr 0x2E87F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -3090,6 +3303,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E282 → header 0x36307 · SprPtr 0x2EDAC → stream 0x3D668 · L2ptr 0x2E882 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=4
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 256×27 casillas · LEDGE_TOP=115 SOLID=147 SLOPE=2 SLOPE_STEEP=11
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -3105,6 +3319,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E285 → header 0x36DE7 · SprPtr 0x2EDAE → stream 0x3D956 · L2ptr 0x2E885 · GFXslot 0x028CB · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 7 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=5 SPR=2 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=17 SOLID=55 SLOPE=10 SLOPE_STEEP=10
 - **Entrada**: casilla (1,6) px (16,96) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 0 L2y 3 · secHdr [0x52 0x18 0x3 0x0]
 - **Cabecera sprites**: 0x1 (memoria 0x1, buoyancy 0x0)
@@ -3120,6 +3335,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E288 → header 0x33BC9 · SprPtr 0x2EDB0 → stream 0x3CEBA · L2ptr 0x2E888 · GFXslot 0x028C3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 71×27 casillas · LEDGE_TOP=14 SOLID=146 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 4 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x4]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3134,6 +3350,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E28B → header 0x30636 · SprPtr 0x2EDB2 → stream 0x3D152 · L2ptr 0x2E88B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3148,6 +3365,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E291 → header 0x34559 · SprPtr 0x2EDB6 → stream 0x3D111 · L2ptr 0x2E891 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xA · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,23) px (128,368) · pantalla entrada 4 · **VERTICAL** · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xC 0x1 0xA 0x64]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3165,6 +3383,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E294 → header 0x34495 · SprPtr 0x2EDB8 → stream 0x3D0F4 · L2ptr 0x2E894 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xC514 · tipo 0x6
 - **Colisión**: 176×27 casillas · LEDGE_TOP=146 SOLID=39
 - **Entrada**: casilla (8,17) px (128,272) · pantalla entrada 9 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x48 0xC1 0xA 0x9]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -3181,6 +3400,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E297 → header 0x351D6 · SprPtr 0x2EDBA → stream 0x3D304 · L2ptr 0x2E897 · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 7 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · SOLID=40
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x18 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x1 (memoria 0x1, buoyancy 0x0)
@@ -3196,6 +3416,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E29A → header 0x3189D · SprPtr 0x2EDBC → stream 0x3C7BD · L2ptr 0x2E89A · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=4 SPR=5 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 30×27 casillas · SOLID=1 SLOPE=6 SLOPE_STEEP=6
 - **Entrada**: casilla (8,21) px (128,336) · pantalla entrada 1 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x1 0xA 0x1]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3210,6 +3431,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E29D → header 0x30636 · SprPtr 0x2EDBE → stream 0x3C414 · L2ptr 0x2E89D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -3224,6 +3446,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2A0 → header 0x33DB6 · SprPtr 0x2EDC0 → stream 0x3CF4D · L2ptr 0x2E8A0 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=2 SPR=1 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=110 SOLID=78 SLOPE_STEEP=17
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 4 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x39 0xA 0x4]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -3242,6 +3465,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2A3 → header 0x33DB6 · SprPtr 0x2EDC2 → stream 0x3CF4D · L2ptr 0x2E8A3 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=2 SPR=1 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=110 SOLID=78 SLOPE_STEEP=17
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x39 0xA 0x0]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -3260,6 +3484,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2A6 → header 0x30636 · SprPtr 0x2EDC4 → stream 0x3C414 · L2ptr 0x2E8A6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -3274,6 +3499,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2A9 → header 0x31473 · SprPtr 0x2EDC6 → stream 0x3C749 · L2ptr 0x2E8A9 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 14 pantallas (224 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 224×27 casillas · LEDGE_TOP=220 SOLID=422 SLOPE=4 SLOPE_STEEP=4
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3289,6 +3515,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2AC → header 0x3244F · SprPtr 0x2EDC8 → stream 0x3CA0C · L2ptr 0x2E8AC · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=42
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2A 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x9 (memoria 0x9, buoyancy 0x0)
@@ -3304,6 +3531,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2AF → header 0x30636 · SprPtr 0x2EDCA → stream 0x3C943 · L2ptr 0x2E8AF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3318,6 +3546,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2B5 → header 0x31F64 · SprPtr 0x2EDCE → stream 0x3C926 · L2ptr 0x2E8B5 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x8 · música 3 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x9EBF · tipo 0x6
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,25) px (16,400) · pantalla entrada 7 · **VERTICAL** · L2scroll 7 L3 3 L1y 0 L2y 3 · secHdr [0x7D 0xC0 0x3 0x67]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3334,6 +3563,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2B8 → header 0x31E2E · SprPtr 0x2EDD0 → stream 0x3C915 · L2ptr 0x2E8B8 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=52 SOLID=43 SLOPE_STEEP=8
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 2 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x1 0xA 0x2]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -3350,6 +3580,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2BB → header 0x3178E · SprPtr 0x2EDD2 → stream 0x3C7A7 · L2ptr 0x2E8BB · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=4
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=54 SOLID=76 SLOPE_STEEP=11
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3367,6 +3598,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2BE → header 0x385B4 · SprPtr 0x2EDD4 → stream 0x3DADD · L2ptr 0x2E8BE · GFXslot 0x028E3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0xA · música 7 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,0) px (128,0) · pantalla entrada 0 · **VERTICAL** · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0x0 0x1 0x0 0x60]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3387,6 +3619,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2C1 → header 0x30621 · SprPtr 0x2EDD6 → stream 0x3C40C · L2ptr 0x2E8C1 · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3402,6 +3635,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2C4 → header 0x322F2 · SprPtr 0x2EDD8 → stream 0x3C9CA · L2ptr 0x2E8C4 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 79×27 casillas · SOLID=2 SLOPE=16 SLOPE_STEEP=16
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 2 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x2]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -3420,6 +3654,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2C7 → header 0x32374 · SprPtr 0x2EDDA → stream 0x3C9DB · L2ptr 0x2E8C7 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 74×27 casillas · SOLID=11
 - **Entrada**: casilla (14,22) px (224,352) · pantalla entrada 4 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x3 0xA 0x4]
 - **Cabecera sprites**: 0x7 (memoria 0x7, buoyancy 0x0)
@@ -3437,6 +3672,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2CA → header 0x322F2 · SprPtr 0x2EDDC → stream 0x3C9CA · L2ptr 0x2E8CA · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 79×27 casillas · SOLID=2 SLOPE=16 SLOPE_STEEP=16
 - **Entrada**: casilla (14,22) px (224,352) · pantalla entrada 4 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x3 0xA 0x4]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -3455,6 +3691,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2CD → header 0x36EFD · SprPtr 0x2EDDE → stream 0x3D9B1 · L2ptr 0x2E8CD · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=1 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 192×27 casillas · LEDGE_TOP=160 SOLID=68 SLOPE_STEEP=28
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x17 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3470,6 +3707,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2D0 → header 0x30621 · SprPtr 0x2EDE0 → stream 0x3C3F5 · L2ptr 0x2E8D0 · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3485,6 +3723,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2D3 → header 0x32420 · SprPtr 0x2EDE2 → stream 0x3C9F2 · L2ptr 0x2E8D3 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 47×27 casillas · SOLID=1
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 1 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x1 0xA 0x1]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3501,6 +3740,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2D6 → header 0x32374 · SprPtr 0x2EDE4 → stream 0x3C9DB · L2ptr 0x2E8D6 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 74×27 casillas · SOLID=11
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x7 (memoria 0x7, buoyancy 0x0)
@@ -3518,6 +3758,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2D9 → header 0x350DC · SprPtr 0x2EDE6 → stream 0x3C3F0 · L2ptr 0x2E8D9 · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 17×27 casillas · SOLID=4
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x18 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3532,6 +3773,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2DF → header 0x365D0 · SprPtr 0x2EDEA → stream 0x3D6D9 · L2ptr 0x2E8DF · GFXslot 0x028EB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 23` (spriteGfx=10) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=200 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 16 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x31 0xA 0x10]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3556,6 +3798,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2E2 → header 0x365D0 · SprPtr 0x2EDEC → stream 0x3D6D9 · L2ptr 0x2E8E2 · GFXslot 0x028EB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 23` (spriteGfx=10) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=200 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 7 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x30 0xA 0x7]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3580,6 +3823,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2E5 → header 0x38DAB · SprPtr 0x2EDEE → stream 0x3DC61 · L2ptr 0x2E8E5 · GFXslot 0x028CB · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 26 pantallas (416 casillas) · modo 0xA · música 4 · tiempo 400 · Layer2 fondo · paletas BG=5 FG=4 SPR=2 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8EE (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,3) px (16,48) · pantalla entrada 0 · **VERTICAL** · L2scroll 0 L3 0 L1y 0 L2y 3 · secHdr [0x1 0x20 0x3 0x60]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -3603,6 +3847,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2E8 → header 0x38CC6 · SprPtr 0x2EDF0 → stream 0x3DC3B · L2ptr 0x2E8E8 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0xC · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF175 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 127×27 casillas · SOLID=18
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x17 0x38 0xA 0x0]
 - **Cabecera sprites**: 0x87 (memoria 0x7, buoyancy 0x80)
@@ -3622,6 +3867,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2EB → header 0x3189D · SprPtr 0x2EDF2 → stream 0x3C7BD · L2ptr 0x2E8EB · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=4 SPR=5 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 30×27 casillas · SOLID=1 SLOPE=6 SLOPE_STEEP=6
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3636,6 +3882,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2F1 → header 0x30621 · SprPtr 0x2EDF6 → stream 0x3C3F5 · L2ptr 0x2E8F1 · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3651,6 +3898,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2F4 → header 0x36815 · SprPtr 0x2EDF8 → stream 0x3D799 · L2ptr 0x2E8F4 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 95×27 casillas · SOLID=2
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3666,6 +3914,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2FA → header 0x318F0 · SprPtr 0x2EDFC → stream 0x3C7CB · L2ptr 0x2E8FA · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=4 SPR=5 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 30×27 casillas · SOLID=1 SLOPE=6 SLOPE_STEEP=6
 - **Entrada**: casilla (8,21) px (128,336) · pantalla entrada 1 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x1 0xA 0x1]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3680,6 +3929,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E2FD → header 0x3063C · SprPtr 0x2EDFE → stream 0x3C3F0 · L2ptr 0x2E8FD · GFXslot 0x028CF · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDE54 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=31 SOLID=11 SLOPE_STEEP=1
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3694,6 +3944,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E300 → header 0x30654 · SprPtr 0x2EE00 → stream 0x3C407 · L2ptr 0x2E900 · GFXslot 0x028DB · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=6) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 7 · tiempo 0 · Layer2 fondo · paletas BG=5 FG=0 SPR=4 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0x7 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3708,6 +3959,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E303 → header 0x30FFD · SprPtr 0x2EE02 → stream 0x3C66F · L2ptr 0x2E903 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=86 SOLID=29
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x7A 0x0]
 - **Cabecera sprites**: 0x82 (memoria 0x2, buoyancy 0x80)
@@ -3729,6 +3981,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E306 → header 0x30EAD · SprPtr 0x2EE04 → stream 0x3C5F4 · L2ptr 0x2E906 · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=1 SPR=2 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 176×27 casillas · SOLID=47
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · no-Yoshi · L2scroll 1 L3 2 L1y 2 L2y 2 · secHdr [0x18 0x80 0xA 0x80]
 - **Cabecera sprites**: 0xC0 (memoria 0x0, buoyancy 0xC0)
@@ -3750,6 +4003,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E309 → header 0x30BDE · SprPtr 0x2EE06 → stream 0x3C593 · L2ptr 0x2E909 · GFXslot 0x028CB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 21 pantallas (336 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=1 SPR=2 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 336×27 casillas · LEDGE_TOP=170 SOLID=172 SLOPE_STEEP=7
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0x1 (memoria 0x1, buoyancy 0x0)
@@ -3773,6 +4027,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E30C → header 0x3802D · SprPtr 0x2EE08 → stream 0x3E759 · L2ptr 0x2E90C · GFXslot 0x028E7 · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 15×27 casillas · 
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x1 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3789,6 +4044,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E30F → header 0x308DD · SprPtr 0x2EE0A → stream 0x3C4CA · L2ptr 0x2E90F · GFXslot 0x028E3 · FGBGslot 0x02947
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 15` (tilesetFG=7)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=349 SOLID=72 SLOPE=6 SLOPE_STEEP=14
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x4 (memoria 0x4, buoyancy 0x0)
@@ -3813,6 +4069,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E312 → header 0x30A2F · SprPtr 0x2EE0C → stream 0x3C532 · L2ptr 0x2E912 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=373 SOLID=71 SLOPE_STEEP=6
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3838,6 +4095,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E315 → header 0x32D09 · SprPtr 0x2EE0E → stream 0x3CBDC · L2ptr 0x2E915 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 176×27 casillas · SOLID=38 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -3856,6 +4114,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E318 → header 0x380C3 · SprPtr 0x2EE10 → stream 0x3E76D · L2ptr 0x2E918 · GFXslot 0x028C7 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0xA · música 3 · tiempo 200 · Layer2 fondo · paletas BG=3 FG=2 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE7C0 (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3869,6 +4128,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E31B → header 0x33817 · SprPtr 0x2EE12 → stream 0x3CDC8 · L2ptr 0x2E91B · GFXslot 0x028CB · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=2 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,25) px (128,400) · pantalla entrada 6 · **VERTICAL** · L2scroll 0 L3 0 L1y 0 L2y 2 · secHdr [0xD 0x1 0x2 0x66]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3888,6 +4148,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E31E → header 0x32E7D · SprPtr 0x2EE14 → stream 0x3CC25 · L2ptr 0x2E91E · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 32 pantallas (512 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 512×27 casillas · LEDGE_TOP=211 SOLID=569 SLOPE=36 SLOPE_STEEP=61
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x0 0xFA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3912,6 +4173,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E321 → header 0x32461 · SprPtr 0x2EE16 → stream 0x3CA17 · L2ptr 0x2E921 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 240×27 casillas · LEDGE_TOP=228 SOLID=196 SLOPE=13 SLOPE_STEEP=20
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x28 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3932,6 +4194,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E324 → header 0x30000 · SprPtr 0x2EE18 → stream 0x3E76D · L2ptr 0x2E924 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -3945,6 +4208,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E327 → header 0x3A600 · SprPtr 0x2EE1A → stream 0x3C422 · L2ptr 0x2E927 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=2 FG=3 SPR=1 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 87×27 casillas · SOLID=64
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xF (memoria 0xF, buoyancy 0x0)
@@ -3959,6 +4223,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E32A → header 0x3ABF9 · SprPtr 0x2EE1C → stream 0x3E19D · L2ptr 0x2E92A · GFXslot 0x028F3 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 24 0E` (spriteGfx=12) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x11 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=85 SOLID=67 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x6A 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -3976,6 +4241,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E32D → header 0x39B58 · SprPtr 0x2EE1E → stream 0x3DF08 · L2ptr 0x2E92D · GFXslot 0x028CB · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 21 pantallas (336 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=2 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 336×27 casillas · LEDGE_TOP=159 SOLID=255 SLOPE=58 SLOPE_STEEP=74
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -3998,6 +4264,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E330 → header 0x39DE2 · SprPtr 0x2EE20 → stream 0x3DFB1 · L2ptr 0x2E930 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 126×27 casillas · LEDGE_TOP=29 SOLID=68 SLOPE_STEEP=12
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x1 0x7A 0x0]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -4014,6 +4281,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E333 → header 0x3A028 · SprPtr 0x2EE22 → stream 0x3E032 · L2ptr 0x2E933 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=7 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0xA134 · tipo 0x7
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x48 0xC0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4033,6 +4301,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E336 → header 0x30000 · SprPtr 0x2EE24 → stream 0x3E76D · L2ptr 0x2E936 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4046,6 +4315,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E339 → header 0x399D6 · SprPtr 0x2EE26 → stream 0x3DE4F · L2ptr 0x2E939 · GFXslot 0x028E3 · FGBGslot 0x02943
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 16` (tilesetFG=6)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · LEDGE_TOP=16 SOLID=89 SLOPE=36 SLOPE_STEEP=36
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0x8A 0x80]
 - **Cabecera sprites**: 0x4 (memoria 0x4, buoyancy 0x0)
@@ -4070,6 +4340,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E33C → header 0x39803 · SprPtr 0x2EE28 → stream 0x3DE01 · L2ptr 0x2E93C · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=4 SPR=5 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · SOLID=1 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xA 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xD (memoria 0xD, buoyancy 0x0)
@@ -4084,6 +4355,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E33F → header 0x392CA · SprPtr 0x2EE2A → stream 0x3DD7B · L2ptr 0x2E93F · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=1 SPR=4 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0x937C · tipo 0x7
 - **Colisión**: 128×27 casillas · LEDGE_TOP=50 SOLID=212 SLOPE_STEEP=3
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x4B 0xC0 0x7A 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4102,6 +4374,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E342 → header 0x38EA4 · SprPtr 0x2EE2C → stream 0x3DD14 · L2ptr 0x2E942 · GFXslot 0x028E3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 18 pantallas (288 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 288×27 casillas · LEDGE_TOP=343 SOLID=519 SLOPE=52 SLOPE_STEEP=124
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4117,6 +4390,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E345 → header 0x3705D · SprPtr 0x2EE2E → stream 0x3D9EF · L2ptr 0x2E945 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=76 SOLID=130 SLOPE=32 SLOPE_STEEP=42
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x0 0x7A 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4134,6 +4408,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E348 → header 0x3295F · SprPtr 0x2EE30 → stream 0x3CB2A · L2ptr 0x2E948 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=282 SOLID=342 SLOPE=113 SLOPE_STEEP=153
 - **Entrada**: casilla (8,6) px (128,96) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 0 L2y 0 · secHdr [0x52 0x1 0xA0 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4159,6 +4434,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E34B → header 0x332D1 · SprPtr 0x2EE32 → stream 0x3CCD4 · L2ptr 0x2E94B · GFXslot 0x028CB · FGBGslot 0x02943
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 16` (tilesetFG=6)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=1 SPR=2 backArea=4
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE684 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · SOLID=32
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · no-Yoshi · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x17 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4185,6 +4461,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E34E → header 0x32600 · SprPtr 0x2EE34 → stream 0x3CA87 · L2ptr 0x2E94E · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 27 pantallas (432 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=1 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 432×27 casillas · LEDGE_TOP=316 SOLID=345 SLOPE=4 SLOPE_STEEP=45
 - **Entrada**: casilla (1,14) px (16,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x0 0xFA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4212,6 +4489,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E351 → header 0x306D0 · SprPtr 0x2EE36 → stream 0x3C450 · L2ptr 0x2E951 · GFXslot 0x028C3 · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · SOLID=14
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4231,6 +4509,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E354 → header 0x334E0 · SprPtr 0x2EE38 → stream 0x3CD68 · L2ptr 0x2E954 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 160×27 casillas · LEDGE_TOP=25 SOLID=187 SLOPE_STEEP=4
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x17 0x1 0x9A 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4248,6 +4527,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E357 → header 0x35ABE · SprPtr 0x2EE3A → stream 0x3D522 · L2ptr 0x2E957 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x1 · música 4 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=4 SPR=5 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xDB8D · tipo 0x6
 - **Colisión**: 170×27 casillas · SOLID=2
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x29 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -4260,12 +4540,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **Sprite 0x39** (0x39) ×7: (8,128,20) (8,133,18) (8,133,19) (8,133,20) (9,155,16) (10,160,17) …
     - [ ] **Sprite 0xDE** (0xDE) ×1: (6,98,13)
 
-### Nivel 0x11E — FOREST OF??????ON 1
-- **Nombre (overworld)**: FOREST OF??????ON 1
+### Nivel 0x11E — FOREST OFILLUSION 1
+- **Nombre (overworld)**: FOREST OFILLUSION 1
 - **Tipo**: nivel de MAPA (translevel 0x42)
 - **Direcciones**: L1ptr 0x2E35A → header 0x3523A · SprPtr 0x2EE3C → stream 0x3D30C · L2ptr 0x2E95A · GFXslot 0x028C3 · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · SOLID=28
 - **Entrada**: casilla (1,23) px (16,368) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1C 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0xA (memoria 0xA, buoyancy 0x0)
@@ -4285,12 +4566,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **HammerBro** (0x9B) ×1: (17,280,16)
     - [ ] **HammerBroPlatform** (0x9C) ×1: (17,280,16)
 
-### Nivel 0x11F — FOREST OF??????ON 4
-- **Nombre (overworld)**: FOREST OF??????ON 4
+### Nivel 0x11F — FOREST OFILLUSION 4
+- **Nombre (overworld)**: FOREST OFILLUSION 4
 - **Tipo**: nivel de MAPA (translevel 0x43)
 - **Direcciones**: L1ptr 0x2E35D → header 0x35F5B · SprPtr 0x2EE3E → stream 0x3D577 · L2ptr 0x2E95D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=261 SOLID=253 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0xC (memoria 0xC, buoyancy 0x0)
@@ -4312,12 +4594,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **Sprite 0xDB** (0xDB) ×2: (2,33,23) (15,247,23)
     - [ ] **Sprite 0xDC** (0xDC) ×1: (14,234,23)
 
-### Nivel 0x120 — FOREST OF??????ON 2
-- **Nombre (overworld)**: FOREST OF??????ON 2
+### Nivel 0x120 — FOREST OFILLUSION 2
+- **Nombre (overworld)**: FOREST OFILLUSION 2
 - **Tipo**: nivel de MAPA (translevel 0x44)
 - **Direcciones**: L1ptr 0x2E360 → header 0x3540B · SprPtr 0x2EE40 → stream 0x3D380 · L2ptr 0x2E960 · GFXslot 0x028D3 · FGBGslot 0x0294F
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0D 1A` (tilesetFG=9)
 - **Propiedades**: ancho 14 pantallas (224 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=7 SPR=3 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDAB9 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 224×27 casillas · LEDGE_TOP=219 SOLID=225 SLOPE_STEEP=90
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x38 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4341,6 +4624,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E363 → header 0x3072B · SprPtr 0x2EE42 → stream 0x3C478 · L2ptr 0x2E963 · GFXslot 0x028C3 · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · SOLID=50
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4356,6 +4640,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E366 → header 0x36183 · SprPtr 0x2EE44 → stream 0x3D5F5 · L2ptr 0x2E966 · GFXslot 0x028CB · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=0 SPR=2 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 145×27 casillas · SOLID=3
 - **Entrada**: casilla (1,12) px (16,192) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 1 L2y 1 · secHdr [0x56 0x0 0x5 0x80]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4370,12 +4655,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **WingedPlatform** (0xC1) ×2: (0,12,14) (1,17,14)
     - [ ] **Sprite 0xF4** (0xF4) ×1: (0,8,0)
 
-### Nivel 0x123 — FOREST OF??????ON 3
-- **Nombre (overworld)**: FOREST OF??????ON 3
+### Nivel 0x123 — FOREST OFILLUSION 3
+- **Nombre (overworld)**: FOREST OFILLUSION 3
 - **Tipo**: nivel de MAPA (translevel 0x47)
 - **Direcciones**: L1ptr 0x2E369 → header 0x356F3 · SprPtr 0x2EE46 → stream 0x3D445 · L2ptr 0x2E969 · GFXslot 0x028C3 · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · SOLID=176
 - **Entrada**: casilla (1,23) px (16,368) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1C 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -4396,6 +4682,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E36C → header 0x30000 · SprPtr 0x2EE48 → stream 0x3E76D · L2ptr 0x2E96C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4409,6 +4696,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E36F → header 0x3BF65 · SprPtr 0x2EE4A → stream 0x3E6F4 · L2ptr 0x2E96F · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 32 pantallas (512 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDC71 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 512×27 casillas · LEDGE_TOP=400 SOLID=325 SLOPE_STEEP=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x7 (memoria 0x7, buoyancy 0x0)
@@ -4434,6 +4722,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E372 → header 0x3BDE5 · SprPtr 0x2EE4C → stream 0x3E650 · L2ptr 0x2E972 · GFXslot 0x028C3 · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=1 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEC82 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · SOLID=158
 - **Entrada**: casilla (1,23) px (16,368) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1C 0x0 0x9A 0x0]
 - **Cabecera sprites**: 0xA (memoria 0xA, buoyancy 0x0)
@@ -4457,6 +4746,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E375 → header 0x3BC11 · SprPtr 0x2EE4E → stream 0x3E5DF · L2ptr 0x2E975 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE7C0 (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
 - **Colisión**: 256×27 casillas · LEDGE_TOP=254 SOLID=286 SLOPE_STEEP=28
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 1 L1y 2 L2y 2 · secHdr [0x1B 0x40 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4476,6 +4766,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E378 → header 0x3BABE · SprPtr 0x2EE50 → stream 0x3E574 · L2ptr 0x2E978 · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=296 SOLID=220 SLOPE=14 SLOPE_STEEP=24
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4501,6 +4792,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E37B → header 0x30000 · SprPtr 0x2EE52 → stream 0x3E76D · L2ptr 0x2E97B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4514,6 +4806,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E37E → header 0x3B26B · SprPtr 0x2EE54 → stream 0x3E3DC · L2ptr 0x2E97E · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xA · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,11) px (128,176) · pantalla entrada 4 · **VERTICAL** · no-Yoshi · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0x5 0x1 0xA 0xE4]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4535,6 +4828,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E381 → header 0x3B46E · SprPtr 0x2EE56 → stream 0x3E428 · L2ptr 0x2E981 · GFXslot 0x028FB · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 0E` (spriteGfx=14) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=0 SPR=0 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE472 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 176×27 casillas · LEDGE_TOP=21 SOLID=180
 - **Entrada**: casilla (8,17) px (128,272) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x1 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4552,12 +4846,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **Sprite 0x98** (0x98) ×2: (3,63,22) (4,69,19)
     - [ ] **VolcanoLotus** (0x99) ×4: (5,92,20) (5,92,14) (8,133,15) (9,146,19)
 
-### Nivel 0x12C — WAY COOL HOUSE ISLAND SWITCH PALACE CASTLE PLAINS GHOST HOUSE SECRET DOME FORTRESS OF??????ON OF BOWSER ROAD WORLD AWESOME 12345PALACEAREAGROOVYMONDOOUTRAGEOUSFUNKYHOUSE
-- **Nombre (overworld)**: WAY COOL HOUSE ISLAND SWITCH PALACE CASTLE PLAINS GHOST HOUSE SECRET DOME FORTRESS OF??????ON OF BOWSER ROAD WORLD AWESOME 12345PALACEAREAGROOVYMONDOOUTRAGEOUSFUNKYHOUSE
+### Nivel 0x12C — WAY COOL
+- **Nombre (overworld)**: WAY COOL
 - **Tipo**: nivel de MAPA (translevel 0x50)
 - **Direcciones**: L1ptr 0x2E384 → header 0x3B540 · SprPtr 0x2EE58 → stream 0x3E466 · L2ptr 0x2E984 · GFXslot 0x028CB · FGBGslot 0x02933
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 16` (tilesetFG=2)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=1 SPR=2 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · SOLID=31
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x80]
 - **Cabecera sprites**: 0x1 (memoria 0x1, buoyancy 0x0)
@@ -4572,12 +4867,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
     - [ ] **GoalTape** (0x7B) ×1: (18,302,23)
     - [ ] **GreyFallingPlatform** (0xC4) ×2: (10,168,22) (10,172,20)
 
-### Nivel 0x12D — AWESOME 12345PALACEAREAGROOVYMONDOOUTRAGEOUSFUNKYHOUSE
-- **Nombre (overworld)**: AWESOME 12345PALACEAREAGROOVYMONDOOUTRAGEOUSFUNKYHOUSE
+### Nivel 0x12D — AWESOME
+- **Nombre (overworld)**: AWESOME
 - **Tipo**: nivel de MAPA (translevel 0x51)
 - **Direcciones**: L1ptr 0x2E387 → header 0x3B908 · SprPtr 0x2EE5A → stream 0x3E4F1 · L2ptr 0x2E987 · GFXslot 0x028E3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=0 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 320×27 casillas · LEDGE_TOP=152 SOLID=191 SLOPE=70 SLOPE_STEEP=77
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x28 0xA 0x0]
 - **Cabecera sprites**: 0x84 (memoria 0x4, buoyancy 0x80)
@@ -4609,6 +4905,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E38A → header 0x30000 · SprPtr 0x2EE5C → stream 0x3E76D · L2ptr 0x2E98A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4622,6 +4919,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E38D → header 0x30000 · SprPtr 0x2EE5E → stream 0x3E76D · L2ptr 0x2E98D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4635,6 +4933,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E390 → header 0x3AF25 · SprPtr 0x2EE60 → stream 0x3E221 · L2ptr 0x2E990 · GFXslot 0x028D3 · FGBGslot 0x0294F
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0D 1A` (tilesetFG=9)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=6 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDAB9 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 192×27 casillas · LEDGE_TOP=152 SOLID=97 SLOPE_STEEP=8
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 3 L1y 2 L2y 2 · secHdr [0x58 0xF8 0xA 0x80]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -4654,6 +4953,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E393 → header 0x30000 · SprPtr 0x2EE62 → stream 0x3E76D · L2ptr 0x2E993 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4667,6 +4967,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E396 → header 0x3AFE3 · SprPtr 0x2EE64 → stream 0x3E29E · L2ptr 0x2E996 · GFXslot 0x028C3 · FGBGslot 0x02943
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 16` (tilesetFG=6)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 2 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE684 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 33×27 casillas · SOLID=109
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x80]
 - **Cabecera sprites**: 0xC (memoria 0xC, buoyancy 0x0)
@@ -4685,6 +4986,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E399 → header 0x30000 · SprPtr 0x2EE66 → stream 0x3E76D · L2ptr 0x2E999 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4698,6 +5000,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E39C → header 0x3AD35 · SprPtr 0x2EE68 → stream 0x3E1C5 · L2ptr 0x2E99C · GFXslot 0x028C3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0xA · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,3) px (128,48) · pantalla entrada 0 · **VERTICAL** · no-Yoshi · L2scroll 0 L3 0 L1y 0 L2y 3 · secHdr [0x1 0x1 0x3 0xE0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4725,6 +5028,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E39F → header 0x3B031 · SprPtr 0x2EE6A → stream 0x3E2AF · L2ptr 0x2E99F · GFXslot 0x028CB · FGBGslot 0x02943
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 16` (tilesetFG=6)
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=1 SPR=2 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE684 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 305×27 casillas · SOLID=74
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0x9A 0x80]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -4751,6 +5055,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3A2 → header 0x3B124 · SprPtr 0x2EE6C → stream 0x3E335 · L2ptr 0x2E9A2 · GFXslot 0x028C3 · FGBGslot 0x02943
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 16` (tilesetFG=6)
 - **Propiedades**: ancho 17 pantallas (272 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE684 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 257×27 casillas · SOLID=336
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · no-Yoshi · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x0 0xA 0x80]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4776,6 +5081,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3A5 → header 0x30000 · SprPtr 0x2EE6E → stream 0x3E76D · L2ptr 0x2E9A5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4789,6 +5095,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3A8 → header 0x30000 · SprPtr 0x2EE70 → stream 0x3E76D · L2ptr 0x2E9A8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4796,12 +5103,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
-### Nivel 0x139 — !?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?B
-- **Nombre (overworld)**: !?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?B
+### Nivel 0x139
+- **Nombre (overworld)**: — (sublevel, sin nombre de mapa)
 - **Tipo**: nivel de MAPA (translevel 0x5D)
 - **Direcciones**: L1ptr 0x2E3AB → header 0x30000 · SprPtr 0x2EE72 → stream 0x3E76D · L2ptr 0x2E9AB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4809,12 +5117,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
-### Nivel 0x13A — !?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?B
-- **Nombre (overworld)**: !?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?B
+### Nivel 0x13A
+- **Nombre (overworld)**: — (sublevel, sin nombre de mapa)
 - **Tipo**: nivel de MAPA (translevel 0x5E)
 - **Direcciones**: L1ptr 0x2E3AE → header 0x30000 · SprPtr 0x2EE74 → stream 0x3E76D · L2ptr 0x2E9AE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4822,12 +5131,13 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
-### Nivel 0x13B — !?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?B
-- **Nombre (overworld)**: !?R??3 ?????P???C?B?C?ARB?CR??B?L??R??? 4?0??B?C?0?C?B?H?????R??B?L??R?43 ? ?0?BKC?RAC?B?H???12R??B?C??RB?G 43 ???BKCR??C?B?HR?????R?B?L???1? ? 2??0B?CR??C?B?RR????????P?12?12? B?H???P???RB?B?I?R?????P?B?E?B? BKH???????RB?B?B?J??????P???C?C?? BKG?O????RC?B?B?I???RP????D?C?? B?B?D????D?B6B?A?B6A?B?D12?'B5D'?12B?B??C6A?D?B6B?A?B6A?B'A8B?D8B?A8B'B??C6A?D?B6C?R?B6A?B'B8?E?C??8B'B??C6B?RC?B6J?R??6A????B?B?B?F?????AB6C??RC?B6C?BR?B?M6B?B?ARE?B6E?B?M6B?H?C6B?A?F?E?6?6?E6C?6?B6B?C6B?B?B6?F?C?6?B6AAD?C???B?B6A?B6B?B?C?ARD?GRA?6??RF?CR??B?C6B?B?D????B?H?????6??BKD?EO?R??C6B?C6ARC?B6C?E??6??BKD?B?DOR??B6B?A?BRA?B?B6B?B??B?A?H?EOKPRPB6B?F???R??B6D??RAB?B??D?ARC?B?B? B6B?F?????RB?BREA??R?E6D??R?BKB??B6B?E????RC?B??B?CR??D6E?6??RBKB?RD?E???RAD6C?C???E6D?6??B?F?B?CR??E6F?A?R??C6E?6?6?B?F?D????B?A?W?B?D?B?BRKV?B?BKB?B?B??V?B?BKB?D????O?AKBDBCBB?B?B?B?DR???O?A?B?B?RB?B?B?B?A?C?O?E?????B?B?C?BR?C?A?B?B??H?B?DAR??C?B?B?BR?B?G6??????I?E????RC?B?B?B?6B?F6?????B?B?B??B?C?R?B?B6?C?B?B?B?6B?D6???B?B??B?A?C?CR?6B?E6B?D??R?B?B6?BKD?B'B??B'C???B?E6B?D????B?B6?BKD?B5B??B5A?BRB??E6B?H??RA6???B?D????B'B?B'FRQ?Q??D6B?B?F????R?B?A?E?A?D?FRDR???C6B?B6B?A?C?BKD?B'B?BKB?BKB?AOC?B?H6?6??R??BKD?B5B?BKB?BKB?B?BO?B?H6?6?6?R?C?A?B?B'A?D?A?B?B?D?O??B?B6B?A?B?B?RB?C?D????B?B?B?A?B?C?B?I6?6??R?6?BRA?B?A?C?BRB?BRC?R?C?B?B6B?ER?R?RB?ARB?ARK?ARC?B?H6?6?R??RV?B???B6??B6??B6??B6??B6C?A?B?B?B?C?B?A?B?A?B?A?B?A?E?B?B?I?????????C?K???????????I?A?C?E?????C?A?C?G???????J?A?B?D????C?B??C?B??C?B??K?B??B?B?A?C?A?C?G???????I?E?????C?A?C?K???????????G?B?CA6?D6G??R?CBRD?D????BKF?C6B?C6G???????F?CR??BKF?B?C???C?HR?????ARF?B?RB?H?ER?R??B?B??B?C??RF?B??B?I?GR??????BKC??RF?CQ??B?J?FR?????BKB??E?EQDR?'B5A'G?A?B?B??B?A?B?C?RQD?A?B?B?'B5A'F?F????R?BRA?B?A?B?AQB?A?C?DR??PH?A?F?ARC?BRA?BDARB?B?B????B?AOH?AHBIAXBGBFBGCF?FBGAFBJAHBIBHFBGAFBJB?B?D???VBWBVBWCV?VBWAVBZAFBGBFVBWAVBZB?B?AFBGAXBIBHBICH?HBIAHBJAVBWBVHBIAXBGBF?B?AVBWBV?B?A?BJF?BZAHBIEH???VBWBV?B?AHBIBHFBGAFBZB?DJB'BJB?AFBGAXBIBX?B?AFBGBFVBWAVD?DZB'BZBJAVBWAVB?B?B?AVBWBVHBIAHB?DJC???C?BZAHBIBHFBGA?B?AHBIBHFBGAFB?DZAFBGAFDJAFBGBFVBWA?B?AFBGBFVBWAVB?DJAVBWAVDZAVBWBVHBIA?B?AVBWBVHBIAHB?DZAHBIBH?C?AHBIAHD?B?AHBIAXBGBF?BJB?DJA?BJA?B?FJB?B?A?B?AVBWBV?BZB?DZA?BZA?B?FZB?B5AFBGAXBIAHC?BJC?BJA?BJB?BJAFBGAFB?B?AVBWAVBJD?BZA?BJBZA?BZB?BZAVBWAVB?B?AHBIAHBZDJC???BZA?BJA?BJAFBGAXBIAHB?B?BJAFBGAFDZAFBGAFB?BZA?BZAVBWBV?BJB?B?BZAVBWAVDJAVBWAVDJAFBGAXBIBH?BZB?B?B?AHBIAHDZAHBIAHDZAVBWAVBJAFBGAFB?B?A?BJB??DJA?BJAFBGAFB?AHBIAHBZAVBWAVB?B?A?BZB??DZA?BZAVBWAVBJAFBGAFBJAHBIAHB?B?B?FBGDF??FBGCF?HBIAHBZAVBWAVBZF?B?D?D?6??B?D??6?P?B?C?A?B?A?C?C?B?A?B?F??????C?C?B???B6F?B?D?B?D?B?D?B?D?B?F?B?D?B?D?B?D?B???B'B8B'D?B?D?B?D?B?H?B'B8B'D?B?D?B?D?B???D?A?I?BQB?B?J?B?B?B??G?C??QBRBQ?B?C?A?F?B?D????C?B?C?BQRB'BRQL?B?D????C?B?C?I??'5?RQ??D?B?C?B?K?AQC?B9B??F?B?C?B?C?AQGDE?B9ERDEDECDAQC?B?B?B??B'D8B'E?C95'D?B'A?C?B?B?B??B'D8B'F?STUV?B'D?C5'?C?B?C?AAH?F??????E?B9BRAC?B?E?????F?H????????C?B9CR??C?B?C?C?6AB?B'Q??????????'59RA6?C?B?C565B?E6??5'B?F????#?B?B'C??6B?C5B?C?F?6???5E?B'G?D??6?C?B?B?E??6ARB9E?D'5??E?DRA6?C?B?F?????RB9F?BRA?B?A?D?CR??C?B?E???ARB9F?FRA??R?B?A?D?AAC?B?B?DQR'5E?JR??6?6?R??B?A?B'B?QB?B?B?B??B'B?ARB?AAC6A?B6BAYB?F??5'??B?B?C???C?CR??C6A?B6I?6?6????RC?AAB?B?D????B?C?6?C6C?6?C6A?D6AAB?B??B?B?B?C?6?B6A?D6A?B6C?6?E6E?6?6?B?B?D????B?A?W?B???D?Y????D?Y????EQ?Y??U?BQB?CQD?YU?Q?B?EQA?CQD?Q?QQ?A?BQL?J?CQB?B?A?GQA?CQA?B?J?DQA?B?A?BQEQA?CQC??YJ?A?BQB?B?BY?EQFQB?I?B??C?DYU?YB?C?A?CQE?I?B?B?CUB?YB?B?DY??YEQA?J?A?CUC?AYB?C?B?B??C?BYUG?BQH?B?YDYB?AYD?BYUG?BQB?FQA?FYBYA?C?BYUE?EQB?GQ?Q?Q?YD?BYBY?CYB?YE?B
+### Nivel 0x13B
+- **Nombre (overworld)**: — (sublevel, sin nombre de mapa)
 - **Tipo**: nivel de MAPA (translevel 0x5F)
 - **Direcciones**: L1ptr 0x2E3B1 → header 0x30000 · SprPtr 0x2EE76 → stream 0x3E76D · L2ptr 0x2E9B1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4841,6 +5151,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3B4 → header 0x30000 · SprPtr 0x2EE78 → stream 0x3E76D · L2ptr 0x2E9B4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4854,6 +5165,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3B7 → header 0x30000 · SprPtr 0x2EE7A → stream 0x3E76D · L2ptr 0x2E9B7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4867,6 +5179,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3BA → header 0x30000 · SprPtr 0x2EE7C → stream 0x3E76D · L2ptr 0x2E9BA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4880,6 +5193,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3BD → header 0x30000 · SprPtr 0x2EE7E → stream 0x3E76D · L2ptr 0x2E9BD · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4893,6 +5207,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3C0 → header 0x30000 · SprPtr 0x2EE80 → stream 0x3E76D · L2ptr 0x2E9C0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4906,6 +5221,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3C3 → header 0x30000 · SprPtr 0x2EE82 → stream 0x3E76D · L2ptr 0x2E9C3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4919,6 +5235,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3C6 → header 0x30000 · SprPtr 0x2EE84 → stream 0x3E76D · L2ptr 0x2E9C6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4932,6 +5249,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3C9 → header 0x30000 · SprPtr 0x2EE86 → stream 0x3E76D · L2ptr 0x2E9C9 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4945,6 +5263,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3CC → header 0x30000 · SprPtr 0x2EE88 → stream 0x3E76D · L2ptr 0x2E9CC · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4958,6 +5277,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3CF → header 0x30000 · SprPtr 0x2EE8A → stream 0x3E76D · L2ptr 0x2E9CF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4971,6 +5291,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3D2 → header 0x30000 · SprPtr 0x2EE8C → stream 0x3E76D · L2ptr 0x2E9D2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4984,6 +5305,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3D5 → header 0x30000 · SprPtr 0x2EE8E → stream 0x3E76D · L2ptr 0x2E9D5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -4997,6 +5319,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3D8 → header 0x30000 · SprPtr 0x2EE90 → stream 0x3E76D · L2ptr 0x2E9D8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5010,6 +5333,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3DB → header 0x30000 · SprPtr 0x2EE92 → stream 0x3E76D · L2ptr 0x2E9DB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5023,6 +5347,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3DE → header 0x30000 · SprPtr 0x2EE94 → stream 0x3E76D · L2ptr 0x2E9DE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5036,6 +5361,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3E1 → header 0x30000 · SprPtr 0x2EE96 → stream 0x3E76D · L2ptr 0x2E9E1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5049,6 +5375,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3E4 → header 0x30000 · SprPtr 0x2EE98 → stream 0x3E76D · L2ptr 0x2E9E4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5062,6 +5389,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3E7 → header 0x30000 · SprPtr 0x2EE9A → stream 0x3E76D · L2ptr 0x2E9E7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5075,6 +5403,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3EA → header 0x30000 · SprPtr 0x2EE9C → stream 0x3E76D · L2ptr 0x2E9EA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5088,6 +5417,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3ED → header 0x30000 · SprPtr 0x2EE9E → stream 0x3E76D · L2ptr 0x2E9ED · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5101,6 +5431,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3F0 → header 0x30000 · SprPtr 0x2EEA0 → stream 0x3E76D · L2ptr 0x2E9F0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5114,6 +5445,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3F3 → header 0x30000 · SprPtr 0x2EEA2 → stream 0x3E76D · L2ptr 0x2E9F3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5127,6 +5459,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3F6 → header 0x30000 · SprPtr 0x2EEA4 → stream 0x3E76D · L2ptr 0x2E9F6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5140,6 +5473,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3F9 → header 0x30000 · SprPtr 0x2EEA6 → stream 0x3E76D · L2ptr 0x2E9F9 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5153,6 +5487,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3FC → header 0x30000 · SprPtr 0x2EEA8 → stream 0x3E76D · L2ptr 0x2E9FC · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5166,6 +5501,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E3FF → header 0x30000 · SprPtr 0x2EEAA → stream 0x3E76D · L2ptr 0x2E9FF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5179,6 +5515,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E402 → header 0x30000 · SprPtr 0x2EEAC → stream 0x3E76D · L2ptr 0x2EA02 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5192,6 +5529,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E405 → header 0x30000 · SprPtr 0x2EEAE → stream 0x3E76D · L2ptr 0x2EA05 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5205,6 +5543,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E408 → header 0x30000 · SprPtr 0x2EEB0 → stream 0x3E76D · L2ptr 0x2EA08 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5218,6 +5557,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E40B → header 0x30000 · SprPtr 0x2EEB2 → stream 0x3E76D · L2ptr 0x2EA0B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5231,6 +5571,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E40E → header 0x30000 · SprPtr 0x2EEB4 → stream 0x3E76D · L2ptr 0x2EA0E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5244,6 +5585,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E411 → header 0x30000 · SprPtr 0x2EEB6 → stream 0x3E76D · L2ptr 0x2EA11 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5257,6 +5599,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E414 → header 0x30000 · SprPtr 0x2EEB8 → stream 0x3E76D · L2ptr 0x2EA14 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5270,6 +5613,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E417 → header 0x30000 · SprPtr 0x2EEBA → stream 0x3E76D · L2ptr 0x2EA17 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5283,6 +5627,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E41A → header 0x30000 · SprPtr 0x2EEBC → stream 0x3E76D · L2ptr 0x2EA1A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5296,6 +5641,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E41D → header 0x30000 · SprPtr 0x2EEBE → stream 0x3E76D · L2ptr 0x2EA1D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5309,6 +5655,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E420 → header 0x30000 · SprPtr 0x2EEC0 → stream 0x3E76D · L2ptr 0x2EA20 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5322,6 +5669,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E423 → header 0x30000 · SprPtr 0x2EEC2 → stream 0x3E76D · L2ptr 0x2EA23 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5335,6 +5683,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E426 → header 0x30000 · SprPtr 0x2EEC4 → stream 0x3E76D · L2ptr 0x2EA26 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5348,6 +5697,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E429 → header 0x30000 · SprPtr 0x2EEC6 → stream 0x3E76D · L2ptr 0x2EA29 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5361,6 +5711,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E42C → header 0x30000 · SprPtr 0x2EEC8 → stream 0x3E76D · L2ptr 0x2EA2C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5374,6 +5725,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E42F → header 0x30000 · SprPtr 0x2EECA → stream 0x3E76D · L2ptr 0x2EA2F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5387,6 +5739,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E432 → header 0x30000 · SprPtr 0x2EECC → stream 0x3E76D · L2ptr 0x2EA32 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5400,6 +5753,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E435 → header 0x30000 · SprPtr 0x2EECE → stream 0x3E76D · L2ptr 0x2EA35 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5413,6 +5767,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E438 → header 0x30000 · SprPtr 0x2EED0 → stream 0x3E76D · L2ptr 0x2EA38 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5426,6 +5781,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E43B → header 0x30000 · SprPtr 0x2EED2 → stream 0x3E76D · L2ptr 0x2EA3B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5439,6 +5795,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E43E → header 0x30000 · SprPtr 0x2EED4 → stream 0x3E76D · L2ptr 0x2EA3E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5452,6 +5809,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E441 → header 0x30000 · SprPtr 0x2EED6 → stream 0x3E76D · L2ptr 0x2EA41 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5465,6 +5823,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E444 → header 0x30000 · SprPtr 0x2EED8 → stream 0x3E76D · L2ptr 0x2EA44 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5478,6 +5837,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E447 → header 0x30000 · SprPtr 0x2EEDA → stream 0x3E76D · L2ptr 0x2EA47 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5491,6 +5851,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E44A → header 0x30000 · SprPtr 0x2EEDC → stream 0x3E76D · L2ptr 0x2EA4A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5504,6 +5865,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E44D → header 0x30000 · SprPtr 0x2EEDE → stream 0x3E76D · L2ptr 0x2EA4D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5517,6 +5879,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E450 → header 0x30000 · SprPtr 0x2EEE0 → stream 0x3E76D · L2ptr 0x2EA50 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5530,6 +5893,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E453 → header 0x30000 · SprPtr 0x2EEE2 → stream 0x3E76D · L2ptr 0x2EA53 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5543,6 +5907,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E456 → header 0x30000 · SprPtr 0x2EEE4 → stream 0x3E76D · L2ptr 0x2EA56 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5556,6 +5921,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E459 → header 0x30000 · SprPtr 0x2EEE6 → stream 0x3E76D · L2ptr 0x2EA59 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5569,6 +5935,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E45C → header 0x30000 · SprPtr 0x2EEE8 → stream 0x3E76D · L2ptr 0x2EA5C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5582,6 +5949,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E45F → header 0x30000 · SprPtr 0x2EEEA → stream 0x3E76D · L2ptr 0x2EA5F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5595,6 +5963,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E462 → header 0x30000 · SprPtr 0x2EEEC → stream 0x3E76D · L2ptr 0x2EA62 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5608,6 +5977,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E465 → header 0x30000 · SprPtr 0x2EEEE → stream 0x3E76D · L2ptr 0x2EA65 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5621,6 +5991,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E468 → header 0x30000 · SprPtr 0x2EEF0 → stream 0x3E76D · L2ptr 0x2EA68 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5634,6 +6005,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E46B → header 0x30000 · SprPtr 0x2EEF2 → stream 0x3E76D · L2ptr 0x2EA6B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5647,6 +6019,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E46E → header 0x30000 · SprPtr 0x2EEF4 → stream 0x3E76D · L2ptr 0x2EA6E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5660,6 +6033,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E471 → header 0x30000 · SprPtr 0x2EEF6 → stream 0x3E76D · L2ptr 0x2EA71 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5673,6 +6047,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E474 → header 0x30000 · SprPtr 0x2EEF8 → stream 0x3E76D · L2ptr 0x2EA74 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5686,6 +6061,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E477 → header 0x30000 · SprPtr 0x2EEFA → stream 0x3E76D · L2ptr 0x2EA77 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5699,6 +6075,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E47A → header 0x30000 · SprPtr 0x2EEFC → stream 0x3E76D · L2ptr 0x2EA7A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5712,6 +6089,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E47D → header 0x30000 · SprPtr 0x2EEFE → stream 0x3E76D · L2ptr 0x2EA7D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5725,6 +6103,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E480 → header 0x30000 · SprPtr 0x2EF00 → stream 0x3E76D · L2ptr 0x2EA80 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5738,6 +6117,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E483 → header 0x30000 · SprPtr 0x2EF02 → stream 0x3E76D · L2ptr 0x2EA83 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5751,6 +6131,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E486 → header 0x30000 · SprPtr 0x2EF04 → stream 0x3E76D · L2ptr 0x2EA86 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5764,6 +6145,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E489 → header 0x30000 · SprPtr 0x2EF06 → stream 0x3E76D · L2ptr 0x2EA89 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5777,6 +6159,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E48C → header 0x30000 · SprPtr 0x2EF08 → stream 0x3E76D · L2ptr 0x2EA8C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5790,6 +6173,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E48F → header 0x30000 · SprPtr 0x2EF0A → stream 0x3E76D · L2ptr 0x2EA8F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5803,6 +6187,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E492 → header 0x30000 · SprPtr 0x2EF0C → stream 0x3E76D · L2ptr 0x2EA92 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5816,6 +6201,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E495 → header 0x30000 · SprPtr 0x2EF0E → stream 0x3E76D · L2ptr 0x2EA95 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5829,6 +6215,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E498 → header 0x30000 · SprPtr 0x2EF10 → stream 0x3E76D · L2ptr 0x2EA98 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5842,6 +6229,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E49B → header 0x30000 · SprPtr 0x2EF12 → stream 0x3E76D · L2ptr 0x2EA9B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5855,6 +6243,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E49E → header 0x30000 · SprPtr 0x2EF14 → stream 0x3E76D · L2ptr 0x2EA9E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5868,6 +6257,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4A1 → header 0x30000 · SprPtr 0x2EF16 → stream 0x3E76D · L2ptr 0x2EAA1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5881,6 +6271,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4A4 → header 0x30000 · SprPtr 0x2EF18 → stream 0x3E76D · L2ptr 0x2EAA4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5894,6 +6285,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4A7 → header 0x30000 · SprPtr 0x2EF1A → stream 0x3E76D · L2ptr 0x2EAA7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5907,6 +6299,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4AA → header 0x30000 · SprPtr 0x2EF1C → stream 0x3E76D · L2ptr 0x2EAAA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5920,6 +6313,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4AD → header 0x30000 · SprPtr 0x2EF1E → stream 0x3E76D · L2ptr 0x2EAAD · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5933,6 +6327,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4B0 → header 0x30000 · SprPtr 0x2EF20 → stream 0x3E76D · L2ptr 0x2EAB0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5946,6 +6341,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4B3 → header 0x30000 · SprPtr 0x2EF22 → stream 0x3E76D · L2ptr 0x2EAB3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5959,6 +6355,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4B6 → header 0x30000 · SprPtr 0x2EF24 → stream 0x3E76D · L2ptr 0x2EAB6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -5972,6 +6369,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4B9 → header 0x3058B · SprPtr 0x2EF26 → stream 0x3C3E3 · L2ptr 0x2EAB9 · GFXslot 0x028F7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 0A 22` (spriteGfx=13) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -5987,6 +6385,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4BC → header 0x30561 · SprPtr 0x2EF28 → stream 0x3C3DB · L2ptr 0x2EABC · GFXslot 0x028F7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 0A 22` (spriteGfx=13) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -6002,6 +6401,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4BF → header 0x30258 · SprPtr 0x2EF2A → stream 0x3C367 · L2ptr 0x2EABF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -6016,6 +6416,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4C2 → header 0x3025E · SprPtr 0x2EF2C → stream 0x3C359 · L2ptr 0x2EAC2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x92 (memoria 0x12, buoyancy 0x80)
@@ -6031,6 +6432,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4C5 → header 0x3025E · SprPtr 0x2EF2E → stream 0x3C354 · L2ptr 0x2EAC5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x92 (memoria 0x12, buoyancy 0x80)
@@ -6045,6 +6447,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4C8 → header 0x30258 · SprPtr 0x2EF30 → stream 0x3C34F · L2ptr 0x2EAC8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6059,6 +6462,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4CB → header 0x30258 · SprPtr 0x2EF32 → stream 0x3C34A · L2ptr 0x2EACB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6073,6 +6477,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4CE → header 0x30258 · SprPtr 0x2EF34 → stream 0x3C345 · L2ptr 0x2EACE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6087,6 +6492,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4D1 → header 0x30252 · SprPtr 0x2EF36 → stream 0x3C340 · L2ptr 0x2EAD1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x10 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x10 (memoria 0x10, buoyancy 0x0)
@@ -6101,6 +6507,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4D4 → header 0x30000 · SprPtr 0x2EF38 → stream 0x3E76D · L2ptr 0x2EAD4 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6114,6 +6521,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4D7 → header 0x30000 · SprPtr 0x2EF3A → stream 0x3E76D · L2ptr 0x2EAD7 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6127,6 +6535,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4DA → header 0x30000 · SprPtr 0x2EF3C → stream 0x3E76D · L2ptr 0x2EADA · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6140,6 +6549,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4DD → header 0x30000 · SprPtr 0x2EF3E → stream 0x3E76D · L2ptr 0x2EADD · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6153,6 +6563,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4E0 → header 0x30000 · SprPtr 0x2EF40 → stream 0x3E76D · L2ptr 0x2EAE0 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6166,6 +6577,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4E3 → header 0x30000 · SprPtr 0x2EF42 → stream 0x3E76D · L2ptr 0x2EAE3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6179,6 +6591,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4E6 → header 0x30000 · SprPtr 0x2EF44 → stream 0x3E76D · L2ptr 0x2EAE6 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6192,6 +6605,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4E9 → header 0x30000 · SprPtr 0x2EF46 → stream 0x3E76D · L2ptr 0x2EAE9 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6205,6 +6619,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4EC → header 0x30000 · SprPtr 0x2EF48 → stream 0x3E76D · L2ptr 0x2EAEC · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6218,6 +6633,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4EF → header 0x30000 · SprPtr 0x2EF4A → stream 0x3E76D · L2ptr 0x2EAEF · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6231,6 +6647,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4F2 → header 0x30000 · SprPtr 0x2EF4C → stream 0x3E76D · L2ptr 0x2EAF2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6244,6 +6661,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4F5 → header 0x30000 · SprPtr 0x2EF4E → stream 0x3E76D · L2ptr 0x2EAF5 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6257,6 +6675,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4F8 → header 0x30000 · SprPtr 0x2EF50 → stream 0x3E76D · L2ptr 0x2EAF8 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6270,6 +6689,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4FB → header 0x30000 · SprPtr 0x2EF52 → stream 0x3E76D · L2ptr 0x2EAFB · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6283,6 +6703,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E4FE → header 0x30000 · SprPtr 0x2EF54 → stream 0x3E76D · L2ptr 0x2EAFE · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6296,6 +6717,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E501 → header 0x30000 · SprPtr 0x2EF56 → stream 0x3E76D · L2ptr 0x2EB01 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6309,6 +6731,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E504 → header 0x30000 · SprPtr 0x2EF58 → stream 0x3E76D · L2ptr 0x2EB04 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6322,6 +6745,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E507 → header 0x30000 · SprPtr 0x2EF5A → stream 0x3E76D · L2ptr 0x2EB07 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6335,6 +6759,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E50A → header 0x30000 · SprPtr 0x2EF5C → stream 0x3E76D · L2ptr 0x2EB0A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6348,6 +6773,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E50D → header 0x30000 · SprPtr 0x2EF5E → stream 0x3E76D · L2ptr 0x2EB0D · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6361,6 +6787,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E510 → header 0x30000 · SprPtr 0x2EF60 → stream 0x3E76D · L2ptr 0x2EB10 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6374,6 +6801,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E513 → header 0x30000 · SprPtr 0x2EF62 → stream 0x3E76D · L2ptr 0x2EB13 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6387,6 +6815,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E516 → header 0x30000 · SprPtr 0x2EF64 → stream 0x3E76D · L2ptr 0x2EB16 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6400,6 +6829,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E519 → header 0x30000 · SprPtr 0x2EF66 → stream 0x3E76D · L2ptr 0x2EB19 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6413,6 +6843,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E51C → header 0x30000 · SprPtr 0x2EF68 → stream 0x3E76D · L2ptr 0x2EB1C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6426,6 +6857,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E51F → header 0x30000 · SprPtr 0x2EF6A → stream 0x3E76D · L2ptr 0x2EB1F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6439,6 +6871,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E522 → header 0x30000 · SprPtr 0x2EF6C → stream 0x3E76D · L2ptr 0x2EB22 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6452,6 +6885,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E525 → header 0x30000 · SprPtr 0x2EF6E → stream 0x3E76D · L2ptr 0x2EB25 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6465,6 +6899,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E528 → header 0x30000 · SprPtr 0x2EF70 → stream 0x3E76D · L2ptr 0x2EB28 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6478,6 +6913,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E52B → header 0x30000 · SprPtr 0x2EF72 → stream 0x3E76D · L2ptr 0x2EB2B · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6491,6 +6927,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E52E → header 0x30000 · SprPtr 0x2EF74 → stream 0x3E76D · L2ptr 0x2EB2E · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6504,6 +6941,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E537 → header 0x3AAC9 · SprPtr 0x2EF7A → stream 0x3E19D · L2ptr 0x2EB37 · GFXslot 0x028F3 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 24 0E` (spriteGfx=12) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x11 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · LEDGE_TOP=85 SOLID=67 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -6521,6 +6959,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E53A → header 0x30FB1 · SprPtr 0x2EF7C → stream 0x3C661 · L2ptr 0x2EB3A · GFXslot 0x028D7 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=46 SOLID=26 SLOPE=10 SLOPE_STEEP=10
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6536,6 +6975,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E53D → header 0x39D84 · SprPtr 0x2EF7E → stream 0x3DF94 · L2ptr 0x2EB3D · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 57×27 casillas · LEDGE_TOP=18 SOLID=67 SLOPE_STEEP=4
 - **Entrada**: casilla (1,12) px (16,192) · pantalla entrada 3 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x16 0x28 0xA 0x3]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -6551,6 +6991,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E540 → header 0x37511 · SprPtr 0x2EF80 → stream 0x3DA7F · L2ptr 0x2EB40 · GFXslot 0x028CF · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=0 SPR=4 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=23 SOLID=28 SLOPE_STEEP=2
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6567,6 +7008,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E543 → header 0x36128 · SprPtr 0x2EF82 → stream 0x3D5CF · L2ptr 0x2EB43 · GFXslot 0x028D3 · FGBGslot 0x0294F
 - **GFX sprites (SP1-4)**: `00 01 13 06` (spriteGfx=4) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0D 1A` (tilesetFG=9)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=1 SPR=3 backArea=2
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDAB9 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 59×27 casillas · LEDGE_TOP=12 SOLID=52 SLOPE_STEEP=5
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 3 · L2scroll 1 L3 3 L1y 2 L2y 2 · secHdr [0x19 0xF8 0xA 0x3]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -6581,6 +7023,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E546 → header 0x331B5 · SprPtr 0x2EF84 → stream 0x3CCBA · L2ptr 0x2EB46 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=20 SOLID=109 SLOPE=16 SLOPE_STEEP=20
 - **Entrada**: casilla (1,12) px (16,192) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x16 0x28 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -6597,6 +7040,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E549 → header 0x32CA8 · SprPtr 0x2EF86 → stream 0x3CBC5 · L2ptr 0x2EB49 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=32 SOLID=82 SLOPE=6 SLOPE_STEEP=10
 - **Entrada**: casilla (1,12) px (16,192) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x16 0x28 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -6613,6 +7057,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E54C → header 0x3B3C6 · SprPtr 0x2EF88 → stream 0x3E402 · L2ptr 0x2EB4C · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 112×27 casillas · LEDGE_TOP=90 SOLID=72 SLOPE_STEEP=3
 - **Entrada**: casilla (14,17) px (224,272) · pantalla entrada 1 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x58 0x1B 0xA 0x1]
 - **Cabecera sprites**: 0xC (memoria 0xC, buoyancy 0x0)
@@ -6634,6 +7079,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E54F → header 0x3B3C6 · SprPtr 0x2EF8A → stream 0x3E402 · L2ptr 0x2EB4F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 112×27 casillas · LEDGE_TOP=90 SOLID=72 SLOPE_STEEP=3
 - **Entrada**: casilla (8,23) px (128,368) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5C 0x19 0xA 0x0]
 - **Cabecera sprites**: 0xC (memoria 0xC, buoyancy 0x0)
@@ -6655,6 +7101,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E552 → header 0x3256D · SprPtr 0x2EF8C → stream 0x3CA6D · L2ptr 0x2EB52 · GFXslot 0x028C3 · FGBGslot 0x02947
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 15` (tilesetFG=7)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CD900 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=21 SOLID=33
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6670,6 +7117,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E555 → header 0x3AD2F · SprPtr 0x2EF8E → stream 0x3E1C0 · L2ptr 0x2EB55 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x10 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x10 (memoria 0x10, buoyancy 0x0)
@@ -6684,6 +7132,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E558 → header 0x3B896 · SprPtr 0x2EF90 → stream 0x3E4EC · L2ptr 0x2EB58 · GFXslot 0x028CB · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 7 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=5 SPR=2 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 80×27 casillas · SOLID=15
 - **Entrada**: casilla (1,25) px (16,400) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5D 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6698,6 +7147,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E55E → header 0x30BB3 · SprPtr 0x2EF94 → stream 0x3C57F · L2ptr 0x2EB5E · GFXslot 0x028D7 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 09` (spriteGfx=5) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=30 SOLID=70 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6712,6 +7162,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E561 → header 0x309F8 · SprPtr 0x2EF96 → stream 0x3C3EE · L2ptr 0x2EB61 · GFXslot 0x028E3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=30 SOLID=75 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6725,6 +7176,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E564 → header 0x3AA77 · SprPtr 0x2EF98 → stream 0x3E183 · L2ptr 0x2EB64 · GFXslot 0x028C3 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=0 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=58 SOLID=14 SLOPE_STEEP=6
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6739,6 +7191,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E567 → header 0x3AA16 · SprPtr 0x2EF9A → stream 0x3E160 · L2ptr 0x2EB67 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=7 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=51 SOLID=19 SLOPE_STEEP=7
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x8F (memoria 0xF, buoyancy 0x80)
@@ -6755,6 +7208,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E56A → header 0x3A961 · SprPtr 0x2EF9C → stream 0x3E131 · L2ptr 0x2EB6A · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x8 · música 3 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=2 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0xA9E3 · tipo 0x7
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,8) px (16,128) · pantalla entrada 4 · **VERTICAL** · L2scroll 7 L3 3 L1y 0 L2y 3 · secHdr [0x73 0xF8 0x3 0x64]
 - **Cabecera sprites**: 0x8E (memoria 0xE, buoyancy 0x80)
@@ -6772,6 +7226,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E56D → header 0x3A8D9 · SprPtr 0x2EF9E → stream 0x3E114 · L2ptr 0x2EB6D · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x2 · música 3 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0xA934 · tipo 0x7
 - **Colisión**: 46×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x4B 0xC0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6787,6 +7242,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E570 → header 0x3A83F · SprPtr 0x2EFA0 → stream 0x3C422 · L2ptr 0x2EB70 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=2 FG=3 SPR=1 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 87×27 casillas · SOLID=72
 - **Entrada**: casilla (1,21) px (16,336) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1A 0x0 0xA 0x0]
 - **Cabecera sprites**: 0xF (memoria 0xF, buoyancy 0x0)
@@ -6801,6 +7257,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E573 → header 0x3A802 · SprPtr 0x2EFA2 → stream 0x3E0E8 · L2ptr 0x2EB73 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · SOLID=3
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 1 · secHdr [0x59 0x0 0x9 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6819,6 +7276,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E576 → header 0x3A765 · SprPtr 0x2EFA4 → stream 0x3E0C5 · L2ptr 0x2EB76 · GFXslot 0x028F3 · FGBGslot 0x02957
 - **GFX sprites (SP1-4)**: `00 01 24 0E` (spriteGfx=12) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=11)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 80×27 casillas · SOLID=459
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x59 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -6835,6 +7293,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E579 → header 0x3A707 · SprPtr 0x2EFA6 → stream 0x3E08D · L2ptr 0x2EB79 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=14 SOLID=38
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x2 (memoria 0x2, buoyancy 0x0)
@@ -6851,6 +7310,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E57C → header 0x3A68E · SprPtr 0x2EFA8 → stream 0x3E067 · L2ptr 0x2EB7C · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=15 SOLID=31
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 2 L1y 2 L2y 2 · secHdr [0x1B 0x80 0xA 0x0]
 - **Cabecera sprites**: 0x8F (memoria 0xF, buoyancy 0x80)
@@ -6868,6 +7328,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E57F → header 0x3AFCE · SprPtr 0x2EFAA → stream 0x3C3F0 · L2ptr 0x2EB7F · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=21 SOLID=13
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6882,6 +7343,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E582 → header 0x3AF16 · SprPtr 0x2EFAC → stream 0x3C3F0 · L2ptr 0x2EB82 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6896,6 +7358,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E585 → header 0x30838 · SprPtr 0x2EFAE → stream 0x3C498 · L2ptr 0x2EB85 · GFXslot 0x028EF · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 0D 14` (spriteGfx=11) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6910,6 +7373,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E588 → header 0x307F3 · SprPtr 0x2EFB0 → stream 0x3C473 · L2ptr 0x2EB88 · GFXslot 0x028EF · FGBGslot 0x0293B
 - **GFX sprites (SP1-4)**: `00 01 0D 14` (spriteGfx=11) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 08` (tilesetFG=4)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE674 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6924,6 +7388,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E58B → header 0x39803 · SprPtr 0x2EFB2 → stream 0x3DE01 · L2ptr 0x2EB8B · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=4 SPR=5 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · SOLID=1 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (14,19) px (224,304) · pantalla entrada 3 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0x9 0x3 0xA 0x3]
 - **Cabecera sprites**: 0xD (memoria 0xD, buoyancy 0x0)
@@ -6938,6 +7403,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E58E → header 0x30621 · SprPtr 0x2EFB4 → stream 0x3C3F5 · L2ptr 0x2EB8E · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6953,6 +7419,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E591 → header 0x39969 · SprPtr 0x2EFB6 → stream 0x3DE3B · L2ptr 0x2EB91 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=5 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 51×27 casillas · SOLID=34
 - **Entrada**: casilla (14,22) px (224,352) · pantalla entrada 3 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x3 0xA 0x3]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6970,6 +7437,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E594 → header 0x39969 · SprPtr 0x2EFB8 → stream 0x3DE3B · L2ptr 0x2EB94 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=5 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 51×27 casillas · SOLID=34
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -6987,6 +7455,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E597 → header 0x39867 · SprPtr 0x2EFBA → stream 0x3DE0F · L2ptr 0x2EB97 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=5 backArea=7
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 159×27 casillas · SOLID=96
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 3 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0x9 0x1 0xA 0x3]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7006,6 +7475,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E59A → header 0x30636 · SprPtr 0x2EFBC → stream 0x3C414 · L2ptr 0x2EB9A · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -7020,6 +7490,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E59D → header 0x36104 · SprPtr 0x2EFBE → stream 0x3D5C7 · L2ptr 0x2EB9D · GFXslot 0x028C3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · LEDGE_TOP=12 SOLID=50 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x29 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7035,6 +7506,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5A0 → header 0x3BD8A · SprPtr 0x2EFC0 → stream 0x3C3EE · L2ptr 0x2EBA0 · GFXslot 0x028C3 · FGBGslot 0x0295B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 1F` (tilesetFG=12)
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=5 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDD44 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 80×27 casillas · LEDGE_TOP=16 SOLID=54 SLOPE=60 SLOPE_STEEP=60
 - **Entrada**: casilla (1,6) px (16,96) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 0 L2y 3 · secHdr [0x52 0x18 0x3 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7048,6 +7520,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5A3 → header 0x3BD75 · SprPtr 0x2EFC2 → stream 0x3C3F0 · L2ptr 0x2EBA3 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE7C0 (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7062,6 +7535,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5A6 → header 0x395F0 · SprPtr 0x2EFC4 → stream 0x3DDB8 · L2ptr 0x2EBA6 · GFXslot 0x028E3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 9 pantallas (144 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=1 SPR=4 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0x975E · tipo 0x7
 - **Colisión**: 144×27 casillas · LEDGE_TOP=130 SOLID=164 SLOPE_STEEP=38
 - **Entrada**: casilla (8,17) px (128,272) · pantalla entrada 1 · L2scroll 4 L3 3 L1y 2 L2y 3 · secHdr [0x48 0xD1 0xB 0x1]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7080,6 +7554,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5A9 → header 0x393E2 · SprPtr 0x2EFC6 → stream 0x3DDB3 · L2ptr 0x2EBA9 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=1 SPR=4 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x7:0x95A5 · tipo 0x7
 - **Colisión**: 160×27 casillas · LEDGE_TOP=136 SOLID=140 SLOPE=7 SLOPE_STEEP=67
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x4B 0xD1 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7094,6 +7569,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5AF → header 0x39221 · SprPtr 0x2EFCA → stream 0x3DD76 · L2ptr 0x2EBAF · GFXslot 0x028E3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 20` (spriteGfx=8) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x18 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7108,6 +7584,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5B2 → header 0x35F46 · SprPtr 0x2EFCC → stream 0x3C3F5 · L2ptr 0x2EBB2 · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7123,6 +7600,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5B5 → header 0x30621 · SprPtr 0x2EFCE → stream 0x3C40C · L2ptr 0x2EBB5 · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7138,6 +7616,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5B8 → header 0x35ABE · SprPtr 0x2EFD0 → stream 0x3D522 · L2ptr 0x2EBB8 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x1 · música 4 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=4 SPR=5 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xDB8D · tipo 0x6
 - **Colisión**: 170×27 casillas · SOLID=2
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 7 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x1 0xA 0x7]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -7156,6 +7635,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5BB → header 0x35ABE · SprPtr 0x2EFD2 → stream 0x3D522 · L2ptr 0x2EBBB · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x1 · música 4 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=4 SPR=5 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xDB8D · tipo 0x6
 - **Colisión**: 170×27 casillas · SOLID=2
 - **Entrada**: casilla (8,19) px (128,304) · pantalla entrada 6 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x29 0x1 0xA 0x6]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -7174,6 +7654,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5BE → header 0x32E18 · SprPtr 0x2EFD4 → stream 0x3CC11 · L2ptr 0x2EBBE · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0xC · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 127×27 casillas · SOLID=3
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xD (memoria 0xD, buoyancy 0x0)
@@ -7188,6 +7669,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5C1 → header 0x30687 · SprPtr 0x2EFD6 → stream 0x3E024 · L2ptr 0x2EBC1 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x92 (memoria 0x12, buoyancy 0x80)
@@ -7203,6 +7685,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5C4 → header 0x3735D · SprPtr 0x2EFD8 → stream 0x3DA44 · L2ptr 0x2EBC4 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=7 SPR=4 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xF42A · tipo 0x6
 - **Colisión**: 256×27 casillas · LEDGE_TOP=93 SOLID=156 SLOPE=27 SLOPE_STEEP=41
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x4B 0xD1 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -7219,6 +7702,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5C7 → header 0x37164 · SprPtr 0x2EFDA → stream 0x3DA12 · L2ptr 0x2EBC7 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,3) px (16,48) · pantalla entrada 0 · **VERTICAL** · L2scroll 0 L3 0 L1y 0 L2y 3 · secHdr [0x1 0x10 0x3 0x60]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7233,6 +7717,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5CA → header 0x374FC · SprPtr 0x2EFDC → stream 0x3C3F0 · L2ptr 0x2EBCA · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=20
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7247,6 +7732,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5CD → header 0x328E9 · SprPtr 0x2EFDE → stream 0x3CB01 · L2ptr 0x2EBCD · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=2 SPR=4 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xA93E · tipo 0x6
 - **Colisión**: 96×27 casillas · LEDGE_TOP=17 SOLID=60 SLOPE=14 SLOPE_STEEP=16
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x49 0xD0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -7264,6 +7750,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5D0 → header 0x33A33 · SprPtr 0x2EFE0 → stream 0x3CE14 · L2ptr 0x2EBD0 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=37 SOLID=41 SLOPE=5 SLOPE_STEEP=8
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x9 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7279,6 +7766,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5D3 → header 0x33A06 · SprPtr 0x2EFE2 → stream 0x3CE0C · L2ptr 0x2EBD3 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 48×27 casillas · LEDGE_TOP=49 SOLID=30 SLOPE=5 SLOPE_STEEP=6
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x11 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7294,6 +7782,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5D6 → header 0x337ED · SprPtr 0x2EFE4 → stream 0x3CDC0 · L2ptr 0x2EBD6 · GFXslot 0x028F7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 0A 22` (spriteGfx=13) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) px (128,224) · pantalla entrada 0 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x57 0x1 0xA 0x0]
 - **Cabecera sprites**: 0xE (memoria 0xE, buoyancy 0x0)
@@ -7309,6 +7798,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5D9 → header 0x33666 · SprPtr 0x2EFE6 → stream 0x3CD94 · L2ptr 0x2EBD9 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0xB74B · tipo 0x6
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 4 L3 3 L1y 2 L2y 2 · secHdr [0x48 0xC0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -7326,6 +7816,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5DC → header 0x33620 · SprPtr 0x2EFE8 → stream 0x3C3EE · L2ptr 0x2EBDC · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=1
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7339,6 +7830,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5DF → header 0x33422 · SprPtr 0x2EFEA → stream 0x3CD63 · L2ptr 0x2EBDF · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 96×27 casillas · LEDGE_TOP=12 SOLID=107 SLOPE_STEEP=5
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7353,6 +7845,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5E2 → header 0x30687 · SprPtr 0x2EFEC → stream 0x3C6D0 · L2ptr 0x2EBE2 · GFXslot 0x028C3 · FGBGslot 0x0292B
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 15` (tilesetFG=0)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 0 L2y 0 · secHdr [0xB 0x0 0x0 0x0]
 - **Cabecera sprites**: 0x92 (memoria 0x12, buoyancy 0x80)
@@ -7367,6 +7860,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5E8 → header 0x35914 · SprPtr 0x2EFF0 → stream 0x3D4C5 · L2ptr 0x2EBE8 · GFXslot 0x028C3 · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 02` (spriteGfx=0) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 16×27 casillas · LEDGE_TOP=13 SOLID=42 SLOPE_STEEP=5
 - **Entrada**: casilla (1,17) px (16,272) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x28 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7382,6 +7876,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5EB → header 0x30621 · SprPtr 0x2EFF2 → stream 0x3C3F5 · L2ptr 0x2EBEB · GFXslot 0x028E7 · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 13 0F` (spriteGfx=9) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
+- **Layer 2**: 2ª capa de OBJETOS · 0x6:0x861B · tipo 0x6
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 2 L3 0 L1y 2 L2y 2 · secHdr [0x2B 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
@@ -7397,6 +7892,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5EE → header 0x35ED2 · SprPtr 0x2EFF4 → stream 0x3D56C · L2ptr 0x2EBEE · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 128×27 casillas · SOLID=2
 - **Entrada**: casilla (8,22) px (128,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x1 0xA 0x0]
 - **Cabecera sprites**: 0x7 (memoria 0x7, buoyancy 0x0)
@@ -7413,6 +7909,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5F1 → header 0x32D09 · SprPtr 0x2EFF6 → stream 0x3CBDC · L2ptr 0x2EBF1 · GFXslot 0x028DF · FGBGslot 0x0293F
 - **GFX sprites (SP1-4)**: `00 01 06 11` (spriteGfx=7) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 07` (tilesetFG=5)
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
+- **Layer 2**: FONDO (imagen) · fuente 0x0CEF80 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 176×27 casillas · SOLID=38 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (8,21) px (128,336) · pantalla entrada 5 · L2scroll 5 L3 0 L1y 2 L2y 2 · secHdr [0x5A 0x1 0xA 0x5]
 - **Cabecera sprites**: 0xB (memoria 0xB, buoyancy 0x0)
@@ -7431,6 +7928,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5F4 → header 0x3116F · SprPtr 0x2EFF8 → stream 0x3C6BF · L2ptr 0x2EBF4 · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE103 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 64×27 casillas · LEDGE_TOP=51 SOLID=14 SLOPE_STEEP=2
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 2 L1y 2 L2y 2 · secHdr [0x1B 0x80 0xA 0x0]
 - **Cabecera sprites**: 0xF (memoria 0xF, buoyancy 0x0)
@@ -7449,6 +7947,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5F7 → header 0x30E6D · SprPtr 0x2EFFA → stream 0x3C5EF · L2ptr 0x2EBF7 · GFXslot 0x028CF · FGBGslot 0x02937
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 32×27 casillas · LEDGE_TOP=12 SOLID=44 SLOPE_STEEP=4
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x20 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -7463,6 +7962,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5FA → header 0x39F22 · SprPtr 0x2EFFC → stream 0x3DFE0 · L2ptr 0x2EBFA · GFXslot 0x028C7 · FGBGslot 0x0292F
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 1B 18` (tilesetFG=1)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
+- **Layer 2**: FONDO (imagen) · fuente 0x0CF45A (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 160×27 casillas · LEDGE_TOP=105 SOLID=113 SLOPE_STEEP=14
 - **Entrada**: casilla (1,19) px (16,304) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x19 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x80 (memoria 0x0, buoyancy 0x80)
@@ -7481,6 +7981,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Direcciones**: L1ptr 0x2E5FD → header 0x30F93 · SprPtr 0x2EFFE → stream 0x3C659 · L2ptr 0x2EBFD · GFXslot 0x028CB · FGBGslot 0x0294B
 - **GFX sprites (SP1-4)**: `00 01 13 05` (spriteGfx=2) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 19 16` (tilesetFG=8)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=1 SPR=2 backArea=6
+- **Layer 2**: FONDO (imagen) · fuente 0x0CDF59 (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
 - **Colisión**: 17×27 casillas · SOLID=4
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 1 L3 0 L1y 2 L2y 2 · secHdr [0x1B 0x10 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)

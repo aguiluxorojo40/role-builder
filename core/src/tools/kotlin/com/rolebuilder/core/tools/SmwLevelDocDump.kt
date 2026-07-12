@@ -117,6 +117,12 @@ fun main(args: Array<String>) {
             " · Layer2 ${if (addr.layer2IsBackground) "fondo" else "nivel"}" +
             " · paletas BG=${info.bgPalette} FG=${info.fgPalette} SPR=${info.spritePalette}" +
             " backArea=${info.backgroundColor}")
+        val l2 = SnesGameRecipes.smwLayer2Info(rom, header, level)
+        val l2Txt = if (l2.isBackground)
+            "FONDO (imagen) · fuente ${hx(l2.backgroundSourceSnes, 6)} (banco \$0C) · " +
+                "tipo ${hx(l2.typeByte)} · ${l2.backgroundBlockCount} bloques Map16 descomprimidos"
+        else "2ª capa de OBJETOS · ${hx(l2.objectBank)}:${hx(l2.addrSnes, 4)} · tipo ${hx(l2.typeByte)}"
+        perLevel.appendLine("- **Layer 2**: $l2Txt")
         perLevel.appendLine("- **Colisión**: $colTxt")
         perLevel.appendLine("- **Entrada**: $startTxt")
         perLevel.appendLine("- **Cabecera sprites**: $sprHdrTxt")
