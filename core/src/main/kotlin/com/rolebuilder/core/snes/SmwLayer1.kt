@@ -39,6 +39,10 @@ object SmwLayer1 {
         val unknownObjects: Int,
         val vertical: Boolean,
         val layout: IntArray,
+        /** Objetos estándar/tileset no portados: código → nº de veces (para el diagnóstico). */
+        val unknownStd: Map<Int, Int> = emptyMap(),
+        /** Objetos extendidos no portados: código → nº de veces. */
+        val unknownExt: Map<Int, Int> = emptyMap(),
     ) {
         /** Nº de columnas de la rejilla (horizontal: pantallas×16; vertical: 16). */
         val cols: Int get() = if (vertical) 16 else screens * 16
@@ -65,6 +69,9 @@ object SmwLayer1 {
 
     /** Modos de nivel sin objetos de Layer 1 (salas de jefe / especiales). */
     private val MODES_NO_LAYER1 = intArrayOf(9, 11, 16)
+
+    /** Tilesets cuyos objetos 0x30-0x3F son de PRADERA (ProcessGrasslandObjects en la ROM). */
+    private val GRASSLAND_TILESETS = setOf(0, 7, 12)
 
     // Tablas de layout de pantallas (offsets dentro del buffer = valor g_ram − 0xC800), copiadas
     // de kLevelDataLayout_* (smw_05.c). Horizontal: 0x1B0/pantalla. Vertical: 0x200/pantalla.
@@ -107,6 +114,30 @@ object SmwLayer1 {
         val secondaryEntrance: Boolean get() = (properties shr 1) and 1 != 0
     }
 
+    /**
+     * Cobertura de los objetos de Layer 1 de un nivel, para diagnóstico/checklist: cuántos
+     * objetos hay, cuántos NO se portan y con qué códigos (std y ext), más orientación/tileset.
+     */
+    data class ObjectCoverage(
+        val vertical: Boolean,
+        val tileset: Int,
+        val mode: Int,
+        val totalObjects: Int,
+        val unknownObjects: Int,
+        val unknownStd: Map<Int, Int>,
+        val unknownExt: Map<Int, Int>,
+    ) {
+        val recognized: Int get() = totalObjects - unknownObjects
+    }
+
+    /** Cobertura de objetos del [level], o null si no hay Layer 1 parseable. */
+    fun objectCoverage(rom: ByteArray, delta: Int, level: Int): ObjectCoverage? {
+        val tm = parse(rom, delta, level) ?: return null
+        return ObjectCoverage(
+            tm.vertical, tm.tileset, tm.mode, tm.totalObjects, tm.unknownObjects, tm.unknownStd, tm.unknownExt,
+        )
+    }
+
     /** Salidas de pantalla del [level] (grafo nivel→sublevel), leídas del stream de Layer 1. */
     fun screenExits(rom: ByteArray, delta: Int, level: Int): List<ScreenExit> {
         val p = SnesGameRecipes.smwLayer1DataPc(rom, delta, level) ?: return emptyList()
@@ -133,8 +164,16 @@ object SmwLayer1 {
         var vertical = false
         var layout = LAYOUT_STD_HORIZ
         val screenExits = ArrayList<ScreenExit>()
+        // Diagnóstico: cuántas veces apareció cada objeto no portado (para el checklist).
+        val unknownStd = LinkedHashMap<Int, Int>()
+        val unknownExt = LinkedHashMap<Int, Int>()
 
         fun rd(i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0xFF
+
+        /** Registra un objeto estándar/tileset no portado. */
+        fun unkStd(obj: Int) { unknown++; unknownStd[obj] = (unknownStd[obj] ?: 0) + 1 }
+        /** Registra un objeto extendido no portado. */
+        fun unkExt(code: Int) { unknown++; unknownExt[code] = (unknownExt[code] ?: 0) + 1 }
 
         fun run(): SmwLevelTilemap? {
             // ---- LoadLevelHeader (solo los campos que afectan al Layer 1) ----
@@ -173,7 +212,9 @@ object SmwLayer1 {
             return done()
         }
 
-        fun done() = SmwLevelTilemap(lo, hi, screensInLevel, tileset, mode, total, unknown, vertical, layout)
+        fun done() = SmwLevelTilemap(
+            lo, hi, screensInLevel, tileset, mode, total, unknown, vertical, layout, unknownStd, unknownExt,
+        )
 
         // ------------------------------ primitivas ------------------------------
         // Réplicas exactas de las rutinas de $0D:A6B1..A9EF (ver smw_0d.c).
@@ -240,10 +281,10 @@ object SmwLayer1 {
         // ------------------------------ dispatch ------------------------------
 
         fun std(obj: Int) {
-            // Los objetos ≥0x30 son ESPECÍFICOS del tileset; solo están portadas las
-            // rutinas de pradera (tileset 0). En otros tilesets significan otra cosa:
-            // se cuentan como no portados en vez de dibujar basura.
-            if (obj >= 0x30 && tileset != 0) { unknown++; return }
+            // Los objetos ≥0x30 son ESPECÍFICOS del tileset; solo están portadas las rutinas de
+            // PRADERA (ProcessGrasslandObjects), que en la ROM cubren los tilesets 0, 7 y 12.
+            // En otros tilesets 0x30-0x3F significan otra cosa: se cuentan como no portados.
+            if (obj >= 0x30 && tileset !in GRASSLAND_TILESETS) { unkStd(obj); return }
             when (obj) {
                 in 0x01..0x0E -> stdCoins(obj - 1)
                 0x0F -> if ((size and 0xF) < 5) stdVerticalPipes() else unknown++
@@ -263,7 +304,7 @@ object SmwLayer1 {
                 0x3D -> if ((size shr 4) < 2) grassTopCloudFringe() else unknown++
                 0x3E -> if ((size and 0xF) < 8) grassSideCloudFringes() else unknown++
                 0x3F -> if ((size shr 4) < 5) grassSmallBushes() else unknown++
-                else -> unknown++
+                else -> unkStd(obj)
             }
         }
 
@@ -286,7 +327,7 @@ object SmwLayer1 {
                 0x91, 0x92 -> extVSteepLeftSlope(k - 0x91)     // slopes de nivel VERTICAL
                 0x93, 0x94 -> extVNormalLeftSlope(k - 0x93)
                 0x95, 0x96 -> extVVerySteepLeftSlope(k - 0x95)
-                else -> unknown++
+                else -> unkExt(k)
             }
         }
 

@@ -94,6 +94,17 @@ tasks.register<JavaExec>("dumpOverworldDoc") {
     workingDir = rootDir
 }
 
+// Diagnostica/checklist de un nivel: ¿importable? y qué objetos faltan por portar:
+//   ./gradlew :core:diagnoseSmwLevel --args="--rom smw.sfc --level 0x105"
+tasks.register<JavaExec>("diagnoseSmwLevel") {
+    group = "rolebuilder"
+    description = "Checklist de importabilidad de un nivel de SMW (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwLevelDiagnoseKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Importa un nivel real de SMW como proyecto editable (Platform Builder):
 //   ./gradlew :core:importSmwLevel --args="--rom smw.sfc --level 0x105 --out proyecto"
 tasks.register<JavaExec>("importSmwLevel") {
