@@ -94,6 +94,17 @@ tasks.register<JavaExec>("dumpOverworldDoc") {
     workingDir = rootDir
 }
 
+// Importa un nivel real de SMW como proyecto editable (Platform Builder):
+//   ./gradlew :core:importSmwLevel --args="--rom smw.sfc --level 0x105 --out proyecto"
+tasks.register<JavaExec>("importSmwLevel") {
+    group = "rolebuilder"
+    description = "Importa un nivel de SMW como proyecto jugable de Role Builder (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwLevelImporterKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Documenta el Layer 2 (fondos y 2ª capa de objetos) a docs/fondos_layer2_smw.md:
 //   ./gradlew :core:dumpLayer2Doc --args="--rom smw.sfc"
 tasks.register<JavaExec>("dumpLayer2Doc") {

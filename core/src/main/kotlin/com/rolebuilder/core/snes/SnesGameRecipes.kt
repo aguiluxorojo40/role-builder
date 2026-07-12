@@ -379,14 +379,25 @@ object SnesGameRecipes {
         val cgram = assembleSmwCgram(rom, delta, level)
         val defs = smwMap16DefTable(rom, delta, tm.tileset)
 
-        val totalCols = tm.screens * 16
-        var lastCol = -1
-        for (c in 0 until totalCols) for (r in 0..26) {
-            val b = tm.block(c, r); if (b > 0 && b != 0x25) { lastCol = maxOf(lastCol, c); break }
+        // Dimensiones recortadas al contenido, según orientación: horizontal recorta columnas
+        // (alto fijo 27); vertical recorta filas (ancho fijo 16, pantallas apiladas).
+        val w: Int; val h: Int
+        if (tm.vertical) {
+            var lastRow = -1
+            for (r in 0 until tm.rows) for (c in 0..15) {
+                val b = tm.block(c, r); if (b > 0 && b != 0x25) { lastRow = maxOf(lastRow, r); break }
+            }
+            if (lastRow < 3) return null
+            w = 16; h = minOf(lastRow + 2, tm.rows)
+        } else {
+            val totalCols = tm.screens * 16
+            var lastCol = -1
+            for (c in 0 until totalCols) for (r in 0..26) {
+                val b = tm.block(c, r); if (b > 0 && b != 0x25) { lastCol = maxOf(lastCol, c); break }
+            }
+            if (lastCol < 3) return null
+            w = minOf(lastCol + 2, totalCols, maxCols); h = 27
         }
-        if (lastCol < 3) return null
-        val w = minOf(lastCol + 2, totalCols, maxCols)
-        val h = 27
 
         // Bloques distintos usados → tesela del atlas. El aire (0x25) queda como -1.
         val blockToTile = HashMap<Int, Int>()
