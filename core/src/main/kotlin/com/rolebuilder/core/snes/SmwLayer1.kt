@@ -297,7 +297,9 @@ object SmwLayer1 {
                 0x16 -> stdPurpleCoins()
                 0x17 -> if ((size shr 4) < 2) stdRopeCloudLine() else unknown++
                 0x1C -> stdDonutBridge()
+                0x1F -> stdSkinnyVerticalPipe()                  // pipe/bone-log vertical fino
                 0x21 -> stdLedge(size, 2)                        // wide-scale ground ledge
+                0x39 -> grassRightDiagonalPipe()                 // tubería diagonal (grassland)
                 0x3A -> grassDiagonalLedgeLeft()
                 0x3B -> grassDiagonalLedgeRight()
                 0x3C -> grassArchLedge()
@@ -322,6 +324,8 @@ object SmwLayer1 {
                 0x44, 0x45 -> extPurpleTriangle(k - 68)
                 0x46 -> extMidwayBar()
                 0x47, 0x48 -> extDoor(k - 71)
+                0x86 -> extGoalSign()
+                0x8E -> extSwitchBlock(1)                        // bloque interruptor amarillo
                 0x82 -> extLargeBush(EXT_BIG_BUSH, 8, 4)
                 0x83 -> extLargeBush(EXT_SMALL_BUSH, 5, 3)
                 0x91, 0x92 -> extVSteepLeftSlope(k - 0x91)     // slopes de nivel VERTICAL
@@ -368,6 +372,85 @@ object SmwLayer1 {
             setHi01(v3); setLo(v3, EXT_V95_MID[v2])
             val v4 = vertVL()
             setHi01(v4); setLo(v4, EXT_V95_BOT[v2])
+        }
+
+        // --------------- objetos añadidos para el nivel 1 (ports 1:1) ---------------
+
+        /** StdObj1F ($0D:B51F): pipe/bone-log vertical fino. Tapa 83, cuerpo 84, base 0x55. */
+        fun stdSkinnyVerticalPipe() {
+            var v1 = pos
+            var v2 = (size and 0xF0) shr 4
+            setHi01(pos)
+            var i = 83
+            while (true) {
+                setLo(v1, i)
+                v1 = vert()
+                v2 = (v2 - 1) and 0xFF
+                if (v2 == 0) break
+                setHi01(v1)
+                i = 84
+            }
+            setHi01(v1); setLo(v1, 0x55)
+        }
+
+        /** GrassObj39 ($0D:B73F): tubería diagonal hacia la derecha (nivel de pradera). */
+        fun grassRightDiagonalPipe() {
+            var updated = pos
+            var r0 = size shr 4
+            var r1 = 1
+            var v2 = 0
+            preserve()
+            while (true) {
+                var r2 = r1
+                do {
+                    setHi01(updated)
+                    updated = horiz(updated, GRASS39_PIPE[v2++]); r2--
+                } while (r2 and 0x80 == 0)
+                restore()
+                updated = goDownLeft()
+                r1 += 2
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                if (v2 == 6) {
+                    r1--
+                    do {
+                        r2 = r1
+                        do {
+                            setHi01(updated)
+                            updated = horiz(updated, GRASS39_PIPE[v2++]); r2--
+                        } while (r2 and 0x80 == 0)
+                        restore()
+                        updated = goDownLeft()
+                        if (v2 == 16) v2 = 11
+                        r0 = (r0 - 1) and 0xFF
+                    } while (r0 and 0x80 == 0)
+                    break
+                }
+            }
+            val v3 = horizNext(updated)
+            setHi01(v3); setLo(v3, 0xEB)
+        }
+
+        /** ExtObj86 ($0D:A7E7): cartel de meta (rejilla 2×2). */
+        fun extGoalSign() {
+            var v0 = pos
+            var v1 = 0
+            preserve()
+            do {
+                do {
+                    setHi00(v0)
+                    v0 = horiz(v0, GOALSIGN_TILES[v1++])
+                } while (v1 and 1 != 0)
+                restore()
+                v0 = vert()
+            } while (v1 != 4)
+        }
+
+        /** ExtObj8E ($0D:B58D): bloque interruptor. En parse en frío el switch está APAGADO,
+         *  así que sale el bloque INACTIVO (contorno), página 0. k=1 amarillo, k=0 verde. */
+        fun extSwitchBlock(k: Int) {
+            setHi00(pos)
+            setLo(pos, SWITCH8E_INACTIVE[k])
         }
 
         // --------------------------- objetos extendidos ---------------------------
@@ -1329,6 +1412,12 @@ object SmwLayer1 {
         0x1f, 0x20, 0x21, 0x22, 0x23, 0x25, 0x26, 0x27, 0x28, 0x2a, 0xde, 0xe0, 0xe2, 0xe4, 0xec, 0xed,
         0x2c, 0x25, 0x2d,
     )
+    // Objetos añadidos para el nivel 1 (tablas de teselas, copiadas 1:1 de smw_0d.c).
+    private val GRASS39_PIPE = intArrayOf(
+        0xc4, 0xc5, 0xc7, 0xec, 0xed, 0xc6, 0xc7, 0xee, 0x59, 0x5a, 0xef, 0xc7, 0xee, 0x59, 0x5b, 0x5c,
+    )
+    private val GOALSIGN_TILES = intArrayOf(0x66, 0x67, 0x68, 0x69)
+    private val SWITCH8E_INACTIVE = intArrayOf(0x6a, 0x6b) // {verde k=0, amarillo k=1}
     // Slopes de nivel vertical (ExtObj91/93/95), 2 variantes cada uno (v2 = 0/1).
     private val EXT_V91_TOP = intArrayOf(0xaa, 0xaf)
     private val EXT_V91_BOT = intArrayOf(0xe2, 0xe4)
