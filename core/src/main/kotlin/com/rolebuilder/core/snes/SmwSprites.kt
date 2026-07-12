@@ -31,7 +31,7 @@ package com.rolebuilder.core.snes
  * (b2&0xF)`—, la X dentro de pantalla es `b2&0xF0` (píxeles) y la Y `b1&0xF0 |
  * (b1&0x0D)<<8`, que en niveles vanilla (bits extra = 0) equivale a este decode.
  */
-internal object SmwSprites {
+object SmwSprites {
 
     /** $05:EC00 → PC. 512 niveles (0x000..0x1FF) × 2 bytes (low/high). */
     internal const val PTR_TABLE_PC = 0x2EC00
@@ -60,7 +60,7 @@ internal object SmwSprites {
      * Parsea la lista de sprites del [level]. Devuelve null si no hay puntero válido
      * o el flujo está corrupto (sin terminador dentro de la cota).
      */
-    fun parse(rom: ByteArray, delta: Int, level: Int): SmwSpriteList? {
+    internal fun parse(rom: ByteArray, delta: Int, level: Int): SmwSpriteList? {
         val ptr = PTR_TABLE_PC + delta + 2 * level
         if (ptr < 0 || ptr + 1 >= rom.size) return null
         val addr = (rom[ptr].toInt() and 0xFF) or ((rom[ptr + 1].toInt() and 0xFF) shl 8)
@@ -87,4 +87,24 @@ internal object SmwSprites {
         }
         return SmwSpriteList(header, list)
     }
+
+    /** Un sprite colocado, público para documentación: id + posición en casillas de 16px. */
+    data class Placement(val id: Int, val xTile: Int, val yTile: Int, val screen: Int)
+
+    /** PC de la entrada (2 bytes) de este nivel en la tabla de punteros de sprites ($05:EC00). */
+    fun ptrTablePc(delta: Int, level: Int): Int = PTR_TABLE_PC + delta + 2 * level
+
+    /** PC donde empieza el FLUJO de datos de sprites del nivel (banco $07), o null. */
+    fun dataStreamPc(rom: ByteArray, delta: Int, level: Int): Int? {
+        val ptr = ptrTablePc(delta, level)
+        if (ptr < 0 || ptr + 1 >= rom.size) return null
+        val addr = (rom[ptr].toInt() and 0xFF) or ((rom[ptr + 1].toInt() and 0xFF) shl 8)
+        if (addr < 0x8000) return null
+        val p = DATA_BANK_PC + delta + (addr - 0x8000)
+        return if (p in rom.indices) p else null
+    }
+
+    /** Sprites colocados en el [level] con su posición, para documentación. */
+    fun placements(rom: ByteArray, delta: Int, level: Int): List<Placement> =
+        parse(rom, delta, level)?.sprites?.map { Placement(it.id, it.xTile, it.yTile, it.screen) } ?: emptyList()
 }

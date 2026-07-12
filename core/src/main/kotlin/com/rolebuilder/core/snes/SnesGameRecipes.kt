@@ -771,6 +771,57 @@ object SnesGameRecipes {
         )
     }
 
+    /** Todas las DIRECCIONES ROM (PC) relevantes de un nivel, para documentar/contrastar. */
+    class SmwLevelAddresses(
+        val level: Int,
+        /** Entrada de 3 bytes de este nivel en la tabla de punteros de Layer 1 ($05:E000). */
+        val layer1PtrTablePc: Int,
+        /** PC de la cabecera primaria (5 bytes) del nivel = datos de Layer 1. */
+        val headerPc: Int?,
+        /** Entrada de 2 bytes de este nivel en la tabla de punteros de sprites ($05:EC00). */
+        val spritePtrTablePc: Int,
+        /** PC donde empieza el flujo de datos de sprites (banco $07). */
+        val spriteStreamPc: Int?,
+        /** Entrada de 4 bytes (SP1-4) en la tabla de GFX de sprites, según spriteGfx del nivel. */
+        val spriteGfxSlotPc: Int?,
+        /** Los 4 nº de fichero GFX que el nivel sube a SP1..SP4 (0x7F = ranura vacía). */
+        val spriteGfxFiles: IntArray?,
+    )
+
+    /** Reúne las direcciones ROM de [level] (0..0x1FF) para documentación. */
+    fun smwLevelAddresses(rom: ByteArray, header: SnesHeader, level: Int): SmwLevelAddresses {
+        val delta = header.headerOffset - 0x7FC0
+        val info = smwLevelInfo(rom, header, level)
+        val slotPc = info?.let { SMW_SPRITE_GFX_TABLE_PC + delta + 4 * (it.spriteGfx and 0x0F) }
+        val files = slotPc?.takeIf { it >= 0 && it + 4 <= rom.size }
+            ?.let { IntArray(4) { s -> byte(rom, slotPc + s) } }
+        return SmwLevelAddresses(
+            level = level,
+            layer1PtrTablePc = SMW_LAYER1_PTR_PC + delta + 3 * level,
+            headerPc = smwLayer1DataPc(rom, delta, level),
+            spritePtrTablePc = SmwSprites.ptrTablePc(delta, level),
+            spriteStreamPc = SmwSprites.dataStreamPc(rom, delta, level),
+            spriteGfxSlotPc = slotPc,
+            spriteGfxFiles = files,
+        )
+    }
+
+    /** Direcciones de las TABLAS globales de SMW (PC), para el índice de referencia del informe. */
+    fun smwReferenceTables(): Map<String, Int> = linkedMapOf(
+        "Tabla punteros Layer 1 ($05:E000)" to SMW_LAYER1_PTR_PC,
+        "Tabla punteros Layer 2 ($05:E600)" to SMW_LAYER2_PTR_PC,
+        "Tabla punteros sprites ($05:EC00)" to SmwSprites.ptrTablePc(0, 0),
+        "Tabla GFX sprites SP1-4 ($00:A8C3)" to SMW_SPRITE_GFX_TABLE_PC,
+        "Tabla GFX FG/BG ($00:A92B)" to SMW_FGBG_GFX_TABLE_PC,
+        "Paleta back area ($00:B0A0)" to SMW_BACK_AREA_PC,
+        "Paleta BG ($00:B0B0)" to SMW_BG_PC,
+        "Paleta FG ($00:B190)" to SMW_FG_PC,
+        "Paleta objetos fija ($00:B250)" to SMW_FIXED_PC,
+        "Paleta jugador ($00:B2C8)" to SMW_PLAYER_PC,
+        "Paleta sprites ($00:B318)" to SMW_SPRITE_PC,
+        "Map16 FG ($0E:8000)" to SMW_MAP16_FG_PC,
+    )
+
     /**
      * Selectores de paleta REALES de la cabecera primaria (5 bytes) de un nivel.
      * Decodificados EXACTAMENTE como la rutina de carga del juego (bank $00

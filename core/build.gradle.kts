@@ -83,6 +83,17 @@ tasks.register<JavaExec>("bakeSmwEnemies") {
     workingDir = rootDir
 }
 
+// Documentación exhaustiva por nivel (direcciones + props + enemigos) a docs/niveles_smw.md:
+//   ./gradlew :core:dumpLevelDocs --args="--rom smw.sfc"
+tasks.register<JavaExec>("dumpLevelDocs") {
+    group = "rolebuilder"
+    description = "Documenta cada nivel de SMW: direcciones, propiedades y enemigos (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwLevelDocDumpKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Vuelca qué enemigos hay en cada nivel de SMW a docs/enemigos_por_nivel.md:
 //   ./gradlew :core:dumpLevelEnemies --args="--rom smw.sfc"
 tasks.register<JavaExec>("dumpLevelEnemies") {
