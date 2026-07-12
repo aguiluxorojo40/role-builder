@@ -88,8 +88,11 @@ object SmwSprites {
         return SmwSpriteList(header, list)
     }
 
-    /** Un sprite colocado, público para documentación: id + posición en casillas de 16px. */
-    data class Placement(val id: Int, val xTile: Int, val yTile: Int, val screen: Int)
+    /** Un sprite colocado, público para documentación: id + posición + extra bits (EE). */
+    data class Placement(val id: Int, val xTile: Int, val yTile: Int, val screen: Int, val extraBits: Int)
+
+    /** Byte de CABECERA de la lista de sprites del nivel (memoria/buoyancy), o null. */
+    fun spriteHeaderByte(rom: ByteArray, delta: Int, level: Int): Int? = parse(rom, delta, level)?.header
 
     /** PC de la entrada (2 bytes) de este nivel en la tabla de punteros de sprites ($05:EC00). */
     fun ptrTablePc(delta: Int, level: Int): Int = PTR_TABLE_PC + delta + 2 * level
@@ -106,5 +109,5 @@ object SmwSprites {
 
     /** Sprites colocados en el [level] con su posición, para documentación. */
     fun placements(rom: ByteArray, delta: Int, level: Int): List<Placement> =
-        parse(rom, delta, level)?.sprites?.map { Placement(it.id, it.xTile, it.yTile, it.screen) } ?: emptyList()
+        parse(rom, delta, level)?.sprites?.map { Placement(it.id, it.xTile, it.yTile, it.screen, it.extraBits) } ?: emptyList()
 }

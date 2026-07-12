@@ -29,6 +29,25 @@ class SmwLevelStart(
     /** Preset de posición FG/BG al entrar (`secHeader1 & 0x38 >> 3`): en qué pantalla
      *  y encuadre arranca la cámara. Las entradas estándar valen 0 (pantalla inicial). */
     val fgBgPositionSetting: Int get() = (secHeader[1].toInt() and 0x38) shr 3
+
+    // --- Campos decodificados de la cabecera secundaria (ver smw_05.c:2412-2434) ---
+    /** ¿Nivel VERTICAL? (misc_level_layout_flags bit0 = F600 bit5). Los verticales no
+     *  tienen Layer 1 horizontal, por eso su colisión/salidas salen vacías. */
+    val vertical: Boolean get() = (secHeader[3] and 0x20) != 0
+    /** Banderas de layout (F600 bits 6-5): bit0=vertical, bit1=modo de layout. */
+    val layoutFlags: Int get() = (secHeader[3] shr 5) and 0x03
+    /** Pantalla/página de entrada (F600 bits 4-0): alto de player X o Y según vertical. */
+    val entranceScreen: Int get() = secHeader[3] and 0x1F
+    /** ¿Desactiva la intro "no Yoshi" (F600 bit7)? Relacionado con midway. */
+    val disableNoYoshiIntro: Boolean get() = (secHeader[3] and 0x80) != 0
+    /** Ajuste de Layer 3 (F200 bits 7-6). */
+    val layer3Setting: Int get() = (secHeader[1] shr 6) and 0x03
+    /** Índice de scroll de Layer 2 (F000 bits 7-4). */
+    val layer2ScrollSetting: Int get() = (secHeader[0] shr 4) and 0x0F
+    /** Preset de Y de Layer 1 (F400 bits 3-2). */
+    val layer1YSetting: Int get() = (secHeader[2] shr 2) and 0x03
+    /** Preset de Y de Layer 2 (F400 bits 1-0). */
+    val layer2YSetting: Int get() = secHeader[2] and 0x03
 }
 
 /**

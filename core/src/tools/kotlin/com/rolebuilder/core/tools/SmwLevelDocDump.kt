@@ -75,10 +75,20 @@ fun main(args: Array<String>) {
                 .joinToString(" ") { "${it.name}=${h[it]}" }
             "${col.cols}×${col.rows} casillas · $nonEmpty"
         }
-        // Entrada (posición de inicio) desde la cabecera secundaria.
+        // Entrada + cabecera secundaria decodificada.
         val start = runCatching { SmwLevelStartReader.read(rom, header, level) }.getOrNull()
         val startTxt = if (start == null) "—" else
-            "casilla (${start.startTileX},${start.startTileY}) = px (${start.startPixelX},${start.startPixelY})"
+            "casilla (${start.startTileX},${start.startTileY}) px (${start.startPixelX},${start.startPixelY})" +
+                " · pantalla entrada ${start.entranceScreen}" +
+                (if (start.vertical) " · **VERTICAL**" else "") +
+                (if (start.disableNoYoshiIntro) " · no-Yoshi" else "") +
+                " · L2scroll ${start.layer2ScrollSetting} L3 ${start.layer3Setting}" +
+                " L1y ${start.layer1YSetting} L2y ${start.layer2YSetting}" +
+                " · secHdr [${start.secHeader.joinToString(" ") { hx(it) }}]"
+        // Byte de cabecera de la lista de sprites (memoria + buoyancy).
+        val sprHdr = SmwSprites.spriteHeaderByte(rom, delta, level)
+        val sprHdrTxt = if (sprHdr == null) "—" else
+            "${hx(sprHdr)} (memoria ${hx(sprHdr and 0x1F)}, buoyancy ${hx(sprHdr and 0xC0)})"
 
         perLevel.appendLine("### Nivel ${hx(level, 3)}")
         perLevel.appendLine("- **Direcciones**: L1ptr ${hx(addr.layer1PtrTablePc, 5)} → header ${hx(addr.headerPc, 5)}" +
@@ -94,6 +104,7 @@ fun main(args: Array<String>) {
             " backArea=${info.backgroundColor}")
         perLevel.appendLine("- **Colisión**: $colTxt")
         perLevel.appendLine("- **Entrada**: $startTxt")
+        perLevel.appendLine("- **Cabecera sprites**: $sprHdrTxt")
         // Salidas de pantalla (grafo nivel → sublevel/nivel destino).
         val exits = runCatching { SmwLayer1.screenExits(rom, delta, level) }.getOrNull() ?: emptyList()
         val exitsTxt = if (exits.isEmpty()) "(ninguna)" else exits.joinToString(" · ") {
@@ -111,8 +122,9 @@ fun main(args: Array<String>) {
         } else {
             perLevel.appendLine("- **Enemigos (${placements.size})**:")
             for ((id, ps) in byId.entries.sortedBy { it.key }) {
-                val pos = ps.take(6).joinToString(" ") { "(${it.screen},${it.xTile},${it.yTile})" } +
-                    if (ps.size > 6) " …" else ""
+                val pos = ps.take(6).joinToString(" ") {
+                    "(${it.screen},${it.xTile},${it.yTile}${if (it.extraBits != 0) " EE${it.extraBits}" else ""})"
+                } + if (ps.size > 6) " …" else ""
                 perLevel.appendLine("    - ${tag(id)} **${SmwSpriteNames.nameOf(id)}** (${hx(id)}) ×${ps.size}: $pos")
             }
         }
