@@ -10,8 +10,11 @@ package com.rolebuilder.core.snes
  * nunca es moneda ni meta. Los números de bloque son los que dibuja el propio parser de objetos:
  *  - Moneda estándar (bloque 0x2B) y las dos mitades de la moneda de dragón (0x2D/0x2E).
  *  - Cartel/poste de META (bloques 0x66..0x69, los que coloca ExtObj86_GoalSign).
+ *  - ? bloque / bloque de premio (0x21..0x24): al golpearlo por abajo suelta un power-up. Es el
+ *    rango que el propio juego comprueba en el golpe de cabeza (RunPlayerBlockCode_EB77:
+ *    `tile_lo in 0x21..0x24` con velocidad vertical hacia arriba).
  */
-enum class SmwBlockBehavior { NONE, COIN, GOAL }
+enum class SmwBlockBehavior { NONE, COIN, GOAL, PRIZE }
 
 object SmwBlockBehaviorClassifier {
 
@@ -20,6 +23,7 @@ object SmwBlockBehaviorClassifier {
         if (block !in 1..0xFF) return SmwBlockBehavior.NONE // solo block-code de página 0
         return when (block) {
             0x2B, 0x2D, 0x2E -> SmwBlockBehavior.COIN
+            in 0x21..0x24 -> SmwBlockBehavior.PRIZE
             in 0x66..0x69 -> SmwBlockBehavior.GOAL
             else -> SmwBlockBehavior.NONE
         }

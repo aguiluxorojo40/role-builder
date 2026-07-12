@@ -119,14 +119,16 @@ fun main(args: Array<String>) {
     ProjectIo.saveDatabase(outDir, database)
     ProjectIo.saveMap(outDir, gameMap)
 
-    // Cuenta celdas coleccionables/meta (tile del mapa cuyo comportamiento no es NONE).
-    var coinCells = 0; var goalCells = 0
-    for (t in map.tiles) if (t >= 0) when (map.behavior.getOrNull(t) ?: 0) { 1 -> coinCells++; 2 -> goalCells++ }
+    // Cuenta celdas coleccionables/meta/premio (tile del mapa cuyo comportamiento no es NONE).
+    var coinCells = 0; var goalCells = 0; var prizeCells = 0
+    for (t in map.tiles) if (t >= 0) when (map.behavior.getOrNull(t) ?: 0) {
+        1 -> coinCells++; 2 -> goalCells++; 3 -> prizeCells++
+    }
 
     println("Proyecto: ${outDir.absolutePath}")
     println("Nivel $hx \"$title\": ${map.mapWidth}×${map.mapHeight} casillas · " +
-        "${map.enemies.size} enemigos · ${map.animations.size} teselas animadas · " +
-        "$coinCells monedas · meta ${if (goalCells > 0) "sí" else "no"} · " +
+        "${map.enemies.size} enemigos · $coinCells monedas · $prizeCells ? bloques · " +
+        "meta ${if (goalCells > 0) "sí" else "no"} · " +
         "fondo ${if (bgLayers.isEmpty()) "no" else "sí (Layer 2)"} · " +
         "inicio ($startX,$startY) · modo PLATFORMER")
 }

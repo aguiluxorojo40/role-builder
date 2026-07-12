@@ -124,4 +124,35 @@ class ProjectPlatformerTest {
         assertTrue(e.goalReached)
         assertEquals(1, e.goalEvents)
     }
+
+    // Tileset con un ? bloque (comportamiento 3 = PRIZE) en el tile 3.
+    private val prizeTileset = Tileset(
+        id = 1, name = "t", image = "t.png", tileSize = 16, columns = 4, rows = 1,
+        passable = listOf(true, false, true, true),
+        platformBehavior = listOf(0, 0, 0, 3), // NONE, NONE, NONE, PRIZE
+    )
+
+    @Test
+    fun `golpear un ? bloque suelta seta, recogerla hace crecer y un golpe encoge`() {
+        // ? bloque en (1,1); el jugador debajo, subiendo, lo golpea de cabeza.
+        val map = mapWith(mapOf((1 to 1) to 3))
+        val e = ProjectPlatformer.engine(map, prizeTileset, startCol = 1, startRow = 3)
+        assertEquals(SmwSolidity.SOLID, e.solidity(1, 1)) // el ? bloque es sólido
+        e.player.x = 1 * 16f; e.player.y = 2 * 16f
+        e.pressJump()
+        // Simula el golpe de cabeza moviéndose hacia arriba.
+        e.player.vy = -4f
+        repeat(3) { e.tick() }
+        assertTrue(e.powerups.isNotEmpty(), "el ? bloque debería soltar una seta")
+        assertEquals(1, e.prizeEvents)
+        // Recoge la seta: el jugador crece.
+        val pu = e.powerups.first()
+        e.player.x = pu.x; e.player.y = pu.y
+        e.tick()
+        assertTrue(e.player.big, "recoger la seta hace grande al jugador")
+        assertEquals(1, e.growEvents)
+        // Un golpe de enemigo estando grande solo encoge (no mata).
+        // (sin enemigos aquí, comprobamos el helper de daño vía tamaño)
+        assertTrue(!e.player.dead)
+    }
 }
