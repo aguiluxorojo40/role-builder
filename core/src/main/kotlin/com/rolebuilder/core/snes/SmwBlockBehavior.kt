@@ -14,15 +14,22 @@ package com.rolebuilder.core.snes
  * snesrev/smw. La MONEDA es el byte bajo 0x2B: se confirma en
  * `ModifyMap16IDForSpecialBlocks` ($00:F545), que con el interruptor-P azul
  * intercambia 0x2B ↔ 0x32 —el clásico "monedas ⇄ bloques" de SMW—, y `counter`
- * de monedas (`player_current_coin_count`) sube al recogerla. El resto de bloques
- * interactivos (`?`, note, message, turn) se irán añadiendo a esta tabla.
+ * de monedas (`player_current_coin_count`) sube al recogerla.
+ *
+ * El bloque `?` / PREMIO ([QUESTION]) es el byte bajo 0x21..0x24: la rutina de golpe
+ * desde abajo ($00, `RunPlayerBlockCode`) solo trata el bloque como golpeable si el
+ * jugador sube y `0x21 <= tile_lo < 0x25`, y entonces llama a `CheckIfBlockWasHit`
+ * (que suelta el contenido). Son bloques SÓLIDOS (te apoyas y los cabeceas).
  */
-enum class SmwBlockAction { NONE, COIN }
+enum class SmwBlockAction { NONE, COIN, QUESTION }
 
 object SmwBlockBehavior {
 
     /** Byte bajo del bloque Map16 de una moneda suelta (confirmado en $00:F545). */
     private const val COIN_LO = 0x2B
+
+    /** Rango de bytes bajos de los bloques golpeables `?`/premio (confirmado en $00:EBxx). */
+    private val QUESTION_LO = 0x21..0x24
 
     /**
      * Acción interactiva del bloque Map16 [block] (tal cual lo entrega
@@ -31,8 +38,10 @@ object SmwBlockBehavior {
      */
     fun classify(block: Int): SmwBlockAction {
         if (block < 0 || block ushr 8 != 0) return SmwBlockAction.NONE
-        return when (block and 0xFF) {
-            COIN_LO -> SmwBlockAction.COIN
+        val lo = block and 0xFF
+        return when {
+            lo == COIN_LO -> SmwBlockAction.COIN
+            lo in QUESTION_LO -> SmwBlockAction.QUESTION
             else -> SmwBlockAction.NONE
         }
     }

@@ -46,6 +46,11 @@ object ProjectPlatformer {
     }
 
     private fun tileSolidity(tileset: Tileset, tile: Int): SmwSolidity {
+        // Los bloques '?' son "block code" (el terreno los da como NONE), pero en el juego
+        // son SÓLIDOS: hay que poder apoyarse y cabecearlos. Forzamos su solidez.
+        if (tileset.platformBlockActions.getOrNull(tile) == SmwBlockAction.QUESTION.ordinal) {
+            return SmwSolidity.SOLID
+        }
         val ord = tileset.platformSolidity.getOrNull(tile)
         if (ord != null) return SOLIDITY_VALUES.getOrElse(ord) { SmwSolidity.NONE }
         return if (tileset.isPassable(tile)) SmwSolidity.NONE else SmwSolidity.SOLID
@@ -89,6 +94,7 @@ object ProjectPlatformer {
                 val sa = tileset.platformBlockActions.getOrNull(tile) ?: continue
                 val ea = when (sa) {
                     SmwBlockAction.COIN.ordinal -> BlockAction.COIN.ordinal
+                    SmwBlockAction.QUESTION.ordinal -> BlockAction.PRIZE.ordinal
                     else -> BlockAction.NONE.ordinal
                 }
                 if (ea != BlockAction.NONE.ordinal) {

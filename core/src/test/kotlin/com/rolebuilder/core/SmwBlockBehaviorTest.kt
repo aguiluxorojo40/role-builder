@@ -15,6 +15,15 @@ class SmwBlockBehaviorTest {
     }
 
     @Test
+    fun `los bloques golpeables 0x21-0x24 son bloques interrogante`() {
+        for (lo in 0x21..0x24) {
+            assertEquals(SmwBlockAction.QUESTION, SmwBlockBehavior.classify(lo), "0x${lo.toString(16)}")
+        }
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x20))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x25))
+    }
+
+    @Test
     fun `el terreno y los bloques del plano alto no son interactivos`() {
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x25)) // aire
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x100)) // terreno sólido
