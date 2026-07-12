@@ -19,8 +19,7 @@ package com.rolebuilder.core.snes
  * Cubre niveles HORIZONTALES y VERTICALES: la base de cada pantalla sale de la
  * tabla de layout del modo (0x1B0/pantalla horizontal, 0x200/pantalla vertical)
  * y en verticales el juego intercambia los nibbles de posición de cada objeto.
- * Los slopes específicos de nivel vertical (ext 0x91/0x93/0x95) aún no se portan
- * y se cuentan como no reconocidos.
+ * Incluye los slopes específicos de nivel vertical (ext 0x91/0x93/0x95).
  */
 object SmwLayer1 {
 
@@ -284,8 +283,50 @@ object SmwLayer1 {
                 0x47, 0x48 -> extDoor(k - 71)
                 0x82 -> extLargeBush(EXT_BIG_BUSH, 8, 4)
                 0x83 -> extLargeBush(EXT_SMALL_BUSH, 5, 3)
+                0x91, 0x92 -> extVSteepLeftSlope(k - 0x91)     // slopes de nivel VERTICAL
+                0x93, 0x94 -> extVNormalLeftSlope(k - 0x93)
+                0x95, 0x96 -> extVVerySteepLeftSlope(k - 0x95)
                 else -> unknown++
             }
+        }
+
+        // ------------------- slopes específicos de nivel VERTICAL -------------------
+        // Port 1:1 de ExtObj91/93/95 ($0D:A80D..A87D, smw_0d.c). Usan el cruce vertical de
+        // NIVEL VERTICAL (pos+16; al desbordar 256 avanza una pantalla entera, ptr += 0x200).
+
+        /** HandleVerticalSubScreenCrossingForCurrentObject_VerticalLevel ($0D:A82A). */
+        fun vertVL(): Int {
+            val t = pos + 16
+            if (t >= 256) ptr += 0x200
+            pos = t and 0xFF
+            return pos
+        }
+
+        fun extVSteepLeftSlope(v2: Int) {
+            val v1 = pos
+            setHi01(v1); setLo(v1, EXT_V91_TOP[v2])
+            val v3 = vertVL()
+            setHi01(v3); setLo(v3, EXT_V91_BOT[v2])
+        }
+
+        fun extVNormalLeftSlope(v2: Int) {
+            val v1 = pos
+            setHi01(v1)
+            val v3 = horiz(v1, EXT_V93_TL[v2])
+            setHi01(v3); setLo(v3, EXT_V93_TR[v2])
+            val v4 = vertVL()
+            setHi01(v4)
+            val v5 = horiz(v4, EXT_V93_BL[v2])
+            setHi01(v5); setLo(v5, EXT_V93_BR[v2])
+        }
+
+        fun extVVerySteepLeftSlope(v2: Int) {
+            val v1 = pos
+            setHi01(v1); setLo(v1, EXT_V95_TOP[v2])
+            val v3 = vertVL()
+            setHi01(v3); setLo(v3, EXT_V95_MID[v2])
+            val v4 = vertVL()
+            setHi01(v4); setLo(v4, EXT_V95_BOT[v2])
         }
 
         // --------------------------- objetos extendidos ---------------------------
@@ -1247,6 +1288,16 @@ object SmwLayer1 {
         0x1f, 0x20, 0x21, 0x22, 0x23, 0x25, 0x26, 0x27, 0x28, 0x2a, 0xde, 0xe0, 0xe2, 0xe4, 0xec, 0xed,
         0x2c, 0x25, 0x2d,
     )
+    // Slopes de nivel vertical (ExtObj91/93/95), 2 variantes cada uno (v2 = 0/1).
+    private val EXT_V91_TOP = intArrayOf(0xaa, 0xaf)
+    private val EXT_V91_BOT = intArrayOf(0xe2, 0xe4)
+    private val EXT_V93_TL = intArrayOf(0x96, 0xa0)
+    private val EXT_V93_TR = intArrayOf(0x9b, 0xa5)
+    private val EXT_V93_BL = intArrayOf(0xde, 0xe6)
+    private val EXT_V93_BR = intArrayOf(0xe6, 0xe0)
+    private val EXT_V95_TOP = intArrayOf(0xca, 0xcc)
+    private val EXT_V95_MID = intArrayOf(0xcb, 0xcd)
+    private val EXT_V95_BOT = intArrayOf(0xf1, 0xf2)
     private val EXT_TLSLOPE_LEFT = intArrayOf(0xd8, 0xdb)
     private val EXT_TLSLOPE_RIGHT = intArrayOf(0xda, 0xdc)
     private val EXT_TRIANGLE = intArrayOf(0xb4, 0xb5)

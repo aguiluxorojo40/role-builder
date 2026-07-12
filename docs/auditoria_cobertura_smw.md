@@ -48,10 +48,10 @@ reconocidos. Salas de jefe / modos sin Layer 1 (modos 9/11/16) no tienen objetos
 1. **Tilemap del fondo de Layer 2 en píxeles**: clasificamos el Layer 2 (fondo vs objetos),
    la fuente en $0C y el nº de bloques Map16 del tilemap descomprimido; el render a color por
    tesela (`renderSmwBackground`) sigue con offsets Map16 [PROBABLE] y gate de cordura.
-2. **Slopes de nivel vertical** (ext 0x91/0x93/0x95): el resto del Layer 1 vertical ya se parsea;
-   estos tres objetos de pendiente específicos se cuentan como no reconocidos.
 
 **Resuelto** en esta ronda (antes pendiente):
+- **Slopes de nivel vertical** (ext 0x91/0x93/0x95): portados 1:1 (`SmwLayer1`); el nivel 0x108
+  (Star Road vertical), cuyos únicos objetos eran esos slopes, pasa de vacío a colisión real.
 - **Nombre de nivel en texto**: se decodifica (`SmwLevelNames`, 91 nombres en `niveles_smw.md`).
   Se ensambla de 3 trozos de un pool ($04:9AC5) vía tres tablas de offsets ($04:9C91/9CCF/9CED);
   el word por translevel ($04:A0FC) empaqueta i1=byte alto, i2/i3=nibbles del byte bajo. La

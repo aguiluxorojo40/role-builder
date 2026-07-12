@@ -4115,7 +4115,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **GFX sprites (SP1-4)**: `00 01 12 03` (spriteGfx=1) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0xA · música 3 · tiempo 200 · Layer2 fondo · paletas BG=3 FG=2 SPR=1 backArea=3
 - **Layer 2**: FONDO (imagen) · fuente 0x0CE7C0 (banco $0C) · tipo 0xFF · 865 bloques Map16 descomprimidos
-- **Colisión**: — (sin colisión reconstruible)
+- **Colisión**: 16×35 casillas · SLOPE=14 SLOPE_STEEP=10
 - **Entrada**: casilla (1,22) px (16,352) · pantalla entrada 0 · L2scroll 0 L3 0 L1y 2 L2y 2 · secHdr [0xB 0x0 0xA 0x0]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
 - **Salidas de pantalla**: (ninguna)
@@ -7703,7 +7703,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **GFX sprites (SP1-4)**: `00 01 13 04` (spriteGfx=3) · **GFX FG/BG [FG1 FG2 BG1 FG3]**: `14 17 0C 1A` (tilesetFG=3)
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
 - **Layer 2**: FONDO (imagen) · fuente 0x0CE8FE (banco $0C) · tipo 0xFF · 864 bloques Map16 descomprimidos
-- **Colisión**: 16×320 casillas · LEDGE_TOP=18 SOLID=186 SLOPE=103 SLOPE_STEEP=127
+- **Colisión**: 16×320 casillas · LEDGE_TOP=18 SOLID=186 SLOPE=111 SLOPE_STEEP=134
 - **Entrada**: casilla (1,3) px (16,48) · pantalla entrada 0 · **VERTICAL** · L2scroll 0 L3 0 L1y 0 L2y 3 · secHdr [0x1 0x10 0x3 0x60]
 - **Cabecera sprites**: 0x0 (memoria 0x0, buoyancy 0x0)
 - **Salidas de pantalla**: pant 9→0x1EC

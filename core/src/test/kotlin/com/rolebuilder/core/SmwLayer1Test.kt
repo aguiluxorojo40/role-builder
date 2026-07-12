@@ -114,6 +114,24 @@ class SmwLayer1Test {
     }
 
     @Test
+    fun `slope de nivel vertical (ext 0x91) coloca tapa y base con cruce vertical`() {
+        // Nivel vertical (modo 0x0A) con un ExtObj91 (steep left slope, v2=0): objeto
+        // extendido (obj=0) con size=0x91 en pos 0. Coloca 0xAA (tapa) y, tras el cruce
+        // vertical de nivel vertical, 0xE2 (base) una fila más abajo; ambos en página 1.
+        val rom = romWithLevel(
+            0x00, 0x0A, 0x00, 0x00, 0x00,  // cabecera vertical
+            0x00, 0x00, 0x91,               // ext 0x91 en (fila0, col0)
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertTrue(tm.vertical)
+        assertEquals(0, tm.unknownObjects) // ya NO se cuenta como desconocido
+        assertEquals(0x1AA, tm.block(0, 0)) // tapa (0xAA, página 1)
+        assertEquals(0x1E2, tm.block(0, 1)) // base (0xE2, página 1), fila de debajo
+    }
+
+    @Test
     fun `objetos desconocidos se cuentan sin romper el parse`() {
         val rom = romWithLevel(
             0x00, 0x00, 0x00, 0x00, 0x00,
