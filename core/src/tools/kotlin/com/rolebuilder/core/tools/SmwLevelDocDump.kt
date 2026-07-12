@@ -90,7 +90,19 @@ fun main(args: Array<String>) {
         val sprHdrTxt = if (sprHdr == null) "—" else
             "${hx(sprHdr)} (memoria ${hx(sprHdr and 0x1F)}, buoyancy ${hx(sprHdr and 0xC0)})"
 
+        // Tipo: nivel de mapa (overworld) vs sublevel/secundario. Los niveles del mapa
+        // son translevel 0x00-0x5F → leveldata 0x000-0x024 y 0x101-0x13B (96 = las 96 salidas).
+        val translevel = when {
+            level <= 0x024 -> level
+            level in 0x101..0x13B -> level - 0xDC
+            else -> null
+        }
+        val tipo = if (translevel != null)
+            "nivel de MAPA (translevel ${hx(translevel)})"
+        else "sublevel / sala secundaria (no aparece en el mapa; se entra por salida de pantalla)"
+
         perLevel.appendLine("### Nivel ${hx(level, 3)}")
+        perLevel.appendLine("- **Tipo**: $tipo")
         perLevel.appendLine("- **Direcciones**: L1ptr ${hx(addr.layer1PtrTablePc, 5)} → header ${hx(addr.headerPc, 5)}" +
             " · SprPtr ${hx(addr.spritePtrTablePc, 5)} → stream ${hx(addr.spriteStreamPc, 5)}" +
             " · L2ptr ${hx(addr.layer2PtrTablePc, 5)} · GFXslot ${hx(addr.spriteGfxSlotPc, 5)}" +

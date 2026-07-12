@@ -45,8 +45,12 @@ Layer 1 (modos 9/11/16) tampoco tienen objetos, es correcto.
 
 ## Resquicios HONESTOS que quedan (nada crítico para construir)
 
-1. **Nombre de nivel en texto** (`kLevelNames` → cadena): tenemos dirección y valor, pero el
-   texto se ensambla de 3 partes con la fuente de SMW; decodificarlo es una tarea aparte.
+1. **Nombre de nivel en texto** (`kLevelNames` → cadena): el nombre se ensambla de 3 tablas de
+   cadenas ($04:9C91/9CCF/9CED → índices en `kUpdateLevelName_LevelNameStrings` $04:9AC5); esas
+   se leen (direcciones + tiles crudos), pero convertir tesela→letra necesita la FUENTE gráfica
+   del nombre (no es una tabla de código), así que el texto legible queda pendiente. Sí resuelto:
+   **qué niveles son de MAPA** (translevel 0x00-0x5F → leveldata 0x000-0x024 y 0x101-0x13B, los
+   **96** con salida) vs **sublevels**, marcado por nivel en `niveles_smw.md` (campo "Tipo").
 2. **Contenido de Layer 2 de fondo**: documentamos puntero y tipo (fondo/nivel), no el tilemap
    del fondo en sí.
 3. **Niveles verticales**: identificados, pero su Layer 1 (colisión/salidas) aún no se parsea
