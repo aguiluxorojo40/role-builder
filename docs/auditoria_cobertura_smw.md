@@ -11,7 +11,7 @@ que extraemos y documentamos. Estado: ✅ completo · ⚠️ parcial · ❌ falt
 | Punteros Layer 1 (`kLevelData_Layer1`) | $05:E000 (3B×512) | ✅ | dirección + **parseado**: colisión, salidas de pantalla |
 | Objetos de Layer 1 (tilemap) | (banco $05/$06…) | ✅¹ | `SmwLayer1` reconstruye el Map16 (objetos comunes) |
 | Punteros Layer 2 (`kLevelData_Layer2`) | $05:E600 (3B×512) | ✅ | dirección + tipo (fondo/nivel) |
-| Contenido de Layer 2 (fondo/objetos) | (banco $0C…) | ⚠️ | solo puntero/tipo; el tilemap de fondo no se vuelca |
+| Contenido de Layer 2 (fondo/objetos) | (banco $0C…) | ✅ | clasificado (fondo vs objetos) + fuente $0C + nº bloques; `SmwLayer2Info`, `docs/fondos_layer2_smw.md` |
 | Punteros de sprites (`kLoadLevel_SpriteDataPtrs`) | $05:EC00 (2B×512) | ✅ | dirección + **lista parseada** |
 | Lista de sprites (enemigos) | banco $07 | ✅ | id, nombre, posición (pantalla,x,y), **extra bits** |
 | Byte de cabecera de sprites | (1er byte de la lista) | ✅ | memoria + buoyancy |
@@ -26,10 +26,10 @@ que extraemos y documentamos. Estado: ✅ completo · ⚠️ parcial · ❌ falt
 | Nombre de nivel (`kLevelNames`) | $04:A0FC (2B×256) | ✅ | **decodificado**: ensamblado de 3 trozos (`SmwLevelNames`), texto por nivel en `niveles_smw.md` |
 | Música de nivel | (índice en cabecera) | ✅ | índice 0-7 + reproductor N-SPC/S-DSP real |
 
-¹ Limitación: **niveles VERTICALES** — `SmwLayer1` solo parsea horizontales; en verticales
-la colisión/salidas salen vacías, pero ahora quedan **identificados** por la bandera de la
-cabecera secundaria (marcados `VERTICAL` en `niveles_smw.md`). Salas de jefe / modos sin
-Layer 1 (modos 9/11/16) tampoco tienen objetos, es correcto.
+¹ `SmwLayer1` ahora parsea niveles **horizontales Y verticales** (tabla de layout por modo:
+0x1B0/pantalla horizontal, 0x200/pantalla vertical, + intercambio de nibbles de posición). Los
+slopes específicos de nivel vertical (ext 0x91/0x93/0x95) aún no se portan y se cuentan como no
+reconocidos. Salas de jefe / modos sin Layer 1 (modos 9/11/16) no tienen objetos, es correcto.
 
 ## Datos GLOBALES (no por nivel) — usados o documentados
 
@@ -45,20 +45,23 @@ Layer 1 (modos 9/11/16) tampoco tienen objetos, es correcto.
 
 ## Resquicios HONESTOS que quedan (nada crítico para construir)
 
-1. **Contenido de Layer 2 de fondo**: documentamos puntero y tipo (fondo/nivel), no el tilemap
-   del fondo en sí.
-2. **Niveles verticales**: identificados, pero su Layer 1 (colisión/salidas) aún no se parsea
-   (otra disposición de pantallas).
-3. **Comportamiento por sprite** (tweaker `$166E`): se usa para la paleta; no se vuelca entero
-   por enemigo en el informe.
+1. **Tilemap del fondo de Layer 2 en píxeles**: clasificamos el Layer 2 (fondo vs objetos),
+   la fuente en $0C y el nº de bloques Map16 del tilemap descomprimido; el render a color por
+   tesela (`renderSmwBackground`) sigue con offsets Map16 [PROBABLE] y gate de cordura.
+2. **Slopes de nivel vertical** (ext 0x91/0x93/0x95): el resto del Layer 1 vertical ya se parsea;
+   estos tres objetos de pendiente específicos se cuentan como no reconocidos.
 
-**Resuelto** (antes pendiente): el **nombre de nivel en texto** ya se decodifica. No hacía falta
-la fuente gráfica: el nombre se ensambla de 3 trozos de un pool ($04:9AC5) vía tres tablas de
-offsets ($04:9C91/9CCF/9CED), y el word por translevel ($04:A0FC) empaqueta los tres índices
-(i1=byte alto, i2/i3=nibbles del byte bajo). El mapa tesela→carácter es directo (0x00-0x19=A-Z,
-0x1F=espacio, 0x5A='#', 0x5D=apóstrofo, 0x63-0x6C=0-9). Implementado en `SmwLevelNames` y volcado
-por nivel en `niveles_smw.md` (94 nombres). El bloqueo anterior ("hace falta la fuente") era falso:
-venía del bug SNES→PC que daba teselas basura.
+**Resuelto** en esta ronda (antes pendiente):
+- **Nombre de nivel en texto**: se decodifica (`SmwLevelNames`, 91 nombres en `niveles_smw.md`).
+  Se ensambla de 3 trozos de un pool ($04:9AC5) vía tres tablas de offsets ($04:9C91/9CCF/9CED);
+  el word por translevel ($04:A0FC) empaqueta i1=byte alto, i2/i3=nibbles del byte bajo. La
+  longitud de cada trozo llega al siguiente límite entre las 3 tablas (comparten pool). El
+  bloqueo anterior ("hace falta la fuente") era falso: venía del bug SNES→PC.
+- **Layer 2**: clasificado y documentado (fondos compartidos + capas de objetos), `docs/fondos_layer2_smw.md`.
+- **Niveles verticales**: `SmwLayer1` ya parsea su Layer 1 (colisión/salidas); 10 niveles
+  verticales que antes salían vacíos ahora tienen colisión.
+- **Comportamiento por sprite (tweaker)**: volcado completo de los 6 bytes por sprite en
+  `docs/comportamiento_sprites.md`.
 
 Todo lo demás relevante para **construir y contrastar niveles** (direcciones, cabeceras,
 GFX/paletas, colisión, entrada, salidas→sublevels, enemigos con posición y extra bits, sprites

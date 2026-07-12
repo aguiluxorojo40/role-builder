@@ -16,12 +16,20 @@ package com.rolebuilder.core.snes
  * saltan y se CUENTAN ([SmwLevelTilemap.unknownObjects]), para poder medir
  * cobertura y decidir honestamente si una escena es fiable.
  *
- * Limitación actual: solo niveles HORIZONTALES (los verticales usan otra
- * disposición de pantallas); para esos parse() devuelve null.
+ * Cubre niveles HORIZONTALES y VERTICALES: la base de cada pantalla sale de la
+ * tabla de layout del modo (0x1B0/pantalla horizontal, 0x200/pantalla vertical)
+ * y en verticales el juego intercambia los nibbles de posición de cada objeto.
+ * Los slopes específicos de nivel vertical (ext 0x91/0x93/0x95) aún no se portan
+ * y se cuentan como no reconocidos.
  */
 object SmwLayer1 {
 
-    /** Resultado: buffer Map16 del nivel (layout: pantalla*0x1B0 + fila*16 + col). */
+    /**
+     * Resultado: buffer Map16 del nivel. La base de cada pantalla sale de la TABLA DE LAYOUT
+     * ([layout], offsets dentro del buffer, réplica de `kLevelDataLayoutTables_Layer1LoPtrs`):
+     * horizontal = 0x1B0 por pantalla; VERTICAL = 0x200 por pantalla (las pantallas se apilan
+     * hacia abajo). En [vertical] la rejilla es 16 columnas × (pantallas×32) filas.
+     */
     internal class SmwLevelTilemap(
         val lo: ByteArray,
         val hi: ByteArray,
@@ -30,21 +38,53 @@ object SmwLayer1 {
         val mode: Int,
         val totalObjects: Int,
         val unknownObjects: Int,
+        val vertical: Boolean,
+        val layout: IntArray,
     ) {
-        /** Bloque Map16 en (colAbs 0..screens*16-1, fila 0..26), o -1 fuera de rango. */
-        fun block(colAbs: Int, row: Int): Int {
-            if (row !in 0..26) return -1
-            val idx = (colAbs / 16) * 0x1B0 + (if (row >= 16) 256 + (row - 16) * 16 else row * 16) + (colAbs % 16)
+        /** Nº de columnas de la rejilla (horizontal: pantallas×16; vertical: 16). */
+        val cols: Int get() = if (vertical) 16 else screens * 16
+        /** Nº de filas de la rejilla (horizontal: 27; vertical: pantallas×32). */
+        val rows: Int get() = if (vertical) screens * 32 else 27
+
+        /**
+         * Bloque Map16 en la rejilla. En horizontal (a=colAbs 0..cols-1, b=fila 0..26); en
+         * vertical (a=columna 0..15, b=fila 0..rows-1). Devuelve -1 fuera de rango.
+         */
+        fun block(a: Int, b: Int): Int {
+            val screen: Int; val within: Int; val cc: Int
+            if (vertical) { screen = b / 32; within = b % 32; cc = a }
+            else { screen = a / 16; within = b; cc = a % 16 }
+            if (within !in 0..31 || cc !in 0..15 || screen !in layout.indices) return -1
+            val idx = layout[screen] + (if (within >= 16) 256 + (within - 16) * 16 else within * 16) + cc
             if (idx !in lo.indices) return -1
             return (lo[idx].toInt() and 0xFF) or ((hi[idx].toInt() and 0xFF) shl 8)
         }
     }
 
-    /** Tamaño del buffer: 32 pantallas × 0x1B0 (idéntico a $7EC800..$7EFFFF). */
-    private const val BUF = 32 * 0x1B0
+    /** Tamaño del buffer: cubre 30 pantallas verticales × 0x200 (> 32 × 0x1B0 horizontal). */
+    private const val BUF = 0x3E00
 
     /** Modos de nivel sin objetos de Layer 1 (salas de jefe / especiales). */
     private val MODES_NO_LAYER1 = intArrayOf(9, 11, 16)
+
+    // Tablas de layout de pantallas (offsets dentro del buffer = valor g_ram − 0xC800), copiadas
+    // de kLevelDataLayout_* (smw_05.c). Horizontal: 0x1B0/pantalla. Vertical: 0x200/pantalla.
+    private val LAYOUT_STD_HORIZ = IntArray(32) { 0x1B0 * it }
+    private val LAYOUT_STD_VERT = IntArray(30) { 0x200 * it }
+    private val LAYOUT_VERT_L1_HORIZ_L2 =
+        IntArray(30) { if (it < 14) 0x200 * it else 0x1B00 + 0x1B0 * (it - 14) }
+
+    /**
+     * Tabla de layout de Layer 1 según el modo (de `kLevelDataLayoutTables_Layer1LoPtrs`): los
+     * modos 3,4 son L1 vertical con cola horizontal; 7,8,10,13 son L1 totalmente vertical; el
+     * resto (0,1,2,5,6,12,14,15,17,30,31) es horizontal. Null = modo sin Layer 1 direccionable.
+     */
+    private fun l1Layout(mode: Int): IntArray? = when (mode) {
+        3, 4 -> LAYOUT_VERT_L1_HORIZ_L2
+        7, 8, 10, 13 -> LAYOUT_STD_VERT
+        in 18..29 -> null
+        else -> LAYOUT_STD_HORIZ
+    }
 
     /** VerticalTable de LoadLevelHeader: bit0 = nivel vertical. */
     private val VERTICAL_TABLE = intArrayOf(
@@ -91,6 +131,8 @@ object SmwLayer1 {
         var objNum = 0; var size = 0; var r10 = 0; var r11 = 0
         var screensInLevel = 1; var mode = 0; var tileset = 0
         var total = 0; var unknown = 0
+        var vertical = false
+        var layout = LAYOUT_STD_HORIZ
         val screenExits = ArrayList<ScreenExit>()
 
         fun rd(i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0xFF
@@ -101,8 +143,9 @@ object SmwLayer1 {
             screensInLevel = (b0 and 0x1F) + 1
             mode = b1 and 0x1F
             tileset = b4 and 0x0F
-            if (VERTICAL_TABLE[mode] and 1 != 0) return null // verticales: no soportados aún
+            vertical = (VERTICAL_TABLE[mode] and 1) != 0
             if (mode in MODES_NO_LAYER1) return done()
+            layout = l1Layout(mode) ?: return null // modo sin Layer 1 direccionable
             data += 5
             // ---- LoadLevelDataObject ----
             if (rd(data) == 0xFF) return done()
@@ -111,19 +154,27 @@ object SmwLayer1 {
                 if (++guard > 2000 || data + 3 > rom.size) return null // flujo corrupto
                 val h0 = rd(data); val h1 = rd(data + 1); size = rd(data + 2); data += 3
                 objNum = (h1 shr 4) or ((h0 and 0x60) shr 1)
-                pos = ((h0 and 0x0F) shl 4) or (h1 and 0x0F)
+                // Niveles VERTICALES: el juego intercambia los nibbles bajos de b0/b1 (la
+                // posición) cuando PAIR16(obj,size) >= 2 (todo salvo screen-exit/jump), para
+                // que Y/X mapeen al apilado vertical. LoadLevelDataObject ($05:85FF).
+                var e0 = h0; var e1 = h1
+                if (vertical && ((objNum shl 8) or size) >= 2) {
+                    e0 = (h1 and 0x0F) or (h0 and 0xF0)
+                    e1 = (h0 and 0x0F) or (h1 and 0xF0)
+                }
+                pos = ((e0 and 0x0F) shl 4) or (e1 and 0x0F)
                 if (h0 and 0x80 != 0) screen++
                 nextScreen = screen
-                ptr = screen * 0x1B0
+                ptr = layout.getOrElse(screen) { BUF } // fuera de tabla: escrituras se descartan
                 if (h0 and 0x10 != 0) ptr += 256
-                r10 = h0; r11 = h1
+                r10 = e0; r11 = e1
                 total++
                 if (objNum != 0) std(objNum) else ext(size)
             } while (rd(data) != 0xFF)
             return done()
         }
 
-        fun done() = SmwLevelTilemap(lo, hi, screensInLevel, tileset, mode, total, unknown)
+        fun done() = SmwLevelTilemap(lo, hi, screensInLevel, tileset, mode, total, unknown, vertical, layout)
 
         // ------------------------------ primitivas ------------------------------
         // Réplicas exactas de las rutinas de $0D:A6B1..A9EF (ver smw_0d.c).

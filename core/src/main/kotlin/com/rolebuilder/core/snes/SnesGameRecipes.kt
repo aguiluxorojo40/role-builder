@@ -693,7 +693,28 @@ object SnesGameRecipes {
         val delta = smwHeaderDelta(header)
         val tm = SmwLayer1.parse(rom, delta, level) ?: return null
 
-        // Última columna con algún bloque distinto de aire (0x25), como en las escenas.
+        if (tm.vertical) {
+            // Vertical: 16 columnas fijas, recorta hasta la última FILA con contenido.
+            var lastRow = -1
+            for (r in 0 until tm.rows) {
+                var any = false
+                for (c in 0..15) { val b = tm.block(c, r); if (b > 0 && b != 0x25) { any = true; break } }
+                if (any) lastRow = r
+            }
+            if (lastRow < 3) return null
+            val cols = 16
+            val rows = minOf(lastRow + 2, tm.rows)
+            val blocks = IntArray(cols * rows)
+            val solidity = ArrayList<SmwSolidity>(cols * rows)
+            for (r in 0 until rows) for (c in 0 until cols) {
+                val b = tm.block(c, r)
+                blocks[r * cols + c] = b
+                solidity.add(SmwBlockCollision.classify(b))
+            }
+            return SmwCollisionMap(level, cols, rows, blocks, solidity)
+        }
+
+        // Horizontal: última columna con algún bloque distinto de aire (0x25).
         val totalCols = tm.screens * 16
         var lastCol = -1
         for (c in 0 until totalCols) {

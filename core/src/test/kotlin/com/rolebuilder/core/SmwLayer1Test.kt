@@ -5,7 +5,6 @@ import com.rolebuilder.core.snes.SnesGameRecipes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -92,10 +91,26 @@ class SmwLayer1Test {
     }
 
     @Test
-    fun `nivel vertical devuelve null (no soportado aun)`() {
-        // Modo 10 (0x0A) es vertical según la VerticalTable.
-        val rom = romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xFF)
-        assertNull(SmwLayer1.parse(rom, 0, 0))
+    fun `nivel vertical parsea con intercambio de nibbles de posicion`() {
+        // Modo 10 (0x0A) es vertical: rejilla 16 cols × (pantallas×32) filas. El mismo
+        // ledge que en horizontal cae en fila1/col2 aquí cae en la posición con los nibbles
+        // bajos de b0/b1 intercambiados (b0=0x21,b1=0x42 → pos e0=0x22,e1=0x41 → fila2/col1).
+        val rom = romWithLevel(
+            0x00, 0x0A, 0x00, 0x00, 0x00,  // cabecera: modo 0x0A (vertical), tileset 0
+            0x21, 0x42, 0x23,               // ledge 0x14, size 0x23 (ancho 4, 2 filas tierra)
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertTrue(tm.vertical)
+        assertEquals(1, tm.totalObjects)
+        assertEquals(0, tm.unknownObjects)
+        // Suelo 0x100 en fila 2, cols 1..4 (posición con nibbles intercambiados).
+        for (c in 1..4) assertEquals(0x100, tm.block(c, 2), "suelo vertical en col $c")
+        // Tierra 0x3F debajo (filas 3-4).
+        for (c in 1..4) assertEquals(0x3F, tm.block(c, 3), "tierra vertical col $c")
+        // En la posición HORIZONTAL (fila1/col2) NO hay suelo: prueba que hubo intercambio.
+        assertEquals(0x25, tm.block(2, 1))
     }
 
     @Test
