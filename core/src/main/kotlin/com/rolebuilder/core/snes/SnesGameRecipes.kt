@@ -328,6 +328,8 @@ object SnesGameRecipes {
         val tiles: List<Int>, // mapWidth*mapHeight, índice en el atlas o -1 (aire)
         /** Solidez REAL por tesela del atlas (ordinal de [SmwSolidity]); para el motor de plataformas. */
         val solidity: List<Int> = emptyList(),
+        /** Comportamiento interactivo por tesela del atlas (ordinal de [SmwBlockBehavior]): moneda/meta. */
+        val behavior: List<Int> = emptyList(),
         /** Enemigos del nivel: (id de sprite, x, y) en celdas de 16px, ya recortados al mapa. */
         val enemies: List<Triple<Int, Int, Int>> = emptyList(),
         /** Teselas animadas del atlas (monedas, bloques ?, agua). */
@@ -454,13 +456,30 @@ object SnesGameRecipes {
             for (f in 0 until SMW_TILEANIM_FRAMES - 1) setCollision(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, s)
         }
 
+        // Comportamiento interactivo por tesela (moneda/meta), en paralelo a la solidez, para
+        // que el motor sepa qué se recoge y dónde acaba el nivel. Los fotogramas extra de una
+        // tesela animada (p. ej. la moneda) heredan el comportamiento de su bloque base.
+        val behavior = IntArray(columns * rows) { SmwBlockBehavior.NONE.ordinal }
+        orderedBlocks.forEachIndexed { i, block -> behavior[i] = SmwBlockBehaviorClassifier.classify(block).ordinal }
+        for ((ai, bi) in animBlockIdx.withIndex()) {
+            val bv = SmwBlockBehaviorClassifier.classify(orderedBlocks[bi]).ordinal
+            for (f in 0 until SMW_TILEANIM_FRAMES - 1) {
+                val idx = orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f
+                if (idx < behavior.size) behavior[idx] = bv
+            }
+        }
+
         // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible.
         val enemies = SmwSprites.parse(rom, delta, level)?.sprites
             ?.filter { it.xTile in 0 until w && it.yTile in 0 until h }
             ?.map { Triple(it.id, it.xTile, it.yTile) }
             .orEmpty()
 
-        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations)
+        return SmwLevelMap(
+            atlas = atlas, columns = columns, rows = rows, passable = passable.toList(),
+            mapWidth = w, mapHeight = h, tiles = tiles.toList(), solidity = solidity.toList(),
+            behavior = behavior.toList(), enemies = enemies, animations = animations,
+        )
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */

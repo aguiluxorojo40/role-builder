@@ -45,7 +45,8 @@ fun main(args: Array<String>) {
     val header = SnesDecoder.parseHeader(rom)
     val delta = header.headerOffset - 0x7FC0
 
-    val map = SnesGameRecipes.extractSmwLevelAsMap(rom, header, level) ?: run {
+    // maxCols alto: importa el nivel COMPLETO (hasta 32 pantallas), incluida la meta del final.
+    val map = SnesGameRecipes.extractSmwLevelAsMap(rom, header, level, maxCols = 512) ?: run {
         System.err.println("El nivel ${level.toString(16)} no es reconstruible como mapa"); return
     }
     val levelName = SmwLevelNames.nameOf(rom, delta, level)
@@ -83,6 +84,7 @@ fun main(args: Array<String>) {
         passable = map.passable,
         animations = map.animations,
         platformSolidity = map.solidity,
+        platformBehavior = map.behavior,
     )
 
     // Mapa: capa 0 = tiles del nivel, capa 1 vacía; enemigos SMW como marcas de plataformas.
@@ -117,9 +119,14 @@ fun main(args: Array<String>) {
     ProjectIo.saveDatabase(outDir, database)
     ProjectIo.saveMap(outDir, gameMap)
 
+    // Cuenta celdas coleccionables/meta (tile del mapa cuyo comportamiento no es NONE).
+    var coinCells = 0; var goalCells = 0
+    for (t in map.tiles) if (t >= 0) when (map.behavior.getOrNull(t) ?: 0) { 1 -> coinCells++; 2 -> goalCells++ }
+
     println("Proyecto: ${outDir.absolutePath}")
     println("Nivel $hx \"$title\": ${map.mapWidth}×${map.mapHeight} casillas · " +
         "${map.enemies.size} enemigos · ${map.animations.size} teselas animadas · " +
+        "$coinCells monedas · meta ${if (goalCells > 0) "sí" else "no"} · " +
         "fondo ${if (bgLayers.isEmpty()) "no" else "sí (Layer 2)"} · " +
         "inicio ($startX,$startY) · modo PLATFORMER")
 }

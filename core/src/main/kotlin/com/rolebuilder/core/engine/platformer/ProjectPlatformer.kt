@@ -4,6 +4,7 @@ import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.snes.SmwBlockBehavior
 import com.rolebuilder.core.snes.SmwSolidity
 
 /**
@@ -50,6 +51,21 @@ object ProjectPlatformer {
         return if (tileset.isPassable(tile)) SmwSolidity.NONE else SmwSolidity.SOLID
     }
 
+    private val BEHAVIOR_VALUES = SmwBlockBehavior.values()
+
+    /** Comportamiento interactivo (moneda/meta) de la celda: el primer tile no-NONE de sus capas. */
+    fun behaviorAt(map: GameMap, tileset: Tileset, col: Int, row: Int): SmwBlockBehavior {
+        if (!map.inBounds(col, row)) return SmwBlockBehavior.NONE
+        for (layer in map.layers.indices) {
+            val tile = map.tileAt(layer, col, row)
+            if (tile == EMPTY_TILE) continue
+            val ord = tileset.platformBehavior.getOrNull(tile) ?: continue
+            val b = BEHAVIOR_VALUES.getOrElse(ord) { SmwBlockBehavior.NONE }
+            if (b != SmwBlockBehavior.NONE) return b
+        }
+        return SmwBlockBehavior.NONE
+    }
+
     /**
      * Monta un [PlatformerEngine] jugable sobre [map]. El inicio (en celdas) se
      * convierte a píxeles con la rejilla de 16; se coloca al jugador un poco por
@@ -69,6 +85,7 @@ object ProjectPlatformer {
         startPixelY = startRow * TILE,
         tuning = tuning,
         enemySeeds = map.platformEnemies.map { enemySeed(it) },
+        behaviorAt = { c, r -> behaviorAt(map, tileset, c, r) },
     )
 
     /** Convierte un enemigo del mapa (celda) en semilla del motor (píxeles). */

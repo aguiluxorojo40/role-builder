@@ -38,6 +38,12 @@ data class Tileset(
      * 0=aire, 1=borde de un sentido, 2=sólido, 3=cuesta, 4=cuesta doble, 5=pinchos.
      */
     val platformSolidity: List<Int> = emptyList(),
+    /**
+     * Comportamiento interactivo por índice de tile para el motor de Platform Builder, en
+     * paralelo a [platformSolidity]: ordinal de `SmwBlockBehavior` (0=nada, 1=moneda, 2=meta).
+     * Vacío = ningún tile es coleccionable ni meta. Lo rellena el importador de niveles SMW.
+     */
+    val platformBehavior: List<Int> = emptyList(),
 ) {
     val tileCount: Int get() = columns * rows
 

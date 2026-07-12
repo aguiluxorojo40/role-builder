@@ -1,5 +1,6 @@
 package com.rolebuilder.core.engine.platformer
 
+import com.rolebuilder.core.snes.SmwBlockBehavior
 import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.math.abs
 import kotlin.math.max
@@ -55,6 +56,8 @@ class PlatformerEngine(
     startPixelY: Int,
     val tuning: PlatformerTuning,
     enemySeeds: List<EnemySeed> = emptyList(),
+    /** Comportamiento interactivo de la celda (moneda/meta), del tileset importado. */
+    private val behaviorAt: (col: Int, row: Int) -> SmwBlockBehavior = { _, _ -> SmwBlockBehavior.NONE },
 ) {
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat())
 
@@ -80,6 +83,21 @@ class PlatformerEngine(
         private set
     var deathEvents = 0
         private set
+
+    /** Monedas recogidas y evento monótono para el audio/HUD. */
+    var coins = 0
+        private set
+    var coinEvents = 0
+        private set
+
+    /** true cuando el jugador alcanza la META; evento monótono para el remate del nivel. */
+    var goalReached = false
+        private set
+    var goalEvents = 0
+        private set
+
+    /** Celdas cuyo coleccionable ya se recogió (clave col*rows+row), para no re-cogerlo. */
+    private val consumed = HashSet<Int>()
 
     /** Marca al jugador como muerto una sola vez y cuenta el evento. */
     private fun killPlayer() {
@@ -152,7 +170,30 @@ class PlatformerEngine(
         handlePlayerEnemyContact()
 
         checkDeadly()
+        checkPickupsAndGoal()
         if (p.y > (rows + 2) * tileSize) killPlayer() // caído al vacío
+    }
+
+    /** Recoge monedas y detecta la META en las celdas que solapa la caja del jugador. */
+    private fun checkPickupsAndGoal() {
+        val p = player
+        val w = tuning.playerWidth
+        val h = tuning.playerHeight
+        val c0 = (p.x / tileSize).toInt()
+        val c1 = ((p.x + w - 0.01f) / tileSize).toInt()
+        val r0 = (p.y / tileSize).toInt()
+        val r1 = ((p.y + h - 0.01f) / tileSize).toInt()
+        for (r in r0..r1) for (c in c0..c1) {
+            if (c < 0 || c >= cols || r < 0 || r >= rows) continue
+            when (behaviorAt(c, r)) {
+                SmwBlockBehavior.COIN -> {
+                    val key = c * rows + r
+                    if (consumed.add(key)) { coins++; coinEvents++ }
+                }
+                SmwBlockBehavior.GOAL -> if (!goalReached) { goalReached = true; goalEvents++ }
+                SmwBlockBehavior.NONE -> {}
+            }
+        }
     }
 
     /** Gravedad, patrulla y colisión de cada enemigo con el terreno. */

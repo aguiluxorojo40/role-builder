@@ -90,4 +90,38 @@ class ProjectPlatformerTest {
         assertTrue(e.player.y < 3 * 16f, "no debe hundirse en el suelo (y=${e.player.y})")
         assertTrue(!e.player.dead, "no debe morir sobre suelo firme")
     }
+
+    // Tileset con comportamiento: tile 2 = moneda (ordinal 1), tile 3 = meta (ordinal 2).
+    private val behaviorTileset = Tileset(
+        id = 1, name = "t", image = "t.png", tileSize = 16, columns = 4, rows = 1,
+        passable = listOf(true, false, true, true),
+        platformBehavior = listOf(0, 0, 1, 2), // NONE, NONE, COIN, GOAL
+    )
+
+    private fun mapWith(cellTile: Map<Pair<Int, Int>, Int>): GameMap {
+        val w = 4; val h = 4
+        val l0 = MutableList(w * h) { 0 }
+        for ((cr, t) in cellTile) l0[cr.second * w + cr.first] = t
+        return GameMap(id = 1, name = "m", width = w, height = h, tilesetId = 1,
+            layers = listOf(l0, List(w * h) { EMPTY_TILE }))
+    }
+
+    @Test
+    fun `moneda se recoge una vez y la meta se alcanza`() {
+        val map = mapWith(mapOf((1 to 1) to 2, (2 to 1) to 3)) // moneda en (1,1), meta en (2,1)
+        val e = ProjectPlatformer.engine(map, behaviorTileset, startCol = 0, startRow = 0)
+        // Coloca al jugador sobre la moneda y avanza: la recoge (contador +1, evento +1).
+        e.player.x = 1 * 16f; e.player.y = 1 * 16f
+        e.tick()
+        assertEquals(1, e.coins)
+        assertEquals(1, e.coinEvents)
+        // Quieto sobre la moneda otro tick: NO se re-cuenta (celda consumida).
+        e.tick()
+        assertEquals(1, e.coins)
+        // Sobre la meta: se marca alcanzada.
+        e.player.x = 2 * 16f; e.player.y = 1 * 16f
+        e.tick()
+        assertTrue(e.goalReached)
+        assertEquals(1, e.goalEvents)
+    }
 }
