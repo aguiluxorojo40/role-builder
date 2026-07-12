@@ -83,6 +83,17 @@ tasks.register<JavaExec>("bakeSmwEnemies") {
     workingDir = rootDir
 }
 
+// Vuelca qué enemigos hay en cada nivel de SMW a docs/enemigos_por_nivel.md:
+//   ./gradlew :core:dumpLevelEnemies --args="--rom smw.sfc"
+tasks.register<JavaExec>("dumpLevelEnemies") {
+    group = "rolebuilder"
+    description = "Informe de enemigos por nivel de SMW desde la ROM (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwLevelEnemiesKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Busca el mejor nivel de horneado (paleta canónica) para cada sprite grande:
 //   ./gradlew :core:scoutBigSpritePalettes --args="--rom smw.sfc --out scout [--only 0x9F]"
 tasks.register<JavaExec>("scoutBigSpritePalettes") {

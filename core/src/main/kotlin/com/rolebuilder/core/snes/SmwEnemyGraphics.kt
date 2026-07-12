@@ -325,6 +325,17 @@ object SmwEnemyGraphics {
     fun bigSpriteFor(spriteId: Int): BigSprite? = bigSprites.firstOrNull { it.id == spriteId }
 
     /**
+     * Ids de sprite que aparecen en la LISTA DE SPRITES del [level] (enemigos/entidades
+     * colocados en ese nivel), en orden de aparición. Vacío si el nivel no tiene lista
+     * válida. Es "qué enemigos hay en este nivel" según los datos reales de la ROM.
+     */
+    fun spritesInLevel(rom: ByteArray, header: SnesHeader, level: Int): List<Int> {
+        val delta = header.headerOffset - 0x7FC0
+        val list = SmwSprites.parse(rom, delta, level) ?: return emptyList()
+        return list.sprites.map { it.id }
+    }
+
+    /**
      * Niveles (0x000..0x1FF) cuya LISTA DE SPRITES contiene el [spriteId]. En esos niveles
      * el juego carga de verdad su GFX y su PALETA reales, así que son los mejores candidatos
      * para hornear el sprite con sus colores canónicos. Devuelve como mucho [max] niveles.

@@ -1,0 +1,427 @@
+# Enemigos por nivel de SMW (lista de sprites real de la ROM)
+
+Generado con `:core:dumpLevelEnemies` leyendo la lista de sprites de cada nivel.
+`[B]` = sprite grande reconstruido · `[s]` = en el roster pequeño · `[ ]` = falta.
+Niveles con datos: 220.
+
+## Por nivel
+
+- **0x000**: [ ] BonusGame
+- **0x001**: [ ] RedParakoopa ×25, [ ] BobOmb ×4, [ ] KoopaKidBossFight ×11, [s] PipeLakitu ×2, [s] JumpingPiranhaPlant ×2, [ ] GoalTape, [ ] Sprite 0x92, [ ] Sprite 0xCD ×3, [ ] Sprite 0xD9 ×3
+- **0x002**: [ ] Sprite 0x41 ×3, [ ] Sprite 0x42 ×9, [ ] Sprite 0x43 ×5, [ ] PorcuPuffer, [ ] Sprite 0xCF, [ ] Sprite 0xD0, [ ] Sprite 0xD9 ×3
+- **0x003**: [ ] SideExitAndFireplace
+- **0x004**: [ ] MessageBox, [ ] Sprite 0xE1
+- **0x005**: [s] RedKoopaNoShell, [ ] BlueKoopaNoShell, [B] GreenParakoopa ×7, [ ] RedParakoopa ×2, [ ] Sprite 0x55 ×3, [ ] Sprite 0x62 ×4, [ ] Sprite 0x63 ×2, [ ] Sprite 0x68 ×5, [ ] GoalTape, [ ] MessageBox, [ ] Sprite 0xE0 ×8
+- **0x006**: [s] YellowKoopa, [s] RedKoopaNoShell ×2, [ ] BlueKoopaNoShell ×3, [s] Goomba ×6, [B] ParaGoomba ×11, [ ] ParachuteGoomba ×4, [ ] ShiftingPipe ×2, [s] JumpingPiranhaPlant ×3, [ ] GoalTape, [ ] ChangingItem, [ ] HammerBro ×4, [ ] HammerBroPlatform ×4, [ ] Sprite 0xCC, [ ] Sprite 0xD9, [ ] Sprite 0xDD
+- **0x007**: [ ] Thwimp ×2, [ ] BallNChain ×3
+- **0x008**: [s] BlueKoopa, [s] RedKoopaNoShell ×8, [s] PSwitch, [ ] Sprite 0xDB
+- **0x009**: [s] BuzzyBeetle ×10, [ ] Sprite 0x2E ×2, [ ] LeftFlyingBlock, [ ] Swooper ×14, [ ] Sprite 0xE8
+- **0x00A**: [ ] Keyhole, [ ] Sprite 0x15 ×6, [ ] VerticalCheepCheep ×6, [ ] RipVanFish ×9, [s] PSwitch, [ ] GoalTape, [ ] Blurp ×8
+- **0x00B**: [ ] ThrowingDryBones ×2, [B] BonyBeetle ×2, [ ] BallNChain ×3, [ ] Fishbone ×10, [ ] FallingSpike ×6
+- **0x00C**: [B] GreenParakoopa ×11, [ ] GreenFlyingParakoopa ×3, [ ] BobOmb ×6, [ ] ScalePlatform ×9, [ ] GreyFallingPlatform ×3, [ ] Sprite 0xE8
+- **0x00D**: [s] GreenKoopa, [s] RedKoopa ×3, [s] BlueKoopa ×7, [ ] Sprite 0x72 ×32, [ ] GroundSuperKoopa ×3, [ ] GoalTape, [ ] Sprite 0xD3 ×2, [ ] Sprite 0xD9, [ ] Sprite 0xDA, [ ] Sprite 0xDB ×2, [ ] Sprite 0xDC ×3
+- **0x00E**: [B] BonyBeetle ×2, [ ] Sprite 0x74, [ ] BallNChain ×6
+- **0x00F**: [ ] Sprite 0x63 ×3, [ ] Sprite 0x64 ×6, [ ] Sprite 0x65 ×30, [ ] Sprite 0x66, [ ] GoalTape ×2
+- **0x010**: [s] Sprite 0x4D ×12, [s] LedgeMontyMole ×18, [s] JumpingPiranhaPlant ×2, [ ] Sprite 0x50, [ ] GoalTape, [ ] ChangingItem, [ ] Sprite 0x93, [ ] SumoBro ×5, [ ] SlidingNakedBlueKoopa ×4, [ ] Sprite 0xDB
+- **0x011**: [ ] Blurp ×33, [ ] Sprite 0xCA ×19
+- **0x013**: [ ] BouncingFootball, [ ] PortableSpringboard, [ ] Sprite 0x38, [s] PSwitch, [ ] Sprite 0xE3
+- **0x014**: [s] PSwitch
+- **0x015**: [ ] RedParakoopa ×2, [ ] Keyhole, [s] JumpingPiranhaPlant, [ ] Sprite 0x72 ×3, [ ] GroundSuperKoopa ×16, [ ] GoalTape, [ ] Key, [ ] Sprite 0x98 ×6, [ ] VolcanoLotus ×4, [ ] MessageBox, [ ] InvisibleMushroom ×2
+- **0x016**: [ ] RedParakoopa ×2, [ ] Keyhole, [s] JumpingPiranhaPlant, [ ] Sprite 0x72 ×3, [ ] GroundSuperKoopa ×16, [ ] GoalTape, [ ] Key, [ ] Sprite 0x98 ×6, [ ] VolcanoLotus ×4, [ ] MessageBox, [ ] InvisibleMushroom ×2
+- **0x017**: [ ] RedParakoopa ×2, [ ] Keyhole, [s] JumpingPiranhaPlant, [ ] Sprite 0x72 ×3, [ ] GroundSuperKoopa ×16, [ ] GoalTape, [ ] Key, [ ] Sprite 0x98 ×6, [ ] VolcanoLotus ×4, [ ] MessageBox, [ ] InvisibleMushroom ×2
+- **0x018**: [ ] Sprite 0xC9 ×4
+- **0x01A**: [ ] PortableSpringboard ×2, [ ] ThrowingDryBones, [ ] Podoboo ×2, [ ] Sprite 0x67 ×13, [ ] Sprite 0xE9 ×2
+- **0x01B**: [ ] Sprite 0x32 ×3, [ ] DownFirstWoodenSpike ×10, [ ] UpDownFirstWoodenSpike ×9, [ ] BowserStatueFire ×3, [ ] Sprite 0xD8, [ ] Sprite 0xD9
+- **0x01C**: [ ] KoopaKidBossFight ×13, [s] PSwitch ×2, [ ] ParachuteGoomba ×2, [ ] Sprite 0x40 ×2, [ ] ShiftingPipe ×6, [ ] Sprite 0x59 ×3, [ ] Sprite 0x74, [ ] GoalTape, [ ] ChangingItem, [ ] ClappinChuck ×4, [ ] Sprite 0xDA ×3, [ ] Sprite 0xDB ×2, [ ] Sprite 0xDC ×2, [ ] Sprite 0xDD ×2
+- **0x01D**: [ ] Sprite 0x78 ×3, [ ] GoalTape, [ ] ClappinChuck, [ ] CarrotTopLiftUpperRight ×12, [ ] CarrotTopLiftUpperLeft ×3, [B] MegaMole ×3, [ ] GreyFallingPlatform
+- **0x01F**: [ ] Sprite 0x67 ×7, [ ] Layer3Smasher, [ ] Sprite 0xE6, [ ] Sprite 0xF3
+- **0x020**: [ ] Podoboo ×4, [s] PSwitch, [ ] Sprite 0x5A ×3, [ ] Sprite 0x78, [ ] CreateEatBlock ×2, [ ] FallingSpike ×3, [ ] Sprite 0xB6 ×8, [ ] BowserStatue ×4
+- **0x021**: [ ] Sprite 0x38 ×7, [ ] Sprite 0x39 ×7, [ ] MovingLedgeHole ×8, [ ] FishinBoo, [ ] Sprite 0xDE ×2
+- **0x022**: [ ] GreenFlyingParakoopa, [ ] PortableSpringboard ×2, [s] PSwitch, [s] JumpingPiranhaPlant ×4, [ ] DinoRhino ×6, [ ] DinoTorch ×14, [ ] GoalTape, [ ] LeftFlyingBlock ×2, [ ] WarpHole, [ ] ClappinChuck, [ ] InvisibleMushroom
+- **0x023**: [s] RedKoopaNoShell ×6, [ ] BlueKoopaNoShell ×11, [ ] GreenFlyingParakoopa ×3, [ ] GoalTape ×2, [ ] GreyChainedPlatform ×22, [ ] Sparky ×6
+- **0x024**: [ ] PortableSpringboard, [ ] DinoRhino ×4, [ ] DinoTorch ×6, [ ] MessageBox
+- **0x093**: [s] KoopaKid, [ ] Sprite 0xB6
+- **0x094**: [s] KoopaKid, [ ] Sprite 0xB6 ×2
+- **0x095**: [ ] Reznor ×4
+- **0x096**: [s] KoopaKid, [ ] Podoboo ×3
+- **0x097**: [s] KoopaKid
+- **0x098**: [s] KoopaKid
+- **0x099**: [s] KoopaKid
+- **0x09A**: [s] KoopaKid
+- **0x09B**: [ ] ActivateBowserBattle
+- **0x0BE**: [ ] PorcuPuffer ×2, [ ] Sprite 0xCF
+- **0x0BF**: [ ] Sprite 0x55, [ ] VerticalCheckerboardPlatform ×4, [ ] Sprite 0xD7
+- **0x0C0**: [ ] BubbleWithSprite ×12
+- **0x0C1**: [ ] PorcuPuffer ×2
+- **0x0C2**: [ ] BobOmb ×10
+- **0x0C3**: [ ] GreenFlyingParakoopa ×2, [ ] ShiftingPipe ×6
+- **0x0C4**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x0C5**: [ ] DisplayMessage
+- **0x0C6**: [ ] GoalTape
+- **0x0C7**: [ ] GreenKoopaNoShell, [s] RedKoopaNoShell ×2, [ ] BlueKoopaNoShell, [ ] YellowKoopaNoShell, [s] JumpingPiranhaPlant, [B] Pokey, [ ] SlidingNakedBlueKoopa
+- **0x0C8**: [ ] Sparky ×15, [ ] Sprite 0xE8
+- **0x0C9**: [ ] Sprite 0x6D
+- **0x0CA**: [ ] Sprite 0x6D
+- **0x0CB**: [ ] GoalTape
+- **0x0CC**: [s] KoopaKid
+- **0x0CD**: [s] PSwitch, [ ] GoalTape
+- **0x0CE**: [ ] BubbleWithSprite ×11
+- **0x0CF**: [ ] Feather
+- **0x0D0**: [ ] GreenFlyingParakoopa, [ ] PortableSpringboard ×2, [s] PSwitch, [s] JumpingPiranhaPlant ×4, [ ] DinoRhino ×6, [ ] DinoTorch ×14, [ ] GoalTape, [ ] LeftFlyingBlock ×2, [ ] WarpHole, [ ] ClappinChuck, [ ] InvisibleMushroom
+- **0x0D1**: [ ] GreenFlyingParakoopa, [ ] PortableSpringboard ×2, [s] PSwitch, [s] JumpingPiranhaPlant ×4, [ ] DinoRhino ×6, [ ] DinoTorch ×14, [ ] GoalTape, [ ] LeftFlyingBlock ×2, [ ] WarpHole, [ ] ClappinChuck, [ ] InvisibleMushroom
+- **0x0D2**: [ ] GreenFlyingParakoopa ×9
+- **0x0D3**: [s] KoopaKid, [ ] Sprite 0xB6 ×2
+- **0x0D4**: [ ] ThrowingDryBones, [ ] Sparky ×5, [ ] Sprite 0xA6 ×4, [ ] MovingCastleStone ×2, [ ] Sprite 0xEA
+- **0x0D5**: [ ] Reznor ×4
+- **0x0D6**: [ ] Podoboo ×26, [ ] NonLineGuideGrinder ×11
+- **0x0D7**: [ ] Sprite 0x55, [ ] BrownChainedPlatform
+- **0x0D8**: [s] PSwitch
+- **0x0D9**: [s] KoopaKid
+- **0x0DB**: [ ] Sprite 0x22 ×6, [ ] Sprite 0x23 ×3, [ ] Grinder ×11, [ ] Sprite 0x25
+- **0x0DC**: [B] BonyBeetle ×2, [ ] Podoboo ×6, [ ] Sprite 0xF2
+- **0x0DD**: [ ] Sprite 0x63, [ ] Sprite 0x64
+- **0x0DE**: [ ] Sprite 0x37 ×4
+- **0x0DF**: [ ] Reznor ×4
+- **0x0E0**: [B] Thwomp ×4, [ ] ThrowingDryBones ×3, [B] BonyBeetle ×4, [ ] BallNChain ×7, [ ] Fishbone ×14
+- **0x0E1**: [B] Thwomp ×4, [ ] ThrowingDryBones ×3, [B] BonyBeetle ×4, [ ] BallNChain ×7, [ ] Fishbone ×14
+- **0x0E2**: [ ] Reznor ×4
+- **0x0E3**: [ ] Feather, [ ] MessageBox
+- **0x0E4**: [ ] Sprite 0x37 ×2, [ ] BigBooBoss
+- **0x0E5**: [s] KoopaKid
+- **0x0E7**: [ ] PortableSpringboard, [ ] Sprite 0x32 ×7, [ ] Sprite 0xEF
+- **0x0E8**: [B] Thwomp ×3, [ ] Sprite 0x32, [ ] Podoboo
+- **0x0E9**: [ ] Keyhole, [ ] Key, [ ] Sprite 0x97, [ ] Sprite 0xDC
+- **0x0EA**: [ ] PortableSpringboard, [s] PSwitch, [ ] Sprite 0x74, [ ] Sprite 0x75, [ ] Star, [ ] Feather ×2, [ ] Sprite 0x78 ×9
+- **0x0EB**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x0EC**: [ ] BouncingFootball, [ ] PortableSpringboard, [ ] Sprite 0x38, [s] PSwitch, [ ] Sprite 0xE3
+- **0x0ED**: [ ] Sprite 0x37 ×4, [s] PSwitch, [ ] MessageBox, [ ] Sprite 0xE2
+- **0x0EE**: [ ] BouncingFootball, [ ] PortableSpringboard, [ ] Sprite 0x38, [s] PSwitch, [ ] Sprite 0xE3
+- **0x0EF**: [B] Thwomp ×12, [ ] Thwimp ×8
+- **0x0F0**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x0F1**: [ ] Sprite 0x37 ×5, [ ] Sprite 0x38, [ ] Sprite 0x39 ×2
+- **0x0F2**: [ ] Sprite 0x37 ×4, [s] PSwitch, [ ] MessageBox, [ ] Sprite 0xE2
+- **0x0F3**: [ ] GoalTape
+- **0x0F5**: [ ] GreenFlyingParakoopa, [ ] PortableSpringboard ×2, [s] PSwitch, [s] JumpingPiranhaPlant ×4, [ ] DinoRhino ×6, [ ] DinoTorch ×14, [ ] GoalTape, [ ] LeftFlyingBlock ×2, [ ] WarpHole, [ ] ClappinChuck, [ ] InvisibleMushroom
+- **0x0F6**: [ ] GreenFlyingParakoopa, [ ] PortableSpringboard ×2, [s] PSwitch, [s] JumpingPiranhaPlant ×4, [ ] DinoRhino ×6, [ ] DinoTorch ×14, [ ] GoalTape, [ ] LeftFlyingBlock ×2, [ ] WarpHole, [ ] ClappinChuck, [ ] InvisibleMushroom
+- **0x0F7**: [ ] GreenKoopaNoShell ×5, [s] RedKoopaNoShell ×6, [ ] BlueKoopaNoShell ×2, [ ] YellowKoopaNoShell ×3, [ ] BobOmb ×24, [ ] GoalSphere, [ ] Sprite 0x74, [ ] Star, [ ] Sprite 0x78 ×3, [ ] Sprite 0xA4 ×13
+- **0x0F8**: [ ] Sprite 0x37 ×2, [ ] Sprite 0x38 ×3, [ ] Sprite 0x39 ×3, [ ] Sprite 0xD2, [ ] Sprite 0xE2 ×2, [ ] Sprite 0xE5
+- **0x0F9**: [ ] Sprite 0x37 ×4
+- **0x0FB**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x0FC**: [ ] Sprite 0xAF ×6, [ ] Sprite 0xB0 ×6
+- **0x0FE**: [ ] Sprite 0x37 ×4
+- **0x0FF**: [ ] GoalTape
+- **0x100**: [ ] BonusGame
+- **0x101**: [ ] Sprite 0x22 ×7, [ ] Grinder ×6, [ ] Sprite 0x25 ×4, [ ] Podoboo, [s] PSwitch, [ ] ClimbingNetDoor ×3, [ ] MessageBox ×2, [ ] Sprite 0xE6 ×2
+- **0x102**: [s] RedKoopaNoShell ×3, [ ] Sprite 0x15 ×2, [ ] SurfaceJumpingCheepCheep, [s] PSwitch, [ ] SwimmingAndJumpingCheepCheep ×3, [ ] Sprite 0x5D ×13, [ ] Sprite 0xA4 ×9, [ ] Sprite 0xDB
+- **0x103**: [s] RedKoopaNoShell ×2, [ ] RedParakoopa, [ ] BobOmb ×4, [ ] Sprite 0x55 ×2, [ ] VerticalCheckerboardPlatform ×2, [ ] Sprite 0x59 ×3, [ ] Sprite 0x5A ×5, [ ] BrownChainedPlatform ×8, [ ] GoalTape, [ ] MessageBox ×2
+- **0x104**: [ ] Bird ×4, [ ] SideExitAndFireplace, [ ] MessageBox
+- **0x105**: [s] JumpingPiranhaPlant ×3, [ ] GoalTape, [ ] LeftFlyingBlock, [ ] WarpHole, [ ] ClappinChuck, [B] BanzaiBill ×4, [ ] Rex ×18, [ ] MessageBox ×2, [ ] SlidingNakedBlueKoopa, [ ] InvisibleMushroom, [ ] Sprite 0xDB
+- **0x106**: [s] GreenKoopa, [s] RedKoopa, [s] RedKoopaNoShell ×8, [s] PSwitch, [s] Sprite 0x4D ×2, [s] LedgeMontyMole ×3, [s] JumpingPiranhaPlant, [ ] GoalTape, [B] CharginChuck ×2, [ ] MessageBox ×2, [ ] Sprite 0xDA, [ ] Sprite 0xDB ×2
+- **0x107**: [ ] BouncingFootball ×2, [ ] Sprite 0x37 ×9, [ ] Sprite 0x38 ×4, [ ] Sprite 0xE2, [ ] Sprite 0xE3
+- **0x109**: [s] RedKoopaNoShell ×2, [ ] RedParakoopa, [ ] BobOmb ×8, [ ] PortableSpringboard ×2, [ ] Sprite 0x6B ×5, [ ] RightWallSpringboard ×4
+- **0x10A**: [s] BlueKoopa, [s] BuzzyBeetle ×10, [s] GreenShell ×8, [ ] Sprite 0x2E ×6, [s] PSwitch, [s] JumpingPiranhaPlant ×2, [ ] SkullRaft ×6, [ ] GoalTape, [ ] LeftFlyingBlock ×3, [B] Blargg ×10, [ ] Sprite 0xDB
+- **0x10B**: [ ] GreenKoopaNoShell ×2, [ ] GreenFlyingParakoopa ×9, [ ] BobOmb, [ ] Sprite 0x2E ×12, [ ] PortableSpringboard, [s] JumpingPiranhaPlant ×2, [ ] GoalTape
+- **0x10D**: [ ] Sprite 0xE6
+- **0x10E**: [ ] Ninji ×6, [ ] MechaKoopa ×2, [ ] Spotlight ×2, [ ] LightSwitch
+- **0x10F**: [ ] GreenFlyingParakoopa ×3, [ ] BobOmb ×3, [ ] Keyhole, [ ] PortableSpringboard, [ ] DigginChuck ×9, [ ] DigginChuckRock ×9, [ ] GoalTape, [ ] Key, [ ] SinkingLavaPlatform ×18
+- **0x110**: [ ] Sprite 0x74, [ ] BallNChain ×12, [ ] CreateEatBlock ×2
+- **0x111**: [ ] ThrowingDryBones ×2, [B] BonyBeetle ×2, [ ] Sprite 0x32 ×2, [ ] Podoboo ×7, [ ] FallingSpike ×3, [ ] Sprite 0xE9
+- **0x113**: [s] RedKoopaNoShell, [ ] RedParakoopa ×9, [ ] GreenFlyingParakoopa ×8, [ ] BobOmb, [ ] PortableSpringboard, [ ] Sprite 0x78, [ ] GoalTape, [B] BanzaiBill ×3, [ ] CarrotTopLiftUpperRight, [ ] CarrotTopLiftUpperLeft, [ ] TimedPlatform ×34
+- **0x114**: [ ] GreenGasBubble ×4
+- **0x115**: [s] YellowKoopa, [ ] GreenKoopaNoShell ×5, [ ] Swooper ×9, [ ] Sprite 0xDD, [ ] Sprite 0xEA ×2
+- **0x116**: [B] CharginChuck ×12, [B] MegaMole ×20
+- **0x117**: [s] BuzzyBeetle ×4, [ ] PortableSpringboard, [ ] Sprite 0x97 ×5, [B] Blargg
+- **0x118**: [ ] Keyhole, [s] BuzzyBeetle ×14, [ ] Sprite 0x15 ×11, [ ] VerticalCheepCheep ×5, [ ] Sprite 0x2E, [s] PSwitch ×2, [ ] GoalTape, [ ] Key, [ ] ChangingItem, [B] CharginChuck ×5, [ ] Sprite 0x92, [ ] Swooper ×8
+- **0x119**: [ ] GreenKoopaNoShell ×2, [s] RedKoopaNoShell ×3, [B] GreenParakoopa, [ ] GreenFlyingParakoopa ×4, [ ] BobOmb ×2, [s] JumpingPiranhaPlant ×2, [ ] Sprite 0x6B ×10, [ ] RightWallSpringboard ×15, [ ] Sprite 0x74, [ ] GoalTape, [ ] Sprite 0xD5, [ ] Sprite 0xD6 ×2, [ ] Sprite 0xD9 ×3
+- **0x11A**: [ ] GreenFlyingParakoopa ×2, [ ] Keyhole, [s] BuzzyBeetle ×16, [ ] Sprite 0x2E ×6, [s] JumpingPiranhaPlant, [ ] GoalTape, [ ] Key, [ ] LeftFlyingBlock, [ ] Sprite 0x97, [ ] Swooper ×5, [ ] InvisibleMushroom, [ ] Sprite 0xDA, [ ] Sprite 0xDB, [ ] Sprite 0xDC ×2
+- **0x11B**: [s] YellowKoopa, [ ] GreenKoopaNoShell ×3, [s] RedKoopaNoShell ×3, [ ] BlueKoopaNoShell ×2, [s] PSwitch, [ ] Sprite 0xDD
+- **0x11C**: [B] MagiKoopa, [ ] Podoboo ×7, [s] PSwitch, [ ] Sprite 0x5B ×5
+- **0x11D**: [ ] BouncingFootball ×2, [ ] Sprite 0x37 ×13, [ ] Sprite 0x38, [ ] Sprite 0x39 ×7, [ ] Sprite 0xDE
+- **0x11E**: [s] RedKoopaNoShell ×4, [ ] GreenFlyingParakoopa, [ ] Keyhole, [s] Goomba ×2, [B] ParaGoomba, [ ] PortableSpringboard, [ ] ExplodingBlock ×9, [ ] GoalTape, [ ] ChangingItem, [ ] Wiggler ×15, [ ] HammerBro, [ ] HammerBroPlatform
+- **0x11F**: [s] RedKoopa ×2, [ ] RedParakoopa ×2, [ ] Lakitu ×2, [s] PSwitch, [ ] ShiftingPipe, [s] PipeLakitu ×7, [s] JumpingPiranhaPlant ×2, [ ] Sprite 0x74, [ ] GoalTape, [ ] ChangingItem, [B] CharginChuck, [ ] Sprite 0xD2 ×2, [ ] Sprite 0xDB ×2, [ ] Sprite 0xDC
+- **0x120**: [ ] Keyhole, [ ] Sprite 0x15 ×3, [ ] Sprite 0x3A ×4, [ ] Sprite 0x3B ×11, [ ] Sprite 0x3C ×6, [ ] RipVanFish ×16, [ ] GoalTape, [ ] Key, [ ] Sprite 0x94, [ ] Blurp ×21
+- **0x121**: [ ] KoopaKidBossFight ×8, [s] PSwitch ×2
+- **0x122**: [B] GreenParakoopa ×14, [ ] GreenFlyingParakoopa ×5, [ ] BobOmb, [ ] Sprite 0x78 ×3, [ ] GoalTape, [ ] WingedPlatform ×2, [ ] Sprite 0xF4
+- **0x123**: [ ] PortableSpringboard ×2, [ ] GoalTape, [ ] Sprite 0x92, [ ] BubbleWithSprite ×31, [ ] Sprite 0xD4 ×4, [ ] Sprite 0xD9 ×2, [ ] Sprite 0xDB
+- **0x125**: [s] RedKoopaNoShell ×3, [ ] BlueKoopaNoShell ×5, [ ] RedParakoopa ×3, [ ] BulletBillGenerator, [B] ParaGoomba ×2, [ ] Sprite 0x50, [ ] GoalTape, [ ] Sprite 0x84, [ ] Sprite 0x94 ×2, [ ] Sprite 0x98 ×5, [ ] SumoBro ×7, [ ] Sprite 0xD9 ×2
+- **0x126**: [ ] HoppingFlame ×9, [ ] PortableSpringboard ×2, [ ] ExplodingBlock ×4, [s] JumpingPiranhaPlant, [ ] Sprite 0x50 ×5, [ ] GoalTape, [ ] Wiggler ×10, [ ] HammerBro ×3, [ ] HammerBroPlatform ×3, [ ] Sprite 0xC9 ×16
+- **0x127**: [s] RedKoopaNoShell ×4, [ ] Sprite 0x15 ×16, [ ] VerticalCheepCheep ×9, [s] JumpingPiranhaPlant ×2, [ ] HammerBro ×3, [ ] HammerBroPlatform ×3
+- **0x128**: [ ] GreenKoopaNoShell, [s] RedKoopaNoShell ×2, [ ] BlueKoopaNoShell, [ ] YellowKoopaNoShell, [s] JumpingPiranhaPlant ×3, [ ] Sprite 0x50, [B] Pokey ×15, [ ] GoalTape, [ ] ChangingItem, [ ] Sprite 0x98 ×3, [ ] VolcanoLotus ×5, [ ] SlidingNakedBlueKoopa
+- **0x12A**: [ ] BlueKoopaNoShell, [ ] GreenFlyingParakoopa, [ ] BobOmb, [ ] Sprite 0x64, [ ] Sprite 0x6B ×2, [ ] RightWallSpringboard ×4, [ ] Sprite 0x78, [ ] MessageBox
+- **0x12B**: [ ] GreenFlyingParakoopa ×3, [ ] BobOmb ×2, [ ] PortableSpringboard, [s] PSwitch, [s] JumpingPiranhaPlant ×2, [ ] GoalTape, [ ] ClappinChuck ×2, [ ] Sprite 0x97 ×2, [ ] Sprite 0x98 ×2, [ ] VolcanoLotus ×4
+- **0x12C**: [ ] Sprite 0x62 ×2, [ ] Sprite 0x63, [ ] Sprite 0x64 ×4, [ ] Sprite 0x65 ×2, [ ] Sprite 0x68 ×32, [ ] GoalTape, [ ] GreyFallingPlatform ×2
+- **0x12D**: [s] BlueKoopa ×6, [s] YellowKoopa ×2, [ ] RedParakoopa, [ ] GreenFlyingParakoopa, [ ] BulletBillGenerator, [ ] Sprite 0x15, [s] PSwitch, [ ] Sprite 0x59, [ ] Sprite 0x75, [ ] GoalTape, [B] BanzaiBill ×4, [ ] Rex ×13, [ ] Sprite 0xD1, [ ] Sprite 0xD9, [ ] Sprite 0xDA ×2, [ ] Sprite 0xDB ×2, [ ] Sprite 0xDC, [ ] Sprite 0xDD ×3
+- **0x130**: [ ] Keyhole, [s] YoshiEgg, [ ] RipVanFish ×17, [ ] Star, [ ] Key, [ ] Blurp ×20
+- **0x132**: [ ] Keyhole, [ ] Lakitu, [s] YoshiEgg, [s] PSwitch, [ ] GoalTape
+- **0x134**: [ ] GreenKoopaNoShell, [s] RedKoopaNoShell ×2, [ ] BlueKoopaNoShell ×3, [ ] YellowKoopaNoShell ×3, [ ] RedParakoopa ×6, [ ] GreenFlyingParakoopa ×5, [ ] Keyhole, [s] YoshiEgg, [ ] Sprite 0x74, [ ] Sprite 0x75, [ ] Star ×3, [ ] Feather, [ ] Sprite 0x78, [ ] Key
+- **0x135**: [s] BlueKoopa, [s] RedKoopaNoShell ×6, [ ] BlueKoopaNoShell ×6, [ ] RedParakoopa ×2, [ ] GreenFlyingParakoopa ×13, [ ] BobOmb ×2, [ ] Keyhole, [s] YoshiEgg, [ ] GoalTape, [ ] GreyChainedPlatform ×2, [ ] Sprite 0xDA, [ ] Sprite 0xDB, [ ] Sprite 0xE0 ×7
+- **0x136**: [s] RedKoopaNoShell ×2, [B] GreenParakoopa ×9, [ ] GreenFlyingParakoopa ×7, [ ] BobOmb ×3, [ ] Keyhole, [ ] KoopaKidBossFight ×8, [s] YoshiEgg, [s] PSwitch, [s] JumpingPiranhaPlant ×2, [ ] GoalTape, [ ] Key, [ ] GreyFallingPlatform ×19
+- **0x193**: [s] KoopaKid, [ ] Sprite 0xB6 ×2
+- **0x194**: [s] KoopaKid, [ ] Sprite 0xB6
+- **0x195**: [ ] Reznor ×4
+- **0x196**: [s] KoopaKid, [ ] Podoboo ×3
+- **0x197**: [s] KoopaKid
+- **0x198**: [s] KoopaKid
+- **0x199**: [s] KoopaKid
+- **0x19A**: [s] KoopaKid
+- **0x19B**: [ ] ActivateBowserBattle
+- **0x1BD**: [ ] Ninji ×6, [ ] MechaKoopa ×2, [ ] Spotlight ×2, [ ] LightSwitch
+- **0x1BE**: [B] Pokey ×3, [ ] MessageBox
+- **0x1BF**: [ ] Sprite 0x15 ×5, [ ] Sprite 0x2E ×4
+- **0x1C0**: [ ] HammerBro, [ ] HammerBroPlatform, [ ] GreyFallingPlatform ×4
+- **0x1C1**: [ ] Blurp ×12
+- **0x1C2**: [ ] GreenFlyingParakoopa, [s] BuzzyBeetle ×5, [ ] Sprite 0x15 ×2
+- **0x1C3**: [s] BuzzyBeetle ×4, [ ] Sprite 0x15 ×2, [ ] Sprite 0x2E
+- **0x1C4**: [ ] Lakitu, [s] PSwitch ×3, [ ] Sprite 0x78 ×3, [ ] GoalTape, [ ] HammerBro, [ ] HammerBroPlatform, [ ] InvisibleMushroom, [ ] Sprite 0xD2
+- **0x1C5**: [ ] Lakitu, [s] PSwitch ×3, [ ] Sprite 0x78 ×3, [ ] GoalTape, [ ] HammerBro, [ ] HammerBroPlatform, [ ] InvisibleMushroom, [ ] Sprite 0xD2
+- **0x1C6**: [s] JumpingPiranhaPlant ×2, [ ] GreyFallingPlatform ×6
+- **0x1C7**: [ ] ActivateBowserBattle
+- **0x1C8**: [ ] Sprite 0xF3
+- **0x1CA**: [ ] Sprite 0x84 ×6
+- **0x1CC**: [ ] Sprite 0x93 ×8
+- **0x1CD**: [ ] Podoboo, [ ] BowserStatue ×9, [ ] Sprite 0xE6
+- **0x1CE**: [ ] Sprite 0x32 ×2, [ ] BallNChain ×6, [ ] Fishbone ×6, [ ] Sprite 0xEF
+- **0x1CF**: [B] Thwomp ×8, [ ] Sprite 0xE9
+- **0x1D0**: [ ] Sprite 0xE6
+- **0x1D1**: [ ] Sprite 0x78, [ ] Sparky ×8, [ ] Sprite 0xA6, [ ] MovingCastleStone ×3, [ ] Sprite 0xEA
+- **0x1D2**: [ ] Feather, [ ] Sprite 0x78, [ ] MechaKoopa ×9
+- **0x1D3**: [ ] Sprite 0x25 ×8, [ ] ClimbingNetDoor ×3, [ ] Sprite 0xB6 ×7
+- **0x1D4**: [ ] Podoboo ×9, [ ] Layer3Smasher, [ ] Sprite 0xE6, [ ] Sprite 0xF3
+- **0x1D5**: [ ] GoalTape
+- **0x1D6**: [ ] GoalTape
+- **0x1D7**: [ ] Sprite 0x6D
+- **0x1D8**: [ ] Sprite 0x6D
+- **0x1D9**: [ ] GreenGasBubble ×4
+- **0x1DA**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x1DB**: [ ] Keyhole, [ ] Sprite 0x37 ×3, [s] PSwitch, [ ] Key
+- **0x1DC**: [ ] Keyhole, [ ] Sprite 0x37 ×3, [s] PSwitch, [ ] Key
+- **0x1DD**: [ ] Sprite 0x37 ×4, [ ] Sprite 0x39 ×3, [s] PSwitch, [ ] Star, [ ] Sprite 0x78, [ ] Sprite 0xB0 ×4
+- **0x1DE**: [ ] Reznor ×4
+- **0x1DF**: [ ] Keyhole, [ ] Key
+- **0x1E1**: [ ] GoalTape
+- **0x1E2**: [ ] Keyhole, [ ] GoalTape, [ ] Key, [B] MegaMole ×3, [ ] Sprite 0xF5
+- **0x1E3**: [ ] Sprite 0xEA
+- **0x1E5**: [ ] GoalTape
+- **0x1E6**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x1E7**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x1E8**: [ ] BouncingFootball ×2, [ ] Sprite 0x37 ×13, [ ] Sprite 0x38, [ ] Sprite 0x39 ×7, [ ] Sprite 0xDE
+- **0x1E9**: [ ] BouncingFootball ×2, [ ] Sprite 0x37 ×13, [ ] Sprite 0x38, [ ] Sprite 0x39 ×7, [ ] Sprite 0xDE
+- **0x1EA**: [ ] GreenGasBubble ×6
+- **0x1EB**: [s] KoopaKid, [ ] Podoboo ×3
+- **0x1EC**: [ ] Sprite 0x2E ×12, [B] CharginChuck ×6, [ ] Sprite 0xF5
+- **0x1ED**: [s] BuzzyBeetle ×16
+- **0x1EE**: [ ] GoalTape
+- **0x1EF**: [ ] RedParakoopa, [s] BuzzyBeetle ×7, [B] Blargg ×4, [ ] Sprite 0xF5
+- **0x1F0**: [ ] GoalTape, [ ] Sprite 0x97
+- **0x1F1**: [ ] GoalTape, [ ] Sprite 0x97
+- **0x1F2**: [s] KoopaKid, [ ] Sprite 0xB6
+- **0x1F3**: [ ] Sprite 0x32 ×8, [ ] Podoboo ×4, [ ] Sprite 0x74, [ ] Sprite 0xEA
+- **0x1F5**: [ ] SkullRaft
+- **0x1F6**: [s] KoopaKid
+- **0x1F8**: [ ] Keyhole, [ ] Key
+- **0x1F9**: [ ] GoalTape, [ ] GhostHouseDoor
+- **0x1FA**: [s] PSwitch, [ ] LeftFlyingBlock, [ ] Sprite 0xE1
+- **0x1FB**: [ ] BouncingFootball ×2, [ ] Sprite 0x37 ×9, [ ] Sprite 0x38 ×4, [ ] Sprite 0xE2, [ ] Sprite 0xE3
+- **0x1FC**: [ ] Sprite 0x5A, [ ] LeftFlyingBlock, [ ] Layer3Smasher, [ ] Sprite 0xE6, [ ] Sprite 0xF3
+- **0x1FD**: [s] PSwitch
+- **0x1FE**: [B] MagiKoopa, [ ] Sprite 0x32 ×6, [ ] Podoboo ×4, [ ] DownFirstWoodenSpike ×7, [ ] UpDownFirstWoodenSpike ×4
+- **0x1FF**: [ ] GoalTape, [ ] MessageBox
+
+## Índice inverso (enemigo → niveles)
+
+- [s] **GreenKoopa** (0x0): 2 niveles — 0xD 0x106
+- [s] **RedKoopa** (0x1): 3 niveles — 0xD 0x106 0x11F
+- [s] **BlueKoopa** (0x2): 5 niveles — 0x8 0xD 0x10A 0x12D 0x135
+- [s] **YellowKoopa** (0x3): 4 niveles — 0x6 0x115 0x11B 0x12D
+- [ ] **GreenKoopaNoShell** (0x4): 8 niveles — 0xC7 0xF7 0x10B 0x115 0x119 0x11B 0x128 0x134
+- [s] **RedKoopaNoShell** (0x5): 20 niveles — 0x5 0x6 0x8 0x23 0xC7 0xF7 0x102 0x103 0x106 0x109 0x113 0x119 0x11B 0x11E 0x125 0x127 0x128 0x134 0x135 0x136
+- [ ] **BlueKoopaNoShell** (0x6): 11 niveles — 0x5 0x6 0x23 0xC7 0xF7 0x11B 0x125 0x128 0x12A 0x134 0x135
+- [ ] **YellowKoopaNoShell** (0x7): 4 niveles — 0xC7 0xF7 0x128 0x134
+- [B] **GreenParakoopa** (0x8): 5 niveles — 0x5 0xC 0x119 0x122 0x136
+- [ ] **RedParakoopa** (0x9): 14 niveles — 0x1 0x5 0x15 0x16 0x17 0x103 0x109 0x113 0x11F 0x125 0x12D 0x134 0x135 0x1EF
+- [ ] **GreenFlyingParakoopa** (0xA): 23 niveles — 0xC 0x22 0x23 0xC3 0xD0 0xD1 0xD2 0xF5 0xF6 0x10B 0x10F 0x113 0x119 0x11A 0x11E 0x122 0x12A 0x12B 0x12D 0x134 0x135 0x136 0x1C2
+- [ ] **BobOmb** (0xB): 15 niveles — 0x1 0xC 0xC2 0xF7 0x103 0x109 0x10B 0x10F 0x113 0x119 0x122 0x12A 0x12B 0x135 0x136
+- [ ] **BulletBillGenerator** (0xC): 2 niveles — 0x125 0x12D
+- [ ] **Keyhole** (0xE): 20 niveles — 0xA 0x15 0x16 0x17 0xE9 0x10F 0x118 0x11A 0x11E 0x120 0x130 0x132 0x134 0x135 0x136 0x1DB 0x1DC 0x1DF 0x1E2 0x1F8
+- [s] **Goomba** (0xF): 2 niveles — 0x6 0x11E
+- [B] **ParaGoomba** (0x10): 3 niveles — 0x6 0x11E 0x125
+- [s] **BuzzyBeetle** (0x11): 9 niveles — 0x9 0x10A 0x117 0x118 0x11A 0x1C2 0x1C3 0x1ED 0x1EF
+- [ ] **KoopaKidBossFight** (0x13): 4 niveles — 0x1 0x1C 0x121 0x136
+- [ ] **Sprite 0x15** (0x15): 9 niveles — 0xA 0x102 0x118 0x120 0x127 0x12D 0x1BF 0x1C2 0x1C3
+- [ ] **VerticalCheepCheep** (0x16): 3 niveles — 0xA 0x118 0x127
+- [ ] **SurfaceJumpingCheepCheep** (0x18): 1 niveles — 0x102
+- [ ] **DisplayMessage** (0x19): 1 niveles — 0xC5
+- [ ] **HoppingFlame** (0x1D): 1 niveles — 0x126
+- [ ] **Lakitu** (0x1E): 4 niveles — 0x11F 0x132 0x1C4 0x1C5
+- [B] **MagiKoopa** (0x1F): 2 niveles — 0x11C 0x1FE
+- [ ] **Sprite 0x22** (0x22): 2 niveles — 0xDB 0x101
+- [ ] **Sprite 0x23** (0x23): 1 niveles — 0xDB
+- [ ] **Grinder** (0x24): 2 niveles — 0xDB 0x101
+- [ ] **Sprite 0x25** (0x25): 3 niveles — 0xDB 0x101 0x1D3
+- [B] **Thwomp** (0x26): 5 niveles — 0xE0 0xE1 0xE8 0xEF 0x1CF
+- [ ] **Thwimp** (0x27): 2 niveles — 0x7 0xEF
+- [ ] **BouncingFootball** (0x28): 8 niveles — 0x13 0xEC 0xEE 0x107 0x11D 0x1E8 0x1E9 0x1FB
+- [s] **KoopaKid** (0x29): 21 niveles — 0x93 0x94 0x96 0x97 0x98 0x99 0x9A 0xCC 0xD3 0xD9 0xE5 0x193 0x194 0x196 0x197 0x198 0x199 0x19A 0x1EB 0x1F2 0x1F6
+- [s] **GreenShell** (0x2A): 1 niveles — 0x10A
+- [s] **YoshiEgg** (0x2C): 5 niveles — 0x130 0x132 0x134 0x135 0x136
+- [ ] **Sprite 0x2E** (0x2E): 8 niveles — 0x9 0x10A 0x10B 0x118 0x11A 0x1BF 0x1C3 0x1EC
+- [ ] **PortableSpringboard** (0x2F): 21 niveles — 0x13 0x1A 0x22 0x24 0xD0 0xD1 0xE7 0xEA 0xEC 0xEE 0xF5 0xF6 0x109 0x10B 0x10F 0x113 0x117 0x11E 0x123 0x126 0x12B
+- [ ] **ThrowingDryBones** (0x30): 6 niveles — 0xB 0x1A 0xD4 0xE0 0xE1 0x111
+- [B] **BonyBeetle** (0x31): 6 niveles — 0xB 0xE 0xDC 0xE0 0xE1 0x111
+- [ ] **Sprite 0x32** (0x32): 7 niveles — 0x1B 0xE7 0xE8 0x111 0x1CE 0x1F3 0x1FE
+- [ ] **Podoboo** (0x33): 15 niveles — 0x1A 0x20 0x96 0xD6 0xDC 0xE8 0x101 0x111 0x11C 0x196 0x1CD 0x1D4 0x1EB 0x1F3 0x1FE
+- [ ] **Sprite 0x37** (0x37): 16 niveles — 0xDE 0xE4 0xED 0xF1 0xF2 0xF8 0xF9 0xFE 0x107 0x11D 0x1DB 0x1DC 0x1DD 0x1E8 0x1E9 0x1FB
+- [ ] **Sprite 0x38** (0x38): 11 niveles — 0x13 0x21 0xEC 0xEE 0xF1 0xF8 0x107 0x11D 0x1E8 0x1E9 0x1FB
+- [ ] **Sprite 0x39** (0x39): 7 niveles — 0x21 0xF1 0xF8 0x11D 0x1DD 0x1E8 0x1E9
+- [ ] **Sprite 0x3A** (0x3A): 1 niveles — 0x120
+- [ ] **Sprite 0x3B** (0x3B): 1 niveles — 0x120
+- [ ] **Sprite 0x3C** (0x3C): 1 niveles — 0x120
+- [ ] **RipVanFish** (0x3D): 3 niveles — 0xA 0x120 0x130
+- [s] **PSwitch** (0x3E): 38 niveles — 0x8 0xA 0x13 0x14 0x1C 0x20 0x22 0xCD 0xD0 0xD1 0xD8 0xEA 0xEC 0xED 0xEE 0xF2 0xF5 0xF6 0x101 0x102 0x106 0x10A 0x118 0x11B 0x11C 0x11F 0x121 0x12B 0x12D 0x132 0x136 0x1C4 0x1C5 0x1DB 0x1DC 0x1DD 0x1FA 0x1FD
+- [ ] **ParachuteGoomba** (0x3F): 2 niveles — 0x6 0x1C
+- [ ] **Sprite 0x40** (0x40): 1 niveles — 0x1C
+- [ ] **Sprite 0x41** (0x41): 1 niveles — 0x2
+- [ ] **Sprite 0x42** (0x42): 1 niveles — 0x2
+- [ ] **Sprite 0x43** (0x43): 1 niveles — 0x2
+- [ ] **DigginChuck** (0x46): 1 niveles — 0x10F
+- [ ] **SwimmingAndJumpingCheepCheep** (0x47): 1 niveles — 0x102
+- [ ] **DigginChuckRock** (0x48): 1 niveles — 0x10F
+- [ ] **ShiftingPipe** (0x49): 4 niveles — 0x6 0x1C 0xC3 0x11F
+- [ ] **GoalSphere** (0x4A): 1 niveles — 0xF7
+- [s] **PipeLakitu** (0x4B): 2 niveles — 0x1 0x11F
+- [ ] **ExplodingBlock** (0x4C): 2 niveles — 0x11E 0x126
+- [s] **Sprite 0x4D** (0x4D): 2 niveles — 0x10 0x106
+- [s] **LedgeMontyMole** (0x4E): 2 niveles — 0x10 0x106
+- [s] **JumpingPiranhaPlant** (0x4F): 25 niveles — 0x1 0x6 0x10 0x15 0x16 0x17 0x22 0xC7 0xD0 0xD1 0xF5 0xF6 0x105 0x106 0x10A 0x10B 0x119 0x11A 0x11F 0x126 0x127 0x128 0x12B 0x136 0x1C6
+- [ ] **Sprite 0x50** (0x50): 4 niveles — 0x10 0x125 0x126 0x128
+- [ ] **Ninji** (0x51): 2 niveles — 0x10E 0x1BD
+- [ ] **MovingLedgeHole** (0x52): 1 niveles — 0x21
+- [ ] **ClimbingNetDoor** (0x54): 2 niveles — 0x101 0x1D3
+- [ ] **Sprite 0x55** (0x55): 4 niveles — 0x5 0xBF 0xD7 0x103
+- [ ] **VerticalCheckerboardPlatform** (0x57): 2 niveles — 0xBF 0x103
+- [ ] **Sprite 0x59** (0x59): 3 niveles — 0x1C 0x103 0x12D
+- [ ] **Sprite 0x5A** (0x5A): 3 niveles — 0x20 0x103 0x1FC
+- [ ] **Sprite 0x5B** (0x5B): 1 niveles — 0x11C
+- [ ] **Sprite 0x5D** (0x5D): 1 niveles — 0x102
+- [ ] **BrownChainedPlatform** (0x5F): 2 niveles — 0xD7 0x103
+- [ ] **SkullRaft** (0x61): 2 niveles — 0x10A 0x1F5
+- [ ] **Sprite 0x62** (0x62): 2 niveles — 0x5 0x12C
+- [ ] **Sprite 0x63** (0x63): 4 niveles — 0x5 0xF 0xDD 0x12C
+- [ ] **Sprite 0x64** (0x64): 4 niveles — 0xF 0xDD 0x12A 0x12C
+- [ ] **Sprite 0x65** (0x65): 2 niveles — 0xF 0x12C
+- [ ] **Sprite 0x66** (0x66): 1 niveles — 0xF
+- [ ] **Sprite 0x67** (0x67): 2 niveles — 0x1A 0x1F
+- [ ] **Sprite 0x68** (0x68): 2 niveles — 0x5 0x12C
+- [ ] **Sprite 0x6B** (0x6B): 3 niveles — 0x109 0x119 0x12A
+- [ ] **RightWallSpringboard** (0x6C): 3 niveles — 0x109 0x119 0x12A
+- [ ] **Sprite 0x6D** (0x6D): 4 niveles — 0xC9 0xCA 0x1D7 0x1D8
+- [ ] **DinoRhino** (0x6E): 6 niveles — 0x22 0x24 0xD0 0xD1 0xF5 0xF6
+- [ ] **DinoTorch** (0x6F): 6 niveles — 0x22 0x24 0xD0 0xD1 0xF5 0xF6
+- [B] **Pokey** (0x70): 3 niveles — 0xC7 0x128 0x1BE
+- [ ] **Sprite 0x72** (0x72): 4 niveles — 0xD 0x15 0x16 0x17
+- [ ] **GroundSuperKoopa** (0x73): 4 niveles — 0xD 0x15 0x16 0x17
+- [ ] **Sprite 0x74** (0x74): 9 niveles — 0xE 0x1C 0xEA 0xF7 0x110 0x119 0x11F 0x134 0x1F3
+- [ ] **Sprite 0x75** (0x75): 3 niveles — 0xEA 0x12D 0x134
+- [ ] **Star** (0x76): 5 niveles — 0xEA 0xF7 0x130 0x134 0x1DD
+- [ ] **Feather** (0x77): 5 niveles — 0xCF 0xE3 0xEA 0x134 0x1D2
+- [ ] **Sprite 0x78** (0x78): 13 niveles — 0x1D 0x20 0xEA 0xF7 0x113 0x122 0x12A 0x134 0x1C4 0x1C5 0x1D1 0x1D2 0x1DD
+- [ ] **GoalTape** (0x7B): 66 niveles — 0x1 0x5 0x6 0xA 0xD 0xF 0x10 0x15 0x16 0x17 0x1C 0x1D 0x22 0x23 0xC4 0xC6 0xCB 0xCD 0xD0 0xD1 0xEB 0xF0 0xF3 0xF5 0xF6 0xFB 0xFF 0x103 0x105 0x106 0x10A 0x10B 0x10F 0x113 0x118 0x119 0x11A 0x11E 0x11F 0x120 0x122 0x123 0x125 0x126 0x128 0x12B 0x12C 0x12D 0x132 0x135 0x136 0x1C4 0x1C5 0x1D5 0x1D6 0x1DA 0x1E1 0x1E2 0x1E5 0x1E6 0x1E7 0x1EE 0x1F0 0x1F1 0x1F9 0x1FF
+- [ ] **Key** (0x80): 16 niveles — 0x15 0x16 0x17 0xE9 0x10F 0x118 0x11A 0x120 0x130 0x134 0x136 0x1DB 0x1DC 0x1DF 0x1E2 0x1F8
+- [ ] **ChangingItem** (0x81): 7 niveles — 0x6 0x10 0x1C 0x118 0x11E 0x11F 0x128
+- [ ] **BonusGame** (0x82): 2 niveles — 0x0 0x100
+- [ ] **LeftFlyingBlock** (0x83): 11 niveles — 0x9 0x22 0xD0 0xD1 0xF5 0xF6 0x105 0x10A 0x11A 0x1FA 0x1FC
+- [ ] **Sprite 0x84** (0x84): 2 niveles — 0x125 0x1CA
+- [ ] **Wiggler** (0x86): 2 niveles — 0x11E 0x126
+- [ ] **Layer3Smasher** (0x89): 3 niveles — 0x1F 0x1D4 0x1FC
+- [ ] **Bird** (0x8A): 1 niveles — 0x104
+- [ ] **SideExitAndFireplace** (0x8C): 2 niveles — 0x3 0x104
+- [ ] **GhostHouseDoor** (0x8D): 8 niveles — 0xC4 0xEB 0xF0 0xFB 0x1DA 0x1E6 0x1E7 0x1F9
+- [ ] **WarpHole** (0x8E): 6 niveles — 0x22 0xD0 0xD1 0xF5 0xF6 0x105
+- [ ] **ScalePlatform** (0x8F): 1 niveles — 0xC
+- [ ] **GreenGasBubble** (0x90): 3 niveles — 0x114 0x1D9 0x1EA
+- [B] **CharginChuck** (0x91): 5 niveles — 0x106 0x116 0x118 0x11F 0x1EC
+- [ ] **Sprite 0x92** (0x92): 3 niveles — 0x1 0x118 0x123
+- [ ] **Sprite 0x93** (0x93): 2 niveles — 0x10 0x1CC
+- [ ] **Sprite 0x94** (0x94): 2 niveles — 0x120 0x125
+- [ ] **ClappinChuck** (0x95): 9 niveles — 0x1C 0x1D 0x22 0xD0 0xD1 0xF5 0xF6 0x105 0x12B
+- [ ] **Sprite 0x97** (0x97): 6 niveles — 0xE9 0x117 0x11A 0x12B 0x1F0 0x1F1
+- [ ] **Sprite 0x98** (0x98): 6 niveles — 0x15 0x16 0x17 0x125 0x128 0x12B
+- [ ] **VolcanoLotus** (0x99): 5 niveles — 0x15 0x16 0x17 0x128 0x12B
+- [ ] **SumoBro** (0x9A): 2 niveles — 0x10 0x125
+- [ ] **HammerBro** (0x9B): 7 niveles — 0x6 0x11E 0x126 0x127 0x1C0 0x1C4 0x1C5
+- [ ] **HammerBroPlatform** (0x9C): 7 niveles — 0x6 0x11E 0x126 0x127 0x1C0 0x1C4 0x1C5
+- [ ] **BubbleWithSprite** (0x9D): 3 niveles — 0xC0 0xCE 0x123
+- [ ] **BallNChain** (0x9E): 7 niveles — 0x7 0xB 0xE 0xE0 0xE1 0x110 0x1CE
+- [B] **BanzaiBill** (0x9F): 3 niveles — 0x105 0x113 0x12D
+- [ ] **ActivateBowserBattle** (0xA0): 3 niveles — 0x9B 0x19B 0x1C7
+- [ ] **MechaKoopa** (0xA2): 3 niveles — 0x10E 0x1BD 0x1D2
+- [ ] **GreyChainedPlatform** (0xA3): 2 niveles — 0x23 0x135
+- [ ] **Sprite 0xA4** (0xA4): 2 niveles — 0xF7 0x102
+- [ ] **Sparky** (0xA5): 4 niveles — 0x23 0xC8 0xD4 0x1D1
+- [ ] **Sprite 0xA6** (0xA6): 2 niveles — 0xD4 0x1D1
+- [B] **Blargg** (0xA8): 3 niveles — 0x10A 0x117 0x1EF
+- [ ] **Reznor** (0xA9): 6 niveles — 0x95 0xD5 0xDF 0xE2 0x195 0x1DE
+- [ ] **Fishbone** (0xAA): 4 niveles — 0xB 0xE0 0xE1 0x1CE
+- [ ] **Rex** (0xAB): 2 niveles — 0x105 0x12D
+- [ ] **DownFirstWoodenSpike** (0xAC): 2 niveles — 0x1B 0x1FE
+- [ ] **UpDownFirstWoodenSpike** (0xAD): 2 niveles — 0x1B 0x1FE
+- [ ] **FishinBoo** (0xAE): 1 niveles — 0x21
+- [ ] **Sprite 0xAF** (0xAF): 1 niveles — 0xFC
+- [ ] **Sprite 0xB0** (0xB0): 2 niveles — 0xFC 0x1DD
+- [ ] **CreateEatBlock** (0xB1): 2 niveles — 0x20 0x110
+- [ ] **FallingSpike** (0xB2): 3 niveles — 0xB 0x20 0x111
+- [ ] **BowserStatueFire** (0xB3): 1 niveles — 0x1B
+- [ ] **NonLineGuideGrinder** (0xB4): 1 niveles — 0xD6
+- [ ] **Sprite 0xB6** (0xB6): 8 niveles — 0x20 0x93 0x94 0xD3 0x193 0x194 0x1D3 0x1F2
+- [ ] **CarrotTopLiftUpperRight** (0xB7): 2 niveles — 0x1D 0x113
+- [ ] **CarrotTopLiftUpperLeft** (0xB8): 2 niveles — 0x1D 0x113
+- [ ] **MessageBox** (0xB9): 17 niveles — 0x4 0x5 0x15 0x16 0x17 0x24 0xE3 0xED 0xF2 0x101 0x103 0x104 0x105 0x106 0x12A 0x1BE 0x1FF
+- [ ] **TimedPlatform** (0xBA): 1 niveles — 0x113
+- [ ] **MovingCastleStone** (0xBB): 2 niveles — 0xD4 0x1D1
+- [ ] **BowserStatue** (0xBC): 2 niveles — 0x20 0x1CD
+- [ ] **SlidingNakedBlueKoopa** (0xBD): 4 niveles — 0x10 0xC7 0x105 0x128
+- [ ] **Swooper** (0xBE): 4 niveles — 0x9 0x115 0x118 0x11A
+- [B] **MegaMole** (0xBF): 3 niveles — 0x1D 0x116 0x1E2
+- [ ] **SinkingLavaPlatform** (0xC0): 1 niveles — 0x10F
+- [ ] **WingedPlatform** (0xC1): 1 niveles — 0x122
+- [ ] **Blurp** (0xC2): 5 niveles — 0xA 0x11 0x120 0x130 0x1C1
+- [ ] **PorcuPuffer** (0xC3): 3 niveles — 0x2 0xBE 0xC1
+- [ ] **GreyFallingPlatform** (0xC4): 6 niveles — 0xC 0x1D 0x12C 0x136 0x1C0 0x1C6
+- [ ] **BigBooBoss** (0xC5): 1 niveles — 0xE4
+- [ ] **Spotlight** (0xC6): 2 niveles — 0x10E 0x1BD
+- [ ] **InvisibleMushroom** (0xC7): 12 niveles — 0x15 0x16 0x17 0x22 0xD0 0xD1 0xF5 0xF6 0x105 0x11A 0x1C4 0x1C5
+- [ ] **LightSwitch** (0xC8): 2 niveles — 0x10E 0x1BD
+- [ ] **Sprite 0xC9** (0xC9): 2 niveles — 0x18 0x126
+- [ ] **Sprite 0xCA** (0xCA): 1 niveles — 0x11
+- [ ] **Sprite 0xCC** (0xCC): 1 niveles — 0x6
+- [ ] **Sprite 0xCD** (0xCD): 1 niveles — 0x1
+- [ ] **Sprite 0xCF** (0xCF): 2 niveles — 0x2 0xBE
+- [ ] **Sprite 0xD0** (0xD0): 1 niveles — 0x2
+- [ ] **Sprite 0xD1** (0xD1): 1 niveles — 0x12D
+- [ ] **Sprite 0xD2** (0xD2): 4 niveles — 0xF8 0x11F 0x1C4 0x1C5
+- [ ] **Sprite 0xD3** (0xD3): 1 niveles — 0xD
+- [ ] **Sprite 0xD4** (0xD4): 1 niveles — 0x123
+- [ ] **Sprite 0xD5** (0xD5): 1 niveles — 0x119
+- [ ] **Sprite 0xD6** (0xD6): 1 niveles — 0x119
+- [ ] **Sprite 0xD7** (0xD7): 1 niveles — 0xBF
+- [ ] **Sprite 0xD8** (0xD8): 1 niveles — 0x1B
+- [ ] **Sprite 0xD9** (0xD9): 9 niveles — 0x1 0x2 0x6 0xD 0x1B 0x119 0x123 0x125 0x12D
+- [ ] **Sprite 0xDA** (0xDA): 6 niveles — 0xD 0x1C 0x106 0x11A 0x12D 0x135
+- [ ] **Sprite 0xDB** (0xDB): 13 niveles — 0x8 0xD 0x10 0x1C 0x102 0x105 0x106 0x10A 0x11A 0x11F 0x123 0x12D 0x135
+- [ ] **Sprite 0xDC** (0xDC): 6 niveles — 0xD 0x1C 0xE9 0x11A 0x11F 0x12D
+- [ ] **Sprite 0xDD** (0xDD): 5 niveles — 0x6 0x1C 0x115 0x11B 0x12D
+- [ ] **Sprite 0xDE** (0xDE): 4 niveles — 0x21 0x11D 0x1E8 0x1E9
+- [ ] **Sprite 0xE0** (0xE0): 2 niveles — 0x5 0x135
+- [ ] **Sprite 0xE1** (0xE1): 2 niveles — 0x4 0x1FA
+- [ ] **Sprite 0xE2** (0xE2): 5 niveles — 0xED 0xF2 0xF8 0x107 0x1FB
+- [ ] **Sprite 0xE3** (0xE3): 5 niveles — 0x13 0xEC 0xEE 0x107 0x1FB
+- [ ] **Sprite 0xE5** (0xE5): 1 niveles — 0xF8
+- [ ] **Sprite 0xE6** (0xE6): 7 niveles — 0x1F 0x101 0x10D 0x1CD 0x1D0 0x1D4 0x1FC
+- [ ] **Sprite 0xE8** (0xE8): 3 niveles — 0x9 0xC 0xC8
+- [ ] **Sprite 0xE9** (0xE9): 3 niveles — 0x1A 0x111 0x1CF
+- [ ] **Sprite 0xEA** (0xEA): 5 niveles — 0xD4 0x115 0x1D1 0x1E3 0x1F3
+- [ ] **Sprite 0xEF** (0xEF): 2 niveles — 0xE7 0x1CE
+- [ ] **Sprite 0xF2** (0xF2): 1 niveles — 0xDC
+- [ ] **Sprite 0xF3** (0xF3): 4 niveles — 0x1F 0x1C8 0x1D4 0x1FC
+- [ ] **Sprite 0xF4** (0xF4): 1 niveles — 0x122
+- [ ] **Sprite 0xF5** (0xF5): 3 niveles — 0x1E2 0x1EC 0x1EF
