@@ -94,6 +94,17 @@ tasks.register<JavaExec>("dumpOverworldDoc") {
     workingDir = rootDir
 }
 
+// Vuelca el comportamiento (tweaker) de cada sprite a docs/comportamiento_sprites.md:
+//   ./gradlew :core:dumpSpriteTweaker --args="--rom smw.sfc"
+tasks.register<JavaExec>("dumpSpriteTweaker") {
+    group = "rolebuilder"
+    description = "Documenta los 6 bytes tweaker de cada sprite de SMW (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwSpriteTweakerDumpKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Documentación exhaustiva por nivel (direcciones + props + enemigos) a docs/niveles_smw.md:
 //   ./gradlew :core:dumpLevelDocs --args="--rom smw.sfc"
 tasks.register<JavaExec>("dumpLevelDocs") {
