@@ -5,6 +5,7 @@ import com.rolebuilder.core.model.DefaultProjectFactory
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.GameMode
+import com.rolebuilder.core.model.ParallaxLayer
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tileset
@@ -61,6 +62,16 @@ fun main(args: Array<String>) {
     // Sprites base de personaje/enemigo RPG para que el proyecto cargue completo en la app.
     copyDefaultSprites(imagesDir)
 
+    // Fondo (Layer 2) REAL como capa de parallax detrás de la escena (si el nivel tiene y
+    // decodifica). Se tila en mosaico y acompaña a la cámara a media velocidad (profundidad).
+    val bgLayers = ArrayList<ParallaxLayer>()
+    val bg = SnesGameRecipes.smwBackgroundImage(rom, header, level)
+    if (bg != null) {
+        val bgName = "bg_$hx.png"
+        ImageIO.write(toBufferedImage(bg), "png", File(imagesDir, bgName))
+        bgLayers.add(ParallaxLayer(image = bgName, factor = 0.5f, above = false, alpha = 1f))
+    }
+
     // Tileset con la COLISIÓN REAL por casilla (platformSolidity) y las animaciones del nivel.
     val tileset = Tileset(
         id = 1,
@@ -83,6 +94,7 @@ fun main(args: Array<String>) {
         tilesetId = 1,
         layers = listOf(map.tiles, List(map.mapWidth * map.mapHeight) { EMPTY_TILE }),
         platformEnemies = map.enemies.map { PlatformEnemyMark(it.first, it.second, it.third) },
+        parallaxLayers = bgLayers,
     )
 
     // Inicio = entrada real del nivel (en casillas), recortada al mapa.
@@ -108,6 +120,7 @@ fun main(args: Array<String>) {
     println("Proyecto: ${outDir.absolutePath}")
     println("Nivel $hx \"$title\": ${map.mapWidth}×${map.mapHeight} casillas · " +
         "${map.enemies.size} enemigos · ${map.animations.size} teselas animadas · " +
+        "fondo ${if (bgLayers.isEmpty()) "no" else "sí (Layer 2)"} · " +
         "inicio ($startX,$startY) · modo PLATFORMER")
 }
 

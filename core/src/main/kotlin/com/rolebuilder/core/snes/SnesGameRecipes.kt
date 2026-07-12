@@ -1290,6 +1290,10 @@ object SnesGameRecipes {
      * en BufferBGTilemap; se decodifica contra la VRAM de 4 slots y se colorea con la
      * CGRAM real del nivel.
      */
+    /** Imagen del FONDO (Layer 2) de un nivel a color real, o null si no tiene/decodifica. */
+    fun smwBackgroundImage(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? =
+        renderSmwBackground(rom, header, level)
+
     internal fun renderSmwBackground(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? {
         val delta = smwHeaderDelta(header)
         val entries = layer2BgEntries(rom, delta, level)
