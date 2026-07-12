@@ -1,7 +1,7 @@
 package com.rolebuilder.core.tools
 
 import com.rolebuilder.core.io.ProjectIo
-import com.rolebuilder.core.model.DefaultProjectFactory
+import com.rolebuilder.core.model.Database
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.GameMode
@@ -60,8 +60,9 @@ fun main(args: Array<String>) {
     val atlasName = "level_$hx.png"
     ImageIO.write(toBufferedImage(map.atlas), "png", File(imagesDir, atlasName))
 
-    // Sprites base de personaje/enemigo RPG para que el proyecto cargue completo en la app.
-    copyDefaultSprites(imagesDir)
+    // NADA de assets del ARPG (hero/slime/…): un proyecto de Platform Builder solo lleva lo
+    // que viene del import (tileset + fondo del ROM). El jugador (Mario) y los enemigos los
+    // dibuja el renderer del platformer desde sus propios sprites SMW empaquetados en la app.
 
     // Fondo (Layer 2) REAL como capa de parallax detrás de la escena (si el nivel tiene y
     // decodifica). Se tila en mosaico y acompaña a la cámara a media velocidad (profundidad).
@@ -112,8 +113,9 @@ fun main(args: Array<String>) {
         startY = startY,
         mapIds = listOf(1),
     )
-    // Base de datos por defecto pero con NUESTRO tileset (id 1) para que el mapa resuelva.
-    val database = DefaultProjectFactory.defaultDatabase().copy(tilesets = listOf(tileset))
+    // Base de datos MÍNIMA: solo el tileset del nivel. Sin actores/enemigos/items del ARPG —
+    // el platformer no los usa. (Database.tileset(map.tilesetId) es lo único que lee la app.)
+    val database = Database(tilesets = listOf(tileset))
 
     ProjectIo.saveProject(outDir, project)
     ProjectIo.saveDatabase(outDir, database)
@@ -131,17 +133,6 @@ fun main(args: Array<String>) {
         "meta ${if (goalCells > 0) "sí" else "no"} · " +
         "fondo ${if (bgLayers.isEmpty()) "no" else "sí (Layer 2)"} · " +
         "inicio ($startX,$startY) · modo PLATFORMER")
-}
-
-/** Copia los sprites sintéticos del proyecto por defecto (si están) para que el proyecto cargue. */
-private fun copyDefaultSprites(imagesDir: File) {
-    val src = File("app/src/main/assets/default_project/images")
-    if (!src.isDirectory) return
-    for (f in src.listFiles().orEmpty()) {
-        if (f.extension == "png" && f.name != "tileset.png") {
-            f.copyTo(File(imagesDir, f.name), overwrite = true)
-        }
-    }
 }
 
 private fun toBufferedImage(img: ArgbImage): BufferedImage {
