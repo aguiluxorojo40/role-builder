@@ -1,6 +1,7 @@
 package com.rolebuilder.core.tools
 
 import com.rolebuilder.core.snes.SmwEnemyGraphics
+import com.rolebuilder.core.snes.SmwLayer1
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.core.snes.SmwSprites
@@ -93,6 +94,13 @@ fun main(args: Array<String>) {
             " backArea=${info.backgroundColor}")
         perLevel.appendLine("- **Colisión**: $colTxt")
         perLevel.appendLine("- **Entrada**: $startTxt")
+        // Salidas de pantalla (grafo nivel → sublevel/nivel destino).
+        val exits = runCatching { SmwLayer1.screenExits(rom, delta, level) }.getOrNull() ?: emptyList()
+        val exitsTxt = if (exits.isEmpty()) "(ninguna)" else exits.joinToString(" · ") {
+            val full = (level and 0x100) or it.destination
+            "pant ${it.screen}→${hx(full, 3)}${if (it.secondaryEntrance) " (2ª entrada)" else ""}"
+        }
+        perLevel.appendLine("- **Salidas de pantalla**: $exitsTxt")
         // Enemigos agregados por id, con posiciones.
         val byId = placements.groupBy { it.id }
         val big = byId.keys.filter { it in bigIds }

@@ -19,7 +19,7 @@ package com.rolebuilder.core.snes
  * Limitación actual: solo niveles HORIZONTALES (los verticales usan otra
  * disposición de pantallas); para esos parse() devuelve null.
  */
-internal object SmwLayer1 {
+object SmwLayer1 {
 
     /** Resultado: buffer Map16 del nivel (layout: pantalla*0x1B0 + fila*16 + col). */
     internal class SmwLevelTilemap(
@@ -53,9 +53,27 @@ internal object SmwLayer1 {
     )
 
     /** Parsea el nivel [level]; null si no hay datos, es vertical o modo sin Layer 1. */
-    fun parse(rom: ByteArray, delta: Int, level: Int): SmwLevelTilemap? {
+    internal fun parse(rom: ByteArray, delta: Int, level: Int): SmwLevelTilemap? {
         val p = SnesGameRecipes.smwLayer1DataPc(rom, delta, level) ?: return null
         return P(rom, p).run()
+    }
+
+    /**
+     * Una SALIDA DE PANTALLA (ExtObj00) del nivel: cuando el jugador cruza la [screen], el
+     * juego lo lleva a [destination] (byte bajo). Si [secondaryEntrance] es true, [destination]
+     * es un nº de ENTRADA SECUNDARIA (→ un sublevel, vía la tabla de entradas secundarias);
+     * si no, es el byte bajo de un nº de NIVEL destino (el bit alto lo pone el submapa/agua).
+     */
+    data class ScreenExit(val screen: Int, val destination: Int, val properties: Int) {
+        val secondaryEntrance: Boolean get() = (properties shr 1) and 1 != 0
+    }
+
+    /** Salidas de pantalla del [level] (grafo nivel→sublevel), leídas del stream de Layer 1. */
+    fun screenExits(rom: ByteArray, delta: Int, level: Int): List<ScreenExit> {
+        val p = SnesGameRecipes.smwLayer1DataPc(rom, delta, level) ?: return emptyList()
+        val machine = P(rom, p)
+        machine.run()
+        return machine.screenExits
     }
 
     // =============================== máquina de estado ===============================
@@ -73,6 +91,7 @@ internal object SmwLayer1 {
         var objNum = 0; var size = 0; var r10 = 0; var r11 = 0
         var screensInLevel = 1; var mode = 0; var tileset = 0
         var total = 0; var unknown = 0
+        val screenExits = ArrayList<ScreenExit>()
 
         fun rd(i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0xFF
 
@@ -200,7 +219,10 @@ internal object SmwLayer1 {
 
         fun ext(k: Int) {
             when (k) {
-                0x00 -> { data++ } // screen exit: consume el byte extra; no dibuja
+                0x00 -> { // screen exit (ExtObj00): pantalla r10&0x1F → destino = byte extra
+                    screenExits.add(ScreenExit(r10 and 0x1F, rd(data), r11))
+                    data++
+                }
                 0x01 -> { screen = r10 and 0x1F; nextScreen = screen } // screen jump
                 in 0x10..0x16, in 0x18..0x40 -> ext1Tile(k - 16)
                 0x17 -> ext1Tile(0x32)

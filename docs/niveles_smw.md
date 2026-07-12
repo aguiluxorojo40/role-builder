@@ -31,6 +31,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 7 · tiempo 0 · Layer2 fondo · paletas BG=5 FG=0 SPR=4 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **BonusGame** (0x82) ×1: (0,5,7)
@@ -41,6 +42,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=6 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=238 SOLID=123 SLOPE=72 SLOPE_STEEP=78
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 17→0x0D8
 - **Usa sprites grandes**: no
 - **Enemigos (52)**:
     - [ ] **RedParakoopa** (0x9) ×25: (1,16,23) (1,17,22) (1,31,23) (2,36,22) (2,40,21) (3,50,21) …
@@ -59,6 +61,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=3 backArea=2
 - **Colisión**: 256×27 casillas · SOLID=14
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 15→0x0CB
 - **Usa sprites grandes**: no
 - **Enemigos (23)**:
     - [ ] **Sprite 0x41** (0x41) ×3: (6,103,24) (7,115,24) (9,159,24)
@@ -75,6 +78,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
 - **Colisión**: 16×27 casillas · LEDGE_TOP=16 SOLID=5
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **SideExitAndFireplace** (0x8C) ×1: (0,7,22)
@@ -85,6 +89,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=4 SPR=5 backArea=7
 - **Colisión**: 110×27 casillas · SOLID=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 4→0x0F9 · pant 6→0x0C4
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **MessageBox** (0xB9) ×1: (0,9,21)
@@ -96,6 +101,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=1 SPR=2 backArea=1
 - **Colisión**: 305×27 casillas · LEDGE_TOP=41 SOLID=40
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 14→0x0F4
 - **Usa sprites grandes**: sí — GreenParakoopa (0x8)
 - **Enemigos (35)**:
     - [s] **RedKoopaNoShell** (0x5) ×1: (8,130,23)
@@ -116,6 +122,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 320×27 casillas · LEDGE_TOP=292 SOLID=155 SLOPE=32 SLOPE_STEEP=41
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x0C3 · pant 7→0x0D2
 - **Usa sprites grandes**: sí — ParaGoomba (0x10)
 - **Enemigos (45)**:
     - [s] **YellowKoopa** (0x3) ×1: (1,20,23)
@@ -140,6 +147,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 48×27 casillas · LEDGE_TOP=47 SOLID=9
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 1→0x0E6 · pant 2→0x0E8
 - **Usa sprites grandes**: no
 - **Enemigos (5)**:
     - [ ] **Thwimp** (0x27) ×2: (0,9,11) (1,16,11)
@@ -151,6 +159,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · SOLID=58
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 2→0x0C9
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [s] **BlueKoopa** (0x2) ×1: (0,8,19)
@@ -164,6 +173,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=2 SPR=4 backArea=3
 - **Colisión**: 192×27 casillas · LEDGE_TOP=100 SOLID=189 SLOPE=42 SLOPE_STEEP=50
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 5→0x0E9 · pant 11→0x0FF
 - **Usa sprites grandes**: no
 - **Enemigos (28)**:
     - [s] **BuzzyBeetle** (0x11) ×10: (1,19,20) (1,27,18) (2,39,18) (4,70,13) (7,113,16) (7,119,16) …
@@ -178,6 +188,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 13 pantallas (208 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=2 SPR=3 backArea=2
 - **Colisión**: 194×27 casillas · LEDGE_TOP=26 SOLID=135 SLOPE=3 SLOPE_STEEP=19
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 3→0x0C2
 - **Usa sprites grandes**: no
 - **Enemigos (32)**:
     - [ ] **Keyhole** (0xE) ×1: (9,152,20)
@@ -194,6 +205,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=2 SPR=1 backArea=2
 - **Colisión**: 127×27 casillas · SOLID=22
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 3→0x0E1 · pant 7→0x0E0
 - **Usa sprites grandes**: sí — BonyBeetle (0x31)
 - **Enemigos (23)**:
     - [ ] **ThrowingDryBones** (0x30) ×2: (6,103,23) (7,113,23)
@@ -208,6 +220,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=6
 - **Colisión**: 191×27 casillas · SOLID=47
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 11→0x0F3
 - **Usa sprites grandes**: sí — GreenParakoopa (0x8)
 - **Enemigos (33)**:
     - [B] **GreenParakoopa** (0x8) ×11: (4,78,10) (5,80,10) (5,82,10) (5,84,10) (5,86,10) (5,88,10) …
@@ -223,6 +236,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=0 backArea=7
 - **Colisión**: 305×27 casillas · LEDGE_TOP=11 SOLID=24
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 11→0x0DD
 - **Usa sprites grandes**: no
 - **Enemigos (56)**:
     - [s] **GreenKoopa** (0x0) ×1: (10,162,21)
@@ -243,6 +257,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x1 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=0 FG=3 SPR=1 backArea=3
 - **Colisión**: 95×27 casillas · SOLID=11
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 4→0x0DC · pant 5→0x0DA
 - **Usa sprites grandes**: sí — BonyBeetle (0x31)
 - **Enemigos (9)**:
     - [B] **BonyBeetle** (0x31) ×2: (2,33,24) (2,47,20)
@@ -255,6 +270,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 22 pantallas (352 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=0
 - **Colisión**: 337×27 casillas · SOLID=20
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 11→0x0BF
 - **Usa sprites grandes**: no
 - **Enemigos (42)**:
     - [ ] **Sprite 0x63** (0x63) ×3: (1,19,24) (1,27,21) (2,39,18)
@@ -269,6 +285,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 21 pantallas (336 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=2
 - **Colisión**: 336×27 casillas · LEDGE_TOP=412 SOLID=216 SLOPE=20 SLOPE_STEEP=27
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 11→0x0C1
 - **Usa sprites grandes**: no
 - **Enemigos (46)**:
     - [s] **Sprite 0x4D** (0x4D) ×12: (0,12,23) (1,18,23) (2,39,23) (5,84,23) (5,84,15) (5,84,19) …
@@ -288,6 +305,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=4 SPR=3 backArea=2
 - **Colisión**: 192×27 casillas · LEDGE_TOP=4 SOLID=77 SLOPE_STEEP=29
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 11→0x0C6
 - **Usa sprites grandes**: no
 - **Enemigos (52)**:
     - [ ] **Blurp** (0xC2) ×33: (1,19,17) (1,22,15) (2,35,23) (2,35,20) (2,42,23) (2,44,23) …
@@ -299,6 +317,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,11) = px (16,176)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -308,6 +327,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 79×27 casillas · SOLID=2 SLOPE=16 SLOPE_STEEP=16
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 4→0x0ED
 - **Usa sprites grandes**: no
 - **Enemigos (5)**:
     - [ ] **BouncingFootball** (0x28) ×1: (3,51,20)
@@ -322,6 +342,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · SOLID=36
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x0CA
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **PSwitch** (0x3E) ×1: (0,8,23)
@@ -332,6 +353,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
 - **Colisión**: 320×27 casillas · LEDGE_TOP=418 SOLID=151 SLOPE=1 SLOPE_STEEP=8
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x0FD · pant 11→0x0E3
 - **Usa sprites grandes**: no
 - **Enemigos (38)**:
     - [ ] **RedParakoopa** (0x9) ×2: (6,103,23) (6,107,23)
@@ -352,6 +374,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
 - **Colisión**: 320×27 casillas · LEDGE_TOP=418 SOLID=151 SLOPE=1 SLOPE_STEEP=8
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x0FD · pant 11→0x0E3
 - **Usa sprites grandes**: no
 - **Enemigos (38)**:
     - [ ] **RedParakoopa** (0x9) ×2: (6,103,23) (6,107,23)
@@ -372,6 +395,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
 - **Colisión**: 320×27 casillas · LEDGE_TOP=418 SOLID=151 SLOPE=1 SLOPE_STEEP=8
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x0FD · pant 11→0x0E3
 - **Usa sprites grandes**: no
 - **Enemigos (38)**:
     - [ ] **RedParakoopa** (0x9) ×2: (6,103,23) (6,107,23)
@@ -392,6 +416,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0xE · música 4 · tiempo 400 · Layer2 fondo · paletas BG=4 FG=4 SPR=3 backArea=3
 - **Colisión**: 46×27 casillas · SOLID=26
 - **Entrada**: casilla (1,3) = px (16,48)
+- **Salidas de pantalla**: pant 2→0x0F8
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Sprite 0xC9** (0xC9) ×4: (1,17,10) (1,22,12) (1,24,5) (2,35,14)
@@ -402,6 +427,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -411,6 +437,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 192×27 casillas · LEDGE_TOP=163 SOLID=59 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 11→0x0D4
 - **Usa sprites grandes**: no
 - **Enemigos (20)**:
     - [ ] **PortableSpringboard** (0x2F) ×2: (1,20,24) (1,21,24)
@@ -425,6 +452,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 9 pantallas (144 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=1 backArea=5
 - **Colisión**: 144×27 casillas · LEDGE_TOP=95 SOLID=73 SLOPE_STEEP=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 8→0x0EF
 - **Usa sprites grandes**: no
 - **Enemigos (27)**:
     - [ ] **Sprite 0x32** (0x32) ×3: (1,26,23) (3,58,23) (6,96,23)
@@ -440,6 +468,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 17 pantallas (272 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=7 SPR=0 backArea=0
 - **Colisión**: 272×27 casillas · LEDGE_TOP=154 SOLID=307 SLOPE=2 SLOPE_STEEP=12
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 2→0x0BD · pant 6→0x0C0
 - **Usa sprites grandes**: no
 - **Enemigos (44)**:
     - [ ] **KoopaKidBossFight** (0x13) ×13: (0,11,20) (1,17,16) (1,17,23) (1,29,23) (1,29,16) (2,41,23) …
@@ -463,6 +492,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=4 backArea=3
 - **Colisión**: 240×27 casillas · LEDGE_TOP=34 SOLID=830 SLOPE=427 SLOPE_STEEP=490
 - **Entrada**: casilla (8,6) = px (128,96)
+- **Salidas de pantalla**: pant 8→0x0EA
 - **Usa sprites grandes**: sí — MegaMole (0xBF)
 - **Enemigos (24)**:
     - [ ] **Sprite 0x78** (0x78) ×3: (6,109,19) (6,110,19) (7,112,19)
@@ -479,6 +509,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -488,6 +519,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=1 backArea=4
 - **Colisión**: 96×27 casillas · LEDGE_TOP=67 SOLID=34 SLOPE_STEEP=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 5→0x0D6
 - **Usa sprites grandes**: no
 - **Enemigos (10)**:
     - [ ] **Sprite 0x67** (0x67) ×7: (1,25,21) (2,33,20) (2,43,21) (3,51,20) (4,67,20) (4,77,19) …
@@ -501,6 +533,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=3
 - **Colisión**: 217×27 casillas · SOLID=53
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: pant 14→0x0CC
 - **Usa sprites grandes**: no
 - **Enemigos (26)**:
     - [ ] **Podoboo** (0x33) ×4: (2,37,21) (11,181,19) (11,183,18) (11,187,20)
@@ -518,6 +551,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 14 pantallas (224 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=3
 - **Colisión**: 218×27 casillas · SOLID=1 SLOPE=12 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 13→0x0FC
 - **Usa sprites grandes**: no
 - **Enemigos (25)**:
     - [ ] **Sprite 0x38** (0x38) ×7: (1,24,23) (1,25,22) (5,80,18) (5,80,23) (8,140,20) (11,188,22) …
@@ -532,6 +566,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=190 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 6→0x0F6 · pant 15→0x0BE · pant 16→0x0F5
 - **Usa sprites grandes**: no
 - **Enemigos (34)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×1: (17,283,20)
@@ -552,6 +587,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 24 pantallas (384 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=1 SPR=2 backArea=1
 - **Colisión**: 369×27 casillas · SOLID=99
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x0D7
 - **Usa sprites grandes**: no
 - **Enemigos (50)**:
     - [s] **RedKoopaNoShell** (0x5) ×6: (2,35,16) (3,63,19) (5,87,23) (7,112,20) (8,142,17) (11,179,19)
@@ -567,6 +603,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=0 backArea=2
 - **Colisión**: 64×27 casillas · LEDGE_TOP=98 SOLID=76 SLOPE=62 SLOPE_STEEP=68
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x0CF
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **PortableSpringboard** (0x2F) ×1: (0,14,19)
@@ -580,6 +617,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -589,6 +627,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -598,6 +637,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -607,6 +647,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -616,6 +657,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -625,6 +667,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -634,6 +677,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -643,6 +687,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -652,6 +697,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -661,6 +707,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -670,6 +717,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -679,6 +727,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -688,6 +737,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -697,6 +747,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -706,6 +757,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -715,6 +767,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -724,6 +777,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -733,6 +787,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -742,6 +797,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -751,6 +807,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -760,6 +817,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -769,6 +827,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -778,6 +837,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -787,6 +847,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -796,6 +857,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -805,6 +867,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -814,6 +877,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -823,6 +887,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -832,6 +897,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -841,6 +907,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -850,6 +917,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -859,6 +927,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -868,6 +937,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -877,6 +947,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -886,6 +957,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -895,6 +967,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -904,6 +977,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -913,6 +987,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -922,6 +997,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -931,6 +1007,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -940,6 +1017,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -949,6 +1027,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -958,6 +1037,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -967,6 +1047,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -976,6 +1057,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -985,6 +1067,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -994,6 +1077,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1003,6 +1087,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1012,6 +1097,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1021,6 +1107,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1030,6 +1117,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1039,6 +1127,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1048,6 +1137,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1057,6 +1147,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1066,6 +1157,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1075,6 +1167,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1084,6 +1177,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1093,6 +1187,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1102,6 +1197,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1111,6 +1207,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1120,6 +1217,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1129,6 +1227,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1138,6 +1237,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1147,6 +1247,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1156,6 +1257,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1165,6 +1267,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1174,6 +1277,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1183,6 +1287,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1192,6 +1297,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1201,6 +1307,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1210,6 +1317,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1219,6 +1327,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1228,6 +1337,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1237,6 +1347,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1246,6 +1357,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1255,6 +1367,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1264,6 +1377,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1273,6 +1387,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1282,6 +1397,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1291,6 +1407,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1300,6 +1417,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1309,6 +1427,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1318,6 +1437,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1327,6 +1447,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1336,6 +1457,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1345,6 +1467,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1354,6 +1477,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1363,6 +1487,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1372,6 +1497,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1381,6 +1507,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1390,6 +1517,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1399,6 +1527,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1408,6 +1537,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1417,6 +1547,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1426,6 +1557,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1435,6 +1567,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1444,6 +1577,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1453,6 +1587,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1462,6 +1597,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1471,6 +1607,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1480,6 +1617,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1489,6 +1627,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1498,6 +1637,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1507,6 +1647,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1516,6 +1657,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1525,6 +1667,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1534,6 +1677,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1543,6 +1687,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1552,6 +1697,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1561,6 +1707,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1570,6 +1717,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,5)
@@ -1581,6 +1729,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (3)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,6)
@@ -1592,6 +1741,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Reznor** (0xA9) ×4: (0,1,0) (0,2,0) (0,3,0) (0,4,0)
@@ -1602,6 +1752,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,4)
@@ -1613,6 +1764,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,3)
@@ -1623,6 +1775,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,2)
@@ -1633,6 +1786,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,1)
@@ -1643,6 +1797,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,0)
@@ -1653,6 +1808,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x10 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **ActivateBowserBattle** (0xA0) ×1: (0,0,0)
@@ -1663,6 +1819,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1672,6 +1829,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1681,6 +1839,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1690,6 +1849,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1699,6 +1859,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1708,6 +1869,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1717,6 +1879,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1726,6 +1889,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1735,6 +1899,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1744,6 +1909,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1753,6 +1919,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1762,6 +1929,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1771,6 +1939,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1780,6 +1949,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1789,6 +1959,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1798,6 +1969,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1807,6 +1979,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1816,6 +1989,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1825,6 +1999,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1834,6 +2009,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1843,6 +2019,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1852,6 +2029,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1861,6 +2039,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1870,6 +2049,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1879,6 +2059,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1888,6 +2069,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1897,6 +2079,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1906,6 +2089,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1915,6 +2099,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1924,6 +2109,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1933,6 +2119,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1942,6 +2129,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1951,6 +2139,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -1960,6 +2149,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=1 SPR=3 backArea=6
 - **Colisión**: 63×27 casillas · SOLID=77
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 3→0x0D0
 - **Usa sprites grandes**: no
 - **Enemigos (3)**:
     - [ ] **PorcuPuffer** (0xC3) ×2: (0,14,24) (2,33,24)
@@ -1971,6 +2161,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=0
 - **Colisión**: 63×27 casillas · SOLID=80
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 3→0x0BF (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **Sprite 0x55** (0x55) ×1: (3,53,23)
@@ -1983,6 +2174,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=7 SPR=0 backArea=0
 - **Colisión**: 64×27 casillas · LEDGE_TOP=32 SOLID=70 SLOPE_STEEP=1
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 3→0x0C0 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **BubbleWithSprite** (0x9D) ×12: (1,18,18) (1,22,19) (1,27,18) (1,30,16) (2,34,20) (2,38,18) …
@@ -1993,6 +2185,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=1 SPR=3 backArea=2
 - **Colisión**: 52×27 casillas · SOLID=48
 - **Entrada**: casilla (1,3) = px (16,48)
+- **Salidas de pantalla**: pant 0→0x0C1 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **PorcuPuffer** (0xC3) ×2: (1,17,24) (2,34,24)
@@ -2003,6 +2196,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,25) = px (16,400)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (10)**:
     - [ ] **BobOmb** (0xB) ×10: (0,15,23) (0,15,14) (1,26,29) (1,26,19) (1,26,11) (2,41,23) …
@@ -2013,6 +2207,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 64×27 casillas · LEDGE_TOP=26 SOLID=18
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 3→0x0C3 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (8)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×2: (1,27,21) (2,35,19)
@@ -2024,6 +2219,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=4 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2035,6 +2231,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=0
 - **Colisión**: 16×27 casillas · LEDGE_TOP=16
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **DisplayMessage** (0x19) ×1: (0,0,0)
@@ -2045,6 +2242,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 32×27 casillas · LEDGE_TOP=26 SOLID=17 SLOPE_STEEP=1
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2055,6 +2253,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=2 FG=0 SPR=0 backArea=6
 - **Colisión**: 128×27 casillas · LEDGE_TOP=124 SOLID=1 SLOPE=11 SLOPE_STEEP=10
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — Pokey (0x70)
 - **Enemigos (8)**:
     - [ ] **GreenKoopaNoShell** (0x4) ×1: (4,67,23)
@@ -2071,6 +2270,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=2 backArea=5
 - **Colisión**: 95×27 casillas · SOLID=65
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (16)**:
     - [ ] **Sparky** (0xA5) ×15: (1,23,6) (1,25,11) (1,31,7) (2,36,10) (2,43,16) (2,47,16) …
@@ -2082,6 +2282,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0x6D** (0x6D) ×1: (2,32,20)
@@ -2092,6 +2293,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0x6D** (0x6D) ×1: (2,32,20)
@@ -2102,6 +2304,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=3 backArea=2
 - **Colisión**: 17×27 casillas · SOLID=4
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2112,6 +2315,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,1)
@@ -2122,6 +2326,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=0 SPR=0 backArea=6
 - **Colisión**: 64×27 casillas · LEDGE_TOP=33 SOLID=34
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [s] **PSwitch** (0x3E) ×1: (0,8,23)
@@ -2133,6 +2338,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=0 backArea=2
 - **Colisión**: 64×27 casillas · LEDGE_TOP=23 SOLID=122 SLOPE_STEEP=3
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x0CD
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [ ] **BubbleWithSprite** (0x9D) ×11: (1,19,17) (1,23,19) (1,27,16) (1,27,20) (2,35,18) (2,39,17) …
@@ -2143,6 +2349,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=4 SPR=0 backArea=6
 - **Colisión**: 112×27 casillas · LEDGE_TOP=21 SOLID=136 SLOPE=1 SLOPE_STEEP=3
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 6→0x0CE
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Feather** (0x77) ×1: (0,4,23)
@@ -2153,6 +2360,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=190 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 6→0x0F6 · pant 15→0x0BE · pant 16→0x0F5
 - **Usa sprites grandes**: no
 - **Enemigos (34)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×1: (17,283,20)
@@ -2173,6 +2381,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=190 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 6→0x0F6 · pant 15→0x0BE · pant 16→0x0F5
 - **Usa sprites grandes**: no
 - **Enemigos (34)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×1: (17,283,20)
@@ -2193,6 +2402,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=21 SOLID=53 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 1→0x0D2 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (9)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×9: (0,10,23) (0,10,21) (1,16,23) (1,16,21) (1,21,22) (1,22,22) …
@@ -2203,6 +2413,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (3)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,6)
@@ -2214,6 +2425,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 7→0x0D3
 - **Usa sprites grandes**: no
 - **Enemigos (13)**:
     - [ ] **ThrowingDryBones** (0x30) ×1: (6,104,12)
@@ -2228,6 +2440,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Reznor** (0xA9) ×4: (0,1,0) (0,2,0) (0,3,0) (0,4,0)
@@ -2238,6 +2451,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=4
 - **Colisión**: 256×27 casillas · LEDGE_TOP=115 SOLID=147 SLOPE=2 SLOPE_STEEP=11
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 8→0x0D5 · pant 15→0x0D5
 - **Usa sprites grandes**: no
 - **Enemigos (37)**:
     - [ ] **Podoboo** (0x33) ×26: (1,21,19) (1,21,15) (3,51,11) (3,54,11) (4,68,14) (4,73,13) …
@@ -2249,6 +2463,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 7 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=5 SPR=2 backArea=0
 - **Colisión**: 32×27 casillas · LEDGE_TOP=17 SOLID=55 SLOPE=10 SLOPE_STEEP=10
 - **Entrada**: casilla (1,6) = px (16,96)
+- **Salidas de pantalla**: pant 1→0x0D7 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **Sprite 0x55** (0x55) ×1: (0,7,5)
@@ -2260,6 +2475,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 71×27 casillas · LEDGE_TOP=14 SOLID=146 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 0→0x0D8 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **PSwitch** (0x3E) ×1: (3,60,23)
@@ -2270,6 +2486,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,2)
@@ -2280,6 +2497,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xA · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,23) = px (128,368)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (21)**:
     - [ ] **Sprite 0x22** (0x22) ×6: (1,29,4) (2,33,20) (2,38,26) (2,38,10) (2,43,20) (3,52,6)
@@ -2293,6 +2511,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 176×27 casillas · LEDGE_TOP=146 SOLID=39
 - **Entrada**: casilla (8,17) = px (128,272)
+- **Salidas de pantalla**: pant 0→0x0DB
 - **Usa sprites grandes**: sí — BonyBeetle (0x31)
 - **Enemigos (9)**:
     - [B] **BonyBeetle** (0x31) ×2: (6,99,23) (6,108,23)
@@ -2305,6 +2524,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 7 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=7
 - **Colisión**: 64×27 casillas · SOLID=40
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 3→0x0DD (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **Sprite 0x63** (0x63) ×1: (0,2,24)
@@ -2316,6 +2536,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=4 SPR=5 backArea=6
 - **Colisión**: 30×27 casillas · SOLID=1 SLOPE=6 SLOPE_STEEP=6
 - **Entrada**: casilla (8,21) = px (128,336)
+- **Salidas de pantalla**: pant 0→0x0EB · pant 1→0x0FE
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Sprite 0x37** (0x37) ×4: (0,6,15) (0,11,24) (1,23,14) (1,28,21)
@@ -2326,6 +2547,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Reznor** (0xA9) ×4: (0,1,0) (0,2,0) (0,3,0) (0,4,0)
@@ -2336,6 +2558,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=2 SPR=1 backArea=2
 - **Colisión**: 128×27 casillas · LEDGE_TOP=110 SOLID=78 SLOPE_STEEP=17
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 7→0x0DF
 - **Usa sprites grandes**: sí — Thwomp (0x26), BonyBeetle (0x31)
 - **Enemigos (32)**:
     - [B] **Thwomp** (0x26) ×4: (1,23,14) (2,40,14) (3,62,14) (5,84,14)
@@ -2350,6 +2573,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=2 SPR=1 backArea=2
 - **Colisión**: 128×27 casillas · LEDGE_TOP=110 SOLID=78 SLOPE_STEEP=17
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 7→0x0DF
 - **Usa sprites grandes**: sí — Thwomp (0x26), BonyBeetle (0x31)
 - **Enemigos (32)**:
     - [B] **Thwomp** (0x26) ×4: (1,23,14) (2,40,14) (3,62,14) (5,84,14)
@@ -2364,6 +2588,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Reznor** (0xA9) ×4: (0,1,0) (0,2,0) (0,3,0) (0,4,0)
@@ -2374,6 +2599,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 14 pantallas (224 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=2
 - **Colisión**: 224×27 casillas · LEDGE_TOP=220 SOLID=422 SLOPE=4 SLOPE_STEEP=4
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 13→0x0FD (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **Feather** (0x77) ×1: (0,5,23)
@@ -2385,6 +2611,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 16×27 casillas · SOLID=42
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (3)**:
     - [ ] **Sprite 0x37** (0x37) ×2: (0,2,15) (0,10,15)
@@ -2396,6 +2623,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,0)
@@ -2406,6 +2634,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x8 · música 3 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,25) = px (16,400)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (9)**:
     - [ ] **PortableSpringboard** (0x2F) ×1: (5,85,4)
@@ -2418,6 +2647,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 64×27 casillas · LEDGE_TOP=52 SOLID=43 SLOPE_STEEP=8
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 0→0x0E7
 - **Usa sprites grandes**: sí — Thwomp (0x26)
 - **Enemigos (5)**:
     - [B] **Thwomp** (0x26) ×3: (1,18,3) (1,28,11) (2,35,14)
@@ -2430,6 +2660,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=4
 - **Colisión**: 64×27 casillas · LEDGE_TOP=54 SOLID=76 SLOPE_STEEP=11
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 3→0x0FF
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Keyhole** (0xE) ×1: (2,37,6)
@@ -2443,6 +2674,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0xA · música 7 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=4 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,0) = px (128,0)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (16)**:
     - [ ] **PortableSpringboard** (0x2F) ×1: (11,188,22)
@@ -2459,6 +2691,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2470,6 +2703,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 79×27 casillas · SOLID=2 SLOPE=16 SLOPE_STEEP=16
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 4→0x0ED
 - **Usa sprites grandes**: no
 - **Enemigos (5)**:
     - [ ] **BouncingFootball** (0x28) ×1: (3,51,20)
@@ -2484,6 +2718,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 74×27 casillas · SOLID=11
 - **Entrada**: casilla (14,22) = px (224,352)
+- **Salidas de pantalla**: pant 0→0x0EC · pant 1→0x0F1 · pant 2→0x0F0 · pant 3→0x0E4
 - **Usa sprites grandes**: no
 - **Enemigos (7)**:
     - [ ] **Sprite 0x37** (0x37) ×4: (0,12,22) (1,18,21) (2,37,20) (3,62,18)
@@ -2497,6 +2732,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 79×27 casillas · SOLID=2 SLOPE=16 SLOPE_STEEP=16
 - **Entrada**: casilla (14,22) = px (224,352)
+- **Salidas de pantalla**: pant 4→0x0ED
 - **Usa sprites grandes**: no
 - **Enemigos (5)**:
     - [ ] **BouncingFootball** (0x28) ×1: (3,51,20)
@@ -2511,6 +2747,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=1 backArea=5
 - **Colisión**: 192×27 casillas · LEDGE_TOP=160 SOLID=68 SLOPE_STEEP=28
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 11→0x0E2
 - **Usa sprites grandes**: sí — Thwomp (0x26)
 - **Enemigos (20)**:
     - [B] **Thwomp** (0x26) ×12: (0,12,12) (1,25,14) (2,35,14) (3,52,15) (3,57,15) (4,71,14) …
@@ -2522,6 +2759,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2533,6 +2771,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 47×27 casillas · SOLID=1
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 0→0x0EE · pant 2→0x0F2
 - **Usa sprites grandes**: no
 - **Enemigos (8)**:
     - [ ] **Sprite 0x37** (0x37) ×5: (0,4,17) (0,8,21) (0,14,20) (1,18,17) (1,30,17)
@@ -2545,6 +2784,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 74×27 casillas · SOLID=11
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 0→0x0EC · pant 1→0x0F1 · pant 2→0x0F0 · pant 3→0x0E4
 - **Usa sprites grandes**: no
 - **Enemigos (7)**:
     - [ ] **Sprite 0x37** (0x37) ×4: (0,12,22) (1,18,21) (2,37,20) (3,62,18)
@@ -2558,6 +2798,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=6
 - **Colisión**: 17×27 casillas · SOLID=4
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2568,6 +2809,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=200 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 6→0x0D1 · pant 15→0x0BE · pant 16→0x0D0
 - **Usa sprites grandes**: no
 - **Enemigos (34)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×1: (17,283,20)
@@ -2588,6 +2830,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=200 SOLID=163 SLOPE=59 SLOPE_STEEP=77
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 6→0x0D1 · pant 15→0x0BE · pant 16→0x0D0
 - **Usa sprites grandes**: no
 - **Enemigos (34)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×1: (17,283,20)
@@ -2608,6 +2851,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 26 pantallas (416 casillas) · modo 0xA · música 4 · tiempo 400 · Layer2 fondo · paletas BG=5 FG=4 SPR=2 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,3) = px (16,48)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (59)**:
     - [ ] **GreenKoopaNoShell** (0x4) ×5: (4,70,25) (5,84,8) (8,128,26) (8,128,6) (8,128,16)
@@ -2627,6 +2871,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0xC · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=3
 - **Colisión**: 127×27 casillas · SOLID=18
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 7→0x0F7
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **Sprite 0x37** (0x37) ×2: (6,101,20) (6,107,14)
@@ -2642,6 +2887,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=4 SPR=5 backArea=6
 - **Colisión**: 30×27 casillas · SOLID=1 SLOPE=6 SLOPE_STEEP=6
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 0→0x0EB · pant 1→0x0FE
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Sprite 0x37** (0x37) ×4: (0,6,15) (0,11,24) (1,23,14) (1,28,21)
@@ -2652,6 +2898,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2663,6 +2910,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=3
 - **Colisión**: 95×27 casillas · SOLID=2
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x0FB
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **Sprite 0xAF** (0xAF) ×6: (1,16,24) (1,17,24) (1,18,24) (5,81,22) (5,89,14) (5,91,19)
@@ -2674,6 +2922,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=4 SPR=5 backArea=6
 - **Colisión**: 30×27 casillas · SOLID=1 SLOPE=6 SLOPE_STEEP=6
 - **Entrada**: casilla (8,21) = px (128,336)
+- **Salidas de pantalla**: pant 0→0x0FA · pant 1→0x0DE
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Sprite 0x37** (0x37) ×4: (0,6,15) (0,11,24) (1,23,14) (1,28,21)
@@ -2684,6 +2933,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=6
 - **Colisión**: 32×27 casillas · LEDGE_TOP=31 SOLID=11 SLOPE_STEEP=1
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -2694,6 +2944,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 7 · tiempo 0 · Layer2 fondo · paletas BG=5 FG=0 SPR=4 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **BonusGame** (0x82) ×1: (0,5,7)
@@ -2704,6 +2955,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 128×27 casillas · LEDGE_TOP=86 SOLID=29
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x1FC
 - **Usa sprites grandes**: no
 - **Enemigos (26)**:
     - [ ] **Sprite 0x22** (0x22) ×7: (1,30,20) (2,42,20) (3,54,20) (4,78,20) (5,90,18) (5,92,21) …
@@ -2721,6 +2973,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=1 SPR=2 backArea=6
 - **Colisión**: 176×27 casillas · SOLID=47
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 3→0x1BE · pant 10→0x1FF
 - **Usa sprites grandes**: no
 - **Enemigos (33)**:
     - [s] **RedKoopaNoShell** (0x5) ×3: (5,84,12) (5,88,12) (5,92,12)
@@ -2738,6 +2991,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 21 pantallas (336 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=1 SPR=2 backArea=2
 - **Colisión**: 336×27 casillas · LEDGE_TOP=170 SOLID=172 SLOPE_STEEP=7
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 6→0x1FD
 - **Usa sprites grandes**: no
 - **Enemigos (30)**:
     - [s] **RedKoopaNoShell** (0x5) ×2: (6,106,8) (10,172,19)
@@ -2757,6 +3011,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 0 · tiempo 0 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=0
 - **Colisión**: 15×27 casillas · 
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **Bird** (0x8A) ×4: (0,4,14) (0,5,14) (0,6,14) (0,7,14)
@@ -2769,6 +3024,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=2
 - **Colisión**: 320×27 casillas · LEDGE_TOP=349 SOLID=72 SLOPE=6 SLOPE_STEEP=14
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x1CB
 - **Usa sprites grandes**: sí — BanzaiBill (0x9F)
 - **Enemigos (34)**:
     - [s] **JumpingPiranhaPlant** (0x4F) ×3: (7,113,21) (8,139,20) (17,284,20)
@@ -2789,6 +3045,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=0
 - **Colisión**: 320×27 casillas · LEDGE_TOP=373 SOLID=71 SLOPE_STEEP=6
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 15→0x1CA
 - **Usa sprites grandes**: sí — CharginChuck (0x91)
 - **Enemigos (25)**:
     - [s] **GreenKoopa** (0x0) ×1: (6,106,23)
@@ -2810,6 +3067,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 176×27 casillas · SOLID=38 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 10→0x1EA
 - **Usa sprites grandes**: no
 - **Enemigos (17)**:
     - [ ] **BouncingFootball** (0x28) ×2: (7,115,18) (8,142,20)
@@ -2824,6 +3082,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0xA · música 3 · tiempo 200 · Layer2 fondo · paletas BG=3 FG=2 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -2833,6 +3092,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=2 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,25) = px (128,400)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (22)**:
     - [s] **RedKoopaNoShell** (0x5) ×2: (5,85,30) (6,102,23)
@@ -2848,6 +3108,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 32 pantallas (512 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
 - **Colisión**: 512×27 casillas · LEDGE_TOP=211 SOLID=569 SLOPE=36 SLOPE_STEEP=61
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 11→0x1F7 · pant 14→0x1C2
 - **Usa sprites grandes**: sí — Blargg (0xA8)
 - **Enemigos (49)**:
     - [s] **BlueKoopa** (0x2) ×1: (16,268,23)
@@ -2868,6 +3129,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
 - **Colisión**: 240×27 casillas · LEDGE_TOP=228 SOLID=196 SLOPE=13 SLOPE_STEEP=20
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 9→0x1C6
 - **Usa sprites grandes**: no
 - **Enemigos (28)**:
     - [ ] **GreenKoopaNoShell** (0x4) ×2: (1,19,17) (11,183,23)
@@ -2884,6 +3146,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -2893,6 +3156,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=2 FG=3 SPR=1 backArea=7
 - **Colisión**: 87×27 casillas · SOLID=64
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 0→0x1D4 · pant 2→0x1D3 · pant 3→0x1D2 · pant 5→0x1D1
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0xE6** (0xE6) ×1: (0,0,0)
@@ -2903,6 +3167,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x11 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 128×27 casillas · LEDGE_TOP=85 SOLID=67 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x1C7
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [ ] **Ninji** (0x51) ×6: (2,43,17) (3,59,23) (4,70,23) (4,73,23) (5,87,23) (5,89,23)
@@ -2916,6 +3181,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 21 pantallas (336 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=2 backArea=3
 - **Colisión**: 336×27 casillas · LEDGE_TOP=159 SOLID=255 SLOPE=58 SLOPE_STEEP=74
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 5→0x1BF
 - **Usa sprites grandes**: no
 - **Enemigos (46)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×3: (4,68,24) (5,82,24) (8,132,24)
@@ -2934,6 +3200,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 126×27 casillas · LEDGE_TOP=29 SOLID=68 SLOPE_STEEP=12
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 6→0x1FE · pant 7→0x1FE
 - **Usa sprites grandes**: no
 - **Enemigos (15)**:
     - [ ] **Sprite 0x74** (0x74) ×1: (7,118,23)
@@ -2946,6 +3213,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 15 pantallas (240 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=7 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 14→0x1DE
 - **Usa sprites grandes**: sí — BonyBeetle (0x31)
 - **Enemigos (17)**:
     - [ ] **ThrowingDryBones** (0x30) ×2: (4,69,23) (5,82,23)
@@ -2961,6 +3229,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -2970,6 +3239,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 305×27 casillas · LEDGE_TOP=16 SOLID=89 SLOPE=36 SLOPE_STEEP=36
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 6→0x1BB
 - **Usa sprites grandes**: sí — BanzaiBill (0x9F)
 - **Enemigos (61)**:
     - [s] **RedKoopaNoShell** (0x5) ×1: (6,108,20)
@@ -2990,6 +3260,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=4 SPR=5 backArea=7
 - **Colisión**: 64×27 casillas · SOLID=1 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 3→0x1DD
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **GreenGasBubble** (0x90) ×4: (1,21,18) (1,29,19) (2,40,19) (3,52,18)
@@ -3000,6 +3271,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=1 SPR=4 backArea=3
 - **Colisión**: 128×27 casillas · LEDGE_TOP=50 SOLID=212 SLOPE_STEEP=3
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x1E3
 - **Usa sprites grandes**: no
 - **Enemigos (18)**:
     - [s] **YellowKoopa** (0x3) ×1: (3,60,15)
@@ -3014,6 +3286,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 18 pantallas (288 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 288×27 casillas · LEDGE_TOP=343 SOLID=519 SLOPE=52 SLOPE_STEEP=124
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 15→0x1E4 · pant 16→0x1E5
 - **Usa sprites grandes**: sí — MegaMole (0xBF), CharginChuck (0x91)
 - **Enemigos (32)**:
     - [B] **CharginChuck** (0x91) ×12: (1,26,16) (3,58,23) (6,106,19) (6,110,21) (7,115,23) (10,165,23) …
@@ -3025,6 +3298,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
 - **Colisión**: 128×27 casillas · LEDGE_TOP=76 SOLID=130 SLOPE=32 SLOPE_STEEP=42
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 5→0x1C0 · pant 7→0x1ED
 - **Usa sprites grandes**: sí — Blargg (0xA8)
 - **Enemigos (11)**:
     - [s] **BuzzyBeetle** (0x11) ×4: (1,28,20) (2,37,18) (3,53,23) (3,56,23)
@@ -3038,6 +3312,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 320×27 casillas · LEDGE_TOP=282 SOLID=342 SLOPE=113 SLOPE_STEEP=153
 - **Entrada**: casilla (8,6) = px (128,96)
+- **Salidas de pantalla**: pant 13→0x1C3
 - **Usa sprites grandes**: sí — CharginChuck (0x91)
 - **Enemigos (51)**:
     - [ ] **Keyhole** (0xE) ×1: (5,85,24)
@@ -3059,6 +3334,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=1 SPR=2 backArea=4
 - **Colisión**: 305×27 casillas · SOLID=32
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 11→0x1F5
 - **Usa sprites grandes**: sí — GreenParakoopa (0x8)
 - **Enemigos (47)**:
     - [ ] **GreenKoopaNoShell** (0x4) ×2: (12,194,15) (16,259,19)
@@ -3081,6 +3357,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 27 pantallas (432 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=1 SPR=4 backArea=3
 - **Colisión**: 432×27 casillas · LEDGE_TOP=316 SOLID=345 SLOPE=4 SLOPE_STEEP=45
 - **Entrada**: casilla (1,14) = px (16,224)
+- **Salidas de pantalla**: pant 8→0x1EF
 - **Usa sprites grandes**: no
 - **Enemigos (40)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×2: (7,117,24) (21,337,21)
@@ -3104,6 +3381,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · SOLID=14
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x1D8
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [s] **YellowKoopa** (0x3) ×1: (0,9,23)
@@ -3119,6 +3397,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 160×27 casillas · LEDGE_TOP=25 SOLID=187 SLOPE_STEEP=4
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: pant 6→0x1F4 · pant 9→0x1F3
 - **Usa sprites grandes**: sí — MagiKoopa (0x1F)
 - **Enemigos (14)**:
     - [B] **MagiKoopa** (0x1F) ×1: (1,22,21)
@@ -3132,6 +3411,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x1 · música 4 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=4 SPR=5 backArea=3
 - **Colisión**: 170×27 casillas · SOLID=2
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 1→0x1E6 · pant 3→0x1E7 · pant 10→0x1FA
 - **Usa sprites grandes**: no
 - **Enemigos (24)**:
     - [ ] **BouncingFootball** (0x28) ×2: (1,17,14) (2,43,17)
@@ -3146,6 +3426,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=1
 - **Colisión**: 305×27 casillas · SOLID=28
 - **Entrada**: casilla (1,23) = px (16,368)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — ParaGoomba (0x10)
 - **Enemigos (38)**:
     - [s] **RedKoopaNoShell** (0x5) ×4: (1,30,24) (2,41,24) (2,46,24) (10,162,24)
@@ -3167,6 +3448,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=0 backArea=1
 - **Colisión**: 320×27 casillas · LEDGE_TOP=261 SOLID=253 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 11→0x1DF · pant 13→0x1C1
 - **Usa sprites grandes**: sí — CharginChuck (0x91)
 - **Enemigos (26)**:
     - [s] **RedKoopa** (0x1) ×2: (2,34,23) (15,248,23)
@@ -3190,6 +3472,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 14 pantallas (224 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=7 SPR=3 backArea=5
 - **Colisión**: 224×27 casillas · LEDGE_TOP=219 SOLID=225 SLOPE_STEEP=90
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (65)**:
     - [ ] **Keyhole** (0xE) ×1: (8,131,22)
@@ -3209,6 +3492,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · SOLID=50
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x1D7
 - **Usa sprites grandes**: no
 - **Enemigos (10)**:
     - [ ] **KoopaKidBossFight** (0x13) ×8: (0,7,14) (0,12,14) (1,17,14) (1,22,14) (1,27,14) (2,32,14) …
@@ -3220,6 +3504,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=0 SPR=2 backArea=1
 - **Colisión**: 145×27 casillas · SOLID=3
 - **Entrada**: casilla (1,12) = px (16,192)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — GreenParakoopa (0x8)
 - **Enemigos (27)**:
     - [B] **GreenParakoopa** (0x8) ×14: (2,38,13) (2,39,13) (2,40,13) (2,47,17) (3,63,21) (4,78,19) …
@@ -3236,6 +3521,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=0 SPR=0 backArea=0
 - **Colisión**: 305×27 casillas · SOLID=176
 - **Entrada**: casilla (1,23) = px (16,368)
+- **Salidas de pantalla**: pant 3→0x1BC · pant 17→0x1F8
 - **Usa sprites grandes**: no
 - **Enemigos (42)**:
     - [ ] **PortableSpringboard** (0x2F) ×2: (3,48,24) (5,95,15)
@@ -3252,6 +3538,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3261,6 +3548,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 32 pantallas (512 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=5
 - **Colisión**: 512×27 casillas · LEDGE_TOP=400 SOLID=325 SLOPE_STEEP=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — ParaGoomba (0x10)
 - **Enemigos (33)**:
     - [s] **RedKoopaNoShell** (0x5) ×3: (4,67,23) (15,254,22) (16,264,23)
@@ -3282,6 +3570,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=1 SPR=0 backArea=1
 - **Colisión**: 305×27 casillas · SOLID=158
 - **Entrada**: casilla (1,23) = px (16,368)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (54)**:
     - [ ] **HoppingFlame** (0x1D) ×9: (2,34,24) (2,40,24) (3,48,24) (4,76,24) (6,110,24) (11,186,24) …
@@ -3301,6 +3590,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 256×27 casillas · LEDGE_TOP=254 SOLID=286 SLOPE_STEEP=28
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x1E0 · pant 15→0x1E1
 - **Usa sprites grandes**: no
 - **Enemigos (37)**:
     - [s] **RedKoopaNoShell** (0x5) ×4: (7,113,19) (7,117,23) (11,189,21) (11,191,21)
@@ -3316,6 +3606,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=0 SPR=0 backArea=6
 - **Colisión**: 320×27 casillas · LEDGE_TOP=296 SOLID=220 SLOPE=14 SLOPE_STEEP=24
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — Pokey (0x70)
 - **Enemigos (35)**:
     - [ ] **GreenKoopaNoShell** (0x4) ×1: (4,67,23)
@@ -3337,6 +3628,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3346,6 +3638,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xA · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=1 SPR=2 backArea=6
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,11) = px (128,176)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **BlueKoopaNoShell** (0x6) ×1: (4,76,27)
@@ -3363,6 +3656,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=0 SPR=0 backArea=2
 - **Colisión**: 176×27 casillas · LEDGE_TOP=21 SOLID=180
 - **Entrada**: casilla (8,17) = px (128,272)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (20)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×3: (5,84,24) (5,84,19) (5,84,14)
@@ -3382,6 +3676,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=1 SPR=2 backArea=1
 - **Colisión**: 305×27 casillas · SOLID=31
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 6→0x1C9
 - **Usa sprites grandes**: no
 - **Enemigos (44)**:
     - [ ] **Sprite 0x62** (0x62) ×2: (12,205,19) (14,231,19)
@@ -3398,6 +3693,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=0 backArea=7
 - **Colisión**: 320×27 casillas · LEDGE_TOP=152 SOLID=191 SLOPE=70 SLOPE_STEEP=77
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — BanzaiBill (0x9F)
 - **Enemigos (43)**:
     - [s] **BlueKoopa** (0x2) ×6: (2,45,17) (4,64,17) (6,104,17) (7,127,16) (8,142,20) (10,165,21)
@@ -3425,6 +3721,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3434,6 +3731,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3443,6 +3741,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=6 SPR=3 backArea=2
 - **Colisión**: 192×27 casillas · LEDGE_TOP=152 SOLID=97 SLOPE_STEEP=8
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 9→0x1D5
 - **Usa sprites grandes**: no
 - **Enemigos (41)**:
     - [ ] **Keyhole** (0xE) ×1: (11,185,23)
@@ -3458,6 +3757,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3467,6 +3767,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 2 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=5
 - **Colisión**: 33×27 casillas · SOLID=109
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (5)**:
     - [ ] **Keyhole** (0xE) ×1: (1,23,5)
@@ -3481,6 +3782,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3490,6 +3792,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0xA · música 0 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (8,3) = px (128,48)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (30)**:
     - [ ] **GreenKoopaNoShell** (0x4) ×1: (5,93,24)
@@ -3513,6 +3816,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 20 pantallas (320 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=1 SPR=2 backArea=5
 - **Colisión**: 305×27 casillas · SOLID=74
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (44)**:
     - [s] **BlueKoopa** (0x2) ×1: (12,205,15)
@@ -3535,6 +3839,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 17 pantallas (272 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=5
 - **Colisión**: 257×27 casillas · SOLID=336
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — GreenParakoopa (0x8)
 - **Enemigos (55)**:
     - [s] **RedKoopaNoShell** (0x5) ×2: (14,227,23) (14,236,17)
@@ -3556,6 +3861,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3565,6 +3871,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3574,6 +3881,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3583,6 +3891,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3592,6 +3901,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3601,6 +3911,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3610,6 +3921,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3619,6 +3931,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3628,6 +3941,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3637,6 +3951,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3646,6 +3961,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3655,6 +3971,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3664,6 +3981,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3673,6 +3991,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3682,6 +4001,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3691,6 +4011,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3700,6 +4021,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3709,6 +4031,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3718,6 +4041,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3727,6 +4051,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3736,6 +4061,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3745,6 +4071,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3754,6 +4081,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3763,6 +4091,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3772,6 +4101,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3781,6 +4111,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3790,6 +4121,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3799,6 +4131,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3808,6 +4141,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3817,6 +4151,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3826,6 +4161,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3835,6 +4171,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3844,6 +4181,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3853,6 +4191,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3862,6 +4201,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3871,6 +4211,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3880,6 +4221,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3889,6 +4231,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3898,6 +4241,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3907,6 +4251,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3916,6 +4261,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3925,6 +4271,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3934,6 +4281,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3943,6 +4291,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3952,6 +4301,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3961,6 +4311,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3970,6 +4321,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3979,6 +4331,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3988,6 +4341,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -3997,6 +4351,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4006,6 +4361,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4015,6 +4371,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4024,6 +4381,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4033,6 +4391,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4042,6 +4401,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4051,6 +4411,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4060,6 +4421,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4069,6 +4431,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4078,6 +4441,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4087,6 +4451,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4096,6 +4461,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4105,6 +4471,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4114,6 +4481,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4123,6 +4491,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4132,6 +4501,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4141,6 +4511,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4150,6 +4521,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4159,6 +4531,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4168,6 +4541,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4177,6 +4551,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4186,6 +4561,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4195,6 +4571,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4204,6 +4581,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4213,6 +4591,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4222,6 +4601,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4231,6 +4611,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4240,6 +4621,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4249,6 +4631,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4258,6 +4641,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4267,6 +4651,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4276,6 +4661,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4285,6 +4671,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4294,6 +4681,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4303,6 +4691,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4312,6 +4701,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4321,6 +4711,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4330,6 +4721,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4339,6 +4731,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4348,6 +4741,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4357,6 +4751,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4366,6 +4761,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4375,6 +4771,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4384,6 +4781,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (3)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,6)
@@ -4395,6 +4793,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,5)
@@ -4406,6 +4805,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Reznor** (0xA9) ×4: (0,1,0) (0,2,0) (0,3,0) (0,4,0)
@@ -4416,6 +4816,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,4)
@@ -4427,6 +4828,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,3)
@@ -4437,6 +4839,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,2)
@@ -4447,6 +4850,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,1)
@@ -4457,6 +4861,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,0)
@@ -4467,6 +4872,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x10 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **ActivateBowserBattle** (0xA0) ×1: (0,0,0)
@@ -4477,6 +4883,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4486,6 +4893,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4495,6 +4903,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4504,6 +4913,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4513,6 +4923,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4522,6 +4933,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4531,6 +4943,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4540,6 +4953,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4549,6 +4963,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4558,6 +4973,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4567,6 +4983,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4576,6 +4993,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4585,6 +5003,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4594,6 +5013,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4603,6 +5023,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4612,6 +5033,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4621,6 +5043,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4630,6 +5053,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4639,6 +5063,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4648,6 +5073,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4657,6 +5083,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4666,6 +5093,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4675,6 +5103,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4684,6 +5113,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4693,6 +5123,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4702,6 +5133,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4711,6 +5143,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4720,6 +5153,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4729,6 +5163,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4738,6 +5173,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4747,6 +5183,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 200 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: 48×27 casillas · LEDGE_TOP=44 SOLID=85
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4756,6 +5193,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0x11 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 128×27 casillas · LEDGE_TOP=85 SOLID=67 SLOPE_STEEP=12
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 7→0x1C7
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [ ] **Ninji** (0x51) ×6: (2,43,17) (3,59,23) (4,70,23) (4,73,23) (5,87,23) (5,89,23)
@@ -4769,6 +5207,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=0 SPR=0 backArea=6
 - **Colisión**: 64×27 casillas · LEDGE_TOP=46 SOLID=26 SLOPE=10 SLOPE_STEEP=10
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 3→0x1BE (2ª entrada)
 - **Usa sprites grandes**: sí — Pokey (0x70)
 - **Enemigos (4)**:
     - [B] **Pokey** (0x70) ×3: (1,19,18) (2,34,19) (3,50,16)
@@ -4780,6 +5219,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
 - **Colisión**: 57×27 casillas · LEDGE_TOP=18 SOLID=67 SLOPE_STEEP=4
 - **Entrada**: casilla (1,12) = px (16,192)
+- **Salidas de pantalla**: pant 0→0x1BF (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (9)**:
     - [ ] **Sprite 0x15** (0x15) ×5: (1,18,25) (1,25,25) (1,31,25) (2,40,25) (2,46,25)
@@ -4791,6 +5231,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=0 SPR=4 backArea=6
 - **Colisión**: 48×27 casillas · LEDGE_TOP=23 SOLID=28 SLOPE_STEEP=2
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 2→0x1C0 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **HammerBro** (0x9B) ×1: (1,23,15)
@@ -4803,6 +5244,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 5 · tiempo 300 · Layer2 fondo · paletas BG=4 FG=1 SPR=3 backArea=2
 - **Colisión**: 59×27 casillas · LEDGE_TOP=12 SOLID=52 SLOPE_STEEP=5
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 0→0x1C1 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **Blurp** (0xC2) ×12: (0,6,22) (0,12,19) (1,18,21) (1,19,15) (1,23,23) (1,29,17) …
@@ -4813,6 +5255,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
 - **Colisión**: 64×27 casillas · LEDGE_TOP=20 SOLID=109 SLOPE=16 SLOPE_STEEP=20
 - **Entrada**: casilla (1,12) = px (16,192)
+- **Salidas de pantalla**: pant 3→0x1F7 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (8)**:
     - [ ] **GreenFlyingParakoopa** (0xA) ×1: (3,51,22)
@@ -4825,6 +5268,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=5 SPR=4 backArea=3
 - **Colisión**: 64×27 casillas · LEDGE_TOP=32 SOLID=82 SLOPE=6 SLOPE_STEEP=10
 - **Entrada**: casilla (1,12) = px (16,192)
+- **Salidas de pantalla**: pant 3→0x1C3 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (7)**:
     - [s] **BuzzyBeetle** (0x11) ×4: (0,15,21) (1,21,20) (2,45,22) (2,47,22)
@@ -4837,6 +5281,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=6
 - **Colisión**: 112×27 casillas · LEDGE_TOP=90 SOLID=72 SLOPE_STEEP=3
 - **Entrada**: casilla (14,17) = px (224,272)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **Lakitu** (0x1E) ×1: (4,70,14)
@@ -4854,6 +5299,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 7 pantallas (112 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=6
 - **Colisión**: 112×27 casillas · LEDGE_TOP=90 SOLID=72 SLOPE_STEEP=3
 - **Entrada**: casilla (8,23) = px (128,368)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **Lakitu** (0x1E) ×1: (4,70,14)
@@ -4871,6 +5317,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=1 FG=0 SPR=0 backArea=6
 - **Colisión**: 64×27 casillas · LEDGE_TOP=21 SOLID=33
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 3→0x1C6 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (8)**:
     - [s] **JumpingPiranhaPlant** (0x4F) ×2: (1,24,24) (2,38,23)
@@ -4882,6 +5329,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x10 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **ActivateBowserBattle** (0xA0) ×1: (0,0,0)
@@ -4892,6 +5340,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 7 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=5 SPR=2 backArea=0
 - **Colisión**: 80×27 casillas · SOLID=15
 - **Entrada**: casilla (1,25) = px (16,400)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0xF3** (0xF3) ×1: (0,8,0)
@@ -4902,6 +5351,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=30 SOLID=70 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 1→0x1CA (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **Sprite 0x84** (0x84) ×6: (0,8,15) (0,12,14) (1,19,15) (1,20,13) (1,24,16) (1,28,14)
@@ -4912,6 +5362,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=30 SOLID=75 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 1→0x1CB (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -4921,6 +5372,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=0 backArea=3
 - **Colisión**: 64×27 casillas · LEDGE_TOP=58 SOLID=14 SLOPE_STEEP=6
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x1BD
 - **Usa sprites grandes**: no
 - **Enemigos (8)**:
     - [ ] **Sprite 0x93** (0x93) ×8: (0,14,23) (1,21,23) (1,30,23) (2,33,20) (2,40,23) (2,45,23) …
@@ -4931,6 +5383,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=7 FG=7 SPR=1 backArea=3
 - **Colisión**: 64×27 casillas · LEDGE_TOP=51 SOLID=19 SLOPE_STEEP=7
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x1BD
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [ ] **Podoboo** (0x33) ×1: (2,41,15)
@@ -4943,6 +5396,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x8 · música 3 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=2 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,8) = px (16,128)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (15)**:
     - [ ] **Sprite 0x32** (0x32) ×2: (2,39,6) (4,65,8)
@@ -4956,6 +5410,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x2 · música 3 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 46×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x1BD
 - **Usa sprites grandes**: sí — Thwomp (0x26)
 - **Enemigos (9)**:
     - [B] **Thwomp** (0x26) ×8: (0,8,14) (0,12,14) (1,16,14) (1,20,14) (1,24,14) (1,28,14) …
@@ -4967,6 +5422,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=2 FG=3 SPR=1 backArea=7
 - **Colisión**: 87×27 casillas · SOLID=72
 - **Entrada**: casilla (1,21) = px (16,336)
+- **Salidas de pantalla**: pant 0→0x1CF · pant 2→0x1CE · pant 3→0x1CD · pant 5→0x1CC
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0xE6** (0xE6) ×1: (0,0,0)
@@ -4977,6 +5433,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 64×27 casillas · SOLID=3
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 3→0x1D0
 - **Usa sprites grandes**: no
 - **Enemigos (14)**:
     - [ ] **Sprite 0x78** (0x78) ×1: (1,20,13)
@@ -4991,6 +5448,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=7
 - **Colisión**: 80×27 casillas · SOLID=459
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 4→0x1D0
 - **Usa sprites grandes**: no
 - **Enemigos (11)**:
     - [ ] **Feather** (0x77) ×1: (3,61,12)
@@ -5003,6 +5461,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 48×27 casillas · LEDGE_TOP=14 SOLID=38
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x1D0
 - **Usa sprites grandes**: no
 - **Enemigos (18)**:
     - [ ] **Sprite 0x25** (0x25) ×8: (1,20,22) (1,20,18) (1,24,16) (1,30,19) (1,30,15) (2,36,21) …
@@ -5015,6 +5474,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 3 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=3 SPR=1 backArea=3
 - **Colisión**: 48×27 casillas · LEDGE_TOP=15 SOLID=31
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 2→0x1D0
 - **Usa sprites grandes**: no
 - **Enemigos (12)**:
     - [ ] **Podoboo** (0x33) ×9: (0,9,15) (0,14,15) (1,21,15) (1,26,19) (1,26,15) (2,34,15) …
@@ -5028,6 +5488,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 32×27 casillas · LEDGE_TOP=21 SOLID=13
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5038,6 +5499,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5048,6 +5510,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0x6D** (0x6D) ×1: (2,32,20)
@@ -5058,6 +5521,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 7 · tiempo 200 · Layer2 fondo · paletas BG=5 FG=1 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0x6D** (0x6D) ×1: (2,32,20)
@@ -5068,6 +5532,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=4 SPR=5 backArea=7
 - **Colisión**: 64×27 casillas · SOLID=1 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (14,19) = px (224,304)
+- **Salidas de pantalla**: pant 3→0x1DD
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **GreenGasBubble** (0x90) ×4: (1,21,18) (1,29,19) (2,40,19) (3,52,18)
@@ -5078,6 +5543,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5089,6 +5555,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=5 backArea=7
 - **Colisión**: 51×27 casillas · SOLID=34
 - **Entrada**: casilla (14,22) = px (224,352)
+- **Salidas de pantalla**: pant 3→0x1DD
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **Keyhole** (0xE) ×1: (3,63,5)
@@ -5102,6 +5569,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=5 backArea=7
 - **Colisión**: 51×27 casillas · SOLID=34
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x1DD
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **Keyhole** (0xE) ×1: (3,63,5)
@@ -5115,6 +5583,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 4 · tiempo 300 · Layer2 fondo · paletas BG=2 FG=4 SPR=5 backArea=7
 - **Colisión**: 159×27 casillas · SOLID=96
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 0→0x1DB · pant 3→0x1D9 · pant 6→0x114 · pant 7→0x1DB · pant 8→0x1DA · pant 9→0x1DC
 - **Usa sprites grandes**: no
 - **Enemigos (14)**:
     - [ ] **Sprite 0x37** (0x37) ×4: (1,16,22) (2,34,23) (2,44,23) (4,76,21)
@@ -5130,6 +5599,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x9 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [ ] **Reznor** (0xA9) ×4: (0,1,0) (0,2,0) (0,3,0) (0,4,0)
@@ -5140,6 +5610,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=0 backArea=3
 - **Colisión**: 16×27 casillas · LEDGE_TOP=12 SOLID=50 SLOPE_STEEP=3
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **Keyhole** (0xE) ×1: (0,11,22)
@@ -5151,6 +5622,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 5 pantallas (80 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=5 SPR=0 backArea=1
 - **Colisión**: 80×27 casillas · LEDGE_TOP=16 SOLID=54 SLOPE=60 SLOPE_STEEP=60
 - **Entrada**: casilla (1,6) = px (16,96)
+- **Salidas de pantalla**: pant 4→0x1E0 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -5160,6 +5632,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 0 · tiempo 300 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=1
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5170,6 +5643,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 9 pantallas (144 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=1 SPR=4 backArea=3
 - **Colisión**: 144×27 casillas · LEDGE_TOP=130 SOLID=164 SLOPE_STEEP=38
 - **Entrada**: casilla (8,17) = px (128,272)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: sí — MegaMole (0xBF)
 - **Enemigos (7)**:
     - [ ] **Keyhole** (0xE) ×1: (0,8,20)
@@ -5184,6 +5658,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=1 SPR=4 backArea=3
 - **Colisión**: 160×27 casillas · LEDGE_TOP=136 SOLID=140 SLOPE=7 SLOPE_STEEP=67
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 9→0x1E2
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **Sprite 0xEA** (0xEA) ×1: (0,8,0)
@@ -5194,6 +5669,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5204,6 +5680,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5215,6 +5692,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5226,6 +5704,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x1 · música 4 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=4 SPR=5 backArea=3
 - **Colisión**: 170×27 casillas · SOLID=2
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 1→0x1E6 · pant 3→0x1E7 · pant 10→0x1FA
 - **Usa sprites grandes**: no
 - **Enemigos (24)**:
     - [ ] **BouncingFootball** (0x28) ×2: (1,17,14) (2,43,17)
@@ -5240,6 +5719,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x1 · música 4 · tiempo 400 · Layer2 nivel · paletas BG=6 FG=4 SPR=5 backArea=3
 - **Colisión**: 170×27 casillas · SOLID=2
 - **Entrada**: casilla (8,19) = px (128,304)
+- **Salidas de pantalla**: pant 1→0x1E6 · pant 3→0x1E7 · pant 10→0x1FA
 - **Usa sprites grandes**: no
 - **Enemigos (24)**:
     - [ ] **BouncingFootball** (0x28) ×2: (1,17,14) (2,43,17)
@@ -5254,6 +5734,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0xC · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 127×27 casillas · SOLID=3
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 6→0x1FB · pant 7→0x1F9
 - **Usa sprites grandes**: no
 - **Enemigos (6)**:
     - [ ] **GreenGasBubble** (0x90) ×6: (1,20,17) (2,34,16) (3,50,16) (4,70,16) (5,82,13) (6,98,16)
@@ -5264,6 +5745,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (4)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,4)
@@ -5275,6 +5757,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 16 pantallas (256 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=7 SPR=4 backArea=3
 - **Colisión**: 256×27 casillas · LEDGE_TOP=93 SOLID=156 SLOPE=27 SLOPE_STEEP=41
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 15→0x1EE
 - **Usa sprites grandes**: sí — CharginChuck (0x91)
 - **Enemigos (19)**:
     - [ ] **Sprite 0x2E** (0x2E) ×12: (1,18,21) (1,21,19) (1,24,17) (1,27,15) (2,47,15) (3,54,19) …
@@ -5287,6 +5770,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0xA · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,3) = px (16,48)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (16)**:
     - [s] **BuzzyBeetle** (0x11) ×16: (1,20,10) (1,21,8) (2,34,14) (2,36,18) (2,37,21) (3,52,16) …
@@ -5297,6 +5781,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=7 SPR=4 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=20
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5307,6 +5792,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x2 · música 1 · tiempo 400 · Layer2 nivel · paletas BG=3 FG=2 SPR=4 backArea=3
 - **Colisión**: 96×27 casillas · LEDGE_TOP=17 SOLID=60 SLOPE=14 SLOPE_STEEP=16
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 5→0x1EF (2ª entrada)
 - **Usa sprites grandes**: sí — Blargg (0xA8)
 - **Enemigos (13)**:
     - [ ] **RedParakoopa** (0x9) ×1: (4,75,18)
@@ -5320,6 +5806,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 48×27 casillas · LEDGE_TOP=37 SOLID=41 SLOPE=5 SLOPE_STEEP=8
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (1,30,23)
@@ -5331,6 +5818,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 3 pantallas (48 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 48×27 casillas · LEDGE_TOP=49 SOLID=30 SLOPE=5 SLOPE_STEEP=6
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (1,30,23)
@@ -5342,6 +5830,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 6 · tiempo 400 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 16×27 casillas · SOLID=28
 - **Entrada**: casilla (8,14) = px (128,224)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,5)
@@ -5353,6 +5842,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 12 pantallas (192 casillas) · modo 0x2 · música 3 · tiempo 300 · Layer2 nivel · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 11→0x1F2
 - **Usa sprites grandes**: no
 - **Enemigos (14)**:
     - [ ] **Sprite 0x32** (0x32) ×8: (2,37,19) (3,56,21) (5,81,18) (8,142,21) (9,151,15) (9,154,15) …
@@ -5366,6 +5856,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=32 SOLID=1
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 1→0x1F3
 - **Usa sprites grandes**: no
 - **Enemigos**: (ninguno colocado)
 
@@ -5375,6 +5866,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 6 pantallas (96 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 96×27 casillas · LEDGE_TOP=12 SOLID=107 SLOPE_STEEP=5
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 5→0x1F5 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [ ] **SkullRaft** (0x61) ×1: (0,10,24)
@@ -5385,6 +5877,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0xB · música 6 · tiempo 400 · Layer2 fondo · paletas BG=0 FG=0 SPR=0 backArea=0
 - **Colisión**: — (sin colisión reconstruible)
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **KoopaKid** (0x29) ×1: (0,12,3)
@@ -5395,6 +5888,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 1 pantallas (16 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 16×27 casillas · LEDGE_TOP=13 SOLID=42 SLOPE_STEEP=5
 - **Entrada**: casilla (1,17) = px (16,272)
+- **Salidas de pantalla**: pant 0→0x1F8 (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **Keyhole** (0xE) ×1: (0,10,23)
@@ -5406,6 +5900,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x1 · música 4 · tiempo 300 · Layer2 nivel · paletas BG=6 FG=4 SPR=0 backArea=5
 - **Colisión**: 17×27 casillas · 
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
@@ -5417,6 +5912,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 8 pantallas (128 casillas) · modo 0xC · música 4 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 128×27 casillas · SOLID=2
 - **Entrada**: casilla (8,22) = px (128,352)
+- **Salidas de pantalla**: pant 6→0x1E8 · pant 7→0x1E9
 - **Usa sprites grandes**: no
 - **Enemigos (3)**:
     - [s] **PSwitch** (0x3E) ×1: (6,102,18)
@@ -5429,6 +5925,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 11 pantallas (176 casillas) · modo 0x0 · música 4 · tiempo 400 · Layer2 fondo · paletas BG=6 FG=4 SPR=5 backArea=5
 - **Colisión**: 176×27 casillas · SOLID=38 SLOPE=7 SLOPE_STEEP=7
 - **Entrada**: casilla (8,21) = px (128,336)
+- **Salidas de pantalla**: pant 10→0x1EA
 - **Usa sprites grandes**: no
 - **Enemigos (17)**:
     - [ ] **BouncingFootball** (0x28) ×2: (7,115,18) (8,142,20)
@@ -5443,6 +5940,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 4 pantallas (64 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 64×27 casillas · LEDGE_TOP=51 SOLID=14 SLOPE_STEEP=2
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: pant 3→0x1F6
 - **Usa sprites grandes**: no
 - **Enemigos (5)**:
     - [ ] **Sprite 0x5A** (0x5A) ×1: (3,52,24)
@@ -5457,6 +5955,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 1 · tiempo 300 · Layer2 fondo · paletas BG=6 FG=2 SPR=4 backArea=3
 - **Colisión**: 32×27 casillas · LEDGE_TOP=12 SOLID=44 SLOPE_STEEP=4
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 1→0x1FD (2ª entrada)
 - **Usa sprites grandes**: no
 - **Enemigos (1)**:
     - [s] **PSwitch** (0x3E) ×1: (0,6,23)
@@ -5467,6 +5966,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 10 pantallas (160 casillas) · modo 0x0 · música 3 · tiempo 300 · Layer2 fondo · paletas BG=3 FG=3 SPR=1 backArea=3
 - **Colisión**: 160×27 casillas · LEDGE_TOP=105 SOLID=113 SLOPE_STEEP=14
 - **Entrada**: casilla (1,19) = px (16,304)
+- **Salidas de pantalla**: pant 9→0x1EB
 - **Usa sprites grandes**: sí — MagiKoopa (0x1F)
 - **Enemigos (22)**:
     - [B] **MagiKoopa** (0x1F) ×1: (2,39,0)
@@ -5481,6 +5981,7 @@ Punteros por nivel: Layer1 = tablaL1 + 3·nivel (3 bytes) · Sprites = tablaSpr 
 - **Propiedades**: ancho 2 pantallas (32 casillas) · modo 0x0 · música 2 · tiempo 300 · Layer2 fondo · paletas BG=7 FG=1 SPR=2 backArea=6
 - **Colisión**: 17×27 casillas · SOLID=4
 - **Entrada**: casilla (1,22) = px (16,352)
+- **Salidas de pantalla**: (ninguna)
 - **Usa sprites grandes**: no
 - **Enemigos (2)**:
     - [ ] **GoalTape** (0x7B) ×1: (0,14,23)
