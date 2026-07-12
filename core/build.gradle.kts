@@ -83,6 +83,17 @@ tasks.register<JavaExec>("bakeSmwEnemies") {
     workingDir = rootDir
 }
 
+// Documenta la capa estática del overworld (Star Road, eventos) a docs/overworld_smw.md:
+//   ./gradlew :core:dumpOverworldDoc --args="--rom smw.sfc"
+tasks.register<JavaExec>("dumpOverworldDoc") {
+    group = "rolebuilder"
+    description = "Documenta el overworld estático de SMW (usa --args)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwOverworldDocKt")
+    systemProperty("java.awt.headless", "true")
+    workingDir = rootDir
+}
+
 // Documentación exhaustiva por nivel (direcciones + props + enemigos) a docs/niveles_smw.md:
 //   ./gradlew :core:dumpLevelDocs --args="--rom smw.sfc"
 tasks.register<JavaExec>("dumpLevelDocs") {
