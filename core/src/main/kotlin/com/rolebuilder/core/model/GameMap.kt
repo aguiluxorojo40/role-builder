@@ -26,6 +26,11 @@ data class GameMap(
      * Los consume el motor de Platform Builder; el RPG los ignora.
      */
     val platformEnemies: List<PlatformEnemyMark> = emptyList(),
+    /**
+     * Warps de plataformas: tuberías/puertas que llevan a otro mapa del proyecto. Los
+     * consume el motor de Platform Builder para enlazar los sub-niveles de un nivel SMW.
+     */
+    val platformWarps: List<MapWarp> = emptyList(),
     /** Pista de música de fondo del mapa (ver MusicTracks); null = silencio. */
     val bgm: String? = null,
     /** Clima ambiental al entrar al mapa. */
@@ -124,6 +129,21 @@ data class EnemySpawn(
     val enemyId: Int,
     val x: Int,
     val y: Int,
+)
+
+/**
+ * Warp de plataformas en la celda (x,y): al entrar (según [input]: 0=abajo/tubería,
+ * 1=arriba/puerta, 2=lado/tubería horizontal) lleva al mapa [destMapId] del proyecto,
+ * a la celda ([destX],[destY]). Enlaza los sub-niveles de un nivel SMW importado.
+ */
+@Serializable
+data class MapWarp(
+    val x: Int,
+    val y: Int,
+    val input: Int,
+    val destMapId: Int,
+    val destX: Int,
+    val destY: Int,
 )
 
 /**

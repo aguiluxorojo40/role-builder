@@ -31,6 +31,24 @@ enum class BlockAction { NONE, COIN, PRIZE }
 
 private val BLOCK_ACTIONS = BlockAction.values()
 
+/** Cómo se entra a un warp: hacia abajo (tubería), arriba (puerta/tubería) o de lado. */
+enum class WarpInput { DOWN, UP, SIDE }
+
+/** Un warp en una celda: al entrar lleva al mapa [destMapId] en la celda ([destX],[destY]). */
+class EngineWarp(
+    val col: Int,
+    val row: Int,
+    val input: WarpInput,
+    val destMapId: Int,
+    val destX: Int,
+    val destY: Int,
+)
+
+/** Destino de un warp que el jugador acaba de activar (lo consume la app). */
+class WarpTarget(val destMapId: Int, val destX: Int, val destY: Int)
+
+private fun cellKey(col: Int, row: Int): Long = (col.toLong() shl 32) or (row.toLong() and 0xffffffffL)
+
 /** Enemigo en ejecución (píxeles): camina, cae con gravedad y se puede pisar. */
 class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     val width = 14f
@@ -68,8 +86,23 @@ class PlatformerEngine(
     val tuning: PlatformerTuning,
     enemySeeds: List<EnemySeed> = emptyList(),
     blockActions: IntArray? = null,
+    warps: List<EngineWarp> = emptyList(),
 ) {
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat())
+
+    /** Warps por celda (col,row) del nivel; se activan al entrar con el input correcto. */
+    private val warpAt: Map<Long, EngineWarp> = warps.associateBy { cellKey(it.col, it.row) }
+
+    /** Entrada de dirección para tuberías/puertas (además de [moveX] para el eje X). */
+    var inputDown = false
+    var inputUp = false
+
+    /** Warp recién activado (destino de sala) que la app debe consumir, o null. */
+    var pendingWarp: WarpTarget? = null
+        private set
+
+    /** La app llama a esto tras cambiar de sala para limpiar el warp pendiente. */
+    fun consumeWarp() { pendingWarp = null }
 
     /** Enemigos vivos del nivel, instanciados de las semillas. */
     val enemies: List<PlatformerEnemy> =
@@ -191,9 +224,34 @@ class PlatformerEngine(
         updateEnemies()
         handlePlayerEnemyContact()
         collectCoins()
+        checkWarps()
 
         checkDeadly()
         if (p.y > (rows + 2) * tileSize) killPlayer() // caído al vacío
+    }
+
+    /** Activa un warp si el jugador está sobre su celda y pulsa la dirección correcta. */
+    private fun checkWarps() {
+        if (pendingWarp != null || warpAt.isEmpty()) return
+        val p = player
+        val w = tuning.playerWidth
+        val h = tuning.playerHeight
+        val c0 = (p.x / tileSize).toInt()
+        val c1 = ((p.x + w - 0.01f) / tileSize).toInt()
+        val r0 = (p.y / tileSize).toInt()
+        val r1 = ((p.y + h - 0.01f) / tileSize).toInt()
+        for (r in r0..r1) for (c in c0..c1) {
+            val warp = warpAt[cellKey(c, r)] ?: continue
+            val enter = when (warp.input) {
+                WarpInput.DOWN -> inputDown && p.onGround // baja por la tubería estando de pie
+                WarpInput.UP -> inputUp                   // entra por la puerta / sube por la tubería
+                WarpInput.SIDE -> abs(moveX) > 0.3f       // entra de lado por la tubería horizontal
+            }
+            if (enter) {
+                pendingWarp = WarpTarget(warp.destMapId, warp.destX, warp.destY)
+                return
+            }
+        }
     }
 
     /** Recoge las monedas sueltas que solape la caja del jugador. */

@@ -76,7 +76,12 @@ object ProjectPlatformer {
         tuning = tuning,
         enemySeeds = map.platformEnemies.map { enemySeed(it) },
         blockActions = blockActionGrid(map, tileset),
+        warps = map.platformWarps.map {
+            EngineWarp(it.x, it.y, WARP_INPUTS.getOrElse(it.input) { WarpInput.DOWN }, it.destMapId, it.destX, it.destY)
+        },
     )
+
+    private val WARP_INPUTS = WarpInput.values()
 
     /**
      * Rejilla de acciones interactivas (moneda…) por celda para el motor, a partir de
