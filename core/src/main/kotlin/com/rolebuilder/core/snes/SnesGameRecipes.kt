@@ -766,17 +766,29 @@ object SnesGameRecipes {
     val SMW_MARIO_SHEET_POSES = intArrayOf(0, 1, 4, 6, 12)
 
     /**
+     * Desplazamiento de la tesela por PODER del jugador (kPlayerGFXRt_PowerupTilesetIndex,
+     * banco $00): la MISMA pose usa teselas distintas según Mario sea pequeño (0),
+     * grande (1), de fuego (2) o con capa (3). El índice a las tablas de cabeza/cuerpo
+     * es `PowerupTilesetIndex[poder] + pose`. Grande no es solo "más grande": son otros
+     * gráficos con torso y peto completos, no el chibi de pequeño escalado.
+     */
+    val SMW_MARIO_POWERUP_TILESET = intArrayOf(0x00, 0x46, 0x83, 0x46)
+
+    /**
      * Hoja de sprites de MARIO ya COMPUESTA como la ensambla el juego: por cada pose
      * apila la tesela de la CABEZA sobre la del CUERPO (ver [SMW_PLAYER_HEAD_TILE_PC]/
      * [SMW_PLAYER_BODY_TILE_PC]), así la cara sale con su color de piel en vez de un
      * hueco en blanco. Coloreada con la paleta de jugador REAL de la ROM (fila 8 de la
      * CGRAM: col 1 blanco, cols 2-5 colores estándar, cols 6-F la paleta de Mario).
      *
+     * [powerup] elige el juego de gráficos (0 pequeño, 1 grande, 2 fuego, 3 capa) vía
+     * [SMW_MARIO_POWERUP_TILESET]; por defecto 0 (pequeño), la salida histórica.
+     *
      * Salida: un fotograma de 16×32 px por pose de [SMW_MARIO_SHEET_POSES], en fila
      * (ancho = 16·nPoses, alto = 32). Devuelve null si no se pudo leer/descomprimir
      * GFX32 o no llega hasta las teselas de la cabeza.
      */
-    fun smwMarioSheet(rom: ByteArray, header: SnesHeader): ArgbImage? {
+    fun smwMarioSheet(rom: ByteArray, header: SnesHeader, powerup: Int = 0): ArgbImage? {
         val delta = smwHeaderDelta(header)
         val mpc = lorom(
             byte(rom, SMW_GFX32_LO_PC + delta),
@@ -822,8 +834,10 @@ object SnesGameRecipes {
                     }
                 }
             }
+            val tilesetBase = SMW_MARIO_POWERUP_TILESET[powerup.coerceIn(0, 3)]
             for (f in poses.indices) {
-                val v13 = poses[f] // Mario pequeño: PowerupTilesetIndex[0]=0 + pose = pose.
+                // Índice a las tablas de cabeza/cuerpo = base del poder + pose.
+                val v13 = tilesetBase + poses[f]
                 val headPtr = byte(rom, SMW_PLAYER_HEAD_TILE_PC + delta + v13)
                 val bodyPtr = byte(rom, SMW_PLAYER_BODY_TILE_PC + delta + v13)
                 blitBlock(bodyPtr, f * 16, 16) // cuerpo abajo

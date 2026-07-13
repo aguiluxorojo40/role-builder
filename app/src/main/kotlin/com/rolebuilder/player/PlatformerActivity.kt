@@ -161,13 +161,15 @@ class PlatformerActivity : ComponentActivity() {
         // + cuerpo, así sale con cara (16×32 por fotograma). Coloreado en vivo desde la
         // ROM; si falla, drawMario cae al rectángulo. Enemigos desde el atlas horneado y
         // audio con las muestras reales de SMW (o assets si la ROM no lo permite).
-        // con las muestras reales de SMW (o assets si la ROM no lo permite).
-        val marioBmp = runCatching {
-            val img = SnesGameRecipes.smwMarioSheet(rom, SnesDecoder.parseHeader(rom)) ?: return@runCatching null
+        val header = SnesDecoder.parseHeader(rom)
+        fun marioSheet(powerup: Int) = runCatching {
+            val img = SnesGameRecipes.smwMarioSheet(rom, header, powerup) ?: return@runCatching null
             Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888)
         }.getOrNull()
+        val marioBmp = marioSheet(0)        // pequeño
+        val marioBigBmp = marioSheet(1)     // grande (gráficos propios, no escalado)
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
-        return PlatformerRenderer(engine, null, marioBmp, loadEnemies(), audio)
+        return PlatformerRenderer(engine, null, marioBmp, loadEnemies(), audio, marioBigBmp)
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */

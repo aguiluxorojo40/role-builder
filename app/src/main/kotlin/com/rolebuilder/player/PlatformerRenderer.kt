@@ -40,12 +40,14 @@ class PlatformerWorld(val projectDir: File, val map: GameMap, val tileset: Tiles
 class PlatformerRenderer(
     private val engine: PlatformerEngine,
     private val world: PlatformerWorld? = null,
-    /** Hoja de sprites de Mario (GFX32, 128×64) de la ROM; null = dibujar rectángulo. */
+    /** Hoja de Mario PEQUEÑO (GFX32 compuesto, 16×32 por pose) de la ROM; null = rectángulo. */
     private val marioBitmap: Bitmap? = null,
     /** Atlas de enemigos (16×16 por id curado, en el orden de curatedIds); null = rectángulo. */
     private val enemyBitmap: Bitmap? = null,
     /** Audio de SMW (SFX reales resueltos por SmwSfxCatalog); null = silencio. */
     private val audio: PlatformerAudio? = null,
+    /** Hoja de Mario GRANDE (poder 1, gráficos propios); null = escalar la de pequeño. */
+    private val marioBigBitmap: Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -77,6 +79,7 @@ class PlatformerRenderer(
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
     private var marioTex: Texture? = null
+    private var marioBigTex: Texture? = null
     private var marioAnim = 0f
     private var enemyTex: Texture? = null
     private var tilesetTex: Texture? = null
@@ -89,6 +92,7 @@ class PlatformerRenderer(
         batch = SpriteBatch()
         white = Texture.white()
         marioTex = marioBitmap?.let { Texture(it) }
+        marioBigTex = marioBigBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
@@ -264,7 +268,9 @@ class PlatformerRenderer(
         val p = engine.player
         // Invulnerable tras encoger: parpadea (se salta el dibujo en pulsos), como SMW.
         if (p.invulnFrames > 0 && (p.invulnFrames / 4) % 2 == 1) return
-        val tex = marioTex
+        // Grande usa su PROPIA hoja (gráficos de Mario grande); si no hay, escala la de
+        // pequeño como reserva. Pequeño siempre la suya.
+        val tex = if (p.big) (marioBigTex ?: marioTex) else marioTex
         if (tex == null) {
             val w = engine.tuning.playerWidth / 16f
             val h = engine.playerHeight / 16f
