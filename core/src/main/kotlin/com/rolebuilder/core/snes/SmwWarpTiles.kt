@@ -153,4 +153,55 @@ object SmwWarpTiles {
      */
     fun mainEntrancePosition(start: SmwLevelStart): Pair<Int, Int> =
         presetPosition(start.secHeader[1] and 0x7, start.secHeader[0] and 0xF)
+
+    // ───────────────────────── warps de un nivel, listos para el motor ─────────────────────────
+
+    /**
+     * Un warp RESUELTO de un nivel: la casilla de la boca (tubería vertical o puerta),
+     * cómo se entra y a qué nivel/casilla lleva. Es la unión de las tres piezas: la
+     * tesela de warp (esta clase), la salida de pantalla ([SmwLevelExits]) y la
+     * posición de entrada del destino.
+     */
+    class LevelWarp(
+        val xTile: Int,
+        val yTile: Int,
+        val kind: WarpTile,
+        /** true = se entra pulsando ABAJO de pie sobre la boca; false = pulsando ARRIBA. */
+        val enterDown: Boolean,
+        val destLevel: Int,
+        val destXTile: Int,
+        val destYTile: Int,
+    )
+
+    /**
+     * Los warps JUGABLES del [level]: cruza las teselas de warp de su rejilla de bloques
+     * con la salida de pantalla de SU pantalla ([SmwLevelExits]) y con la entrada del
+     * nivel destino. Decisiones (documentadas, no adivinadas):
+     *  - Solo PUERTAS (0x1F/0x20) y TUBERÍAS VERTICALES (0x37/0x38). El 0x3F crudo
+     *    (tubería horizontal) NO se usa: sin la tabla acts-like ese byte inunda la
+     *    rejilla (65k+ apariciones en la ROM US) y daría falsos warps.
+     *  - La dirección de una tubería vertical la fija su geometría, como en el juego:
+     *    con AIRE encima se entra HACIA ABAJO (de pie sobre la boca); si no, hacia arriba.
+     *  - El destino usa la ENTRADA PRINCIPAL del nivel destino (como [SmwLevelBundle]);
+     *    la pantalla absoluta de las entradas secundarias queda para un refinamiento.
+     */
+    fun levelWarps(rom: ByteArray, header: SnesHeader, level: Int): List<LevelWarp> {
+        val col = SnesGameRecipes.smwLevelCollision(rom, header, level) ?: return emptyList()
+        val conn = runCatching { SmwLevelExits.read(rom, header, level) }.getOrNull() ?: return emptyList()
+        if (conn.exits.isEmpty()) return emptyList()
+        val exitByScreen = conn.exits.associateBy { it.fromScreen }
+        val out = ArrayList<LevelWarp>()
+        for (r in 0 until col.rows) for (c in 0 until col.cols) {
+            val kind = pipeOrDoor(col.blockAt(c, r)) ?: continue
+            if (kind == WarpTile.PIPE_HORIZONTAL) continue
+            val exit = exitByScreen[c / 16] ?: continue
+            val dest = exit.destinationLevel
+            if (dest < 0 || dest >= 0x200) continue
+            val start = SmwLevelStartReader.read(rom, header, dest) ?: continue
+            val airAbove = r == 0 || col.solidityAt(c, r - 1) == SmwSolidity.NONE
+            val enterDown = kind == WarpTile.PIPE_VERTICAL && airAbove
+            out.add(LevelWarp(c, r, kind, enterDown, dest, start.startTileX, start.startTileY))
+        }
+        return out
+    }
 }

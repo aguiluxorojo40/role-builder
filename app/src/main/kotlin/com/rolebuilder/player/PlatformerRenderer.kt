@@ -49,8 +49,14 @@ class PlatformerRenderer(
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
+    /** Eje vertical del joystick (-1 arriba .. +1 abajo): entra por tuberías/puertas. */
+    @Volatile var inMoveY = 0f
     @Volatile var inRunning = false
     @Volatile var inJumpHeld = false
+
+    /** Warp activado por el jugador (tubería/puerta); la UI lo consume y cambia de nivel. */
+    @Volatile var pendingWarp: com.rolebuilder.core.engine.platformer.WarpTarget? = null
+        private set
 
     // Últimos contadores de eventos vistos, para sonar cada evento una sola vez.
     private var lastJumpEvents = 0
@@ -110,6 +116,8 @@ class PlatformerRenderer(
         var guard = 0
         while (acc >= step && guard < 8) {
             engine.moveX = inMoveX
+            engine.inputDown = inMoveY > 0.5f
+            engine.inputUp = inMoveY < -0.5f
             engine.running = inRunning
             engine.setJumpHeld(inJumpHeld)
             engine.tick()
@@ -118,6 +126,7 @@ class PlatformerRenderer(
         }
         dead = engine.player.dead
         coins = engine.coins
+        engine.pendingWarp?.let { pendingWarp = it }
 
         // Audio: suena cada evento del motor (salto, pisotón, moneda, muerte) una vez
         // por aparición, con las muestras reales de SMW resueltas por SmwSfxCatalog.

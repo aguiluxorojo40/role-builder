@@ -78,7 +78,22 @@ class PlatformerActivity : ComponentActivity() {
         }
         // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming.
         music = PlatformerMusic.fromAssets(this)?.also { it.start() }
-        setContent { PlatformerScreen(renderer, onRestart = { recreate() }, onExit = { finish() }) }
+        setContent {
+            PlatformerScreen(
+                renderer,
+                onRestart = { recreate() },
+                onExit = { finish() },
+                // Warp consumido (tubería/puerta): en modo ROM, el destino es un número
+                // de NIVEL de SMW → se relanza la actividad en ese nivel.
+                onWarp = { dest ->
+                    val romPath = intent.getStringExtra(EXTRA_ROM_PATH)
+                    if (romPath != null) {
+                        startActivity(intent(this, File(romPath), dest.destMapId))
+                        finish()
+                    }
+                },
+            )
+        }
     }
 
     override fun onDestroy() {
@@ -176,6 +191,16 @@ class PlatformerActivity : ComponentActivity() {
         // inmutable a propósito: un `?` ya usado sigue siendo sólido.
         val prizeCells = HashSet<Int>()
         for (i in actions.indices) if (actions[i] == BlockAction.PRIZE.ordinal) prizeCells.add(i)
+        // Warps REALES del nivel (puertas y tuberías verticales cruzadas con sus salidas
+        // de pantalla): al entrar, la UI recarga la actividad en el nivel destino.
+        val warps = com.rolebuilder.core.snes.SmwWarpTiles.levelWarps(rom, header, level).map {
+            com.rolebuilder.core.engine.platformer.EngineWarp(
+                col = it.xTile, row = it.yTile,
+                input = if (it.enterDown) com.rolebuilder.core.engine.platformer.WarpInput.DOWN
+                else com.rolebuilder.core.engine.platformer.WarpInput.UP,
+                destMapId = it.destLevel, destX = it.destXTile, destY = it.destYTile,
+            )
+        }
         return PlatformerEngine(
             cols = col.cols, rows = col.rows,
             solidityAt = { c, r ->
@@ -186,6 +211,7 @@ class PlatformerActivity : ComponentActivity() {
             tuning = PlatformerTuning.fromSmw(phys),
             enemySeeds = enemySeeds,
             blockActions = if (anyAction) actions else null,
+            warps = warps,
         )
     }
 
@@ -217,7 +243,12 @@ class PlatformerActivity : ComponentActivity() {
 }
 
 @Composable
-private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit, onExit: () -> Unit) {
+private fun PlatformerScreen(
+    renderer: PlatformerRenderer,
+    onRestart: () -> Unit,
+    onExit: () -> Unit,
+    onWarp: (com.rolebuilder.core.engine.platformer.WarpTarget) -> Unit = {},
+) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var glView by remember { mutableStateOf<GLSurfaceView?>(null) }
 
@@ -250,10 +281,16 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
         }
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            // Marcador de monedas (HUD): sondea el contador del renderer.
+            // Marcador de monedas (HUD) y warp pendiente: sondea el renderer.
             var coinCount by remember { mutableStateOf(0) }
+            var warped by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
-                while (true) { coinCount = renderer.coins; kotlinx.coroutines.delay(120) }
+                while (true) {
+                    coinCount = renderer.coins
+                    val warp = renderer.pendingWarp
+                    if (warp != null && !warped) { warped = true; onWarp(warp) }
+                    kotlinx.coroutines.delay(120)
+                }
             }
             Text(
                 "🪙 $coinCount",
@@ -263,10 +300,10 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
                 fontWeight = FontWeight.Bold,
             )
 
-            // Movimiento horizontal con el joystick (solo el eje X).
+            // Joystick: eje X mueve; eje Y entra por tuberías (abajo) y puertas (arriba).
             VirtualJoystick(
                 modifier = Modifier.align(Alignment.BottomStart).padding(24.dp),
-                onChange = { x, _ -> renderer.inMoveX = x },
+                onChange = { x, y -> renderer.inMoveX = x; renderer.inMoveY = y },
             )
 
             // Salto (mantener = salto más alto) y correr.

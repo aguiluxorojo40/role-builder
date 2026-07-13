@@ -38,11 +38,13 @@ se explican por cuál de las dos usa cada pieza:
 
 ## 🟡 Hecho en core pero NO expuesto (integración pendiente, por valor)
 
-1. **Warps de tubería/puerta, de punta a punta.** El motor ya tiene toda la
-   maquinaria (`EngineWarp`, `pendingWarp`/`consumeWarp`) y `SmwWarpTiles` +
-   `SmwLevelExits` saben leer las bocas y salidas reales de la ROM, pero nadie
-   los conecta: la importación no emite warps (`GameMap.platformWarps` queda
-   vacío) y la app nunca consume `pendingWarp` (no hay cambio de sala).
+1. **Warps en la ruta de mapas importados.** La ruta ROM directa YA tiene warps
+   jugables (`SmwWarpTiles.levelWarps`: puertas y tuberías verticales cruzadas
+   con sus salidas de pantalla; el joystick abajo/arriba entra y la app recarga
+   el nivel destino). Queda la ruta de proyecto: la importación aún no emite
+   `GameMap.platformWarps`, y las tuberías HORIZONTALES (0x3F crudo) están
+   excluidas hasta portar la tabla acts-like (ese byte inunda la rejilla y
+   daría falsos warps).
 2. **Bundle de sub-niveles** (`SmwLevelBundle`): importa un nivel COMPLETO
    siguiendo sus salidas (BFS de sub-niveles + grafo de warps). Sin consumidor
    en la app; encaja con el punto 1.
