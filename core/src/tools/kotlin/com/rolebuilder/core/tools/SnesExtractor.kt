@@ -195,6 +195,63 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --enemies: hornea el ATLAS de enemigos del catálogo curado
+    // (SmwEnemyGraphics.curatedIds, un fotograma 16×16 por id, en su orden) con el
+    // sprite y color REALES de la ROM. Es el horneado oficial de
+    // app/src/main/assets/sprites/enemies.png: si el catálogo cambia, regenerar con
+    // este modo mantiene atlas y código sincronizados.
+    if (opts.containsKey("enemies")) {
+        val enemyGfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        val ids = enemyGfx.curatedIds
+        // Niveles de referencia por id: TODOS los que de verdad contienen ese enemigo
+        // (su VRAM de sprites tiene los gráficos correctos cargados). Entre ellos se
+        // VOTA: se renderiza en cada uno y gana el aspecto MAYORITARIO — algún
+        // sub-nivel puede cargar otro sprite-set y daría un gráfico equivocado
+        // (fuentes, tiles ajenos); en la mayoría quedan en minoría y se descartan.
+        val levelsWithId = HashMap<Int, MutableList<Int>>()
+        for (level in 0 until 0x200) {
+            for ((id, _, _) in SnesGameRecipes.smwLevelEnemies(rom, header, level)) {
+                levelsWithId.getOrPut(id) { ArrayList() }.add(level)
+            }
+        }
+        val fallbackLevels = listOf(0x106, 0x024, 0x0C7, 0x022, 0x0C5, 0x101, 0x105, 0x001, 0x002)
+        val atlas = ArgbImage(ids.size * 16, 16)
+        var missing = 0
+        println("Atlas de enemigos (${ids.size} fotogramas de 16×16, aspecto por mayoría):")
+        ids.forEachIndexed { frame, id ->
+            val candidates = (levelsWithId[id] ?: fallbackLevels).take(16)
+            // hash de píxeles → (imagen, niveles que la producen)
+            val variants = LinkedHashMap<Int, Pair<ArgbImage, MutableList<Int>>>()
+            for (l in candidates) {
+                val img = enemyGfx.spriteImage(rom, header, l, id) ?: continue
+                val key = img.pixels.contentHashCode()
+                variants.getOrPut(key) { img to ArrayList() }.second.add(l)
+            }
+            val winner = variants.values.maxByOrNull { it.second.size }
+            if (winner != null) {
+                val img = winner.first
+                for (y in 0 until 16) for (x in 0 until 16) {
+                    atlas.set(frame * 16 + x, y, img.pixels[y * 16 + x])
+                }
+            } else {
+                missing++
+            }
+            println("  fotograma %2d · id %02X · %-24s %s".format(
+                frame, id, enemyGfx.nameOf(id) ?: "?",
+                if (winner != null) {
+                    "niveles ${winner.second.size}/${candidates.size} " +
+                        "(0x${winner.second.first().toString(16).uppercase()}…)" +
+                        if (variants.size > 1) " · ${variants.size} variantes" else ""
+                } else "SIN GRÁFICO"))
+        }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "enemies.png")
+        ImageIO.write(toBufferedImage(atlas), "png", png)
+        println("Atlas: ${atlas.width}x${atlas.height}px -> images/${png.name}" +
+            if (missing > 0) "  (¡$missing sin gráfico!)" else "")
+        return
+    }
+
     // Modo --powerups: lista los estados de powerup de Mario y qué cambian.
     if (opts.containsKey("powerups")) {
         println("Powerups de Mario (id · alto · agacha/rompe/fuego/vuela):")
@@ -701,6 +758,7 @@ private fun printUsage() {
                                               (TWEAKERS de comportamiento de enemigos: hitbox y banderas por id)
           --rom smw.sfc --level-info [--level 0x106]
                                               (FICHA del nivel: tamaño, modo, música, paletas, tiempo)
+          --rom smw.sfc --enemies             (ATLAS de enemigos del catálogo con sprite/color real → enemies.png)
           --rom smw.sfc --powerups            (estados de powerup de Mario: tamaño y habilidades)
           --rom smw.sfc --play-sim [--level 0x106] [--frames 180] [--powerup big|cape|fire] [--env ice|water]
                                               (SIMULA el nivel en el motor: colisión+físicas+inicio, con powerup/entorno)

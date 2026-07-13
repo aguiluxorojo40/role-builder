@@ -29,6 +29,29 @@ class SmwEnemyGraphicsTest {
         assertEquals("Koopa rojo", SmwEnemyGraphics.nameOf(0x01))
         assertEquals("Koopa azul", SmwEnemyGraphics.nameOf(0x02))
         assertEquals("Koopa amarillo", SmwEnemyGraphics.nameOf(0x03))
-        assertEquals("Goomba", SmwEnemyGraphics.nameOf(0x10))
+        assertEquals("Goomba volador", SmwEnemyGraphics.nameOf(0x10))
+        assertEquals("Bullet Bill", SmwEnemyGraphics.nameOf(0x1C))
+        assertEquals("Boo", SmwEnemyGraphics.nameOf(0x37))
+    }
+
+    @Test
+    fun `el orden del atlas es estable, la tanda 0 conserva sus 15 fotogramas`() {
+        // enemies.png se indexa por posición en curatedIds: si estos 15 se mueven,
+        // el atlas horneado queda desincronizado en silencio. Los nuevos ids van
+        // SIEMPRE al final (y el atlas se regenera con --enemies).
+        val tanda0 = listOf(0x00, 0x01, 0x02, 0x03, 0x05, 0x0F, 0x10, 0x11, 0x1C, 0x29, 0x2A, 0x2C, 0x4B, 0x4D, 0x4E)
+        assertEquals(tanda0, SmwEnemyGraphics.curatedIds.take(15))
+    }
+
+    @Test
+    fun `la tanda 1 esta cubierta y los descartados no`() {
+        for (id in intArrayOf(0x4F, 0x37, 0x3D, 0x15, 0x16, 0x2E, 0x38, 0x39, 0x31)) {
+            assertTrue(SmwEnemyGraphics.handles(id), "debería cubrir 0x${id.toString(16)}")
+        }
+        // Descartados tras verificación visual: su entrada de la tabla genérica no es
+        // su aspecto real (rutina de dibujo propia; salían fuentes o basura).
+        for (id in intArrayOf(0x33, 0x30, 0x32)) {
+            assertFalse(SmwEnemyGraphics.handles(id), "0x${id.toString(16)} está descartado")
+        }
     }
 }

@@ -63,13 +63,29 @@ object SmwEnemyGraphics {
 
     /**
      * Catálogo curado de ids con gráfico real fiable (verificado renderizando desde la
-     * ROM), con nombre legible. El orden define el atlas horneado.
+     * ROM), con nombre legible. El orden define el atlas horneado: los ids NUEVOS se
+     * añaden SIEMPRE al final para no mover los fotogramas ya horneados. El atlas se
+     * regenera con `--enemies` en el extractor (no editar enemies.png a mano).
+     *
+     * Los nombres siguen el despacho real del juego (`kSprStatus08SpriteNormalPtrs`,
+     * banco $01 de snesrev/smw); algunos de la primera tanda estaban mal etiquetados
+     * (0x1C es Bullet Bill, no Bob-omb; 0x29/0x2A/0x4B ídem) y se corrigieron.
      */
     private val NAMES: Map<Int, String> = linkedMapOf(
+        // Tanda 0 (el orden fija los fotogramas 0..14 del atlas horneado).
         0x00 to "Koopa verde", 0x01 to "Koopa rojo", 0x02 to "Koopa azul", 0x03 to "Koopa amarillo",
-        0x05 to "Koopa", 0x0F to "Goomba", 0x10 to "Goomba", 0x11 to "Buzzy Beetle",
-        0x1C to "Bob-omb", 0x29 to "Caparazon verde", 0x2A to "Caparazon rojo",
-        0x2C to "Huevo de Yoshi", 0x4B to "Rex", 0x4D to "Topo", 0x4E to "Topo",
+        0x05 to "Koopa", 0x0F to "Goomba", 0x10 to "Goomba volador", 0x11 to "Buzzy Beetle",
+        0x1C to "Bullet Bill", 0x29 to "Koopa Kid", 0x2A to "Planta Pirana",
+        0x2C to "Huevo de Yoshi", 0x4B to "Lakitu de tuberia", 0x4D to "Topo", 0x4E to "Topo",
+        // Tanda 1: los ids mas frecuentes de la ROM US aun sin cubrir, verificados
+        // visualmente con `--enemies` (voto por mayoria entre los niveles que los
+        // contienen). Se DESCARTARON 0x33 Podoboo, 0x30 y 0x32: su entrada de la
+        // tabla generica no es su aspecto real (rutina de dibujo propia; salian
+        // tiles de fuente o basura de forma unanime en todos sus niveles).
+        0x4F to "Planta Pirana saltarina", 0x37 to "Boo",
+        0x3D to "Rip Van Fish", 0x15 to "Cheep-Cheep", 0x16 to "Cheep-Cheep",
+        0x2E to "Spike Top", 0x38 to "Eerie", 0x39 to "Eerie",
+        0x31 to "Bony Beetle",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
