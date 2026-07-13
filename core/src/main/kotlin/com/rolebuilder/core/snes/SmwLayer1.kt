@@ -191,6 +191,15 @@ internal object SmwLayer1 {
                         0x3C -> castleStoneBlock()
                         else -> unkStd(obj)
                     }
+                    3, 9, 0xA, 0xB, 0xE -> when (obj) {
+                        0x36 -> underground4SidedGround()
+                        0x3A -> undergroundCaveLava(withSurface = true)
+                        0x3B -> undergroundCaveLava(withSurface = false)
+                        0x3D -> undergroundCeilingLedge()
+                        0x3E -> undergroundCeilingEdges()
+                        0x3F -> undergroundSolidDirt()
+                        else -> unkStd(obj)
+                    }
                     4, 5, 0xD -> when (obj) {
                         0x34 -> ghostWoodLedgeOnColumn()
                         0x35, 0x36 -> ghostBrickOrWood(obj - 0x35)
@@ -248,6 +257,7 @@ internal object SmwLayer1 {
                 0x82 -> extLargeBush(EXT_BIG_BUSH, 8, 4)
                 0x83 -> extLargeBush(EXT_SMALL_BUSH, 5, 3)
                 0x86 -> extGoalSign()
+                0x87 -> extSwitchBlockGreen()
                 0x8E -> extSwitchBlockYellow()
                 else -> unkExt(k)
             }
@@ -572,14 +582,12 @@ internal object SmwLayer1 {
         }
 
         /**
-         * Objeto de CASTILLO 0x3C: BLOQUE DE PIEDRA (CastleObj3C, $0D:C478): rectángulo
-         * página 1 con teselas izquierda/medio/derecha por fila — superior 5D/5E/5F,
-         * medias 60/61/62, inferior 63/64/65. Es el muro básico de los castillos.
+         * Rectángulo 3×3 genérico (izquierda/medio/derecha × fila superior/media/
+         * inferior), página 1: el patrón que comparten el BLOQUE DE PIEDRA de
+         * castillo (CastleObj3C, $0D:C478) y el SUELO DE 4 LADOS de subterráneo
+         * (UndergroundObj36, $0D:E135) — misma rutina, distintas tablas.
          */
-        fun castleStoneBlock() {
-            val left = intArrayOf(0x5D, 0x60, 0x63)
-            val mid = intArrayOf(0x5E, 0x61, 0x64)
-            val right = intArrayOf(0x5F, 0x62, 0x65)
+        fun rect3x3(left: IntArray, mid: IntArray, right: IntArray) {
             var v1 = pos
             val r0 = size and 0xF
             var r1 = size shr 4
@@ -604,6 +612,120 @@ internal object SmwLayer1 {
                 r1 = (r1 - 1) and 0xFF
                 if (r1 and 0x80 != 0) break
                 if (lastNext) v2 = 2
+            }
+        }
+
+        /**
+         * Objeto de CASTILLO 0x3C: BLOQUE DE PIEDRA (CastleObj3C, $0D:C478):
+         * superior 5D/5E/5F, medias 60/61/62, inferior 63/64/65. El muro básico.
+         */
+        fun castleStoneBlock() =
+            rect3x3(intArrayOf(0x5D, 0x60, 0x63), intArrayOf(0x5E, 0x61, 0x64), intArrayOf(0x5F, 0x62, 0x65))
+
+        // -------------------------- objetos de SUBTERRÁNEO --------------------------
+        // Ports 1:1 de UndergroundObjXX del banco $0D (tilesets 3/9/0xA/0xB/0xE).
+
+        /** Objeto 0x36: SUELO DE 4 LADOS (UndergroundObj36, $0D:E135): la plataforma
+         *  de cueva, mismo patrón 3×3 que el bloque de piedra con sus tablas. */
+        fun underground4SidedGround() =
+            rect3x3(intArrayOf(0x45, 0x50, 0x4D), intArrayOf(0x00, 0xF0, 0x4E), intArrayOf(0x48, 0x51, 0x4F))
+
+        /**
+         * Objeto 0x3D: SALIENTE DE TECHO ($0D:DCEA): filas de tierra 0x65 (alto =
+         * nibble alto) y una última fila de borde 0x4E, página 1. Era el objeto MÁS
+         * usado de toda la ROM sin portar (307 apariciones en 24 niveles).
+         */
+        fun undergroundCeilingLedge() {
+            var v1 = pos
+            var r0 = size shr 4
+            val r1 = size and 0xF
+            preserve()
+            while (r0 != 0) {
+                var v2 = r1
+                do {
+                    setHi01(v1)
+                    v1 = horiz(v1, 0x65)
+                    v2--
+                } while (v2 >= 0)
+                restore()
+                v1 = vert()
+                r0--
+            }
+            var v3 = r1
+            do {
+                setHi01(v1)
+                v1 = horiz(v1, 0x4E)
+                v3--
+            } while (v3 >= 0)
+        }
+
+        /**
+         * Objeto 0x3E: BORDES DE TECHO ($0D:DD2E): columna de TopTiles[t] (alto =
+         * nibble alto) y una tesela final de BottomTiles[t], página 1.
+         */
+        fun undergroundCeilingEdges() {
+            val top = intArrayOf(0x50, 0x50, 0x51, 0x51)
+            val bottom = intArrayOf(0x4D, 0x50, 0x4F, 0x51)
+            val t = (size and 0xF).coerceAtMost(3) // vanilla solo usa 0..3
+            var v1 = pos
+            var r0 = size shr 4
+            if (r0 != 0) {
+                do {
+                    setHi01(v1)
+                    setLo(v1, top[t])
+                    v1 = vert()
+                    r0--
+                } while (r0 != 0)
+            }
+            setHi01(v1)
+            setLo(v1, bottom[t])
+        }
+
+        /** Objeto 0x3F: TIERRA MACIZA ($0D:DD5C): rectángulo de 0x65, página 1. */
+        fun undergroundSolidDirt() {
+            var v1 = pos
+            var r0 = size shr 4
+            val r1 = size and 0xF
+            preserve()
+            do {
+                var v2 = r1
+                do {
+                    setHi01(v1)
+                    v1 = horiz(v1, 0x65)
+                    v2--
+                } while (v2 >= 0)
+                restore()
+                v1 = vert()
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objetos 0x3A/0x3B: LAVA DE CUEVA ($0D:DCA9): 0x3A con fila de superficie
+         * 0x59 y relleno 0xFF; 0x3B solo el relleno. Todo página 1.
+         */
+        fun undergroundCaveLava(withSurface: Boolean) {
+            var v1 = pos
+            val r0 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            var v3 = r0
+            do {
+                setHi01(v1)
+                v1 = horiz(v1, if (withSurface) 0x59 else 0xFF)
+                v3--
+            } while (v3 >= 0)
+            while (true) {
+                restore()
+                v1 = vert()
+                v3 = r0
+                r1 = (r1 - 1) and 0xFF
+                if (r1 and 0x80 != 0) break
+                do {
+                    setHi01(v1)
+                    v1 = horiz(v1, 0xFF)
+                    v3--
+                } while (v3 >= 0)
             }
         }
 
@@ -682,6 +804,14 @@ internal object SmwLayer1 {
             val v1 = pos
             setHi00(v1)
             setLo(v1, 0x6B)
+        }
+
+        /** Objeto extendido 0x87: BLOQUE DE INTERRUPTOR VERDE en frío (tesela 0x6A
+         *  de página 0, kExtObj8E_YellowSwitchBlock_InactiveTiles[0]). */
+        fun extSwitchBlockGreen() {
+            val v1 = pos
+            setHi00(v1)
+            setLo(v1, 0x6A)
         }
 
         fun extTopLeftSlope(v2: Int) {
