@@ -297,7 +297,10 @@ object SnesGameRecipes {
         for (k in 0..3) {
             val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
             val e = SnesTilemap.decodeEntry(word)
-            if ((e.tileIndex and 0xFF) in 0xF8..0xFF) continue // slots animados (aire)
+            // Las teselas sin contenido en VRAM (ranura vacía o animada sin fuente)
+            // quedan null y se saltan solas: no hace falta (ni es correcto) descartar
+            // el rango 0xF8-0xFF a mano — son las últimas teselas ESTÁTICAS de FG2 y
+            // la tubería diagonal de YI1 las usa (saltarlas abría huecos al cielo).
             val px = vram.getOrNull(e.tileIndex) ?: continue
             val rowP = (e.palette and 7) * 16
             val bx = ox + SMW_BLOCK_SUBPOS[k][0]; val by = oy + SMW_BLOCK_SUBPOS[k][1]
@@ -983,8 +986,20 @@ object SnesGameRecipes {
         for (r in 0..2) run(SMW_BERRY_PC + r * 14, 9 + r, 9, 7)
         // Player (Mario normal): fila 8 (sprite 0), cols 6-F (10 colores).
         run(SMW_PLAYER_PC, 8, 6, 10)
+        // K) Colores ANIMADOS (UploadLevelAnimations, $00:A414): el juego cicla cada
+        // pocos frames los índices 0x64/0x6D (DORADO del brillo de monedas/bloques ?)
+        // y 0x7D (rojo, bloques ON/OFF) desde kGlobalPalettes_Flashing ($00:B60C).
+        // En las tablas fijas esos huecos guardan un MAGENTA placeholder (#f808f8):
+        // sin esta pasada, las monedas de dragón y los '?' salen rosas. Frame 0.
+        pal[0x64] = color(SMW_FLASHING_PC)
+        pal[0x6D] = color(SMW_FLASHING_PC)
+        pal[0x7D] = color(SMW_FLASHING_PC + 16)
         return pal
     }
+
+    /** Tabla de colores del DESTELLO (kGlobalPalettes_Flashing): $00B60C → PC 0x360C.
+     *  8 words de dorado (frames del brillo) + 8 words de rojo (ON/OFF). */
+    internal const val SMW_FLASHING_PC = 0x360C
 
     /**
      * Lecturas de las tablas de paleta reales de SMW sobre [rom], ya aplicado el

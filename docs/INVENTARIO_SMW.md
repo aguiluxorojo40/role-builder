@@ -101,6 +101,13 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
   parser ahora REGISTRA los ids sin portar (SmwLevelTilemap.unknownIds), así
   que medir el siguiente nivel es inmediato.
 
+- **Colores animados de la CGRAM** (resuelto): las tablas fijas guardan un
+  MAGENTA placeholder en los índices 0x64/0x6D (dorado del brillo de monedas y
+  bloques `?`) y 0x7D (rojo ON/OFF); el juego los cicla en vivo desde
+  kGlobalPalettes_Flashing ($00:B60C). assembleSmwCgram escribe ahora el frame
+  0 — antes las monedas de dragón salían ROSAS. Y drawSmwBlock ya no descarta
+  las teselas 0xF8-0xFF (son estáticas de FG2; la tubería diagonal de YI1 las
+  usa y el descarte abría huecos transparentes).
 - **Tuberías horizontales (0x3F)**: el byte aparece 65.831 veces en las
   rejillas de la ROM US (p. ej. regiones 6×2 en 0x105/0x106 lejos de la salida)
   — NO es solo la boca enterable. En el juego, la entrada por 0x3F está
