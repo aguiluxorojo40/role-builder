@@ -50,6 +50,8 @@ class PlatformerRenderer(
     private val marioBigBitmap: Bitmap? = null,
     /** Hoja de Mario de FUEGO (poder 3: gráficos de grande, paleta blanca); null = usar grande. */
     private val marioFireBitmap: Bitmap? = null,
+    /** Hoja de Mario CAPA (poder 2: gráficos con capa amarilla); null = usar grande. */
+    private val marioCapeBitmap: Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -84,6 +86,7 @@ class PlatformerRenderer(
     private var marioTex: Texture? = null
     private var marioBigTex: Texture? = null
     private var marioFireTex: Texture? = null
+    private var marioCapeTex: Texture? = null
     private var marioAnim = 0f
     private var enemyTex: Texture? = null
     private var tilesetTex: Texture? = null
@@ -98,6 +101,7 @@ class PlatformerRenderer(
         marioTex = marioBitmap?.let { Texture(it) }
         marioBigTex = marioBigBitmap?.let { Texture(it) }
         marioFireTex = marioFireBitmap?.let { Texture(it) }
+        marioCapeTex = marioCapeBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
@@ -258,11 +262,16 @@ class PlatformerRenderer(
             val my = m.y / 16f
             val mw = m.width / 16f
             val mh = m.height / 16f
-            if (m.kind == com.rolebuilder.core.engine.platformer.PowerupKind.FIRE_FLOWER) {
+            val kind = m.kind
+            if (kind == com.rolebuilder.core.engine.platformer.PowerupKind.FIRE_FLOWER) {
                 // Flor de fuego: pétalos naranjas y centro claro (dibujo de motor).
                 batch.draw(white, mx, my, mw, mh * 0.6f, r = 1f, g = 0.45f, b = 0.10f, a = 1f)
                 batch.draw(white, mx + mw * 0.3f, my + mh * 0.2f, mw * 0.4f, mh * 0.35f, r = 1f, g = 0.95f, b = 0.7f, a = 1f)
                 batch.draw(white, mx + mw * 0.2f, my + mh * 0.6f, mw * 0.6f, mh * 0.4f, r = 0.25f, g = 0.7f, b = 0.25f, a = 1f)
+            } else if (kind == com.rolebuilder.core.engine.platformer.PowerupKind.CAPE_FEATHER) {
+                // Pluma de capa: cuerpo amarillo alargado con nervio claro (dibujo de motor).
+                batch.draw(white, mx + mw * 0.25f, my, mw * 0.5f, mh, r = 1f, g = 0.85f, b = 0.10f, a = 1f)
+                batch.draw(white, mx + mw * 0.45f, my + mh * 0.1f, mw * 0.1f, mh * 0.8f, r = 1f, g = 1f, b = 0.85f, a = 1f)
             } else {
                 batch.draw(white, mx, my, mw, mh * 0.55f, r = 0.90f, g = 0.16f, b = 0.14f, a = 1f)
                 batch.draw(white, mx + mw * 0.2f, my + mh * 0.55f, mw * 0.6f, mh * 0.45f, r = 1f, g = 0.9f, b = 0.75f, a = 1f)
@@ -294,9 +303,11 @@ class PlatformerRenderer(
         val p = engine.player
         // Invulnerable tras encoger: parpadea (se salta el dibujo en pulsos), como SMW.
         if (p.invulnFrames > 0 && (p.invulnFrames / 4) % 2 == 1) return
-        // Cada poder usa su PROPIA hoja: fuego (blanco) → grande → pequeño como reserva.
+        // Cada poder usa su PROPIA hoja: fuego (blanco) / capa (amarilla) → grande →
+        // pequeño como reserva.
         val tex = when {
             p.fire -> marioFireTex ?: marioBigTex ?: marioTex
+            p.cape -> marioCapeTex ?: marioBigTex ?: marioTex
             p.big -> marioBigTex ?: marioTex
             else -> marioTex
         }

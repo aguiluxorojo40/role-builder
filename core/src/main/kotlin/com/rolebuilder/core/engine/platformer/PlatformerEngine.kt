@@ -18,12 +18,14 @@ class PlatformerBody(var x: Float, var y: Float) {
     var big = false
     /** ¿Mario de FUEGO? (flor recogida). Implica grande y permite lanzar bolas de fuego. */
     var fire = false
+    /** ¿Mario CAPA? (pluma recogida). Implica grande y permite PLANEAR al caer. */
+    var cape = false
     /** Fotogramas de invulnerabilidad restantes tras encoger por un golpe. */
     var invulnFrames = 0
 }
 
-/** Qué otorga un [PowerupItem] al recogerlo: SETA (crece) o FLOR (da fuego). */
-enum class PowerupKind { MUSHROOM, FIRE_FLOWER }
+/** Qué otorga un [PowerupItem]: SETA (crece), FLOR (fuego) o PLUMA (capa/planeo). */
+enum class PowerupKind { MUSHROOM, FIRE_FLOWER, CAPE_FEATHER }
 
 /**
  * Powerup en marcha (píxeles): sale de un bloque `?`, cae con gravedad, avanza en
@@ -234,21 +236,30 @@ class PlatformerEngine(
         powerupEvents++
     }
 
-    /** Da a Mario el poder de FUEGO (implica grande; crece antes si era pequeño). */
+    /** Da a Mario el poder de FUEGO (implica grande; excluye la capa). */
     private fun makeFire() {
         if (!player.big) growPlayer() else powerupEvents++
         player.fire = true
+        player.cape = false
+    }
+
+    /** Da a Mario la CAPA (implica grande; excluye el fuego). */
+    private fun makeCape() {
+        if (!player.big) growPlayer() else powerupEvents++
+        player.cape = true
+        player.fire = false
     }
 
     /**
-     * Golpe de enemigo: con poder (grande/fuego) → vuelve a PEQUEÑO (pierde el fuego),
-     * con invulnerabilidad para escapar como en SMW; pequeño → muere.
+     * Golpe de enemigo: con poder (grande/fuego/capa) → vuelve a PEQUEÑO (pierde el
+     * poder), con invulnerabilidad para escapar como en SMW; pequeño → muere.
      */
     private fun hurtPlayer() {
         if (player.invulnFrames > 0) return
         if (player.big) {
             player.big = false
             player.fire = false
+            player.cape = false
             player.y += BIG_HEIGHT - smallHeight // los pies no se mueven
             player.invulnFrames = INVULN_FRAMES
             damageEvents++
@@ -339,6 +350,10 @@ class PlatformerEngine(
         // --- gravedad (salto variable: menor manteniendo el botón mientras sube) ---
         val gravity = if (jumpHeld && p.vy < 0f) t.gravityHold else t.gravityFall
         p.vy = min(p.vy + gravity, t.maxFallSpeed)
+
+        // --- capa: PLANEO. Al caer manteniendo el salto, desciende despacio (como en
+        // SMW al aletear); no anula el salto ni la subida, solo suaviza la caída. ---
+        if (p.cape && !p.onGround && jumpHeld && p.vy > CAPE_GLIDE_SPEED) p.vy = CAPE_GLIDE_SPEED
 
         // --- integración con colisión, eje a eje ---
         moveHorizontal(p.vx)
@@ -443,6 +458,7 @@ class PlatformerEngine(
                 when (m.kind) {
                     PowerupKind.MUSHROOM -> if (!p.big) growPlayer() else { coins++; coinEvents++ }
                     PowerupKind.FIRE_FLOWER -> if (!p.fire) makeFire() else { coins++; coinEvents++ }
+                    PowerupKind.CAPE_FEATHER -> if (!p.cape) makeCape() else { coins++; coinEvents++ }
                 }
             }
         }
@@ -644,8 +660,8 @@ class PlatformerEngine(
                 // Bloque '?': el golpe desde abajo suelta el premio y lo deja "usado"
                 // (sigue sólido; su solidez no cambia). Un cabezazo = un bloque.
                 // Premio progresivo (simplificación de diseño, no dato de la ROM):
-                // SETA si es pequeño; FLOR DE FUEGO si es grande sin fuego; MONEDA si ya
-                // tiene fuego.
+                // SETA si es pequeño; FLOR (fuego) si es grande normal; PLUMA (capa) si
+                // ya tiene fuego; MONEDA si ya tiene capa.
                 for (c in hitCols) {
                     if (blockActionAt(c, row) == BlockAction.PRIZE) {
                         setAction(c, row, BlockAction.NONE)
@@ -653,7 +669,8 @@ class PlatformerEngine(
                         val py = row * tileSize - 15f
                         when {
                             !p.big -> items.add(PowerupItem(px, py, PowerupKind.MUSHROOM))
-                            !p.fire -> items.add(PowerupItem(px, py, PowerupKind.FIRE_FLOWER))
+                            !p.fire && !p.cape -> items.add(PowerupItem(px, py, PowerupKind.FIRE_FLOWER))
+                            !p.cape -> items.add(PowerupItem(px, py, PowerupKind.CAPE_FEATHER))
                             else -> { coins++; coinEvents++ }
                         }
                         break
@@ -684,5 +701,7 @@ class PlatformerEngine(
         const val SMALL_HEIGHT = 14f
         /** Invulnerabilidad tras encoger (~1.5 s a 60 fps), para poder escapar. */
         const val INVULN_FRAMES = 90
+        /** Velocidad de caída al PLANEAR con la capa (px/fotograma): descenso suave. */
+        const val CAPE_GLIDE_SPEED = 1.0f
     }
 }

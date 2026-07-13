@@ -408,6 +408,59 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `Mario de fuego cabecea un ? y suelta una PLUMA de capa`() {
+        val e = bigPrizeEngine()
+        e.player.fire = true
+        e.run(20)
+        e.setJumpHeld(true); e.pressJump()
+        e.run(60) // cabecea
+        assertEquals(1, e.items.size, "el bloque ? soltó un premio")
+        assertEquals(PowerupKind.CAPE_FEATHER, e.items.first().kind, "y es una pluma de capa")
+    }
+
+    @Test
+    fun `recoger la pluma da capa y quita el fuego`() {
+        val e = bigPrizeEngine()
+        e.player.fire = true
+        e.run(20)
+        e.setJumpHeld(true); e.pressJump()
+        e.run(60); e.setJumpHeld(false)
+        var guard = 0
+        while (!e.player.cape && guard < 400) { e.tick(); guard++ }
+        assertTrue(e.player.cape, "recogió la pluma y tiene capa")
+        assertFalse(e.player.fire, "la capa reemplaza al fuego")
+        assertTrue(e.player.big, "sigue grande")
+    }
+
+    @Test
+    fun `la capa hace planear al caer con el salto mantenido`() {
+        // Nivel alto sin suelo cerca: Mario cae en caída libre.
+        val e = PlatformerEngine(
+            6, 20, solidityAt = { _, _ -> SmwSolidity.NONE },
+            startPixelX = 2 * 16, startPixelY = 1 * 16,
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
+        )
+        e.player.cape = true
+        e.setJumpHeld(true) // mantiene el salto → planea al caer
+        e.run(60)
+        assertTrue(e.player.vy <= PlatformerEngine.CAPE_GLIDE_SPEED + 0.01f, "planea: cae despacio (vy=${e.player.vy})")
+        assertTrue(e.player.vy < tuning.maxFallSpeed, "más lento que la caída normal")
+        assertFalse(e.player.dead, "planeando no ha caído fuera aún")
+    }
+
+    @Test
+    fun `sin capa la caida no planea`() {
+        val e = PlatformerEngine(
+            6, 20, solidityAt = { _, _ -> SmwSolidity.NONE },
+            startPixelX = 2 * 16, startPixelY = 1 * 16,
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
+        )
+        e.setJumpHeld(true)
+        e.run(60)
+        assertEquals(tuning.maxFallSpeed, e.player.vy, 0.001f, "sin capa cae a velocidad terminal")
+    }
+
+    @Test
     fun `un golpe siendo de fuego lo deja pequeno`() {
         val cols = 12; val rows = 10
         val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }

@@ -169,8 +169,9 @@ class PlatformerActivity : ComponentActivity() {
         val marioBmp = marioSheet(0)        // pequeño
         val marioBigBmp = marioSheet(1)     // grande (gráficos propios, no escalado)
         val marioFireBmp = marioSheet(3)    // fuego (gráficos de grande, paleta blanca)
+        val marioCapeBmp = marioSheet(2)    // capa (gráficos con capa amarilla)
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
-        return PlatformerRenderer(engine, null, marioBmp, loadEnemies(), audio, marioBigBmp, marioFireBmp)
+        return PlatformerRenderer(engine, null, marioBmp, loadEnemies(), audio, marioBigBmp, marioFireBmp, marioCapeBmp)
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
