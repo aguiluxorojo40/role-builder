@@ -38,18 +38,11 @@ se explican por cuál de las dos usa cada pieza:
 
 ## 🟡 Hecho en core pero NO expuesto (integración pendiente, por valor)
 
-1. **Warps de proyecto: VIVOS para castillos.** Importar el castillo de Iggy
-   (0x101) crea 2 mapas con 3 warps funcionales (verificado). El resto de
-   niveles con puertas (casas fantasma) sigue pendiente de su tabla de
-   objetos. Texto original de cuando estaba latente: "Crear mapa" ya importa el
-   bundle (sub-niveles como mapas + `GameMap.platformWarps` resueltos a ids de
-   mapa) y la app cambia de mapa al entrar (relanza con destino y entrada).
-   PERO hoy ningún nivel de la ROM US produce un bundle multi-mapa con warps
-   (verificado con barrido completo): los niveles con puertas —casas
-   fantasma— no pasan el gate de honestidad del parser de objetos de Layer 1,
-   y los reconstruibles solo tienen tuberías horizontales (excluidas, ver
-   Hallazgos). Se enciende solo cuando crezca la cobertura del parser o se
-   porte la entrada por 0x3F. La ruta ROM directa sí tiene warps jugables hoy.
+1. **Warps de proyecto: VIVOS.** "Crear mapa" importa el bundle (sub-niveles
+   como mapas + `platformWarps` resueltos a ids de mapa) y la app cambia de
+   mapa al entrar. Con el parser al nivel actual hay **35 niveles** que
+   producen bundle multi-mapa con warps jugables (castillos y casas fantasma
+   incluidos). Solo faltan las tuberías HORIZONTALES (0x3F, ver Hallazgos).
 3. **Música derivada de la ROM cargada** (`SmwMusic.assembleAram`): hoy la app
    suena una pista fija pre-horneada; el ensamblador puede derivar la del nivel
    desde la ROM del usuario en runtime.
