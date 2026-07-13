@@ -332,6 +332,8 @@ object SnesGameRecipes {
         val enemies: List<Triple<Int, Int, Int>> = emptyList(),
         /** Teselas animadas del atlas (monedas, bloques ?, agua). */
         val animations: List<com.rolebuilder.core.model.TileAnimation> = emptyList(),
+        /** Acción interactiva por tesela del atlas (ordinal de [SmwBlockAction]): moneda… */
+        val blockActions: List<Int> = emptyList(),
     )
 
     /** ¿La definición del bloque Map16 usa alguna tesela de VRAM animada? */
@@ -443,13 +445,26 @@ object SnesGameRecipes {
             for (f in 0 until SMW_TILEANIM_FRAMES - 1) setCollision(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, s)
         }
 
+        // Acción interactiva por tesela ([SmwBlockBehavior]): las monedas se recogen. Los
+        // fotogramas extra de un bloque animado heredan la acción de su bloque base (una
+        // moneda anima, y todos sus fotogramas siguen siendo "moneda").
+        val blockActions = IntArray(columns * rows) { SmwBlockAction.NONE.ordinal }
+        fun setAction(idx: Int, block: Int) {
+            if (idx < blockActions.size) blockActions[idx] = SmwBlockBehavior.classify(block).ordinal
+        }
+        orderedBlocks.forEachIndexed { i, block -> setAction(i, block) }
+        for ((ai, bi) in animBlockIdx.withIndex()) {
+            val block = orderedBlocks[bi]
+            for (f in 0 until SMW_TILEANIM_FRAMES - 1) setAction(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, block)
+        }
+
         // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible.
         val enemies = SmwSprites.parse(rom, delta, level)?.sprites
             ?.filter { it.xTile in 0 until w && it.yTile in 0 until h }
             ?.map { Triple(it.id, it.xTile, it.yTile) }
             .orEmpty()
 
-        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations)
+        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations, blockActions.toList())
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */
@@ -1448,6 +1463,20 @@ object SnesGameRecipes {
     }
 
     private fun byte(rom: ByteArray, i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0
+
+    /**
+     * Descomprime el fichero GFX [file] (0x00..0x33) de SMW y devuelve sus bytes, o
+     * null si el fichero no existe o la descompresión falla. Reutiliza la localización
+     * robusta de la tabla de punteros de GFX ([findSmwGfxTable], que ya absorbe el delta
+     * de cabecera SMC) y el mapeo LoROM del juego. Lo usan las recetas que necesitan un
+     * fichero de gráficos concreto (p. ej. los sprites de enemigos, en los ficheros SP).
+     */
+    internal fun smwGfxFileData(rom: ByteArray, file: Int): ByteArray? {
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+        if (pc < 0x40000 || pc >= rom.size) return null
+        return runCatching { LcLz2.decompress(rom, pc).data }.getOrNull()
+    }
 
     private fun extractSmw(rom: ByteArray, header: SnesHeader): List<SnesAutoExtractor.Finding> {
         val bases = findSmwGfxTable(rom) ?: return emptyList()

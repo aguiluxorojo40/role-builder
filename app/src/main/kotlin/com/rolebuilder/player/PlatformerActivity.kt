@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +60,8 @@ import java.io.File
  */
 class PlatformerActivity : ComponentActivity() {
 
+    private var music: PlatformerMusic? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemBars()
@@ -69,7 +72,15 @@ class PlatformerActivity : ComponentActivity() {
         } else {
             buildRomRenderer() ?: run { finish(); return }
         }
+        // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming.
+        music = PlatformerMusic.fromAssets(this)?.also { it.start() }
         setContent { PlatformerScreen(renderer, onRestart = { recreate() }, onExit = { finish() }) }
+    }
+
+    override fun onDestroy() {
+        music?.stop()
+        music = null
+        super.onDestroy()
     }
 
     /** Modo proyecto: juega el mapa del Platform Builder con sus tiles reales. */
@@ -85,7 +96,7 @@ class PlatformerActivity : ComponentActivity() {
                     return null
                 }
             val engine = ProjectPlatformer.engine(map, tileset, project.startX, project.startY)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset))
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this))
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -99,21 +110,39 @@ class PlatformerActivity : ComponentActivity() {
         val rom = try {
             File(romPath).readBytes()
         } catch (e: Exception) {
+            Toast.makeText(this, "No se pudo leer la ROM: ${e.message}", Toast.LENGTH_LONG).show()
+            return null
+        }
+        val engine = try {
+            buildEngine(rom, level)
+        } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el nivel: ${e.message}", Toast.LENGTH_LONG).show()
             return null
         }
-        val engine = buildEngine(rom, level)
         if (engine == null) {
             Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
             return null
         }
-        // Sprite REAL de Mario (GFX32) coloreado de la ROM; si falla, se dibuja rectángulo.
+        // Sprite REAL de Mario (GFX32, hoja 128×64) coloreado en vivo desde la ROM; si
+        // falla, drawMario cae al rectángulo. Enemigos desde el atlas horneado y audio
+        // con las muestras reales de SMW (o assets si la ROM no lo permite).
         val marioBmp = runCatching {
             val img = SnesGameRecipes.smwMarioSheet(rom, SnesDecoder.parseHeader(rom)) ?: return@runCatching null
             Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888)
         }.getOrNull()
-        return PlatformerRenderer(engine, marioBitmap = marioBmp)
+        val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
+        return PlatformerRenderer(engine, null, marioBmp, loadEnemies(), audio)
     }
+
+    /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
+    private fun loadMario(): android.graphics.Bitmap? = loadSprite("sprites/mario.png")
+
+    /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
+    private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
+
+    private fun loadSprite(path: String): android.graphics.Bitmap? = runCatching {
+        assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }
+    }.getOrNull()
 
     /** Extrae de la ROM lo necesario y monta el motor, o null si no es SMW jugable. */
     private fun buildEngine(rom: ByteArray, level: Int): PlatformerEngine? {
@@ -183,10 +212,26 @@ private fun PlatformerScreen(renderer: PlatformerRenderer, onRestart: () -> Unit
                 }
             }
             lifecycleOwner.lifecycle.addObserver(observer)
-            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+                renderer.releaseAudio()
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            // Marcador de monedas (HUD): sondea el contador del renderer.
+            var coinCount by remember { mutableStateOf(0) }
+            LaunchedEffect(Unit) {
+                while (true) { coinCount = renderer.coins; kotlinx.coroutines.delay(120) }
+            }
+            Text(
+                "🪙 $coinCount",
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+
             // Movimiento horizontal con el joystick (solo el eje X).
             VirtualJoystick(
                 modifier = Modifier.align(Alignment.BottomStart).padding(24.dp),

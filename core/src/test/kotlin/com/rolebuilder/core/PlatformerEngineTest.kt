@@ -1,7 +1,10 @@
 package com.rolebuilder.core
 
+import com.rolebuilder.core.engine.platformer.BlockAction
 import com.rolebuilder.core.engine.platformer.EnemySeed
+import com.rolebuilder.core.engine.platformer.EngineWarp
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
+import com.rolebuilder.core.engine.platformer.WarpInput
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.snes.SmwPhysics
 import com.rolebuilder.core.snes.SmwSolidity
@@ -180,5 +183,98 @@ class PlatformerEngineTest {
         e.moveX = 1f // el jugador avanza hacia el enemigo
         e.run(30)
         assertTrue(e.player.dead, "el contacto lateral mata al jugador")
+    }
+
+    // ----------------------------------------------- contadores de eventos (audio)
+
+    @Test
+    fun `saltar incrementa jumpEvents una vez por salto`() {
+        val e = engine(10, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+        }
+        e.run(30)
+        assertEquals(0, e.jumpEvents)
+        e.setJumpHeld(true)
+        e.pressJump()
+        e.tick()
+        assertEquals(1, e.jumpEvents, "un flanco de salto = un evento")
+        e.run(10) // mantener pulsado en el aire no re-dispara
+        assertEquals(1, e.jumpEvents)
+    }
+
+    @Test
+    fun `pisar a un enemigo incrementa stompEvents`() {
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        e.run(60)
+        assertEquals(1, e.stompEvents, "un pisotón = un evento")
+    }
+
+    @Test
+    fun `morir incrementa deathEvents una sola vez`() {
+        val e = engine(10, 8, startCol = 2, startRow = 1) { /* sin suelo: cae al vacío */ }
+        e.run(200)
+        assertTrue(e.player.dead)
+        assertEquals(1, e.deathEvents, "la muerte se cuenta una vez, no en cada tick posterior")
+    }
+
+    // -------------------------------------------------------- bloques interactivos
+
+    @Test
+    fun `recoge una moneda al tocarla`() {
+        val cols = 6; val rows = 6
+        val actions = IntArray(cols * rows) { BlockAction.NONE.ordinal }
+        actions[2 * cols + 2] = BlockAction.COIN.ordinal // moneda en (2,2)
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { _, _ -> SmwSolidity.NONE },
+            startPixelX = 2 * 16, startPixelY = 2 * 16, tuning = tuning, blockActions = actions,
+        )
+        e.tick() // el jugador arranca solapando la celda de la moneda
+        assertEquals(1, e.coins, "recoge la moneda")
+        assertEquals(1, e.coinEvents, "suena una vez")
+        assertEquals(BlockAction.NONE, e.blockActionAt(2, 2), "la moneda desaparece")
+    }
+
+    @Test
+    fun `golpear un bloque interrogante desde abajo suelta moneda y lo deja usado`() {
+        val cols = 6; val rows = 8
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[6][c] = SmwSolidity.SOLID // suelo
+        grid[3][2] = SmwSolidity.SOLID                          // bloque ? sólido
+        val actions = IntArray(cols * rows) { BlockAction.NONE.ordinal }
+        actions[3 * cols + 2] = BlockAction.PRIZE.ordinal
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 2 * 16, startPixelY = 5 * 16, tuning = tuning, blockActions = actions,
+        )
+        e.run(20) // se posa en el suelo
+        e.setJumpHeld(true); e.pressJump()
+        e.run(60)  // salta y cabecea el bloque
+        assertEquals(1, e.coins, "el bloque ? soltó una moneda")
+        assertEquals(BlockAction.NONE, e.blockActionAt(2, 3), "el bloque queda usado")
+    }
+
+    // -------------------------------------------------------------------- warps
+
+    @Test
+    fun `bajar por una tuberia activa el warp al mapa destino`() {
+        val cols = 6; val rows = 8
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[6][c] = SmwSolidity.SOLID // suelo
+        val warps = listOf(EngineWarp(3, 5, WarpInput.DOWN, destMapId = 7, destX = 2, destY = 3))
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 3 * 16, startPixelY = 4 * 16, tuning = tuning, warps = warps,
+        )
+        e.run(20) // se posa sobre la celda (3,5)
+        assertTrue(e.pendingWarp == null, "sin pulsar abajo no hay warp")
+        e.inputDown = true
+        e.run(2)
+        val warp = e.pendingWarp
+        assertTrue(warp != null, "bajar sobre la tubería activa el warp")
+        assertEquals(7, warp!!.destMapId)
+        assertEquals(2, warp.destX)
+        assertEquals(3, warp.destY)
     }
 }

@@ -4,6 +4,7 @@ import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.snes.SmwBlockAction
 import com.rolebuilder.core.snes.SmwSolidity
 
 /**
@@ -45,6 +46,11 @@ object ProjectPlatformer {
     }
 
     private fun tileSolidity(tileset: Tileset, tile: Int): SmwSolidity {
+        // Los bloques '?' son "block code" (el terreno los da como NONE), pero en el juego
+        // son SÓLIDOS: hay que poder apoyarse y cabecearlos. Forzamos su solidez.
+        if (tileset.platformBlockActions.getOrNull(tile) == SmwBlockAction.QUESTION.ordinal) {
+            return SmwSolidity.SOLID
+        }
         val ord = tileset.platformSolidity.getOrNull(tile)
         if (ord != null) return SOLIDITY_VALUES.getOrElse(ord) { SmwSolidity.NONE }
         return if (tileset.isPassable(tile)) SmwSolidity.NONE else SmwSolidity.SOLID
@@ -69,7 +75,42 @@ object ProjectPlatformer {
         startPixelY = startRow * TILE,
         tuning = tuning,
         enemySeeds = map.platformEnemies.map { enemySeed(it) },
+        blockActions = blockActionGrid(map, tileset),
+        warps = map.platformWarps.map {
+            EngineWarp(it.x, it.y, WARP_INPUTS.getOrElse(it.input) { WarpInput.DOWN }, it.destMapId, it.destX, it.destY)
+        },
     )
+
+    private val WARP_INPUTS = WarpInput.values()
+
+    /**
+     * Rejilla de acciones interactivas (moneda…) por celda para el motor, a partir de
+     * la acción por tesela del tileset ([Tileset.platformBlockActions], que rellena la
+     * importación de niveles SMW). Gana la primera capa con acción. null si no hay.
+     */
+    private fun blockActionGrid(map: GameMap, tileset: Tileset): IntArray? {
+        if (tileset.platformBlockActions.isEmpty()) return null
+        val grid = IntArray(map.width * map.height) { BlockAction.NONE.ordinal }
+        var any = false
+        for (r in 0 until map.height) for (c in 0 until map.width) {
+            for (layer in map.layers.indices) {
+                val tile = map.tileAt(layer, c, r)
+                if (tile == EMPTY_TILE) continue
+                val sa = tileset.platformBlockActions.getOrNull(tile) ?: continue
+                val ea = when (sa) {
+                    SmwBlockAction.COIN.ordinal -> BlockAction.COIN.ordinal
+                    SmwBlockAction.QUESTION.ordinal -> BlockAction.PRIZE.ordinal
+                    else -> BlockAction.NONE.ordinal
+                }
+                if (ea != BlockAction.NONE.ordinal) {
+                    grid[r * map.width + c] = ea
+                    any = true
+                    break
+                }
+            }
+        }
+        return if (any) grid else null
+    }
 
     /** Convierte un enemigo del mapa (celda) en semilla del motor (píxeles). */
     private fun enemySeed(mark: PlatformEnemyMark): EnemySeed =

@@ -26,11 +26,13 @@ class PlatformerWorld(val projectDir: File, val map: GameMap, val tileset: Tiles
 
 /**
  * Renderer del motor de plataformas: avanza el motor a 60 fps fijos (como SMW) y
- * dibuja el nivel y a Mario con el mismo [SpriteBatch]/[Camera2D] que el RPG.
+ * dibuja el nivel, a Mario y a los enemigos con el mismo [SpriteBatch]/[Camera2D]
+ * que el RPG.
  *
- * De momento pinta la COLISIÓN por colores (suelo de un sentido, sólido, cuesta,
- * pinchos) sobre un cielo azul, y a Mario como un rectángulo — lo justo para VER y
- * JUGAR lo extraído. Encima se pueden montar luego los gráficos Map16 reales.
+ * Mario se dibuja con su hoja GFX32 real de la ROM ([marioBitmap]); los enemigos con
+ * su atlas real ([enemyBitmap], un fotograma 16×16 por id curado); si falta un asset
+ * se cae al rectángulo de reserva. El audio ([audio]) suena cada evento del motor
+ * (salto, pisotón, moneda, muerte) una sola vez con las muestras reales de SMW.
  *
  * La app escribe el input en [inMoveX]/[inRunning]/[inJumpHeld] desde otro hilo; el
  * hilo GL los aplica antes de cada tick.
@@ -40,20 +42,35 @@ class PlatformerRenderer(
     private val world: PlatformerWorld? = null,
     /** Hoja de sprites de Mario (GFX32, 128×64) de la ROM; null = dibujar rectángulo. */
     private val marioBitmap: Bitmap? = null,
+    /** Atlas de enemigos (16×16 por id curado, en el orden de curatedIds); null = rectángulo. */
+    private val enemyBitmap: Bitmap? = null,
+    /** Audio de SMW (SFX reales resueltos por SmwSfxCatalog); null = silencio. */
+    private val audio: PlatformerAudio? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
     @Volatile var inRunning = false
     @Volatile var inJumpHeld = false
 
+    // Últimos contadores de eventos vistos, para sonar cada evento una sola vez.
+    private var lastJumpEvents = 0
+    private var lastStompEvents = 0
+    private var lastDeathEvents = 0
+    private var lastCoinEvents = 0
+
     /** Lo lee la UI para el aviso de "has muerto". */
     @Volatile var dead = false
+        private set
+
+    /** Monedas recogidas; lo lee la UI para el marcador (HUD). */
+    @Volatile var coins = 0
         private set
 
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
     private var marioTex: Texture? = null
     private var marioAnim = 0f
+    private var enemyTex: Texture? = null
     private var tilesetTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
@@ -64,6 +81,7 @@ class PlatformerRenderer(
         batch = SpriteBatch()
         white = Texture.white()
         marioTex = marioBitmap?.let { Texture(it) }
+        enemyTex = enemyBitmap?.let { Texture(it) }
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
@@ -97,6 +115,20 @@ class PlatformerRenderer(
             guard++
         }
         dead = engine.player.dead
+        coins = engine.coins
+
+        // Audio: suena cada evento del motor (salto, pisotón, moneda, muerte) una vez
+        // por aparición, con las muestras reales de SMW resueltas por SmwSfxCatalog.
+        audio?.let { a ->
+            if (engine.jumpEvents > lastJumpEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.JUMP)
+            if (engine.stompEvents > lastStompEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP)
+            if (engine.deathEvents > lastDeathEvents) a.playDeath()
+            if (engine.coinEvents > lastCoinEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.COIN)
+            lastJumpEvents = engine.jumpEvents
+            lastStompEvents = engine.stompEvents
+            lastDeathEvents = engine.deathEvents
+            lastCoinEvents = engine.coinEvents
+        }
 
         // Cámara en casillas (16 px = 1 casilla), centrada en Mario.
         camera.x = engine.player.x / 16f
@@ -126,6 +158,10 @@ class PlatformerRenderer(
                     for (c in minC..maxC) {
                         val mapTile = map.tileAt(layer, c, r)
                         if (mapTile == EMPTY_TILE || mapTile < 0 || mapTile >= ts.tileCount) continue
+                        // Moneda ya recogida: el motor la marcó consumida → no la pintes.
+                        if (ts.platformBlockActions.getOrNull(mapTile) == com.rolebuilder.core.snes.SmwBlockAction.COIN.ordinal &&
+                            engine.blockActionAt(c, r) == com.rolebuilder.core.engine.platformer.BlockAction.NONE
+                        ) continue
                         // Si la tesela anima (monedas, bloques ?), sustituye por su fotograma.
                         val anim = animByTile[mapTile]
                         val tile = if (anim != null && anim.frames.isNotEmpty()) {
@@ -159,15 +195,27 @@ class PlatformerRenderer(
             }
         }
 
-        // Enemigos (rectángulo por ahora), en casillas. Aplastados = franja fina.
+        // Enemigos: sprite REAL de SMW para los ids con gráfico curado; si no, un
+        // rectángulo. Aplastados = franja fina un instante al pisarlos.
+        val etex = enemyTex
         for (e in engine.enemies) {
             if (!e.alive && e.squashTimer <= 0) continue
             val ex = e.x / 16f
             val ew = e.width / 16f
-            if (e.alive) {
+            val frame = ENEMY_FRAME[e.id]
+            if (e.alive && etex != null && frame != null) {
+                // Sprite 16×16 centrado sobre la caja del enemigo, con los pies abajo.
+                val cx = (e.x + e.width / 2f) / 16f - 0.5f
+                val feet = (e.y + e.height) / 16f - 1f
+                val u0 = frame * ENEMY_UV
+                batch.draw(
+                    etex, cx, feet, 1f, 1f,
+                    u0 = u0, v0 = 0f, u1 = u0 + ENEMY_UV, v1 = 1f,
+                    flipX = e.vx > 0f,
+                )
+            } else if (e.alive) {
                 batch.draw(white, ex, e.y / 16f, ew, e.height / 16f, r = 0.65f, g = 0.20f, b = 0.55f, a = 1f)
             } else {
-                // Pisado: se dibuja aplanado contra el suelo un instante.
                 val fh = e.height / 16f * 0.3f
                 batch.draw(white, ex, (e.y + e.height * 0.7f) / 16f, ew, fh, r = 0.5f, g = 0.5f, b = 0.5f, a = 1f)
             }
@@ -221,11 +269,23 @@ class PlatformerRenderer(
         )
     }
 
+    /** Libera los recursos de audio (SoundPool). Llamar al salir del nivel. */
+    fun releaseAudio() = audio?.release()
+
     private fun colorOf(s: SmwSolidity): FloatArray = when (s) {
         SmwSolidity.LEDGE_TOP -> floatArrayOf(0.50f, 0.82f, 0.50f)   // verde: un sentido
         SmwSolidity.SOLID -> floatArrayOf(0.55f, 0.36f, 0.18f)       // marrón: sólido
         SmwSolidity.SLOPE, SmwSolidity.SLOPE_STEEP -> floatArrayOf(0.35f, 0.62f, 1.0f) // azul: cuesta
         SmwSolidity.SPIKE -> floatArrayOf(0.88f, 0.20f, 0.20f)       // rojo: pinchos
         SmwSolidity.NONE -> floatArrayOf(0f, 0f, 0f)
+    }
+
+    companion object {
+        /** id de sprite → su fotograma en enemies.png; en el MISMO orden que hornea el atlas. */
+        private val ENEMY_FRAME: Map<Int, Int> =
+            com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.withIndex()
+                .associate { (frame, id) -> id to frame }
+        /** Ancho UV de un fotograma en el atlas de enemigos. */
+        private val ENEMY_UV = 1f / com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.size.toFloat()
     }
 }
