@@ -83,6 +83,23 @@ entre los niveles que contienen cada id). **Descartados** 0x33 Podoboo, 0x30 y
 0x32: su entrada de la tabla OAM genérica no es su aspecto real (rutina de
 dibujo propia; salían tiles de fuente o basura de forma unánime).
 
-**Tanda 2 (pendiente — cuerpo por la vía genérica, alas aparte):** Koopas
-aladas 0x08/0x09/0x0A/0x0B (las alas son 2 teselas extra en pasada propia,
-`DrawWingTiles`). Muy frecuentes: 84/72/58/42 colocaciones.
+**Tanda 2 — INTENTADA Y REVERTIDA (necesita port de rutina propia):** Koopas
+aladas 0x08/0x09/0x0A/0x0B (lo más colocado de la ROM: 84/72/58/42). Se probó
+componer cuerpo genérico + ala (`DrawWingTiles`, tesela 0x5D) y la verificación
+visual suspendió: la entrada de la tabla genérica da el cuerpo SIN caparazón y
+el ala tapa la cabeza. Su aspecto real exige portar su rutina de dibujo
+completa (caparazón + alas con sus offsets), no la vía genérica.
+
+## Hallazgos de investigación (para retomar sin re-descubrir)
+
+- **Tuberías horizontales (0x3F)**: el byte aparece 65.831 veces en las
+  rejillas de la ROM US (p. ej. regiones 6×2 en 0x105/0x106 lejos de la salida)
+  — NO es solo la boca enterable. En el juego, la entrada por 0x3F está
+  condicionada por el punto de colisión que la toca y la geometría
+  (`RunPlayerBlockCode_EB77` → `CheckIfEnteringHorizontalPipe`, $00:F3C4).
+  Exponerlas requiere portar ese flujo (o la clasificación por puntos), no un
+  filtro por byte.
+- **Alas de para-Koopa** (`kDrawWingTiles_*`, $01:9E95): tesela 0x5D plegada /
+  0xC6 extendida, trasera en (-1,-4) volteada, delantera en (+9,-4), sub-paleta
+  3 de sprites fija, dibujadas detrás del cuerpo. Transcrito y listo para
+  cuando se porte la rutina completa de la para-Koopa.

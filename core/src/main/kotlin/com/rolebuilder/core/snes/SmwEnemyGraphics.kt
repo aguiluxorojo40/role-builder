@@ -86,6 +86,12 @@ object SmwEnemyGraphics {
         0x3D to "Rip Van Fish", 0x15 to "Cheep-Cheep", 0x16 to "Cheep-Cheep",
         0x2E to "Spike Top", 0x38 to "Eerie", 0x39 to "Eerie",
         0x31 to "Bony Beetle",
+        // Las Koopas ALADAS (0x08..0x0B), pese a ser los enemigos mas colocados de la
+        // ROM, NO estan: se intento componer cuerpo generico + ala (DrawWingTiles,
+        // tesela 0x5D plegada) y el resultado no es fiel — su entrada de la tabla
+        // generica da el cuerpo SIN caparazon y el ala tapa la cabeza. Su aspecto
+        // real requiere portar su rutina de dibujo propia (caparazon + alas con sus
+        // offsets), no la via generica.
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
