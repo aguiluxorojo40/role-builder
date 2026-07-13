@@ -188,7 +188,17 @@ internal object SmwLayer1 {
                 when (tileset) {
                     1 -> when (obj) {
                         0x34 -> castleVerticalDoubleEndedPipe()
+                        0x37 -> ropeHorizontalLineGuide()
+                        0x38 -> ropeVerticalLineGuide()
                         0x3C -> castleStoneBlock()
+                        else -> unkStd(obj)
+                    }
+                    2, 6, 8 -> when (obj) {
+                        0x32 -> ropeLogBridge()
+                        0x38 -> ropeHorizontalLineGuide()
+                        0x39 -> ropeVerticalLineGuide()
+                        0x3C -> ropeMushroomTop()
+                        0x3D -> ropeMushroomColumn()
                         else -> unkStd(obj)
                     }
                     3, 9, 0xA, 0xB, 0xE -> when (obj) {
@@ -621,6 +631,119 @@ internal object SmwLayer1 {
          */
         fun castleStoneBlock() =
             rect3x3(intArrayOf(0x5D, 0x60, 0x63), intArrayOf(0x5E, 0x61, 0x64), intArrayOf(0x5F, 0x62, 0x65))
+
+        // ---------------------------- objetos de CUERDA ----------------------------
+        // Ports 1:1 de RopeObjXX del banco $0D (tilesets 2/6/8; algunos compartidos
+        // con la tabla de castillo).
+
+        /**
+         * Objeto 0x3C: SOMBRERO DE SETA (RopeObj3C, $0D:D103): fila página 1 de
+         * borde 7 + medio 8 + borde 9; si una punta cae sobre un TALLO ya dibujado
+         * (teselas 0x73..0x75) usa la unión 10/11, leyendo el buffer como el juego.
+         */
+        fun ropeMushroomTop() {
+            var r0 = size and 0xF
+            val j = pos
+            setHi01(j)
+            val prev = rdLo(j)
+            val first = if (prev in 0x73..0x75) 10 else 7
+            var i = horiz(j, first)
+            while (true) {
+                r0 = (r0 - 1) and 0xFF
+                if (r0 == 0) break
+                setHi01(i)
+                i = horiz(i, 8)
+            }
+            setHi01(i)
+            val prev2 = rdLo(i)
+            val last = if (prev2 in 0x73..0x75) 11 else 9
+            horiz(i, last)
+        }
+
+        /**
+         * Objeto 0x3D: TALLO DE SETA (RopeObj3D, $0D:D145): filas página 0 de
+         * 0x73 + 0x74… más una tesela 0x75 al final de cada fila.
+         */
+        fun ropeMushroomColumn() {
+            var v1 = pos
+            val r0 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            do {
+                var v2 = if (r0 == 0) 256 else r0
+                setHi00(v1)
+                var i = 0x73
+                while (true) {
+                    v1 = horiz(v1, i)
+                    if (--v2 == 0) break
+                    setHi00(v1)
+                    i = 0x74
+                }
+                setHi00(v1)
+                horiz(v1, 0x75)
+                restore()
+                v1 = vert()
+                r1 = (r1 - 1) and 0xFF
+            } while (r1 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto 0x32: PUENTE DE TRONCOS (RopeObj32, $0D:D24E): fila superior 0xA3
+         * (página 0, la pasarela) y fila inferior 0x0E (página 1, el tronco).
+         */
+        fun ropeLogBridge() {
+            val tiles = intArrayOf(0xA3, 0x0E)
+            var v1 = pos
+            val r0 = size and 0xF
+            var r1 = size and 0xF
+            preserve()
+            var v2 = 0
+            while (true) {
+                setHi00(v1)
+                if (v2 == 1) setHi01(v1)
+                v1 = horiz(v1, tiles[v2])
+                r1 = (r1 - 1) and 0xFF
+                if (r1 and 0x80 != 0) {
+                    restore()
+                    v1 = vert()
+                    r1 = r0
+                    if (++v2 == 2) break
+                }
+            }
+        }
+
+        /**
+         * GUÍA DE LÍNEA horizontal (RopeObj38/CastleObj37, $0D:CF12): fila página 0
+         * de la tesela elegida por el nibble alto (0x92/0x93).
+         */
+        fun ropeHorizontalLineGuide() {
+            val tiles = intArrayOf(0x92, 0x93)
+            val t = (size shr 4).coerceAtMost(1) // vanilla solo usa 0..1
+            var v1 = pos
+            var r0 = size and 0xF
+            do {
+                setHi00(v1)
+                v1 = horiz(v1, tiles[t])
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * GUÍA DE LÍNEA vertical (CastleObj38/RopeObj39, $0D:CF33): columna página 0
+         * de la tesela elegida por el nibble bajo (0x90/0x91/0xA2).
+         */
+        fun ropeVerticalLineGuide() {
+            val tiles = intArrayOf(0x90, 0x91, 0xA2)
+            val t = (size and 0xF).coerceAtMost(2) // vanilla solo usa 0..2
+            var v1 = pos
+            var r0 = size shr 4
+            do {
+                setHi00(v1)
+                setLo(v1, tiles[t])
+                v1 = vert()
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
 
         // -------------------------- objetos de SUBTERRÁNEO --------------------------
         // Ports 1:1 de UndergroundObjXX del banco $0D (tilesets 3/9/0xA/0xB/0xE).

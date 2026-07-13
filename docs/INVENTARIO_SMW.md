@@ -99,14 +99,18 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
   warps de proyecto ya NO están latentes. Tras portar también la
   tubería doble de castillo (0x34), la puerta del jefe (ext 0x90) y la tabla
   de CASA FANTASMA (0x34-0x3A: salientes sobre columnas, ladrillo/madera,
-  troncos, muros/pinchos), el estado global es: **369 de 501 niveles
-  parseados al 100%** y **37 bundles multi-mapa con warps jugables** (de 0 a
-  37 en una sesión). Portada también la tabla de SUBTERRÁNEO (0x36 suelo 4
+  troncos, muros/pinchos), el estado global es: **379 de 501 niveles
+  parseados al 100%** y **39 bundles multi-mapa con warps jugables** (de 0 a
+  39 en una sesión). Portada también la tabla de SUBTERRÁNEO (0x36 suelo 4
   lados, 0x3A/0x3B lava de cueva, 0x3D saliente de techo —el objeto más usado
   de la ROM sin portar, 307×—, 0x3E bordes de techo, 0x3F tierra maciza;
   tilesets 3/9/A/B/E) y el interruptor VERDE (ext 0x87). Galería: 8 niveles.
-  Pendiente mayor: tabla de CUERDA (ts 2/6/8: setas 3C/3D, guías de línea) y
-  bosque (ts C: 34/35/37). El parser REGISTRA los ids sin portar
+  Portada también la tabla de CUERDA
+  (ts 2/6/8: sombrero/tallo de seta 3C/3D con sus uniones leyendo el buffer,
+  puente de troncos 0x32, guías de línea horizontal/vertical — compartidas
+  con castillo 0x37/0x38). Pendiente: bosque (ts C: 34/35/37), cintas
+  transportadoras (rope 0x36), guías inclinadas (rope 3A/3B) y escaleras
+  (castle 3D). El parser REGISTRA los ids sin portar
   (SmwLevelTilemap.unknownIds), así que medir el siguiente nivel es
   inmediato.
 
