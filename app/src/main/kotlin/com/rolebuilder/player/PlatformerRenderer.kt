@@ -57,6 +57,8 @@ class PlatformerRenderer(
     private var lastStompEvents = 0
     private var lastDeathEvents = 0
     private var lastCoinEvents = 0
+    private var lastPowerupEvents = 0
+    private var lastDamageEvents = 0
 
     /** Lo lee la UI para el aviso de "has muerto". */
     @Volatile var dead = false
@@ -124,10 +126,15 @@ class PlatformerRenderer(
             if (engine.stompEvents > lastStompEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP)
             if (engine.deathEvents > lastDeathEvents) a.playDeath()
             if (engine.coinEvents > lastCoinEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.COIN)
+            if (engine.powerupEvents > lastPowerupEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.POWERUP)
+            // Encoger por golpe: no hay SFX propio en el catálogo; un pisotón grave sirve.
+            if (engine.damageEvents > lastDamageEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP, volume = 0.6f, rate = 0.6f)
             lastJumpEvents = engine.jumpEvents
             lastStompEvents = engine.stompEvents
             lastDeathEvents = engine.deathEvents
             lastCoinEvents = engine.coinEvents
+            lastPowerupEvents = engine.powerupEvents
+            lastDamageEvents = engine.damageEvents
         }
 
         // Cámara en casillas (16 px = 1 casilla), centrada en Mario.
@@ -221,6 +228,19 @@ class PlatformerRenderer(
             }
         }
 
+        // Setas de powerup en marcha: seta clásica (sombrero rojo, base clara). Es un
+        // dibujo de motor (dos rectángulos), no un sprite de la ROM: el gráfico de la
+        // seta vive fuera de la tabla OAM genérica que ya portamos.
+        for (m in engine.items) {
+            if (!m.alive) continue
+            val mx = m.x / 16f
+            val my = m.y / 16f
+            val mw = m.width / 16f
+            val mh = m.height / 16f
+            batch.draw(white, mx, my, mw, mh * 0.55f, r = 0.90f, g = 0.16f, b = 0.14f, a = 1f)
+            batch.draw(white, mx + mw * 0.2f, my + mh * 0.55f, mw * 0.6f, mh * 0.45f, r = 1f, g = 0.9f, b = 0.75f, a = 1f)
+        }
+
         drawMario(dt)
 
         batch.end()
@@ -233,10 +253,12 @@ class PlatformerRenderer(
      */
     private fun drawMario(dt: Float) {
         val p = engine.player
+        // Invulnerable tras encoger: parpadea (se salta el dibujo en pulsos), como SMW.
+        if (p.invulnFrames > 0 && (p.invulnFrames / 4) % 2 == 1) return
         val tex = marioTex
         if (tex == null) {
             val w = engine.tuning.playerWidth / 16f
-            val h = engine.tuning.playerHeight / 16f
+            val h = engine.playerHeight / 16f
             val red = if (p.dead) 0.4f else 1f
             batch.draw(white, p.x / 16f, p.y / 16f, w, h, r = red, g = 0.25f, b = 0.2f, a = 1f)
             return
@@ -256,11 +278,13 @@ class PlatformerRenderer(
         val u1 = (fc * 16f + 16f) / sw
         val v0 = 0f
         val v1 = 16f / sh
-        // Sprite de 1 casilla, centrado en horizontal y anclado por los pies.
+        // Sprite centrado en horizontal y anclado por los pies. Grande: el mismo
+        // fotograma estirado a casilla y media (la caja del motor mide 26 px); es un
+        // estirado honesto, no las teselas de Mario grande de la ROM (pendiente).
         val dw = 1f
-        val dh = 1f
+        val dh = if (p.big) 1.5f else 1f
         val cx = (p.x + engine.tuning.playerWidth / 2f) / 16f
-        val feetY = (p.y + engine.tuning.playerHeight) / 16f
+        val feetY = (p.y + engine.playerHeight) / 16f
         // La hoja de GFX32 mira a la IZQUIERDA; se voltea al mirar a la derecha.
         batch.draw(
             tex, cx - dw / 2f, feetY - dh, dw, dh,

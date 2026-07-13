@@ -236,23 +236,86 @@ class PlatformerEngineTest {
         assertEquals(BlockAction.NONE, e.blockActionAt(2, 2), "la moneda desaparece")
     }
 
-    @Test
-    fun `golpear un bloque interrogante desde abajo suelta moneda y lo deja usado`() {
+    /** Motor con suelo, un bloque `?` sobre la cabeza y el jugador listo para cabecearlo. */
+    private fun prizeEngine(): PlatformerEngine {
         val cols = 6; val rows = 8
         val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
         for (c in 0 until cols) grid[6][c] = SmwSolidity.SOLID // suelo
         grid[3][2] = SmwSolidity.SOLID                          // bloque ? sólido
         val actions = IntArray(cols * rows) { BlockAction.NONE.ordinal }
         actions[3 * cols + 2] = BlockAction.PRIZE.ordinal
-        val e = PlatformerEngine(
+        return PlatformerEngine(
             cols, rows, solidityAt = { c, r -> grid[r][c] },
             startPixelX = 2 * 16, startPixelY = 5 * 16, tuning = tuning, blockActions = actions,
         )
+    }
+
+    @Test
+    fun `golpear un bloque interrogante siendo pequeno suelta una SETA y lo deja usado`() {
+        val e = prizeEngine()
         e.run(20) // se posa en el suelo
         e.setJumpHeld(true); e.pressJump()
         e.run(60)  // salta y cabecea el bloque
-        assertEquals(1, e.coins, "el bloque ? soltó una moneda")
+        assertEquals(0, e.coins, "el premio de pequeño no es moneda")
+        assertEquals(1, e.items.size, "el bloque ? soltó una seta")
         assertEquals(BlockAction.NONE, e.blockActionAt(2, 3), "el bloque queda usado")
+    }
+
+    // ------------------------------------------------------------------ powerups
+
+    @Test
+    fun `recoger la seta hace crecer a Mario y suena el powerup`() {
+        val e = prizeEngine()
+        e.run(20)
+        e.setJumpHeld(true); e.pressJump()
+        e.run(60) // cabecea: sale la seta y cae al suelo
+        val smallH = e.playerHeight
+        assertFalse(e.player.big)
+        // La seta patrulla el mismo suelo que el jugador: acaba tocándolo.
+        e.run(600)
+        assertTrue(e.player.big, "creció al tocar la seta")
+        assertEquals(1, e.powerupEvents, "el powerup suena una vez")
+        assertEquals(PlatformerEngine.BIG_HEIGHT, e.playerHeight, "la caja crece")
+        assertTrue(e.playerHeight > smallH)
+        assertTrue(e.items.none { it.alive }, "la seta se consumió")
+    }
+
+    @Test
+    fun `un golpe siendo grande encoge con invulnerabilidad en vez de matar`() {
+        val cols = 12; val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 5 * 16, startPixelY = 8 * 16 - 26, // de pie sobre el suelo
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT), // arranca grande
+            enemySeeds = listOf(EnemySeed(6 * 16, 8 * 16 - 14, 0)),
+        )
+        assertTrue(e.player.big, "el tuning de 26 px arranca grande")
+        e.run(30) // el enemigo patrulla hacia el jugador y le golpea de lado
+        assertFalse(e.player.dead, "no muere: encoge")
+        assertFalse(e.player.big, "queda pequeño")
+        assertEquals(1, e.damageEvents)
+        assertTrue(e.player.invulnFrames > 0, "queda invulnerable un rato")
+        // Durante la invulnerabilidad, más contacto no mata ni re-encoge.
+        e.run(10)
+        assertFalse(e.player.dead, "el contacto durante la invulnerabilidad no mata")
+    }
+
+    @Test
+    fun `un golpe siendo pequeno sigue matando`() {
+        val cols = 12; val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 5 * 16, startPixelY = 8 * 16 - 14,
+            tuning = tuning,
+            enemySeeds = listOf(EnemySeed(6 * 16, 8 * 16 - 14, 0)),
+        )
+        e.run(60)
+        assertTrue(e.player.dead, "pequeño muere al contacto")
+        assertEquals(1, e.deathEvents)
     }
 
     // -------------------------------------------------------------------- warps

@@ -734,6 +734,18 @@ object SnesGameRecipes {
     }
 
     /**
+     * ENEMIGOS del nivel [level] como (id de sprite, casilla X, casilla Y), leídos de
+     * la lista de sprites real de la ROM ([SmwSprites]). Es el API público para que
+     * la app siembre enemigos también al jugar un nivel DIRECTO desde la ROM (la ruta
+     * de mapa importado ya los lleva dentro de [SmwLevelMap.enemies]). Vacío si el
+     * nivel no tiene lista válida.
+     */
+    fun smwLevelEnemies(rom: ByteArray, header: SnesHeader, level: Int): List<Triple<Int, Int, Int>> =
+        SmwSprites.parse(rom, smwHeaderDelta(header), level)?.sprites
+            ?.map { Triple(it.id, it.xTile, it.yTile) }
+            .orEmpty()
+
+    /**
      * Hoja de sprites de MARIO (GFX32) coloreada con la paleta de jugador REAL de la
      * ROM (fila 8 de la CGRAM: col 1 blanco, cols 2-5 colores estándar, cols 6-F la
      * paleta de Mario). Es 128×64 px = 16×8 teselas de 8×8; cada fotograma de Mario

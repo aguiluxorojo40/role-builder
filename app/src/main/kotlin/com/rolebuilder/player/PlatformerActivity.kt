@@ -42,10 +42,14 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.rolebuilder.core.engine.platformer.BlockAction
+import com.rolebuilder.core.engine.platformer.EnemySeed
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.engine.platformer.ProjectPlatformer
 import com.rolebuilder.core.io.ProjectIo
+import com.rolebuilder.core.snes.SmwBlockAction
+import com.rolebuilder.core.snes.SmwBlockBehavior
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SmwPhysicsReader
 import com.rolebuilder.core.snes.SnesDecoder
@@ -150,11 +154,36 @@ class PlatformerActivity : ComponentActivity() {
         val col = SnesGameRecipes.smwLevelCollision(rom, header, level) ?: return null
         val phys = SmwPhysicsReader.read(rom, header) ?: return null
         val start = SmwLevelStartReader.read(rom, header, level) ?: return null
+        // Bloques interactivos REALES del nivel (monedas y bloques `?`): clasifica cada
+        // bloque Map16 del mapa de colisión con la misma rutina que el juego, igualando
+        // esta ruta con la de mapas importados.
+        var anyAction = false
+        val actions = IntArray(col.cols * col.rows) { i ->
+            when (SmwBlockBehavior.classify(col.blocks[i])) {
+                SmwBlockAction.COIN -> BlockAction.COIN.ordinal.also { anyAction = true }
+                SmwBlockAction.QUESTION -> BlockAction.PRIZE.ordinal.also { anyAction = true }
+                else -> BlockAction.NONE.ordinal
+            }
+        }
+        // Enemigos reales del nivel (lista de sprites de la ROM), recortados al mapa.
+        val enemySeeds = SnesGameRecipes.smwLevelEnemies(rom, header, level)
+            .filter { (_, x, y) -> x in 0 until col.cols && y in 0 until col.rows }
+            .map { (id, x, y) -> EnemySeed(x * 16, y * 16, id) }
+        // Los bloques `?` son "block code" (el terreno los da como NONE) pero en el
+        // juego son SÓLIDOS: se fuerza su solidez, como hace ProjectPlatformer. Es
+        // inmutable a propósito: un `?` ya usado sigue siendo sólido.
+        val prizeCells = HashSet<Int>()
+        for (i in actions.indices) if (actions[i] == BlockAction.PRIZE.ordinal) prizeCells.add(i)
         return PlatformerEngine(
             cols = col.cols, rows = col.rows,
-            solidityAt = { c, r -> col.solidityAt(c, r) },
+            solidityAt = { c, r ->
+                if (r * col.cols + c in prizeCells) com.rolebuilder.core.snes.SmwSolidity.SOLID
+                else col.solidityAt(c, r)
+            },
             startPixelX = start.startPixelX, startPixelY = start.startPixelY,
             tuning = PlatformerTuning.fromSmw(phys),
+            enemySeeds = enemySeeds,
+            blockActions = if (anyAction) actions else null,
         )
     }
 

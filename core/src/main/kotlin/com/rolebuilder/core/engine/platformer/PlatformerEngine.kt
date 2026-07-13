@@ -14,6 +14,24 @@ class PlatformerBody(var x: Float, var y: Float) {
     var dead = false
     /** Tiempo (en fotogramas) que ha estado subiendo el salto actual. */
     var jumping = false
+    /** ¿Mario grande? (seta recogida). Cambia la altura de la caja y aguanta un golpe. */
+    var big = false
+    /** Fotogramas de invulnerabilidad restantes tras encoger por un golpe. */
+    var invulnFrames = 0
+}
+
+/**
+ * SETA de powerup en marcha (píxeles): sale de un bloque `?`, cae con gravedad,
+ * avanza en línea recta rebotando en las paredes (y cayéndose por los bordes, como
+ * en SMW) y crece al jugador al tocarla.
+ */
+class PowerupItem(var x: Float, var y: Float) {
+    val width = 14f
+    val height = 14f
+    var vx = 0.8f
+    var vy = 0f
+    var onGround = false
+    var alive = true
 }
 
 /** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
@@ -24,8 +42,9 @@ class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
  * clasificación de bloques Map16 de SMW, que se mapea a esto al montar el nivel):
  *  - [NONE]: sin interacción.
  *  - [COIN]: se recoge al tocarla (suma moneda y desaparece).
- *  - [PRIZE]: bloque `?`: sólido; al golpearlo desde abajo suelta una moneda y queda
- *    "usado" (sigue sólido pero ya no premia).
+ *  - [PRIZE]: bloque `?`: sólido; al golpearlo desde abajo suelta el premio (SETA si
+ *    el jugador es pequeño, moneda si ya es grande) y queda "usado" (sigue sólido
+ *    pero ya no premia).
  */
 enum class BlockAction { NONE, COIN, PRIZE }
 
@@ -74,7 +93,7 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
  *    paras encima), se atraviesa de lado y saltando desde abajo — igual que SMW.
  *  - [SmwSolidity.SLOPE]/[SmwSolidity.SLOPE_STEEP] se tratan de momento como sólidas
  *    (bloque completo); la forma sub-píxel de la cuesta queda para un refinamiento.
- *  - [SmwSolidity.SPIKE] mata al jugador al tocarla.
+ *  - [SmwSolidity.SPIKE] daña al jugador al tocarla (grande encoge; pequeño muere).
  *  - [SmwSolidity.NONE] no colisiona.
  */
 class PlatformerEngine(
@@ -88,7 +107,25 @@ class PlatformerEngine(
     blockActions: IntArray? = null,
     warps: List<EngineWarp> = emptyList(),
 ) {
-    val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat())
+    val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat()).also {
+        // Si el tuning ya viene de Mario grande (26 px), el estado arranca grande.
+        it.big = tuning.playerHeight >= BIG_HEIGHT
+    }
+
+    /**
+     * Altura ACTUAL de la caja del jugador: la del tuning de pequeño, o la de Mario
+     * grande tras coger una seta. Todo el motor (y el dibujado) debe usar esta, no
+     * `tuning.playerHeight`, para que crecer/encoger sea real.
+     */
+    val playerHeight: Float
+        get() = if (player.big) BIG_HEIGHT else smallHeight
+
+    /** Altura de pequeño: la del tuning, o la canónica si el tuning ya era de grande. */
+    private val smallHeight =
+        if (tuning.playerHeight >= BIG_HEIGHT) SMALL_HEIGHT else tuning.playerHeight
+
+    /** Setas de powerup en marcha (vivas o no; la capa de dibujo filtra por alive). */
+    val items = ArrayList<PowerupItem>()
 
     /** Warps por celda (col,row) del nivel; se activan al entrar con el input correcto. */
     private val warpAt: Map<Long, EngineWarp> = warps.associateBy { cellKey(it.col, it.row) }
@@ -153,6 +190,36 @@ class PlatformerEngine(
         private set
     var deathEvents = 0
         private set
+    /** Evento "powerup recogido" (Mario crece). */
+    var powerupEvents = 0
+        private set
+    /** Evento "golpe recibido" (Mario encoge en vez de morir). */
+    var damageEvents = 0
+        private set
+
+    /** Crece a Mario grande (los pies se quedan donde están; sube la cabeza). */
+    private fun growPlayer() {
+        if (player.big) return
+        player.y -= BIG_HEIGHT - smallHeight
+        player.big = true
+        powerupEvents++
+    }
+
+    /**
+     * Golpe de enemigo: grande → encoge (con un periodo de invulnerabilidad para
+     * poder escapar, como en SMW); pequeño → muere.
+     */
+    private fun hurtPlayer() {
+        if (player.invulnFrames > 0) return
+        if (player.big) {
+            player.big = false
+            player.y += BIG_HEIGHT - smallHeight // los pies no se mueven
+            player.invulnFrames = INVULN_FRAMES
+            damageEvents++
+        } else {
+            killPlayer()
+        }
+    }
 
     /** Marca al jugador como muerto una sola vez y cuenta el evento. */
     private fun killPlayer() {
@@ -221,7 +288,10 @@ class PlatformerEngine(
         moveHorizontal(p.vx)
         moveVertical(p.vy)
 
+        if (p.invulnFrames > 0) p.invulnFrames--
+
         updateEnemies()
+        updateItems()
         handlePlayerEnemyContact()
         collectCoins()
         checkWarps()
@@ -235,7 +305,7 @@ class PlatformerEngine(
         if (pendingWarp != null || warpAt.isEmpty()) return
         val p = player
         val w = tuning.playerWidth
-        val h = tuning.playerHeight
+        val h = playerHeight
         val c0 = (p.x / tileSize).toInt()
         val c1 = ((p.x + w - 0.01f) / tileSize).toInt()
         val r0 = (p.y / tileSize).toInt()
@@ -259,7 +329,7 @@ class PlatformerEngine(
         if (actions == null) return
         val p = player
         val w = tuning.playerWidth
-        val h = tuning.playerHeight
+        val h = playerHeight
         val c0 = (p.x / tileSize).toInt()
         val c1 = ((p.x + w - 0.01f) / tileSize).toInt()
         val r0 = (p.y / tileSize).toInt()
@@ -269,6 +339,51 @@ class PlatformerEngine(
                 setAction(c, r, BlockAction.NONE)
                 coins++
                 coinEvents++
+            }
+        }
+    }
+
+    /**
+     * Mueve cada seta (gravedad + línea recta rebotando en paredes, cayéndose por los
+     * bordes como en SMW) y la recoge si el jugador la toca: crece a grande, o da una
+     * moneda si ya lo es.
+     */
+    private fun updateItems() {
+        if (items.isEmpty()) return
+        val p = player
+        val pw = tuning.playerWidth
+        val ph = playerHeight
+        for (m in items) {
+            if (!m.alive) continue
+            // Vertical: gravedad y aterrizaje (mismos criterios que los enemigos).
+            m.vy = min(m.vy + tuning.gravityFall, tuning.maxFallSpeed)
+            var ny = m.y + m.vy
+            val minCol = (m.x / tileSize).toInt()
+            val maxCol = ((m.x + m.width - 0.01f) / tileSize).toInt()
+            m.onGround = false
+            if (m.vy > 0) {
+                val row = ((ny + m.height) / tileSize).toInt()
+                if ((minCol..maxCol).any { c -> blocksFloor(solidity(c, row)) }) {
+                    ny = row * tileSize - m.height - 0.01f
+                    m.vy = 0f
+                    m.onGround = true
+                }
+            }
+            m.y = ny
+            // Horizontal: rebota SOLO en paredes (por los bordes se cae, no se gira).
+            val nx = m.x + m.vx
+            val minRow = (m.y / tileSize).toInt()
+            val maxRow = ((m.y + m.height - 0.01f) / tileSize).toInt()
+            val frontCol = if (m.vx > 0) ((nx + m.width) / tileSize).toInt() else (nx / tileSize).toInt()
+            if ((minRow..maxRow).any { r -> blocksSide(solidity(frontCol, r)) }) m.vx = -m.vx
+            else m.x = nx
+            if (m.y > (rows + 3) * tileSize) { m.alive = false; continue }
+            // Recogida por solape con la caja del jugador.
+            val overlap = p.x < m.x + m.width && p.x + pw > m.x &&
+                p.y < m.y + m.height && p.y + ph > m.y
+            if (overlap && !p.dead) {
+                m.alive = false
+                if (!p.big) growPlayer() else { coins++; coinEvents++ }
             }
         }
     }
@@ -330,7 +445,7 @@ class PlatformerEngine(
         val p = player
         if (p.dead) return
         val pw = tuning.playerWidth
-        val ph = tuning.playerHeight
+        val ph = playerHeight
         for (e in enemies) {
             if (!e.alive) continue
             val overlap = p.x < e.x + e.width && p.x + pw > e.x &&
@@ -346,7 +461,7 @@ class PlatformerEngine(
                 p.jumping = false
                 stompEvents++
             } else {
-                killPlayer()
+                hurtPlayer() // grande: encoge con invulnerabilidad; pequeño: muere
                 return
             }
         }
@@ -356,7 +471,7 @@ class PlatformerEngine(
         if (dx == 0f) return
         val p = player
         val w = tuning.playerWidth
-        val h = tuning.playerHeight
+        val h = playerHeight
         var nx = p.x + dx
         val top = p.y
         val bottom = p.y + h - 0.01f
@@ -381,7 +496,7 @@ class PlatformerEngine(
     private fun moveVertical(dy: Float) {
         val p = player
         val w = tuning.playerWidth
-        val h = tuning.playerHeight
+        val h = playerHeight
         var ny = p.y + dy
         val left = p.x
         val right = p.x + w - 0.01f
@@ -410,13 +525,19 @@ class PlatformerEngine(
             if (hitCols.isNotEmpty()) {
                 ny = (row + 1) * tileSize + 0.01f
                 p.vy = 0f
-                // Bloque '?': el golpe desde abajo suelta una moneda y lo deja "usado"
+                // Bloque '?': el golpe desde abajo suelta el premio y lo deja "usado"
                 // (sigue sólido; su solidez no cambia). Un cabezazo = un bloque.
+                // Premio progresivo (simplificación de diseño, no dato de la ROM):
+                // SETA si Mario es pequeño; MONEDA si ya es grande.
                 for (c in hitCols) {
                     if (blockActionAt(c, row) == BlockAction.PRIZE) {
                         setAction(c, row, BlockAction.NONE)
-                        coins++
-                        coinEvents++
+                        if (!p.big) {
+                            items.add(PowerupItem(c * tileSize + 1f, row * tileSize - 15f))
+                        } else {
+                            coins++
+                            coinEvents++
+                        }
                         break
                     }
                 }
@@ -428,13 +549,22 @@ class PlatformerEngine(
     private fun checkDeadly() {
         val p = player
         val w = tuning.playerWidth
-        val h = tuning.playerHeight
+        val h = playerHeight
         val c0 = (p.x / tileSize).toInt()
         val c1 = ((p.x + w - 0.01f) / tileSize).toInt()
         val r0 = (p.y / tileSize).toInt()
         val r1 = ((p.y + h - 0.01f) / tileSize).toInt()
         for (r in r0..r1) for (c in c0..c1) {
-            if (solidity(c, r) == SmwSolidity.SPIKE) { killPlayer(); return }
+            if (solidity(c, r) == SmwSolidity.SPIKE) { hurtPlayer(); return }
         }
+    }
+
+    companion object {
+        /** Altura de la caja de Mario grande (dos casillas, como fromSmw con BIG). */
+        const val BIG_HEIGHT = 26f
+        /** Altura canónica de pequeño si el tuning ya venía de grande. */
+        const val SMALL_HEIGHT = 14f
+        /** Invulnerabilidad tras encoger (~1.5 s a 60 fps), para poder escapar. */
+        const val INVULN_FRAMES = 90
     }
 }
