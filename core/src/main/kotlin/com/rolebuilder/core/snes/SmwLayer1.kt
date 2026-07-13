@@ -181,9 +181,13 @@ internal object SmwLayer1 {
         fun std(obj: Int) {
             // Los objetos ≥0x30 son ESPECÍFICOS del tileset. Está portada la tabla de
             // PRADERA (ProcessGrasslandObjects), que el juego usa para los tilesets 0,
-            // 7 y 0xC (kProcessStandardAndTilesetSpecificObjects_TilesetPtrs, $0D);
-            // el resto (castillo, cuerda, subterráneo, casa fantasma) sigue sin portar.
-            if (obj >= 0x30 && tileset != 0 && tileset != 7 && tileset != 0xC) { unkStd(obj); return }
+            // 7 y 0xC (kProcessStandardAndTilesetSpecificObjects_TilesetPtrs, $0D), y
+            // del CASTILLO (tileset 1) el bloque de piedra 0x3C; el resto (cuerda,
+            // subterráneo, casa fantasma) sigue sin portar.
+            if (obj >= 0x30 && tileset != 0 && tileset != 7 && tileset != 0xC) {
+                if (tileset == 1 && obj == 0x3C) { castleStoneBlock(); return }
+                unkStd(obj); return
+            }
             when (obj) {
                 in 0x01..0x0E -> stdCoins(obj - 1)
                 0x0F -> if ((size and 0xF) < 5) stdVerticalPipes() else unkStd(obj)
@@ -195,7 +199,10 @@ internal object SmwLayer1 {
                 0x15 -> stdMidwayGoal()
                 0x16 -> stdPurpleCoins()
                 0x17 -> if ((size shr 4) < 2) stdRopeCloudLine() else unkStd(obj)
+                in 0x18..0x1B -> stdWaterOrLava(obj - 0x18)
                 0x1C -> stdDonutBridge()
+                0x1D -> stdClimbingNetBottom()
+                0x1E -> stdClimbingNetSide()
                 0x1F -> stdSkinnyVerticalPipe()
                 0x21 -> stdLedge(size, 2)                        // wide-scale ground ledge
                 0x39 -> grassDiagonalPipeRight()
@@ -220,6 +227,7 @@ internal object SmwLayer1 {
                 0x44, 0x45 -> extPurpleTriangle(k - 68)
                 0x46 -> extMidwayBar()
                 0x47, 0x48 -> extDoor(k - 71)
+                0x4A -> extClimbingNetDoor()
                 0x82 -> extLargeBush(EXT_BIG_BUSH, 8, 4)
                 0x83 -> extLargeBush(EXT_SMALL_BUSH, 5, 3)
                 0x86 -> extGoalSign()
@@ -244,6 +252,165 @@ internal object SmwLayer1 {
             setHi00(v2); setLo(v2, 0x2D)
             val v3 = vert()
             setHi00(v3); setLo(v3, 0x2E)
+        }
+
+        /**
+         * Objetos estándar 0x18-0x1B: AGUA/LAVA con superficie (RopeObj2E/StdObj18,
+         * $0D:B3E3): rectángulo página 0 con la fila superior de TopTiles[k] y el
+         * relleno de BottomTiles[k] (k = obj-0x18: agua 0x00/0x02, agua sin animar
+         * 0x01/0x03, lava 0x04/0x05, y 0x08/0x0B).
+         */
+        fun stdWaterOrLava(k: Int) {
+            val top = intArrayOf(0x00, 0x01, 0x04, 0x08)
+            val bottom = intArrayOf(0x02, 0x03, 0x05, 0x0B)
+            var v1 = pos
+            val r0 = size and 0xF
+            var r2 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            do {
+                setHi00(v1)
+                v1 = horiz(v1, top[k])
+                r2 = (r2 - 1) and 0xFF
+            } while (r2 and 0x80 == 0)
+            while (true) {
+                restore()
+                var v3 = vert()
+                r2 = r0
+                r1 = (r1 - 1) and 0xFF
+                if (r1 and 0x80 != 0) break
+                do {
+                    setHi00(v3)
+                    v3 = horiz(v3, bottom[k])
+                    r2 = (r2 - 1) and 0xFF
+                } while (r2 and 0x80 == 0)
+            }
+        }
+
+        /**
+         * Objeto estándar 0x1D: RED TREPABLE con borde inferior (StdObj1D, $0D:B461):
+         * filas de red (0x0B) y una última fila de borde (0x0E), página 0.
+         */
+        fun stdClimbingNetBottom() {
+            var v1 = pos
+            var r0 = size shr 4
+            val r1 = size and 0xF
+            var v2 = size and 0xF
+            preserve()
+            while (r0 != 0) {
+                do {
+                    setHi00(v1)
+                    v1 = horiz(v1, 0x0B)
+                    v2--
+                } while (v2 >= 0)
+                restore()
+                v1 = vert()
+                v2 = r1
+                r0--
+            }
+            do {
+                setHi00(v1)
+                v1 = horiz(v1, 0x0E)
+                v2--
+            } while (v2 >= 0)
+        }
+
+        /**
+         * Objeto estándar 0x1E: BORDE LATERAL de red trepable (StdObj1E, $0D:B49E):
+         * columna de SideTiles[k] (k = nibble bajo: 0 izq, 1 der) cuyas puntas se
+         * convierten en ESQUINA leyendo lo ya dibujado en el buffer (0x08 → esquina
+         * superior, 0x0E → esquina interior), como hace el juego.
+         */
+        fun stdClimbingNetSide() {
+            val kk = size and 0x1
+            val side = intArrayOf(0x0A, 0x0C)[kk]
+            val topCorner = intArrayOf(0x07, 0x09)[kk]
+            val topInner = intArrayOf(0x1A, 0x19)[kk]
+            val botCorner = intArrayOf(0x0D, 0x0F)[kk]
+            val botInner = intArrayOf(0x1C, 0x1B)[kk]
+            var v1 = pos
+            var r0 = size shr 4
+            run {
+                val a = when (rdLo(v1)) {
+                    0x08 -> topCorner
+                    0x0E -> topInner
+                    else -> side
+                }
+                setHi00(v1); setLo(v1, a)
+            }
+            while (true) {
+                if (v1 + 16 >= 256) pageCross(1)
+                v1 = (v1 + 16) and 0xFF
+                r0 = (r0 - 1) and 0xFF
+                if (r0 == 0) break
+                setHi00(v1); setLo(v1, side)
+            }
+            val a = when (rdLo(v1)) {
+                0x0E -> botCorner
+                0x08 -> botInner
+                else -> side
+            }
+            setHi00(v1); setLo(v1, a)
+        }
+
+        /**
+         * Objeto de CASTILLO 0x3C: BLOQUE DE PIEDRA (CastleObj3C, $0D:C478): rectángulo
+         * página 1 con teselas izquierda/medio/derecha por fila — superior 5D/5E/5F,
+         * medias 60/61/62, inferior 63/64/65. Es el muro básico de los castillos.
+         */
+        fun castleStoneBlock() {
+            val left = intArrayOf(0x5D, 0x60, 0x63)
+            val mid = intArrayOf(0x5E, 0x61, 0x64)
+            val right = intArrayOf(0x5F, 0x62, 0x65)
+            var v1 = pos
+            val r0 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            var v2 = 0
+            while (true) {
+                var r2 = r0
+                setHi01(v1)
+                var i = horiz(v1, left[v2])
+                while (true) {
+                    r2 = (r2 - 1) and 0xFF
+                    if (r2 == 0) break
+                    setHi01(i)
+                    i = horiz(i, mid[v2])
+                }
+                setHi01(i)
+                setLo(i, right[v2])
+                restore()
+                v1 = vert()
+                v2 = 1
+                val lastNext = r1 == 1
+                r1 = (r1 - 1) and 0xFF
+                if (r1 and 0x80 != 0) break
+                if (lastNext) v2 = 2
+            }
+        }
+
+        /**
+         * Objeto extendido 0x4A: PUERTA DE RED GIRATORIA 4×4 (ExtObj4A, $0D:A7C1),
+         * con las teselas de la tabla del juego. Como el original, NO toca el byte
+         * alto (la puerta se dibuja sobre fondo vacío, página 0).
+         */
+        fun extClimbingNetDoor() {
+            val tiles = intArrayOf(
+                0x10, 0x11, 0x11, 0x12, 0x13, 0x0B, 0x0B, 0x15,
+                0x13, 0x0B, 0x0B, 0x15, 0x16, 0x17, 0x17, 0x18,
+            )
+            var v0 = pos
+            var v1 = 0
+            preserve()
+            do {
+                var r2 = 3
+                do {
+                    v0 = horiz(v0, tiles[v1++])
+                    r2--
+                } while (r2 >= 0)
+                restore()
+                v0 = vert()
+            } while (v1 != 16)
         }
 
         /**

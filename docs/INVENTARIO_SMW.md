@@ -38,7 +38,10 @@ se explican por cuál de las dos usa cada pieza:
 
 ## 🟡 Hecho en core pero NO expuesto (integración pendiente, por valor)
 
-1. **Warps de proyecto: cableados pero LATENTES.** "Crear mapa" ya importa el
+1. **Warps de proyecto: VIVOS para castillos.** Importar el castillo de Iggy
+   (0x101) crea 2 mapas con 3 warps funcionales (verificado). El resto de
+   niveles con puertas (casas fantasma) sigue pendiente de su tabla de
+   objetos. Texto original de cuando estaba latente: "Crear mapa" ya importa el
    bundle (sub-niveles como mapas + `GameMap.platformWarps` resueltos a ids de
    mapa) y la app cambia de mapa al entrar (relanza con destino y entrada).
    PERO hoy ningún nivel de la ROM US produce un bundle multi-mapa con warps
@@ -96,10 +99,14 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
   ExtObj86 cartel de meta, ExtObj8E bloque de interruptor y GrassObj39 tubería
   diagonal, y el gate ahora acepta los tilesets 7/0xC que usan la tabla de
   pradera, como el juego). 0x106 YI2 = 96%, 0x024/0x0C7/0x0C5 = 100%,
-  0x022 = 95%. Pendientes: 0x101 = 19% (necesita la tabla de CUERDA: std
-  1A/1B/1D/1E/3C + ext 4A) y casas fantasma (tabla propia: std 34-3A). El
-  parser ahora REGISTRA los ids sin portar (SmwLevelTilemap.unknownIds), así
-  que medir el siguiente nivel es inmediato.
+  0x022 = 95%, y **0x101 castillo de Iggy = 100%** (antes 19%: portados
+  agua/lava 0x18-0x1B, redes trepables 0x1D/0x1E, bloque de piedra de castillo
+  0x3C y puerta de red 0x4A). Con ello el PRIMER bundle multi-mapa de la ROM
+  se enciende: 0x101 importa 2 mapas (101+1FC) con 3 warps jugables — los
+  warps de proyecto ya NO están latentes. Pendientes cercanos: 0x1FC al 97%
+  (falta ext:90 ×1), 0x1F2 (std:34 ×7) y casas fantasma (std 34-3A). El
+  parser REGISTRA los ids sin portar (SmwLevelTilemap.unknownIds), así que
+  medir el siguiente nivel es inmediato.
 
 - **Colores animados de la CGRAM** (resuelto): las tablas fijas guardan un
   MAGENTA placeholder en los índices 0x64/0x6D (dorado del brillo de monedas y
