@@ -10,3 +10,9 @@ captures/
 
 # Worktrees y estado local de los agentes de Claude Code (transitorio)
 .claude/
+
+# ROMs de trabajo (material con copyright): NUNCA se versionan
+*.sfc
+*.smc
+smw_out/
+snes_out/
