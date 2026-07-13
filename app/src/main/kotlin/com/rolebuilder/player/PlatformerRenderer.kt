@@ -263,8 +263,9 @@ class PlatformerRenderer(
             batch.draw(white, p.x / 16f, p.y / 16f, w, h, r = red, g = 0.25f, b = 0.2f, a = 1f)
             return
         }
-        // Cada pose de Mario es una tesela 16×16 (2×2). Fotogramas limpios de lado
-        // (fila 0): 0 parado, 2/3 el ciclo de andar, 4 saltando/corriendo (lean).
+        // Cada fotograma es Mario ENTERO 16×32 (cabeza + cuerpo ya compuestos por
+        // smwMarioSheet, con su cara). Índices de pose de la hoja: 0 parado, 2/3 el
+        // ciclo de andar, 4 saltando/corriendo (pose inclinada).
         val running = abs(p.vx) > 2.2f
         if (p.onGround && abs(p.vx) > 0.2f) marioAnim += dt else if (p.onGround) marioAnim = 0f
         val fc = when {
@@ -277,12 +278,12 @@ class PlatformerRenderer(
         val u0 = fc * 16f / sw
         val u1 = (fc * 16f + 16f) / sw
         val v0 = 0f
-        val v1 = 16f / sh
-        // Sprite centrado en horizontal y anclado por los pies. Grande: el mismo
-        // fotograma estirado a casilla y media (la caja del motor mide 26 px); es un
-        // estirado honesto, no las teselas de Mario grande de la ROM (pendiente).
+        val v1 = 1f // cada fotograma ocupa toda la altura (32 px) de la hoja
+        // Sprite centrado en horizontal y anclado por los pies. La hoja ya es Mario
+        // grande (32 px): a tamaño natural son 2 casillas; pequeño se dibuja algo más
+        // bajo para acercarse a su caja de colisión.
         val dw = 1f
-        val dh = if (p.big) 1.5f else 1f
+        val dh = if (p.big) 2f else 1.5f
         val cx = (p.x + engine.tuning.playerWidth / 2f) / 16f
         val feetY = (p.y + engine.playerHeight) / 16f
         // La hoja de GFX32 mira a la IZQUIERDA; se voltea al mirar a la derecha.

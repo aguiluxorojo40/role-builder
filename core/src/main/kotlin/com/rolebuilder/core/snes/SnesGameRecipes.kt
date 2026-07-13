@@ -652,6 +652,18 @@ object SnesGameRecipes {
     internal const val SMW_GFX32_HI_PC = 0x38D9
     internal const val SMW_GFX32_BANK_PC = 0x3890
 
+    /**
+     * Tablas del ensamblador de OAM del jugador (rutina PlayerGFXRt, banco $00). Para
+     * CADA pose el juego dibuja a Mario como DOS teselas 16×16 apiladas: la CABEZA
+     * (arriba) y el CUERPO (abajo), cuyos gráficos NO están juntos en GFX32 sino en
+     * celdas separadas que la ROM combina por DMA. Estas dos tablas dan, por pose, el
+     * "puntero de tesela" de la cabeza y del cuerpo (índice v13 = pose para Mario
+     * pequeño). Sin componerlas Mario sale "sin cabeza" (el hueco de la cara queda en
+     * blanco). Direcciones: $00:E00C y $00:E0CC (192 bytes cada una).
+     */
+    internal const val SMW_PLAYER_HEAD_TILE_PC = 0x600C
+    internal const val SMW_PLAYER_BODY_TILE_PC = 0x60CC
+
     /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
     internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
@@ -746,11 +758,23 @@ object SnesGameRecipes {
             .orEmpty()
 
     /**
-     * Hoja de sprites de MARIO (GFX32) coloreada con la paleta de jugador REAL de la
-     * ROM (fila 8 de la CGRAM: col 1 blanco, cols 2-5 colores estándar, cols 6-F la
-     * paleta de Mario). Es 128×64 px = 16×8 teselas de 8×8; cada fotograma de Mario
-     * grande ocupa 2×3 teselas (16×24): columna 0 parado, 2/4 andando, 6 corriendo,
-     * 8 saltando. Devuelve null si no se pudo leer/descomprimir GFX32.
+     * Índice de las poses de Mario que exporta [smwMarioSheet], en el ORDEN de los
+     * fotogramas de la hoja. Se eligen las poses "de a pie" del juego real:
+     * `0` parado, `4`/`6` los dos pasos del ciclo de andar, `12` la pose inclinada
+     * (correr/saltar). El renderer mapea: fotograma 0 = quieto, 2/3 = andar, 4 = aire.
+     */
+    val SMW_MARIO_SHEET_POSES = intArrayOf(0, 1, 4, 6, 12)
+
+    /**
+     * Hoja de sprites de MARIO ya COMPUESTA como la ensambla el juego: por cada pose
+     * apila la tesela de la CABEZA sobre la del CUERPO (ver [SMW_PLAYER_HEAD_TILE_PC]/
+     * [SMW_PLAYER_BODY_TILE_PC]), así la cara sale con su color de piel en vez de un
+     * hueco en blanco. Coloreada con la paleta de jugador REAL de la ROM (fila 8 de la
+     * CGRAM: col 1 blanco, cols 2-5 colores estándar, cols 6-F la paleta de Mario).
+     *
+     * Salida: un fotograma de 16×32 px por pose de [SMW_MARIO_SHEET_POSES], en fila
+     * (ancho = 16·nPoses, alto = 32). Devuelve null si no se pudo leer/descomprimir
+     * GFX32 o no llega hasta las teselas de la cabeza.
      */
     fun smwMarioSheet(rom: ByteArray, header: SnesHeader): ArgbImage? {
         val delta = smwHeaderDelta(header)
@@ -762,10 +786,13 @@ object SnesGameRecipes {
         if (mpc < 0x40000 || mpc >= rom.size) return null
         val mdata = runCatching { LcLz2.decompress(rom, mpc).data }.getOrNull() ?: return null
         val mfmt = SnesGraphicFormat.SNES_4BPP
-        val mcount = minOf(SnesAssetExtractor.availableTiles(mdata.size, 0, mfmt), 128)
-        if (mcount < 16) return null
+        val avail = SnesAssetExtractor.availableTiles(mdata.size, 0, mfmt)
+        // Las teselas de la cabeza (puntero 0x50) viven en la mitad BAJA de GFX32; hace
+        // falta la hoja entera (≥ 256 teselas), no solo las 128 de arriba.
+        if (avail < 256) return null
         val tables = SmwPaletteTables(rom, delta)
-        val white = SnesDecoder.bgr15ToArgb(0x7FDD)
+        // Blanco de SPRITE (fila 8) = $7FFF, no el $7FDD de objeto.
+        val white = SnesDecoder.bgr15ToArgb(0x7FFF)
         val fix8 = tables.fixedRow(8)
         val pl = tables.player(0)
         val marioPal = intArrayOf(
@@ -773,7 +800,36 @@ object SnesGameRecipes {
             pl[0], pl[1], pl[2], pl[3], pl[4], pl[5], pl[6], pl[7], pl[8], pl[9],
         )
         return runCatching {
-            SnesAssetExtractor.extractTileSheet(mdata, 0, mfmt, marioPal, mcount, 16).image
+            val poses = SMW_MARIO_SHEET_POSES
+            val sheet = ArgbImage(16 * poses.size, 32)
+            // Pinta el bloque 16×16 (4 teselas 8×8) que apunta [ptr] en (ox,oy).
+            fun blitBlock(ptr: Int, ox: Int, oy: Int) {
+                // Puntero de tesela → índice de tesela 8×8 en el buffer de 16 de ancho:
+                // t = (ptr & 0xF7) << 6 bytes; /32 = (ptr & 0xF7) << 1; bit 3 = +512.
+                val base = ((ptr and 0xF7) shl 1) + if (ptr and 0x08 != 0) 512 else 0
+                // Orden 16×16: sup-izq, sup-der, inf-izq (16 después), inf-der.
+                val cells = intArrayOf(base, base + 1, base + 16, base + 17)
+                for (c in 0 until 4) {
+                    val t = cells[c]
+                    if (t < 0 || t >= avail) continue
+                    val decoded = SnesDecoder.decodeTile(mdata, t * mfmt.bytesPerTile, mfmt, t)
+                    val dx = ox + (c and 1) * 8
+                    val dy = oy + (c ushr 1) * 8
+                    for (py in 0 until 8) for (px in 0 until 8) {
+                        val ci = decoded.pixelIndices[py * 8 + px]
+                        if (ci == 0) continue
+                        sheet.set(dx + px, dy + py, marioPal[ci])
+                    }
+                }
+            }
+            for (f in poses.indices) {
+                val v13 = poses[f] // Mario pequeño: PowerupTilesetIndex[0]=0 + pose = pose.
+                val headPtr = byte(rom, SMW_PLAYER_HEAD_TILE_PC + delta + v13)
+                val bodyPtr = byte(rom, SMW_PLAYER_BODY_TILE_PC + delta + v13)
+                blitBlock(bodyPtr, f * 16, 16) // cuerpo abajo
+                blitBlock(headPtr, f * 16, 0)  // cabeza arriba (sobre el cuerpo)
+            }
+            sheet
         }.getOrNull()
     }
 

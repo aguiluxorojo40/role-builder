@@ -127,8 +127,10 @@ class PlatformerActivity : ComponentActivity() {
             Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
             return null
         }
-        // Sprite REAL de Mario (GFX32, hoja 128×64) coloreado en vivo desde la ROM; si
-        // falla, drawMario cae al rectángulo. Enemigos desde el atlas horneado y audio
+        // Sprite REAL de Mario (GFX32) COMPUESTO como el juego: cada pose apila cabeza
+        // + cuerpo, así sale con cara (16×32 por fotograma). Coloreado en vivo desde la
+        // ROM; si falla, drawMario cae al rectángulo. Enemigos desde el atlas horneado y
+        // audio con las muestras reales de SMW (o assets si la ROM no lo permite).
         // con las muestras reales de SMW (o assets si la ROM no lo permite).
         val marioBmp = runCatching {
             val img = SnesGameRecipes.smwMarioSheet(rom, SnesDecoder.parseHeader(rom)) ?: return@runCatching null
