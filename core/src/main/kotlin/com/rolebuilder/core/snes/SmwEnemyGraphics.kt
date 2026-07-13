@@ -62,6 +62,26 @@ object SmwEnemyGraphics {
     }
 
     /**
+     * `kSprXXX_Generic_Spr0to13Prop` (banco $01): propiedades de DIBUJO de los ids
+     * 0x00-0x13. El bit 0x40 = el sprite se dibuja como DOS bloques 16×16 APILADOS
+     * (`GenericGFXRtDraw2Tiles16x16sStacked`, ~16×32 de alto): son las Koopas CON
+     * caparazón (0x04-0x07) y las aladas (0x08-0x0B). Su entrada de [OAM_TILES] lleva
+     * los DOS bloques (byte 0 = arriba, byte 1 = abajo); pintando solo el primero la
+     * Koopa sale como una cabeza suelta "sin caparazón".
+     */
+    private val SPR0TO13_PROP = intArrayOf(
+        0x00, 0x02, 0x03, 0x0d, 0x40, 0x42, 0x43, 0x45, 0x50, 0x50,
+        0x50, 0x5c, 0xdd, 0x05, 0x00, 0x20, 0x20, 0x00, 0x00, 0x00,
+    )
+
+    /** Último id de la familia "genérica andadora" (0x00-0x13): la que ANIMA el andar. */
+    private const val LAST_GENERIC_WALKER = 0x13
+
+    /** ¿El id se dibuja APILADO (16×32, p. ej. Koopa con caparazón)? */
+    fun isTall(spriteId: Int): Boolean =
+        spriteId in SPR0TO13_PROP.indices && (SPR0TO13_PROP[spriteId] and 0x40) != 0
+
+    /**
      * Catálogo curado de ids con gráfico real fiable (verificado renderizando desde la
      * ROM), con nombre legible. El orden define el atlas horneado: los ids NUEVOS se
      * añaden SIEMPRE al final para no mover los fotogramas ya horneados. El atlas se
@@ -110,6 +130,96 @@ object SmwEnemyGraphics {
      * color 0 queda transparente.
      */
     fun spriteImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        val base = TILE_BYTES[OAM_OFFSET[spriteId]] + art.page * 0x100
+        val img = ArgbImage(16, 16) // pixels a 0 = transparente
+        return if (art.paintBlock(base, img, 0, 0)) img else null
+    }
+
+    /**
+     * FOTOGRAMAS de ANDAR del enemigo [spriteId] como los dibuja el juego, cada uno en
+     * una celda UNIFORME de 16×32 anclada por los pies:
+     *  - Ids APILADOS ([isTall], Koopas con caparazón): los dos bloques 16×16 (arriba +
+     *    abajo) de su entrada, con los 2 fotogramas del ciclo (`offset + 2·fotograma`).
+     *  - Resto de andadores genéricos (id ≤ 0x13, p. ej. Goomba, Koopas sin caparazón):
+     *    su 16×16 en la MITAD BAJA de la celda, con sus 2 fotogramas (`offset + f`),
+     *    exactamente el `+ spr_table1602` de `GenericGFXRtDraw1Tile16x16`.
+     *  - Ids fuera de la familia andadora: UN solo fotograma (su rutina de animación es
+     *    propia y meter el "siguiente byte" de la tabla pintaría basura).
+     * null si el id no está curado o faltan datos. [spriteImage] queda intacta (es la
+     * que consume el atlas horneado de 16×16).
+     */
+    fun spriteFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): List<ArgbImage>? {
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        val off = OAM_OFFSET[spriteId]
+        val tall = isTall(spriteId)
+        val animFrames = if (spriteId <= LAST_GENERIC_WALKER) 2 else 1
+        val out = ArrayList<ArgbImage>(animFrames)
+        for (f in 0 until animFrames) {
+            val img = ArgbImage(16, 32)
+            val painted = if (tall) {
+                val i = off + 2 * f
+                if (i + 1 >= TILE_BYTES.size) break
+                val top = TILE_BYTES[i] + art.page * 0x100
+                val bottom = TILE_BYTES[i + 1] + art.page * 0x100
+                // El bob de 1 px del juego (fotograma impar) se omite: el ciclo lo dan
+                // los pies del bloque de abajo.
+                art.paintBlock(top, img, 0, 0) or art.paintBlock(bottom, img, 0, 16)
+            } else {
+                val i = off + f
+                if (i >= TILE_BYTES.size) break
+                art.paintBlock(TILE_BYTES[i] + art.page * 0x100, img, 0, 16)
+            }
+            if (!painted) break
+            out.add(img)
+        }
+        return out.ifEmpty { null }
+    }
+
+    /**
+     * "Pintor" de bloques 16×16 de un nivel: los 4 ficheros GFX de sprites del nivel,
+     * su CGRAM ensamblada y la sub-paleta/página del sprite (nibble bajo de $166E).
+     * Es el mismo montaje verificado de [spriteImage], factorizado para reutilizarlo.
+     */
+    private class LevelSpriteArt(
+        private val spData: Array<ByteArray?>,
+        private val cgram: IntArray,
+        private val cgRow: Int,
+        val page: Int,
+    ) {
+        private fun tileIndices(tile9: Int): IntArray? {
+            val slot = tile9 / TILES_PER_FILE
+            if (slot !in 0..3) return null
+            val data = spData[slot] ?: return null
+            val local = tile9 % TILES_PER_FILE
+            val off = local * FORMAT.bytesPerTile
+            if (off + FORMAT.bytesPerTile > data.size) return null
+            return SnesDecoder.decodeTile(data, off, FORMAT, local).pixelIndices
+        }
+
+        /** Pinta el bloque 16×16 con esquina en el nº de tesela [base] en (ox,oy) de [img]. */
+        fun paintBlock(base: Int, img: ArgbImage, ox: Int, oy: Int): Boolean {
+            var painted = false
+            // 16×16 = 4 teselas de 8×8: N, N+1 (arriba); N+0x10, N+0x11 (abajo).
+            val sub = arrayOf(intArrayOf(0, 0, 0), intArrayOf(1, 8, 0), intArrayOf(0x10, 0, 8), intArrayOf(0x11, 8, 8))
+            for (so in sub) {
+                val px = tileIndices(base + so[0]) ?: continue
+                for (y in 0..7) for (x in 0..7) {
+                    val ci = px[y * 8 + x]
+                    if (ci == 0) continue
+                    val dx = ox + so[1] + x
+                    val dy = oy + so[2] + y
+                    if (dx >= img.width || dy >= img.height) continue
+                    img.set(dx, dy, cgram[cgRow + (ci and 0x0F)])
+                    painted = true
+                }
+            }
+            return painted
+        }
+    }
+
+    /** Prepara el [LevelSpriteArt] del nivel para [spriteId], o null si faltan datos. */
+    private fun artFor(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): LevelSpriteArt? {
         if (!NAMES.containsKey(spriteId)) return null
         if (spriteId !in OAM_OFFSET.indices) return null
         val delta = header.headerOffset - 0x7FC0
@@ -132,31 +242,6 @@ object SmwEnemyGraphics {
         }
 
         val cgram = SnesGameRecipes.assembleSmwCgram(rom, delta, level)
-
-        fun tileIndices(tile9: Int): IntArray? {
-            val slot = tile9 / TILES_PER_FILE
-            if (slot !in 0..3) return null
-            val data = spData[slot] ?: return null
-            val local = tile9 % TILES_PER_FILE
-            val off = local * FORMAT.bytesPerTile
-            if (off + FORMAT.bytesPerTile > data.size) return null
-            return SnesDecoder.decodeTile(data, off, FORMAT, local).pixelIndices
-        }
-
-        val base = TILE_BYTES[OAM_OFFSET[spriteId]] + page * 0x100
-        val img = ArgbImage(16, 16) // pixels a 0 = transparente
-        var painted = false
-        // 16×16 = 4 teselas de 8×8: N, N+1 (arriba); N+0x10, N+0x11 (abajo).
-        val sub = arrayOf(intArrayOf(0, 0, 0), intArrayOf(1, 8, 0), intArrayOf(0x10, 0, 8), intArrayOf(0x11, 8, 8))
-        for (so in sub) {
-            val px = tileIndices(base + so[0]) ?: continue
-            for (y in 0..7) for (x in 0..7) {
-                val ci = px[y * 8 + x]
-                if (ci == 0) continue
-                img.set(so[1] + x, so[2] + y, cgram[cgRow + (ci and 0x0F)])
-                painted = true
-            }
-        }
-        return if (painted) img else null
+        return LevelSpriteArt(spData, cgram, cgRow, page)
     }
 }

@@ -170,8 +170,24 @@ class PlatformerActivity : ComponentActivity() {
         val marioBigBmp = marioSheet(1)     // grande (gráficos propios, no escalado)
         val marioFireBmp = marioSheet(3)    // fuego (gráficos de grande, paleta blanca)
         val marioCapeBmp = marioSheet(2)    // capa (gráficos con capa amarilla)
+        // Gráficos VIVOS de enemigos del nivel: fotogramas de andar reales (las Koopas
+        // CON su caparazón, 16×32 apilado). El atlas horneado queda de reserva para
+        // los ids que no salgan.
+        val enemyFrames: Map<Int, List<Bitmap>> = com.rolebuilder.core.snes.SnesGameRecipes
+            .smwLevelEnemies(rom, header, level)
+            .map { (id, _, _) -> id }.distinct()
+            .mapNotNull { id ->
+                runCatching {
+                    com.rolebuilder.core.snes.SmwEnemyGraphics.spriteFrames(rom, header, level, id)
+                        ?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
+                }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
+            }.toMap()
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
-        return PlatformerRenderer(engine, null, marioBmp, loadEnemies(), audio, marioBigBmp, marioFireBmp, marioCapeBmp)
+        return PlatformerRenderer(
+            engine, null, marioBmp, loadEnemies(), audio,
+            marioBigBmp, marioFireBmp, marioCapeBmp,
+            romEnemyFrames = enemyFrames.ifEmpty { null },
+        )
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */

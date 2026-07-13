@@ -284,10 +284,15 @@ class PlatformerEngine(
         fireballEvents++
     }
 
-    /** Marca al jugador como muerto una sola vez y cuenta el evento. */
-    private fun killPlayer() {
+    /**
+     * Marca al jugador como muerto una sola vez y cuenta el evento. [pop] = el saltito
+     * de muerte de SMW (DEATH_POP_SPEED); caer al vacío no lo da (ya está fuera).
+     */
+    private fun killPlayer(pop: Boolean = true) {
         if (!player.dead) {
             player.dead = true
+            player.vx = 0f
+            if (pop) player.vy = DEATH_POP_SPEED
             deathEvents++
         }
     }
@@ -319,7 +324,14 @@ class PlatformerEngine(
     /** Avanza un fotograma. */
     fun tick() {
         val p = player
-        if (p.dead) return
+        if (p.dead) {
+            // Animación de MUERTE de SMW: Mario da el saltito hacia arriba (el "pop" de
+            // -112/16 px/f de $00:F606, puesto por killPlayer) y cae SIN colisión hasta
+            // salir del nivel; el mundo queda quieto alrededor. Antes se congelaba todo.
+            p.vy = min(p.vy + tuning.gravityFall, tuning.maxFallSpeed)
+            p.y += p.vy
+            return
+        }
         val t = tuning
 
         // --- horizontal: aceleración hacia el tope, o rozamiento ---
@@ -369,7 +381,7 @@ class PlatformerEngine(
         checkWarps()
 
         checkDeadly()
-        if (p.y > (rows + 2) * tileSize) killPlayer() // caído al vacío
+        if (p.y > (rows + 2) * tileSize) killPlayer(pop = false) // caído al vacío
     }
 
     /** Activa un warp si el jugador está sobre su celda y pulsa la dirección correcta. */
@@ -703,5 +715,7 @@ class PlatformerEngine(
         const val INVULN_FRAMES = 90
         /** Velocidad de caída al PLANEAR con la capa (px/fotograma): descenso suave. */
         const val CAPE_GLIDE_SPEED = 1.0f
+        /** "Pop" de muerte de SMW: -112 dieciseisavos de px/f ($00:F606) = -7 px/f. */
+        const val DEATH_POP_SPEED = -7f
     }
 }

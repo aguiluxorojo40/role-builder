@@ -213,6 +213,26 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `al morir hay animacion de pop hacia arriba y caida fuera del nivel`() {
+        // Muere por pinchos: el mundo no debe congelarse; Mario da el saltito de SMW
+        // y cae sin colisión hasta salir del nivel.
+        val e = engine(10, 10, startCol = 2, startRow = 6) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+            g[7][2] = SmwSolidity.SPIKE
+        }
+        var guard = 0
+        while (!e.player.dead && guard < 120) { e.tick(); guard++ }
+        assertTrue(e.player.dead)
+        assertTrue(e.player.vy < 0f, "arranca el pop de muerte hacia arriba (vy=${e.player.vy})")
+        val y0 = e.player.y
+        e.tick()
+        assertTrue(e.player.y < y0, "sube en el primer fotograma del pop")
+        e.run(300)
+        assertTrue(e.player.y > 10 * 16f, "cae atravesando el suelo y sale del nivel (y=${e.player.y})")
+        assertEquals(1, e.deathEvents, "la muerte sigue contándose una sola vez")
+    }
+
+    @Test
     fun `morir incrementa deathEvents una sola vez`() {
         val e = engine(10, 8, startCol = 2, startRow = 1) { /* sin suelo: cae al vacío */ }
         e.run(200)

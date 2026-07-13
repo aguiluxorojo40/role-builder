@@ -52,6 +52,12 @@ class PlatformerRenderer(
     private val marioFireBitmap: Bitmap? = null,
     /** Hoja de Mario CAPA (poder 2: gráficos con capa amarilla); null = usar grande. */
     private val marioCapeBitmap: Bitmap? = null,
+    /**
+     * Fotogramas VIVOS de enemigos por id (celdas 16×32 ancladas por los pies, 1-2
+     * fotogramas de andar); tienen prioridad sobre el atlas horneado [enemyBitmap].
+     * Es la vía del modo ROM: Koopas CON caparazón y andar animado.
+     */
+    private val romEnemyFrames: Map<Int, List<Bitmap>>? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -89,6 +95,7 @@ class PlatformerRenderer(
     private var marioCapeTex: Texture? = null
     private var marioAnim = 0f
     private var enemyTex: Texture? = null
+    private var romEnemyTex: Map<Int, List<Texture>> = emptyMap()
     private var tilesetTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
@@ -103,6 +110,7 @@ class PlatformerRenderer(
         marioFireTex = marioFireBitmap?.let { Texture(it) }
         marioCapeTex = marioCapeBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
+        romEnemyTex = romEnemyFrames?.mapValues { (_, frames) -> frames.map { Texture(it) } } ?: emptyMap()
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
@@ -227,15 +235,24 @@ class PlatformerRenderer(
             }
         }
 
-        // Enemigos: sprite REAL de SMW para los ids con gráfico curado; si no, un
-        // rectángulo. Aplastados = franja fina un instante al pisarlos.
+        // Enemigos: primero los fotogramas VIVOS de la ROM (Koopa CON caparazón, andar
+        // animado a la cadencia real de SMW: cambia cada 8 fotogramas); si no, el atlas
+        // horneado; si no, un rectángulo. Aplastados = franja fina al pisarlos.
         val etex = enemyTex
         for (e in engine.enemies) {
             if (!e.alive && e.squashTimer <= 0) continue
             val ex = e.x / 16f
             val ew = e.width / 16f
             val frame = ENEMY_FRAME[e.id]
-            if (e.alive && etex != null && frame != null) {
+            val live = romEnemyTex[e.id]
+            if (e.alive && live != null && live.isNotEmpty()) {
+                // Celda 16×32 anclada por los pies (los apilados ocupan 2 casillas; los
+                // bajos llevan su 16×16 en la mitad inferior de la celda).
+                val walkFrame = live[((now / ENEMY_STEP_NS) % live.size).toInt()]
+                val cx = (e.x + e.width / 2f) / 16f - 0.5f
+                val feet = (e.y + e.height) / 16f
+                batch.draw(walkFrame, cx, feet - 2f, 1f, 2f, flipX = e.vx > 0f)
+            } else if (e.alive && etex != null && frame != null) {
                 // Sprite 16×16 centrado sobre la caja del enemigo, con los pies abajo.
                 val cx = (e.x + e.width / 2f) / 16f - 0.5f
                 val feet = (e.y + e.height) / 16f - 1f
@@ -302,7 +319,8 @@ class PlatformerRenderer(
     private fun drawMario(dt: Float) {
         val p = engine.player
         // Invulnerable tras encoger: parpadea (se salta el dibujo en pulsos), como SMW.
-        if (p.invulnFrames > 0 && (p.invulnFrames / 4) % 2 == 1) return
+        // Muerto NO parpadea: la caída de muerte se ve entera.
+        if (!p.dead && p.invulnFrames > 0 && (p.invulnFrames / 4) % 2 == 1) return
         // Cada poder usa su PROPIA hoja: fuego (blanco) / capa (amarilla) → grande →
         // pequeño como reserva.
         val tex = when {
@@ -319,14 +337,19 @@ class PlatformerRenderer(
             return
         }
         // Cada fotograma es Mario ENTERO 16×32 (cabeza + cuerpo ya compuestos por
-        // smwMarioSheet, con su cara). Índices de pose de la hoja: 0 parado, 2/3 el
-        // ciclo de andar, 4 saltando/corriendo (pose inclinada).
+        // smwMarioSheet, con su cara). Poses de la hoja: 0 parado, 1 paso, 2/3 carrera
+        // a tope (brazos extendidos), 4 en el aire. El ANDAR de SMW alterna parado↔paso
+        // (poses 0/1); los brazos extendidos son SOLO la carrera a máxima velocidad —
+        // usarlos para andar era lo que se veía raro.
         val running = abs(p.vx) > 2.2f
         if (p.onGround && abs(p.vx) > 0.2f) marioAnim += dt else if (p.onGround) marioAnim = 0f
+        val phase = (marioAnim * (if (running) 14f else 9f)).toInt() % 2
         val fc = when {
+            p.dead -> 4                                        // muerte: cae aspaventado
             !p.onGround -> 4                                   // saltando (pose inclinada)
             abs(p.vx) <= 0.2f -> 0                             // parado
-            else -> if ((marioAnim * (if (running) 14f else 9f)).toInt() % 2 == 0) 2 else 3
+            running -> 2 + phase                               // carrera a tope: brazos fuera
+            else -> phase                                      // andar: parado↔paso, como SMW
         }
         val sw = tex.width.toFloat()
         val sh = tex.height.toFloat()
@@ -367,5 +390,11 @@ class PlatformerRenderer(
                 .associate { (frame, id) -> id to frame }
         /** Ancho UV de un fotograma en el atlas de enemigos. */
         private val ENEMY_UV = 1f / com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.size.toFloat()
+
+        /**
+         * Cadencia del andar de los enemigos: SMW cambia de fotograma cada 8 ticks de
+         * 60 fps (`spr_table1602 = (++contador & 8) != 0`) → 8/60 s por fotograma.
+         */
+        private const val ENEMY_STEP_NS = 8L * 1_000_000_000L / 60L
     }
 }
