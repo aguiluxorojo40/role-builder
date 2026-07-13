@@ -91,6 +91,16 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
 
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 
+- **Cobertura del parser de objetos de Layer 1 por nivel** (medida sobre la ROM
+  US; % de objetos del nivel con rutina portada): 0x106 YI2 = 96% (5 objetos sin
+  portar), 0x024 = 100%, 0x0C7 = 100%, 0x022 = 95%, 0x0C5 = 100%, **0x105
+  Yoshi's Island 1 = 70% (27 sin portar)**, **0x101 = 19% (97 sin portar)**.
+  Consecuencia: 0x105/0x101 NO se cargan correctamente hoy — la escena no pasa
+  el gate de honestidad y su COLISIÓN en la ruta ROM directa tiene huecos
+  (celdas de objetos no parseados quedan como aire). Portar más rutinas de
+  objetos de Layer 1 es la llave que abre niveles nuevos, casas fantasma,
+  warps de proyecto y galería.
+
 - **Tuberías horizontales (0x3F)**: el byte aparece 65.831 veces en las
   rejillas de la ROM US (p. ej. regiones 6×2 en 0x105/0x106 lejos de la salida)
   — NO es solo la boca enterable. En el juego, la entrada por 0x3F está
