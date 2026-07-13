@@ -103,10 +103,16 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
   agua/lava 0x18-0x1B, redes trepables 0x1D/0x1E, bloque de piedra de castillo
   0x3C y puerta de red 0x4A). Con ello el PRIMER bundle multi-mapa de la ROM
   se enciende: 0x101 importa 2 mapas (101+1FC) con 3 warps jugables — los
-  warps de proyecto ya NO están latentes. Pendientes cercanos: 0x1FC al 97%
-  (falta ext:90 ×1), 0x1F2 (std:34 ×7) y casas fantasma (std 34-3A). El
-  parser REGISTRA los ids sin portar (SmwLevelTilemap.unknownIds), así que
-  medir el siguiente nivel es inmediato.
+  warps de proyecto ya NO están latentes. Tras portar también la
+  tubería doble de castillo (0x34), la puerta del jefe (ext 0x90) y la tabla
+  de CASA FANTASMA (0x34-0x3A: salientes sobre columnas, ladrillo/madera,
+  troncos, muros/pinchos), el estado global es: **344 de 501 niveles
+  parseados al 100%** y **35 bundles multi-mapa con warps jugables** (de 0 a
+  35 en una sesión). Galería: 8 niveles (praderas, YI1, castillo de Iggy,
+  casa fantasma, cueva, cielo). Pendientes: tablas de CUERDA y SUBTERRÁNEO
+  (p. ej. 0xE9 ts=3: std 36/3D/3E). El parser REGISTRA los ids sin portar
+  (SmwLevelTilemap.unknownIds), así que medir el siguiente nivel es
+  inmediato.
 
 - **Colores animados de la CGRAM** (resuelto): las tablas fijas guardan un
   MAGENTA placeholder en los índices 0x64/0x6D (dorado del brillo de monedas y

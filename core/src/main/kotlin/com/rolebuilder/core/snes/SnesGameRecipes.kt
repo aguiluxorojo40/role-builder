@@ -197,7 +197,7 @@ object SnesGameRecipes {
      * cueva y cielo — escaparate variado y reconocible.
      */
     private val SMW_SCENE_LEVELS = intArrayOf(
-        0x105, 0x106, 0x024, 0x0C7, 0x022, 0x0C5,
+        0x105, 0x106, 0x101, 0x0DE, 0x024, 0x0C7, 0x022, 0x0C5,
     )
 
     /**

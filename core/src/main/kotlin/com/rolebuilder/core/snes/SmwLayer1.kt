@@ -179,14 +179,30 @@ internal object SmwLayer1 {
         // ------------------------------ dispatch ------------------------------
 
         fun std(obj: Int) {
-            // Los objetos ≥0x30 son ESPECÍFICOS del tileset. Está portada la tabla de
-            // PRADERA (ProcessGrasslandObjects), que el juego usa para los tilesets 0,
-            // 7 y 0xC (kProcessStandardAndTilesetSpecificObjects_TilesetPtrs, $0D), y
-            // del CASTILLO (tileset 1) el bloque de piedra 0x3C; el resto (cuerda,
-            // subterráneo, casa fantasma) sigue sin portar.
+            // Los objetos ≥0x30 son ESPECÍFICOS del tileset
+            // (kProcessStandardAndTilesetSpecificObjects_TilesetPtrs, $0D). Portados:
+            // PRADERA completa (tilesets 0/7/0xC), y de CASTILLO (1) y CASA FANTASMA
+            // (4/5/0xD) los objetos que usan los niveles reales; cuerda y subterráneo
+            // siguen sin portar.
             if (obj >= 0x30 && tileset != 0 && tileset != 7 && tileset != 0xC) {
-                if (tileset == 1 && obj == 0x3C) { castleStoneBlock(); return }
-                unkStd(obj); return
+                when (tileset) {
+                    1 -> when (obj) {
+                        0x34 -> castleVerticalDoubleEndedPipe()
+                        0x3C -> castleStoneBlock()
+                        else -> unkStd(obj)
+                    }
+                    4, 5, 0xD -> when (obj) {
+                        0x34 -> ghostWoodLedgeOnColumn()
+                        0x35, 0x36 -> ghostBrickOrWood(obj - 0x35)
+                        0x37 -> ghostHorizontalLog()
+                        0x38 -> ghostWoodenLedgeRun(size and 0xF, pos)
+                        0x39 -> ghostVerticalLog()
+                        0x3A -> ghostBrickWallOrSpikes()
+                        else -> unkStd(obj)
+                    }
+                    else -> unkStd(obj)
+                }
+                return
             }
             when (obj) {
                 in 0x01..0x0E -> stdCoins(obj - 1)
@@ -228,6 +244,7 @@ internal object SmwLayer1 {
                 0x46 -> extMidwayBar()
                 0x47, 0x48 -> extDoor(k - 71)
                 0x4A -> extClimbingNetDoor()
+                0x90 -> extLargeBossDoor()
                 0x82 -> extLargeBush(EXT_BIG_BUSH, 8, 4)
                 0x83 -> extLargeBush(EXT_SMALL_BUSH, 5, 3)
                 0x86 -> extGoalSign()
@@ -351,6 +368,207 @@ internal object SmwLayer1 {
                 else -> side
             }
             setHi00(v1); setLo(v1, a)
+        }
+
+        /**
+         * Objeto de CASTILLO 0x34: TUBERÍA VERTICAL de doble boca (CastleObj34,
+         * $0D:C5D8): boca 0x33/0x34 (página 1) arriba y abajo, cuerpo 0x9D/0x9E
+         * (página 0) en medio. Alto = nibble alto (uint8: 0 = 256).
+         */
+        fun castleVerticalDoubleEndedPipe() {
+            var r0 = size shr 4
+            if (r0 == 0) r0 = 256
+            preserve()
+            val v1 = pos
+            setHi01(v1)
+            val v2 = horiz(v1, 0x33)
+            setHi01(v2); setLo(v2, 0x34)
+            var v4: Int
+            while (true) {
+                restore()
+                v4 = vert()
+                if (--r0 == 0) break
+                setHi00(v4)
+                val v3 = horiz(v4, 0x9D)
+                setHi00(v3); setLo(v3, 0x9E)
+            }
+            setHi01(v4)
+            val v5 = horiz(v4, 0x33)
+            setHi01(v5); setLo(v5, 0x34)
+        }
+
+        /**
+         * Objeto extendido 0x90: PUERTA GRANDE DEL JEFE 2×3 (ExtObj90, $0D:C31E):
+         * teselas 98/99, 9A/9B, 9C/9C, página 0.
+         */
+        fun extLargeBossDoor() {
+            val tiles = intArrayOf(0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9C)
+            var v0 = pos
+            var v1 = 0
+            do {
+                var r1 = 1
+                do {
+                    setHi00(v0)
+                    v0 = horiz(v0, tiles[v1++])
+                    r1--
+                } while (r1 >= 0)
+                v0 = vert()
+            } while (v1 != 6)
+        }
+
+        // ------------------------- objetos de CASA FANTASMA -------------------------
+        // Ports 1:1 de las rutinas GhostHouseObjXX del banco $0D (tilesets 4/5/0xD).
+
+        /**
+         * Tramo de SALIENTE DE MADERA (GhostHouseObj38 y la repisa de Obj34,
+         * $0D:ED4A): teselas 0x0A + 0x0B… y remate 0x0C, página 1.
+         */
+        fun ghostWoodenLedgeRun(kIn: Int, jIn: Int) {
+            var k = if (kIn == 0) 256 else kIn
+            var j = jIn
+            setHi01(j)
+            var i = 0x0A
+            while (true) {
+                j = horiz(j, i)
+                if (--k == 0) break
+                setHi01(j)
+                i = 0x0B
+            }
+            setHi01(j)
+            setLo(j, 0x0C)
+        }
+
+        /**
+         * Objeto 0x34 de casa fantasma: SALIENTE DE MADERA SOBRE COLUMNAS
+         * ($0D:EEC0): repisa de ancho 4n+2 y una columna (0x78 + 0x79…) cada 4
+         * celdas bajo ella. El cruce de página del interior de la columna NO
+         * sincroniza el puntero de respaldo, como el original.
+         */
+        fun ghostWoodLedgeOnColumn() {
+            var r0 = size and 0xF
+            val r1 = size shr 4
+            preserve()
+            ghostWoodenLedgeRun(4 * (size and 0xF) + 2, pos)
+            restore()
+            var v3 = (pos + 1) and 0xFF
+            if (v3 and 0xF == 0) { v3 = pos and 0xF0; forwardOneScreen() }
+            if (v3 + 16 >= 256) pageCross(1)
+            pos = (v3 + 16) and 0xFF
+            var v5 = pos
+            do {
+                restore()
+                var v6 = if (r1 == 0) 256 else r1
+                setHi00(v5)
+                var i = 0x78
+                while (true) {
+                    setLo(v5, i)
+                    if (v5 + 16 >= 256) ptr += 0x100 // cruce crudo, sin tocar ptrBak
+                    v5 = (v5 + 16) and 0xFF
+                    if (--v6 == 0) break
+                    setHi00(v5)
+                    i = 0x79
+                }
+                restore()
+                v5 = (pos + 4) and 0xFF
+                if (((v5 and 0xF) - 4) and 0x80 != 0) {
+                    v5 = (pos - 12) and 0xFF
+                    forwardOneScreen()
+                }
+                pos = v5
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objetos 0x35/0x36 de casa fantasma: FONDO DE LADRILLO (k=0, tesela 0x92,
+         * página 0) o BLOQUES DE MADERA sólidos (k=1, tesela 0x5E, página 1)
+         * ($0D:ECCE): rectángulo ancho×alto.
+         */
+        fun ghostBrickOrWood(k: Int) {
+            val tiles = intArrayOf(0x92, 0x5E, 0x82)
+            var v1 = pos
+            val r0 = size and 0xF
+            var r2 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            while (true) {
+                setHi00(v1)
+                if (k == 1) setHi01(v1)
+                v1 = horiz(v1, tiles[k])
+                r2 = (r2 - 1) and 0xFF
+                if (r2 and 0x80 != 0) {
+                    restore()
+                    v1 = vert()
+                    r2 = r0
+                    r1 = (r1 - 1) and 0xFF
+                    if (r1 and 0x80 != 0) break
+                }
+            }
+        }
+
+        /**
+         * Objeto 0x37 de casa fantasma: TRONCO/BARANDILLA horizontal de fondo
+         * ($0D:ED12): fila izquierda/medio/derecha según el tipo (nibble alto),
+         * página 0.
+         */
+        fun ghostHorizontalLog() {
+            val left = intArrayOf(0x82, 0x89, 0x88)
+            val mid = intArrayOf(0x82, 0x8A, 0x88)
+            val right = intArrayOf(0x82, 0x8B, 0x88)
+            val v2 = (size shr 4).coerceAtMost(2) // vanilla solo usa 0..2
+            var v1 = pos
+            var r0 = size and 0xF
+            if (r0 == 0) r0 = 256
+            setHi00(v1)
+            var i = left[v2]
+            while (true) {
+                v1 = horiz(v1, i)
+                if (--r0 == 0) break
+                setHi00(v1)
+                i = mid[v2]
+            }
+            setHi00(v1)
+            setLo(v1, right[v2])
+        }
+
+        /**
+         * Objeto 0x39 de casa fantasma: TRONCO VERTICAL de fondo ($0D:ED6B):
+         * columna con tesela superior y cuerpo según el tipo (nibble bajo), página 0.
+         */
+        fun ghostVerticalLog() {
+            val top = intArrayOf(0x83, 0x78, 0x79)
+            val bottom = intArrayOf(0x83, 0x79, 0x79)
+            val v2 = (size and 0xF).coerceAtMost(2) // vanilla solo usa 0..2
+            var v1 = pos
+            var r0 = size shr 4
+            setHi00(v1)
+            var i = top[v2]
+            while (true) {
+                setLo(v1, i)
+                v1 = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                setHi00(v1)
+                i = bottom[v2]
+            }
+        }
+
+        /**
+         * Objeto 0x3A de casa fantasma: MURO DE LADRILLO sólido o LÍNEA VERTICAL DE
+         * PINCHOS ($0D:ED99): columna de la tesela elegida por el nibble bajo
+         * (0x5F/0x60 muro, 0x5A/0x5B pinchos), página 1.
+         */
+        fun ghostBrickWallOrSpikes() {
+            val tiles = intArrayOf(0x5F, 0x60, 0x5A, 0x5B)
+            val v1 = (size and 0xF).coerceAtMost(3) // vanilla solo usa 0..3
+            var v2 = pos
+            var r0 = size shr 4
+            do {
+                setHi01(v2)
+                setLo(v2, tiles[v1])
+                v2 = vert()
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
         }
 
         /**
