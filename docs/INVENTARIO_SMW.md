@@ -91,15 +91,15 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
 
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 
-- **Cobertura del parser de objetos de Layer 1 por nivel** (medida sobre la ROM
-  US; % de objetos del nivel con rutina portada): 0x106 YI2 = 96% (5 objetos sin
-  portar), 0x024 = 100%, 0x0C7 = 100%, 0x022 = 95%, 0x0C5 = 100%, **0x105
-  Yoshi's Island 1 = 70% (27 sin portar)**, **0x101 = 19% (97 sin portar)**.
-  Consecuencia: 0x105/0x101 NO se cargan correctamente hoy — la escena no pasa
-  el gate de honestidad y su COLISIÓN en la ruta ROM directa tiene huecos
-  (celdas de objetos no parseados quedan como aire). Portar más rutinas de
-  objetos de Layer 1 es la llave que abre niveles nuevos, casas fantasma,
-  warps de proyecto y galería.
+- **Cobertura del parser de objetos de Layer 1 por nivel** (ROM US): **0x105
+  Yoshi's Island 1 = 100%** (antes 70%: se portaron StdObj1F tubería fina,
+  ExtObj86 cartel de meta, ExtObj8E bloque de interruptor y GrassObj39 tubería
+  diagonal, y el gate ahora acepta los tilesets 7/0xC que usan la tabla de
+  pradera, como el juego). 0x106 YI2 = 96%, 0x024/0x0C7/0x0C5 = 100%,
+  0x022 = 95%. Pendientes: 0x101 = 19% (necesita la tabla de CUERDA: std
+  1A/1B/1D/1E/3C + ext 4A) y casas fantasma (tabla propia: std 34-3A). El
+  parser ahora REGISTRA los ids sin portar (SmwLevelTilemap.unknownIds), así
+  que medir el siguiente nivel es inmediato.
 
 - **Tuberías horizontales (0x3F)**: el byte aparece 65.831 veces en las
   rejillas de la ROM US (p. ej. regiones 6×2 en 0x105/0x106 lejos de la salida)

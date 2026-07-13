@@ -30,6 +30,8 @@ internal object SmwLayer1 {
         val mode: Int,
         val totalObjects: Int,
         val unknownObjects: Int,
+        /** id de objeto sin rutina portada → nº de apariciones ("std:NN"/"ext:NN"). */
+        val unknownIds: Map<String, Int> = emptyMap(),
     ) {
         /** Bloque Map16 en (colAbs 0..screens*16-1, fila 0..26), o -1 fuera de rango. */
         fun block(colAbs: Int, row: Int): Int {
@@ -104,7 +106,13 @@ internal object SmwLayer1 {
             return done()
         }
 
-        fun done() = SmwLevelTilemap(lo, hi, screensInLevel, tileset, mode, total, unknown)
+        val unknownIds = HashMap<String, Int>()
+
+        fun unkStd(id: Int) { unknown++; val k = "std:%02X".format(id); unknownIds[k] = (unknownIds[k] ?: 0) + 1 }
+
+        fun unkExt(id: Int) { unknown++; val k = "ext:%02X".format(id); unknownIds[k] = (unknownIds[k] ?: 0) + 1 }
+
+        fun done() = SmwLevelTilemap(lo, hi, screensInLevel, tileset, mode, total, unknown, unknownIds)
 
         // ------------------------------ primitivas ------------------------------
         // Réplicas exactas de las rutinas de $0D:A6B1..A9EF (ver smw_0d.c).
@@ -171,30 +179,33 @@ internal object SmwLayer1 {
         // ------------------------------ dispatch ------------------------------
 
         fun std(obj: Int) {
-            // Los objetos ≥0x30 son ESPECÍFICOS del tileset; solo están portadas las
-            // rutinas de pradera (tileset 0). En otros tilesets significan otra cosa:
-            // se cuentan como no portados en vez de dibujar basura.
-            if (obj >= 0x30 && tileset != 0) { unknown++; return }
+            // Los objetos ≥0x30 son ESPECÍFICOS del tileset. Está portada la tabla de
+            // PRADERA (ProcessGrasslandObjects), que el juego usa para los tilesets 0,
+            // 7 y 0xC (kProcessStandardAndTilesetSpecificObjects_TilesetPtrs, $0D);
+            // el resto (castillo, cuerda, subterráneo, casa fantasma) sigue sin portar.
+            if (obj >= 0x30 && tileset != 0 && tileset != 7 && tileset != 0xC) { unkStd(obj); return }
             when (obj) {
                 in 0x01..0x0E -> stdCoins(obj - 1)
-                0x0F -> if ((size and 0xF) < 5) stdVerticalPipes() else unknown++
-                0x10 -> if (((size and 0xF0) shr 3) < 7) stdHorizontalPipes() else unknown++
+                0x0F -> if ((size and 0xF) < 5) stdVerticalPipes() else unkStd(obj)
+                0x10 -> if (((size and 0xF0) shr 3) < 7) stdHorizontalPipes() else unkStd(obj)
                 0x11 -> stdBulletShooter()
                 0x12 -> stdSlopes()
-                0x13 -> if ((size and 0xF) < 15) stdGroundEdges() else unknown++
+                0x13 -> if ((size and 0xF) < 15) stdGroundEdges() else unkStd(obj)
                 0x14 -> stdLedge(size and 0xF, size shr 4)      // entrada "standard ledge"
                 0x15 -> stdMidwayGoal()
                 0x16 -> stdPurpleCoins()
-                0x17 -> if ((size shr 4) < 2) stdRopeCloudLine() else unknown++
+                0x17 -> if ((size shr 4) < 2) stdRopeCloudLine() else unkStd(obj)
                 0x1C -> stdDonutBridge()
+                0x1F -> stdSkinnyVerticalPipe()
                 0x21 -> stdLedge(size, 2)                        // wide-scale ground ledge
+                0x39 -> grassDiagonalPipeRight()
                 0x3A -> grassDiagonalLedgeLeft()
                 0x3B -> grassDiagonalLedgeRight()
                 0x3C -> grassArchLedge()
-                0x3D -> if ((size shr 4) < 2) grassTopCloudFringe() else unknown++
-                0x3E -> if ((size and 0xF) < 8) grassSideCloudFringes() else unknown++
-                0x3F -> if ((size shr 4) < 5) grassSmallBushes() else unknown++
-                else -> unknown++
+                0x3D -> if ((size shr 4) < 2) grassTopCloudFringe() else unkStd(obj)
+                0x3E -> if ((size and 0xF) < 8) grassSideCloudFringes() else unkStd(obj)
+                0x3F -> if ((size shr 4) < 5) grassSmallBushes() else unkStd(obj)
+                else -> unkStd(obj)
             }
         }
 
@@ -211,7 +222,9 @@ internal object SmwLayer1 {
                 0x47, 0x48 -> extDoor(k - 71)
                 0x82 -> extLargeBush(EXT_BIG_BUSH, 8, 4)
                 0x83 -> extLargeBush(EXT_SMALL_BUSH, 5, 3)
-                else -> unknown++
+                0x86 -> extGoalSign()
+                0x8E -> extSwitchBlockYellow()
+                else -> unkExt(k)
             }
         }
 
@@ -231,6 +244,59 @@ internal object SmwLayer1 {
             setHi00(v2); setLo(v2, 0x2D)
             val v3 = vert()
             setHi00(v3); setLo(v3, 0x2E)
+        }
+
+        /**
+         * Objeto estándar 0x1F: TUBERÍA VERTICAL FINA / tronco (StdObj1F, $0D:B51F):
+         * columna de boca 0x53 + cuerpo 0x54 y remate 0x55, todo página 1. El alto es
+         * el nibble alto del byte de tamaño; el juego decrementa un uint8 (0 = 256).
+         */
+        fun stdSkinnyVerticalPipe() {
+            var v1 = pos
+            var v2 = (size and 0xF0) shr 4
+            if (v2 == 0) v2 = 256
+            setHi01(v1)
+            var i = 0x53
+            while (true) {
+                setLo(v1, i)
+                v1 = vert()
+                if (--v2 == 0) break
+                setHi01(v1)
+                i = 0x54
+            }
+            setHi01(v1)
+            setLo(v1, 0x55)
+        }
+
+        /**
+         * Objeto extendido 0x86: CARTEL DE META 2×2 (ExtObj86_GoalSign, $0D:A7E7):
+         * teselas 0x66/0x67 arriba y 0x68/0x69 abajo, página 0.
+         */
+        fun extGoalSign() {
+            val tiles = intArrayOf(0x66, 0x67, 0x68, 0x69)
+            var v0 = pos
+            var v1 = 0
+            preserve()
+            do {
+                do {
+                    setHi00(v0)
+                    v0 = horiz(v0, tiles[v1++])
+                } while (v1 and 1 != 0)
+                restore()
+                v0 = vert()
+            } while (v1 != 4)
+        }
+
+        /**
+         * Objeto extendido 0x8E: BLOQUE DE INTERRUPTOR AMARILLO (ExtObj8E, $0D:B58D).
+         * En frío (interruptor sin pisar; misma convención de "memoria a 0" que
+         * [ext1Tile]) es la silueta punteada: tesela 0x6B de página 0
+         * (kExtObj8E_YellowSwitchBlock_InactiveTiles[1]).
+         */
+        fun extSwitchBlockYellow() {
+            val v1 = pos
+            setHi00(v1)
+            setLo(v1, 0x6B)
         }
 
         fun extTopLeftSlope(v2: Int) {
@@ -1071,6 +1137,56 @@ internal object SmwLayer1 {
                 setHi00(v6)
                 horiz(v6, ARCH[v5])
             }
+        }
+
+        /**
+         * Objeto de pradera 0x39: TUBERÍA DIAGONAL hacia la derecha
+         * (GrassObj39_RightFacingDiagonalPipe, $0D:B73F): crece en diagonal bajando a
+         * la izquierda (filas cada vez más anchas), con remate 0xEB. Todo página 1.
+         * Port 1:1 incluida la aritmética uint8 de los contadores.
+         */
+        fun grassDiagonalPipeRight() {
+            val tiles = intArrayOf(
+                0xC4, 0xC5, 0xC7, 0xEC, 0xED, 0xC6, 0xC7, 0xEE,
+                0x59, 0x5A, 0xEF, 0xC7, 0xEE, 0x59, 0x5B, 0x5C,
+            )
+            var updated = pos
+            var r0 = size shr 4
+            var r1 = 1
+            var v2 = 0
+            preserve()
+            while (true) {
+                var r2 = r1
+                do {
+                    setHi01(updated)
+                    updated = horiz(updated, tiles[v2++])
+                    r2 = (r2 - 1) and 0xFF
+                } while (r2 and 0x80 == 0)
+                restore()
+                updated = goDownLeft()
+                r1 += 2
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                if (v2 == 6) {
+                    r1--
+                    do {
+                        r2 = r1
+                        do {
+                            setHi01(updated)
+                            updated = horiz(updated, tiles[v2++])
+                            r2 = (r2 - 1) and 0xFF
+                        } while (r2 and 0x80 == 0)
+                        restore()
+                        updated = goDownLeft()
+                        if (v2 == 16) v2 = 11
+                        r0 = (r0 - 1) and 0xFF
+                    } while (r0 and 0x80 == 0)
+                    break
+                }
+            }
+            val v3 = horizNext(updated)
+            setHi01(v3)
+            setLo(v3, 0xEB)
         }
 
         fun grassDiagonalLedgeLeft() {
