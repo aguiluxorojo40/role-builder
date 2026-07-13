@@ -4,6 +4,7 @@ import com.rolebuilder.core.engine.platformer.BlockAction
 import com.rolebuilder.core.engine.platformer.EnemySeed
 import com.rolebuilder.core.engine.platformer.EngineWarp
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
+import com.rolebuilder.core.engine.platformer.PowerupKind
 import com.rolebuilder.core.engine.platformer.WarpInput
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.snes.SmwPhysics
@@ -316,6 +317,112 @@ class PlatformerEngineTest {
         e.run(60)
         assertTrue(e.player.dead, "pequeño muere al contacto")
         assertEquals(1, e.deathEvents)
+    }
+
+    // --------------------------------------------------------------- flor de fuego
+
+    /** Motor que ARRANCA grande, con suelo lleno, un `?` sobre la cabeza y enemigos. */
+    private fun bigPrizeEngine(seeds: List<EnemySeed> = emptyList()): PlatformerEngine {
+        val cols = 10; val rows = 8
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[6][c] = SmwSolidity.SOLID // suelo
+        grid[3][2] = SmwSolidity.SOLID                          // bloque ? sólido
+        val actions = IntArray(cols * rows) { BlockAction.NONE.ordinal }
+        actions[3 * cols + 2] = BlockAction.PRIZE.ordinal
+        return PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 2 * 16, startPixelY = 6 * 16 - PlatformerEngine.BIG_HEIGHT.toInt(),
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
+            blockActions = actions, enemySeeds = seeds,
+        )
+    }
+
+    @Test
+    fun `Mario grande cabecea un ? y suelta una FLOR DE FUEGO`() {
+        val e = bigPrizeEngine()
+        assertTrue(e.player.big, "arranca grande")
+        e.run(20)
+        e.setJumpHeld(true); e.pressJump()
+        e.run(60) // cabecea el bloque
+        assertEquals(0, e.coins, "grande sin fuego no da moneda")
+        assertEquals(1, e.items.size, "el bloque ? soltó un premio")
+        assertEquals(PowerupKind.FIRE_FLOWER, e.items.first().kind, "y es una flor de fuego")
+    }
+
+    @Test
+    fun `recoger la flor de fuego da el poder de fuego`() {
+        val e = bigPrizeEngine()
+        e.run(20)
+        e.setJumpHeld(true); e.pressJump()
+        e.run(60) // cabecea: sale la flor
+        e.setJumpHeld(false)
+        assertFalse(e.player.fire)
+        // La flor cae sobre el jugador (misma columna) y se recoge.
+        var guard = 0
+        while (!e.player.fire && guard < 400) { e.tick(); guard++ }
+        assertTrue(e.player.fire, "recogió la flor y tiene fuego")
+        assertTrue(e.player.big, "el fuego implica seguir grande")
+        assertTrue(e.items.none { it.alive }, "la flor se consumió")
+    }
+
+    @Test
+    fun `Mario de fuego lanza una bola que mata a un enemigo`() {
+        // Suelo lleno, jugador de fuego a la izquierda, enemigo unas casillas a la derecha.
+        val cols = 12; val rows = 8
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[6][c] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 2 * 16, startPixelY = 6 * 16 - PlatformerEngine.BIG_HEIGHT.toInt(),
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
+            enemySeeds = listOf(EnemySeed(6 * 16, 6 * 16 - 14, 0)),
+        )
+        e.player.fire = true
+        e.run(10) // se posa
+        val enemy = e.enemies.single()
+        assertTrue(enemy.alive)
+        e.moveX = 1f; e.tick()          // mira a la derecha (hacia el enemigo)
+        e.running = true; e.tick()      // flanco de correr → lanza una bola
+        assertEquals(1, e.fireballEvents, "un flanco de correr = una bola")
+        assertTrue(e.fireballs.any { it.alive }, "hay una bola en vuelo")
+        e.moveX = 0f                     // no avanzar tras el enemigo; que lo mate la bola
+        e.run(40)
+        assertFalse(enemy.alive, "la bola de fuego mata al enemigo")
+    }
+
+    @Test
+    fun `dos bolas de fuego son el maximo en pantalla`() {
+        val cols = 20; val rows = 8
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[6][c] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 2 * 16, startPixelY = 6 * 16 - PlatformerEngine.BIG_HEIGHT.toInt(),
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
+        )
+        e.player.fire = true
+        e.run(10)
+        // Tres pulsaciones de correr seguidas: solo dos bolas caben en pantalla.
+        repeat(3) { e.running = false; e.tick(); e.running = true; e.tick() }
+        assertTrue(e.fireballs.count { it.alive } <= 2, "nunca más de dos bolas vivas")
+    }
+
+    @Test
+    fun `un golpe siendo de fuego lo deja pequeno`() {
+        val cols = 12; val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 5 * 16, startPixelY = 8 * 16 - PlatformerEngine.BIG_HEIGHT.toInt(),
+            tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
+            enemySeeds = listOf(EnemySeed(6 * 16, 8 * 16 - 14, 0)),
+        )
+        e.player.fire = true // ya tenía fuego
+        e.run(30) // el enemigo le golpea de lado
+        assertFalse(e.player.dead, "no muere: pierde el poder")
+        assertFalse(e.player.fire, "deja de tener fuego")
+        assertFalse(e.player.big, "y queda pequeño")
     }
 
     // -------------------------------------------------------------------- warps

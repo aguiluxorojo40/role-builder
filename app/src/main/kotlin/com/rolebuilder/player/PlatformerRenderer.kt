@@ -48,6 +48,8 @@ class PlatformerRenderer(
     private val audio: PlatformerAudio? = null,
     /** Hoja de Mario GRANDE (poder 1, gráficos propios); null = escalar la de pequeño. */
     private val marioBigBitmap: Bitmap? = null,
+    /** Hoja de Mario de FUEGO (poder 3: gráficos de grande, paleta blanca); null = usar grande. */
+    private val marioFireBitmap: Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -67,6 +69,7 @@ class PlatformerRenderer(
     private var lastCoinEvents = 0
     private var lastPowerupEvents = 0
     private var lastDamageEvents = 0
+    private var lastFireballEvents = 0
 
     /** Lo lee la UI para el aviso de "has muerto". */
     @Volatile var dead = false
@@ -80,6 +83,7 @@ class PlatformerRenderer(
     private lateinit var white: Texture
     private var marioTex: Texture? = null
     private var marioBigTex: Texture? = null
+    private var marioFireTex: Texture? = null
     private var marioAnim = 0f
     private var enemyTex: Texture? = null
     private var tilesetTex: Texture? = null
@@ -93,6 +97,7 @@ class PlatformerRenderer(
         white = Texture.white()
         marioTex = marioBitmap?.let { Texture(it) }
         marioBigTex = marioBigBitmap?.let { Texture(it) }
+        marioFireTex = marioFireBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
@@ -142,12 +147,15 @@ class PlatformerRenderer(
             if (engine.powerupEvents > lastPowerupEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.POWERUP)
             // Encoger por golpe: no hay SFX propio en el catálogo; un pisotón grave sirve.
             if (engine.damageEvents > lastDamageEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP, volume = 0.6f, rate = 0.6f)
+            // Lanzar bola: sin SFX propio en el catálogo; un blip agudo y corto ("fwip").
+            if (engine.fireballEvents > lastFireballEvents) a.play(com.rolebuilder.core.snes.SmwSfxCatalog.Event.STOMP, volume = 0.35f, rate = 1.9f)
             lastJumpEvents = engine.jumpEvents
             lastStompEvents = engine.stompEvents
             lastDeathEvents = engine.deathEvents
             lastCoinEvents = engine.coinEvents
             lastPowerupEvents = engine.powerupEvents
             lastDamageEvents = engine.damageEvents
+            lastFireballEvents = engine.fireballEvents
         }
 
         // Cámara en casillas (16 px = 1 casilla), centrada en Mario.
@@ -250,8 +258,26 @@ class PlatformerRenderer(
             val my = m.y / 16f
             val mw = m.width / 16f
             val mh = m.height / 16f
-            batch.draw(white, mx, my, mw, mh * 0.55f, r = 0.90f, g = 0.16f, b = 0.14f, a = 1f)
-            batch.draw(white, mx + mw * 0.2f, my + mh * 0.55f, mw * 0.6f, mh * 0.45f, r = 1f, g = 0.9f, b = 0.75f, a = 1f)
+            if (m.kind == com.rolebuilder.core.engine.platformer.PowerupKind.FIRE_FLOWER) {
+                // Flor de fuego: pétalos naranjas y centro claro (dibujo de motor).
+                batch.draw(white, mx, my, mw, mh * 0.6f, r = 1f, g = 0.45f, b = 0.10f, a = 1f)
+                batch.draw(white, mx + mw * 0.3f, my + mh * 0.2f, mw * 0.4f, mh * 0.35f, r = 1f, g = 0.95f, b = 0.7f, a = 1f)
+                batch.draw(white, mx + mw * 0.2f, my + mh * 0.6f, mw * 0.6f, mh * 0.4f, r = 0.25f, g = 0.7f, b = 0.25f, a = 1f)
+            } else {
+                batch.draw(white, mx, my, mw, mh * 0.55f, r = 0.90f, g = 0.16f, b = 0.14f, a = 1f)
+                batch.draw(white, mx + mw * 0.2f, my + mh * 0.55f, mw * 0.6f, mh * 0.45f, r = 1f, g = 0.9f, b = 0.75f, a = 1f)
+            }
+        }
+
+        // Bolas de fuego en vuelo: núcleo claro con halo naranja (dibujo de motor).
+        for (fb in engine.fireballs) {
+            if (!fb.alive) continue
+            val bx = fb.x / 16f
+            val by = fb.y / 16f
+            val bw = fb.width / 16f
+            val bh = fb.height / 16f
+            batch.draw(white, bx, by, bw, bh, r = 1f, g = 0.45f, b = 0.10f, a = 1f)
+            batch.draw(white, bx + bw * 0.25f, by + bh * 0.25f, bw * 0.5f, bh * 0.5f, r = 1f, g = 0.95f, b = 0.6f, a = 1f)
         }
 
         drawMario(dt)
@@ -268,9 +294,12 @@ class PlatformerRenderer(
         val p = engine.player
         // Invulnerable tras encoger: parpadea (se salta el dibujo en pulsos), como SMW.
         if (p.invulnFrames > 0 && (p.invulnFrames / 4) % 2 == 1) return
-        // Grande usa su PROPIA hoja (gráficos de Mario grande); si no hay, escala la de
-        // pequeño como reserva. Pequeño siempre la suya.
-        val tex = if (p.big) (marioBigTex ?: marioTex) else marioTex
+        // Cada poder usa su PROPIA hoja: fuego (blanco) → grande → pequeño como reserva.
+        val tex = when {
+            p.fire -> marioFireTex ?: marioBigTex ?: marioTex
+            p.big -> marioBigTex ?: marioTex
+            else -> marioTex
+        }
         if (tex == null) {
             val w = engine.tuning.playerWidth / 16f
             val h = engine.playerHeight / 16f

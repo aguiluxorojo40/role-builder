@@ -16,22 +16,42 @@ class PlatformerBody(var x: Float, var y: Float) {
     var jumping = false
     /** ¿Mario grande? (seta recogida). Cambia la altura de la caja y aguanta un golpe. */
     var big = false
+    /** ¿Mario de FUEGO? (flor recogida). Implica grande y permite lanzar bolas de fuego. */
+    var fire = false
     /** Fotogramas de invulnerabilidad restantes tras encoger por un golpe. */
     var invulnFrames = 0
 }
 
+/** Qué otorga un [PowerupItem] al recogerlo: SETA (crece) o FLOR (da fuego). */
+enum class PowerupKind { MUSHROOM, FIRE_FLOWER }
+
 /**
- * SETA de powerup en marcha (píxeles): sale de un bloque `?`, cae con gravedad,
- * avanza en línea recta rebotando en las paredes (y cayéndose por los bordes, como
- * en SMW) y crece al jugador al tocarla.
+ * Powerup en marcha (píxeles): sale de un bloque `?`, cae con gravedad, avanza en
+ * línea recta rebotando en las paredes (y cayéndose por los bordes, como en SMW) y
+ * al tocar al jugador le da su efecto según [kind] (SETA crece; FLOR da fuego). La
+ * flor de SMW no camina, pero mantener el mismo movimiento simplifica y se recoge
+ * igual de rápido.
  */
-class PowerupItem(var x: Float, var y: Float) {
+class PowerupItem(var x: Float, var y: Float, val kind: PowerupKind = PowerupKind.MUSHROOM) {
     val width = 14f
     val height = 14f
     var vx = 0.8f
     var vy = 0f
     var onGround = false
     var alive = true
+}
+
+/**
+ * Bola de fuego que lanza Mario de fuego (píxeles): avanza en su dirección, cae con
+ * gravedad y REBOTA en el suelo (como en SMW), mata al enemigo que toca y se apaga al
+ * chocar con una pared, salir del nivel o agotar su vida.
+ */
+class Fireball(var x: Float, var y: Float, var vx: Float) {
+    val width = 8f
+    val height = 8f
+    var vy = 1.5f
+    var alive = true
+    var life = 200 // fotogramas máximos en pantalla
 }
 
 /** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
@@ -124,8 +144,11 @@ class PlatformerEngine(
     private val smallHeight =
         if (tuning.playerHeight >= BIG_HEIGHT) SMALL_HEIGHT else tuning.playerHeight
 
-    /** Setas de powerup en marcha (vivas o no; la capa de dibujo filtra por alive). */
+    /** Powerups en marcha (seta/flor; vivas o no; la capa de dibujo filtra por alive). */
     val items = ArrayList<PowerupItem>()
+
+    /** Bolas de fuego en vuelo lanzadas por Mario de fuego. */
+    val fireballs = ArrayList<Fireball>()
 
     /** Warps por celda (col,row) del nivel; se activan al entrar con el input correcto. */
     private val warpAt: Map<Long, EngineWarp> = warps.associateBy { cellKey(it.col, it.row) }
@@ -196,6 +219,12 @@ class PlatformerEngine(
     /** Evento "golpe recibido" (Mario encoge en vez de morir). */
     var damageEvents = 0
         private set
+    /** Evento "bola de fuego lanzada". */
+    var fireballEvents = 0
+        private set
+
+    /** Rising-edge del botón de correr (para lanzar bolas con la misma tecla, como SMW). */
+    private var prevRunning = false
 
     /** Crece a Mario grande (los pies se quedan donde están; sube la cabeza). */
     private fun growPlayer() {
@@ -205,20 +234,43 @@ class PlatformerEngine(
         powerupEvents++
     }
 
+    /** Da a Mario el poder de FUEGO (implica grande; crece antes si era pequeño). */
+    private fun makeFire() {
+        if (!player.big) growPlayer() else powerupEvents++
+        player.fire = true
+    }
+
     /**
-     * Golpe de enemigo: grande → encoge (con un periodo de invulnerabilidad para
-     * poder escapar, como en SMW); pequeño → muere.
+     * Golpe de enemigo: con poder (grande/fuego) → vuelve a PEQUEÑO (pierde el fuego),
+     * con invulnerabilidad para escapar como en SMW; pequeño → muere.
      */
     private fun hurtPlayer() {
         if (player.invulnFrames > 0) return
         if (player.big) {
             player.big = false
+            player.fire = false
             player.y += BIG_HEIGHT - smallHeight // los pies no se mueven
             player.invulnFrames = INVULN_FRAMES
             damageEvents++
         } else {
             killPlayer()
         }
+    }
+
+    /**
+     * Lanza una bola de fuego si Mario tiene el poder, está en el suelo o el aire y no
+     * hay ya dos en pantalla (límite de SMW). Sale desde el pecho en la dirección a la
+     * que mira.
+     */
+    private fun throwFireball() {
+        if (!player.fire || player.dead) return
+        if (fireballs.count { it.alive } >= 2) return
+        val dir = if (player.facingRight) 1f else -1f
+        val speed = 4f
+        val fx = player.x + if (player.facingRight) tuning.playerWidth else -8f
+        val fy = player.y + playerHeight * 0.35f
+        fireballs.add(Fireball(fx, fy, dir * speed))
+        fireballEvents++
     }
 
     /** Marca al jugador como muerto una sola vez y cuenta el evento. */
@@ -270,6 +322,10 @@ class PlatformerEngine(
             p.vx = if (p.vx > 0) max(0f, p.vx - t.friction) else min(0f, p.vx + t.friction)
         }
 
+        // --- lanzar bola de fuego: al PULSAR correr (misma tecla que en SMW) ---
+        if (running && !prevRunning) throwFireball()
+        prevRunning = running
+
         // --- salto (con buffer de una pulsación) ---
         if (jumpPressedEdge && p.onGround) {
             p.vy = t.jumpSpeed
@@ -292,6 +348,7 @@ class PlatformerEngine(
 
         updateEnemies()
         updateItems()
+        updateFireballs()
         handlePlayerEnemyContact()
         collectCoins()
         checkWarps()
@@ -383,7 +440,66 @@ class PlatformerEngine(
                 p.y < m.y + m.height && p.y + ph > m.y
             if (overlap && !p.dead) {
                 m.alive = false
-                if (!p.big) growPlayer() else { coins++; coinEvents++ }
+                when (m.kind) {
+                    PowerupKind.MUSHROOM -> if (!p.big) growPlayer() else { coins++; coinEvents++ }
+                    PowerupKind.FIRE_FLOWER -> if (!p.fire) makeFire() else { coins++; coinEvents++ }
+                }
+            }
+        }
+    }
+
+    /**
+     * Mueve las bolas de fuego: avanzan en su dirección, caen con gravedad y REBOTAN al
+     * tocar el suelo (como en SMW); matan al enemigo que tocan y se apagan al chocar con
+     * una pared, salir del nivel o agotar su vida. Máximo dos vivas (lo controla el
+     * lanzamiento).
+     */
+    private fun updateFireballs() {
+        if (fireballs.isEmpty()) return
+        val it = fireballs.iterator()
+        while (it.hasNext()) {
+            val fb = it.next()
+            if (!fb.alive) { it.remove(); continue }
+            if (--fb.life <= 0) { fb.alive = false; it.remove(); continue }
+            // Vertical: gravedad y rebote contra el suelo.
+            fb.vy = min(fb.vy + tuning.gravityFall, tuning.maxFallSpeed)
+            var ny = fb.y + fb.vy
+            val minCol = (fb.x / tileSize).toInt()
+            val maxCol = ((fb.x + fb.width - 0.01f) / tileSize).toInt()
+            if (fb.vy > 0) {
+                val row = ((ny + fb.height) / tileSize).toInt()
+                if ((minCol..maxCol).any { c -> blocksFloor(solidity(c, row)) }) {
+                    ny = row * tileSize - fb.height - 0.01f
+                    fb.vy = -2.5f // rebota hacia arriba
+                }
+            }
+            fb.y = ny
+            // Horizontal: al chocar con una pared se apaga.
+            val nx = fb.x + fb.vx
+            val minRow = (fb.y / tileSize).toInt()
+            val maxRow = ((fb.y + fb.height - 0.01f) / tileSize).toInt()
+            val frontCol = if (fb.vx > 0) ((nx + fb.width) / tileSize).toInt() else (nx / tileSize).toInt()
+            if ((minRow..maxRow).any { r -> blocksSide(solidity(frontCol, r)) }) {
+                fb.alive = false; it.remove(); continue
+            }
+            fb.x = nx
+            // Fuera del nivel (lados o fondo): se apaga.
+            if (fb.x < -16f || fb.x > (cols + 1) * tileSize || fb.y > (rows + 3) * tileSize) {
+                fb.alive = false; it.remove(); continue
+            }
+            // Impacto con enemigo vivo: lo mata (como un pisotón, para el sonido).
+            for (e in enemies) {
+                if (!e.alive) continue
+                if (fb.x < e.x + e.width && fb.x + fb.width > e.x &&
+                    fb.y < e.y + e.height && fb.y + fb.height > e.y
+                ) {
+                    e.alive = false
+                    e.squashTimer = 12
+                    stompEvents++
+                    fb.alive = false
+                    it.remove()
+                    break
+                }
             }
         }
     }
@@ -528,15 +644,17 @@ class PlatformerEngine(
                 // Bloque '?': el golpe desde abajo suelta el premio y lo deja "usado"
                 // (sigue sólido; su solidez no cambia). Un cabezazo = un bloque.
                 // Premio progresivo (simplificación de diseño, no dato de la ROM):
-                // SETA si Mario es pequeño; MONEDA si ya es grande.
+                // SETA si es pequeño; FLOR DE FUEGO si es grande sin fuego; MONEDA si ya
+                // tiene fuego.
                 for (c in hitCols) {
                     if (blockActionAt(c, row) == BlockAction.PRIZE) {
                         setAction(c, row, BlockAction.NONE)
-                        if (!p.big) {
-                            items.add(PowerupItem(c * tileSize + 1f, row * tileSize - 15f))
-                        } else {
-                            coins++
-                            coinEvents++
+                        val px = c * tileSize + 1f
+                        val py = row * tileSize - 15f
+                        when {
+                            !p.big -> items.add(PowerupItem(px, py, PowerupKind.MUSHROOM))
+                            !p.fire -> items.add(PowerupItem(px, py, PowerupKind.FIRE_FLOWER))
+                            else -> { coins++; coinEvents++ }
                         }
                         break
                     }

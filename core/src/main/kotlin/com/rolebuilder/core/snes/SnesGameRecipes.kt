@@ -775,14 +775,23 @@ object SnesGameRecipes {
     val SMW_MARIO_POWERUP_TILESET = intArrayOf(0x00, 0x46, 0x83, 0x46)
 
     /**
+     * Fila de paleta de jugador por PODER (de kPlayerGFXRt_PalettePointers para Mario:
+     * v4 = 2·poder). Pequeño/grande/capa usan la paleta normal de Mario (player 0);
+     * FUEGO usa la suya (player 2): peto y gorra BLANCOS, camisa roja. Sin esto, Mario
+     * de fuego saldría con los colores normales.
+     */
+    val SMW_MARIO_POWERUP_PALETTE = intArrayOf(0, 0, 0, 2)
+
+    /**
      * Hoja de sprites de MARIO ya COMPUESTA como la ensambla el juego: por cada pose
      * apila la tesela de la CABEZA sobre la del CUERPO (ver [SMW_PLAYER_HEAD_TILE_PC]/
      * [SMW_PLAYER_BODY_TILE_PC]), así la cara sale con su color de piel en vez de un
      * hueco en blanco. Coloreada con la paleta de jugador REAL de la ROM (fila 8 de la
      * CGRAM: col 1 blanco, cols 2-5 colores estándar, cols 6-F la paleta de Mario).
      *
-     * [powerup] elige el juego de gráficos (0 pequeño, 1 grande, 2 fuego, 3 capa) vía
-     * [SMW_MARIO_POWERUP_TILESET]; por defecto 0 (pequeño), la salida histórica.
+     * [powerup] elige el juego de gráficos Y la paleta (0 pequeño, 1 grande, 2 capa,
+     * 3 fuego) vía [SMW_MARIO_POWERUP_TILESET]/[SMW_MARIO_POWERUP_PALETTE]; por defecto
+     * 0 (pequeño), la salida histórica.
      *
      * Salida: un fotograma de 16×32 px por pose de [SMW_MARIO_SHEET_POSES], en fila
      * (ancho = 16·nPoses, alto = 32). Devuelve null si no se pudo leer/descomprimir
@@ -806,7 +815,7 @@ object SnesGameRecipes {
         // Blanco de SPRITE (fila 8) = $7FFF, no el $7FDD de objeto.
         val white = SnesDecoder.bgr15ToArgb(0x7FFF)
         val fix8 = tables.fixedRow(8)
-        val pl = tables.player(0)
+        val pl = tables.player(SMW_MARIO_POWERUP_PALETTE[powerup.coerceIn(0, 3)])
         val marioPal = intArrayOf(
             0, white, fix8[0], fix8[1], fix8[2], fix8[3],
             pl[0], pl[1], pl[2], pl[3], pl[4], pl[5], pl[6], pl[7], pl[8], pl[9],
