@@ -83,13 +83,25 @@ class PlatformerActivity : ComponentActivity() {
                 renderer,
                 onRestart = { recreate() },
                 onExit = { finish() },
-                // Warp consumido (tubería/puerta): en modo ROM, el destino es un número
-                // de NIVEL de SMW → se relanza la actividad en ese nivel.
+                // Warp consumido (tubería/puerta): en modo ROM el destino es un número
+                // de NIVEL de SMW; en modo proyecto, un id de MAPA del proyecto (con su
+                // casilla de entrada). En ambos casos se relanza la actividad allí.
                 onWarp = { dest ->
                     val romPath = intent.getStringExtra(EXTRA_ROM_PATH)
-                    if (romPath != null) {
-                        startActivity(intent(this, File(romPath), dest.destMapId))
-                        finish()
+                    val projPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
+                    when {
+                        romPath != null -> {
+                            startActivity(intent(this, File(romPath), dest.destMapId))
+                            finish()
+                        }
+                        projPath != null -> {
+                            startActivity(
+                                intentForProject(this, File(projPath), dest.destMapId)
+                                    .putExtra(EXTRA_START_X, dest.destX)
+                                    .putExtra(EXTRA_START_Y, dest.destY)
+                            )
+                            finish()
+                        }
                     }
                 },
             )
@@ -114,7 +126,10 @@ class PlatformerActivity : ComponentActivity() {
                     Toast.makeText(this, "El proyecto no tiene tileset.", Toast.LENGTH_LONG).show()
                     return null
                 }
-            val engine = ProjectPlatformer.engine(map, tileset, project.startX, project.startY)
+            // Inicio: el del proyecto, o el punto de entrada del warp que nos trajo aquí.
+            val startX = intent.getIntExtra(EXTRA_START_X, project.startX)
+            val startY = intent.getIntExtra(EXTRA_START_Y, project.startY)
+            val engine = ProjectPlatformer.engine(map, tileset, startX, startY)
             PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this))
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
@@ -228,6 +243,8 @@ class PlatformerActivity : ComponentActivity() {
         private const val EXTRA_LEVEL = "level"
         private const val EXTRA_PROJECT_PATH = "projectPath"
         private const val EXTRA_MAP_ID = "mapId"
+        private const val EXTRA_START_X = "startX"
+        private const val EXTRA_START_Y = "startY"
 
         fun intent(context: Context, romFile: File, level: Int): Intent =
             Intent(context, PlatformerActivity::class.java)

@@ -48,8 +48,12 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.snes.SmwLevelBundle
+import com.rolebuilder.core.snes.SmwWarpTiles
+import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesAutoExtractor
 import com.rolebuilder.core.snes.SnesDecoder
@@ -400,29 +404,11 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                     .background(Color(0xFF202024), RoundedCornerShape(4.dp)),
                             )
                             TextButton(onClick = {
+                                val rom = romBytes; val hdr = header
                                 runCatching {
-                                    val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
-                                    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
-                                    val tsId = state.nextTilesetId()
-                                    state.addTileset(
-                                        Tileset(
-                                            id = tsId, name = "$name (SMW)", image = fileName,
-                                            tileSize = 16, columns = m.columns, rows = m.rows,
-                                            passable = m.passable, platformSolidity = m.solidity,
-                                            animations = m.animations, platformBlockActions = m.blockActions,
-                                        )
-                                    )
-                                    state.addImportedMap(
-                                        GameMap(
-                                            id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
-                                            tilesetId = tsId,
-                                            layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
-                                            platformEnemies = m.enemies.map {
-                                                PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
-                                            },
-                                        )
-                                    )
-                                    Toast.makeText(context, "Mapa creado: SMW $name", Toast.LENGTH_SHORT).show()
+                                    if (rom == null || hdr == null) error("carga primero la ROM")
+                                    val msg = importSmwLevelBundle(state, rom, hdr, entry.first, name, m)
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }.onFailure {
                                     Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
                                 }
@@ -665,5 +651,81 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 ) { Text("Guardar tileset") }
             }
         }
+    }
+}
+
+/**
+ * Importa el nivel [level] de SMW como MAPAS del proyecto: el nivel elegido MÁS sus
+ * sub-niveles enlazados ([SmwLevelBundle]: a donde llevan sus tuberías y puertas),
+ * y rellena [GameMap.platformWarps] cruzando las bocas de warp reales de cada
+ * sub-nivel ([SmwWarpTiles.levelWarps]) con los ids de mapa recién creados — así las
+ * tuberías/puertas FUNCIONAN al jugar el mapa. Si el bundle no es extraíble, cae al
+ * comportamiento clásico: un solo mapa ([fallback]) sin warps.
+ * Devuelve el mensaje para el usuario.
+ */
+private fun importSmwLevelBundle(
+    state: EditorState,
+    rom: ByteArray,
+    hdr: SnesHeader,
+    level: Int,
+    name: String,
+    fallback: SnesGameRecipes.SmwLevelMap,
+): String {
+    val bundle = runCatching { SmwLevelBundle.extract(rom, hdr, level) }.getOrNull()
+    val entries: List<Pair<Int, SnesGameRecipes.SmwLevelMap>> =
+        bundle?.levels?.zip(bundle.maps) ?: listOf(level to fallback)
+
+    // 1ª pasada: crea tileset + mapa por sub-nivel y apunta nivel SMW → id de mapa.
+    val mapIdByLevel = HashMap<Int, Int>()
+    val created = ArrayList<Pair<Int, GameMap>>()
+    for ((lv, m) in entries) {
+        val subName = if (lv == level) name else "$name·${lv.toString(16).uppercase()}"
+        val fileName = SnesImport.sanitizeFileName("smw_${subName}_tiles")
+        SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
+        val tsId = state.nextTilesetId()
+        state.addTileset(
+            Tileset(
+                id = tsId, name = "$subName (SMW)", image = fileName,
+                tileSize = 16, columns = m.columns, rows = m.rows,
+                passable = m.passable, platformSolidity = m.solidity,
+                animations = m.animations, platformBlockActions = m.blockActions,
+            )
+        )
+        val stored = state.addImportedMap(
+            GameMap(
+                id = 0, name = "SMW $subName", width = m.mapWidth, height = m.mapHeight,
+                tilesetId = tsId,
+                layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
+                platformEnemies = m.enemies.map {
+                    PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
+                },
+            )
+        )
+        mapIdByLevel[lv] = stored.id
+        created.add(lv to stored)
+    }
+
+    // 2ª pasada: warps por sub-nivel, con el destino traducido a id de mapa del
+    // proyecto. Solo puertas y tuberías verticales (mismos criterios que levelWarps).
+    var warpCount = 0
+    for ((lv, stored) in created) {
+        val warps = SmwWarpTiles.levelWarps(rom, hdr, lv).mapNotNull { w ->
+            mapIdByLevel[w.destLevel]?.let { destMapId ->
+                MapWarp(
+                    x = w.xTile, y = w.yTile,
+                    input = if (w.enterDown) 0 else 1, // 0=abajo (tubería), 1=arriba (puerta)
+                    destMapId = destMapId, destX = w.destXTile, destY = w.destYTile,
+                )
+            }
+        }
+        if (warps.isNotEmpty()) {
+            state.updateMap(stored.copy(platformWarps = warps))
+            warpCount += warps.size
+        }
+    }
+    return if (created.size > 1) {
+        "Nivel completo: ${created.size} mapas y $warpCount warps (SMW $name)"
+    } else {
+        "Mapa creado: SMW $name" + if (warpCount > 0) " ($warpCount warps)" else ""
     }
 }
