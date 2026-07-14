@@ -268,9 +268,22 @@ fun main(args: Array<String>) {
         val aram = com.rolebuilder.core.snes.SmwMusic.assembleAram(rom, delta, bank)
         if (aram == null) { println("No se pudo ensamblar la ARAM (¿ROM no SMW?)."); return }
         val renderer = com.rolebuilder.core.snes.SmwMusicRenderer(aram)
+        if (opts.containsKey("noecho")) { renderer.debugDisableEchoWrites = true; println("(eco DESACTIVADO para diagnóstico)") }
         renderer.selectSong(song)
         println("Renderizando canción $song, $seconds s…")
         val pcm = renderer.render(seconds)
+        // Diagnóstico de solape eco↔muestras: rango de ARAM que el eco pisa vs el
+        // directorio de muestras BRR. Si se solapan, el eco corrompe las muestras.
+        val (elo, ehi) = renderer.debugEchoRange()
+        if (ehi > elo) {
+            val dir = com.rolebuilder.core.snes.SmwMusic.readSampleDirectory(aram)
+            val sLo = dir.minOfOrNull { it.startAddr } ?: 0
+            val sHi = dir.maxOfOrNull { it.loopAddr } ?: 0
+            val overlap = elo < sHi && sLo < ehi
+            println("Eco escribe en ARAM 0x${elo.toString(16)}..0x${ehi.toString(16)}; " +
+                "muestras BRR 0x${sLo.toString(16)}..0x${sHi.toString(16)}+ " +
+                "→ ${if (overlap) "¡SOLAPAN! (el eco corrompe las muestras)" else "sin solape"}")
+        }
         // WAV PCM 16-bit estéreo 32000 Hz.
         val wav = File(outDir, "music_song$song.wav")
         java.io.DataOutputStream(wav.outputStream().buffered()).use { o ->

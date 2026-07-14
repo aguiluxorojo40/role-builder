@@ -25,6 +25,19 @@ class SmwDsp(
     /** Registros DSP espejo (0x80 bytes), como en el hardware. */
     val regs = IntArray(0x80)
 
+    /** DEBUG: si es true, no se escriben las muestras de eco en la ARAM (para aislar
+     *  si el buffer de eco está corrompiendo las muestras BRR). */
+    var debugDisableEchoWrites = false
+
+    /** DEBUG: máscara de canales AUDIBLES (bit i = canal i suena). 0xFF = todos. */
+    var debugChannelMask = 0xFF
+
+    /** DEBUG: rango [inicio, fin) de ARAM que el eco ha tocado con escrituras. */
+    var debugEchoLo = 0x10000
+        private set
+    var debugEchoHi = 0
+        private set
+
     /** Última muestra de salida estéreo (16 bits con signo) tras [cycle]. */
     var outL = 0
         private set
@@ -113,6 +126,7 @@ class SmwDsp(
         var totalR = 0
         for (i in 0 until 8) {
             cycleChannel(i)
+            if (debugChannelMask and (1 shl i) == 0) continue // DEBUG: canal silenciado
             totalL += (channel[i].sampleOut * channel[i].volumeL) shr 6
             totalR += (channel[i].sampleOut * channel[i].volumeR) shr 6
             totalL = clamp16(totalL)
@@ -165,11 +179,13 @@ class SmwDsp(
         inR += (sumR * feedbackVolume) shr 7
         inL = clamp16(inL) and 0xfffe
         inR = clamp16(inR) and 0xfffe
-        if (echoWrites) {
+        if (echoWrites && !debugDisableEchoWrites) {
             setRam(adr, inL and 0xff)
             setRam(adr + 1, (inL shr 8) and 0xff)
             setRam(adr + 2, inR and 0xff)
             setRam(adr + 3, (inR shr 8) and 0xff)
+            if ((adr and 0xffff) < debugEchoLo) debugEchoLo = adr and 0xffff
+            if ((adr and 0xffff) + 4 > debugEchoHi) debugEchoHi = (adr and 0xffff) + 4
         }
         firBufferIndex = (firBufferIndex + 1) and 7
         echoBufferIndex++

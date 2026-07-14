@@ -32,6 +32,19 @@ class SmwMusicRenderer(aram: ByteArray) {
     private val ram = ByteArray(0x10000)
     private val dsp = SmwDsp(ram)
 
+    /** DEBUG: desactiva las escrituras del eco en la ARAM (para aislar corrupción). */
+    var debugDisableEchoWrites: Boolean
+        get() = dsp.debugDisableEchoWrites
+        set(v) { dsp.debugDisableEchoWrites = v }
+
+    /** DEBUG: rango [lo, hi) de ARAM que el eco ha tocado con sus escrituras. */
+    fun debugEchoRange(): Pair<Int, Int> = dsp.debugEchoLo to dsp.debugEchoHi
+
+    /** DEBUG: máscara de canales audibles (bit i = canal i suena). */
+    var debugChannelMask: Int
+        get() = dsp.debugChannelMask
+        set(v) { dsp.debugChannelMask = v }
+
     init {
         require(aram.size == 0x10000) { "La ARAM debe medir 64 KiB" }
         System.arraycopy(aram, 0, ram, 0, ram.size)
@@ -464,6 +477,7 @@ class SmwMusicRenderer(aram: ByteArray) {
             val reg = c.index * 16
             dspWrite(reg + V0PITCHL, t and 0xff)
             dspWrite(reg + V0PITCHH, t shr 8)
+            if (debugCapturePitch) debugPitchWrites.add((c.index shl 16) or (t and 0x3fff))
         }
     }
 
@@ -776,7 +790,18 @@ class SmwMusicRenderer(aram: ByteArray) {
         return (if (orgA and 0x100 != 0) -t else t) and 0xffff
     }
 
-    private fun dspWrite(reg: Int, value: Int) = dsp.write(reg and 0x7f, value and 0xff)
+    /** DEBUG: cuenta bits de KEYON escritos (note-ons) para medir stutter/retrigger. */
+    var debugKeyonBits = 0
+        private set
+
+    /** DEBUG: captura de los valores de registro PITCH del DSP (canal<<16 | pitch14). */
+    var debugCapturePitch = false
+    val debugPitchWrites = ArrayList<Int>()
+
+    private fun dspWrite(reg: Int, value: Int) {
+        if ((reg and 0x7f) == 0x4C) debugKeyonBits += Integer.bitCount(value and 0xff)
+        dsp.write(reg and 0x7f, value and 0xff)
+    }
 
     private fun ram(a: Int): Int = ram[a and 0xffff].toInt() and 0xff
     private fun ramNext(c: Channel): Int {
