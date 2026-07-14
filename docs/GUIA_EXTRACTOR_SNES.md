@@ -207,6 +207,10 @@ herramienta de escritorio (no necesita el editor):
 
 # Demo de descompresión sin ROMs con copyright:
 ./gradlew :core:extractSnesTileset --args="--demo-compressed out"
+
+# Ver un NIVEL de SMW tal como se importa a la app (fondo Layer 2 + primer plano
+# Layer 1), sin abrir la app — genera salida/images/scene_<nivel>.png:
+./gradlew :core:extractSnesTileset --args="--rom smw.sfc --out salida --scene --level 0x105"
 ```
 
 Genera un PNG en `salida/images/` y un `*.tileset.json` que describe la rejilla.

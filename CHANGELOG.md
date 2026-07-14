@@ -64,6 +64,9 @@ del motor (ver 0.1.0).
 **Herramientas y documentación**
 - **`--enemies`**: regenera el atlas de enemigos (`enemies.png`) de forma
   reproducible desde el catálogo.
+- **`--scene`**: renderiza un nivel TAL COMO se importa a la app (fondo Layer 2
+  + primer plano Layer 1) a un PNG, para verlo sin abrir la app — el equivalente
+  visual de `--music`.
 - Documentos `docs/INVENTARIO_SMW.md`, `docs/GUIA_DEL_PROYECTO.md` y
   `docs/GUIA_EXTRACTOR_SNES.md`.
 

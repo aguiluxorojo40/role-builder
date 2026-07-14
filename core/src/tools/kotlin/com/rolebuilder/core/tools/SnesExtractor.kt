@@ -157,6 +157,41 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --scene: renderiza el nivel TAL COMO SE IMPORTA a la app (fondo Layer 2
+    // DEBAJO + primer plano Layer 1 encima, con el mismo atlas Map16). Es el equivalente
+    // visual de --music: ver un nivel sin abrir la app. --level elige el nivel y --cols
+    // recorta el ancho (por defecto 96 casillas = 1536 px) para verlo con detalle.
+    if (opts.containsKey("scene")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x105
+        val m = SnesGameRecipes.extractSmwLevelAsMap(rom, header, level)
+        if (m == null) {
+            println("El nivel 0x${level.toString(16).uppercase()} no es reconstruible " +
+                "(¿vertical, sala de jefe o sin datos de Layer 1?). Prueba otro --level.")
+            return
+        }
+        val cols = minOf(m.mapWidth, opts["cols"]?.let { parseInt(it) } ?: 96)
+        val img = ArgbImage(cols * 16, m.mapHeight * 16)
+        fun blitAt(tile: Int, dx: Int, dy: Int) {
+            if (tile < 0) return
+            val ax = (tile % m.columns) * 16; val ay = (tile / m.columns) * 16
+            for (py in 0..15) for (px in 0..15) img.set(dx + px, dy + py, m.atlas.get(ax + px, ay + py))
+        }
+        for (y in 0 until m.mapHeight) for (x in 0 until cols) {
+            val cell = y * m.mapWidth + x
+            blitAt(m.bgTiles.getOrElse(cell) { -1 }, x * 16, y * 16) // Layer 2 (fondo) debajo
+            blitAt(m.tiles[cell], x * 16, y * 16)                    // Layer 1 (primer plano) encima
+        }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "scene_${level.toString(16)}.png")
+        ImageIO.write(toBufferedImage(img), "png", png)
+        val hasBg = m.bgTiles.any { it >= 0 }
+        println("Escena del nivel 0x${level.toString(16).uppercase()}: mapa ${m.mapWidth}×${m.mapHeight} " +
+            "(recortado a $cols cols), atlas ${m.atlas.width}×${m.atlas.height}, " +
+            "Layer 2 ${if (hasBg) "SÍ" else "no"}, ${m.enemies.size} enemigos.")
+        println("  -> images/${png.name}")
+        return
+    }
+
     // Modo --physics: lee las TABLAS DE FÍSICAS reales del jugador de SMW (acelerar,
     // correr, saltar, caer, gravedad, tope de caída) y las imprime en sus unidades.
     if (opts.containsKey("physics")) {
@@ -814,6 +849,8 @@ private fun printUsage() {
           --rom <ruta> --recipe               (modo fácil: vuelca los gráficos reales de un juego con receta)
           --rom smw.sfc --collision [--level 0x106]
                                               (MAPA DE COLISIÓN de un nivel de SMW: solidez por celda + máscara PNG)
+          --rom smw.sfc --scene [--level 0x105] [--cols 96]
+                                              (ESCENA del nivel tal como se importa: Layer 2 fondo + Layer 1 delante → scene_<lvl>.png)
           --rom smw.sfc --physics             (TABLAS DE FÍSICAS del jugador: acelerar, correr, saltar, caer, gravedad)
           --rom smw.sfc --sprite-behavior [--id 0x0C]
                                               (TWEAKERS de comportamiento de enemigos: hitbox y banderas por id)
