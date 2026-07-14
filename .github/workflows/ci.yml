@@ -63,6 +63,10 @@ jobs:
       # Release rodante con enlace de descarga estable. La rama principal publica
       # en 'apk-latest'; las ramas del extractor de SNES publican en
       # 'apk-snes-latest' para no pisar la anterior.
+      - name: Leer versión de la app
+        id: appver
+        run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
       - name: Preparar APK con nombre
         if: github.ref_name == 'claude/android-rpg-engine-jsrssr' || github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy' || github.ref_name == 'claude/snes-sprite-color-automation-918asc'
         run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
@@ -72,7 +76,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ (github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy' || github.ref_name == 'claude/snes-sprite-color-automation-918asc') && 'apk-snes-latest' || 'apk-latest' }}
-          name: ${{ (github.ref_name == 'claude/snes-asset-extraction-htsbch' || github.ref_name == 'claude/snes-sprite-color-automation-3x51fa' || github.ref_name == 'claude/snes-sprite-color-automation-59ybqy') && 'APK con extractor de SNES (debug)' || 'APK más reciente (debug)' }}
+          name: Role Builder ${{ steps.appver.outputs.name }} — APK de depuración
           prerelease: true
-          body: APK de depuración compilada automáticamente a partir del último push de la rama.
+          body: |
+            APK de depuración compilada automáticamente desde el último push de la rama `${{ github.ref_name }}`.
+
+            **Versión:** ${{ steps.appver.outputs.name }} · commit [`${{ github.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+
+            Detalle de novedades en el [CHANGELOG](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md).
           files: role-builder-debug.apk
