@@ -477,6 +477,57 @@ object SnesGameRecipes {
             Triple<Int, String, SmwLevelMap>(lv, "Nivel ${lv.toString(16).uppercase()}", m)
         }
 
+    /** Ficha ligera de un nivel importable, SIN construir su mapa (eso es caro). */
+    class SmwLevelListing(
+        val level: Int,
+        val name: String,
+        /** Nº de pantallas de ancho (de la cabecera). */
+        val screens: Int,
+        /** % de objetos del nivel con rutina portada (100 = reconstrucción fiel). */
+        val coveragePct: Int,
+        /** Nombre corto del tipo de tileset (pradera, castillo, cueva…). */
+        val tilesetName: String,
+    )
+
+    /** Nombres cortos por tileset FG (índice 0..F), según la tabla de despacho del juego. */
+    private val SMW_TILESET_NAMES = arrayOf(
+        "pradera", "castillo", "cuerda", "cueva", "casa fantasma", "casa fantasma",
+        "cuerda", "pradera", "cuerda", "cueva", "cueva", "cueva", "pradera",
+        "casa fantasma", "cueva", "?",
+    )
+
+    /**
+     * TODOS los niveles del JUEGO importables: recorre los huecos de nivel que el
+     * mundo del juego referencia (0x001..0x024 y 0x101..0x13B — los ~96 niveles de
+     * SMW) y devuelve la ficha de los que el parser reconstruye con fidelidad
+     * (cobertura 100% y contenido real). Los sub-niveles a los que llevan sus
+     * tuberías/puertas entran solos al importar (bundle); no se listan sueltos.
+     * Es barato (solo parsea; no monta atlas): apto para la UI.
+     */
+    fun listImportableSmwLevels(rom: ByteArray, header: SnesHeader): List<SmwLevelListing> {
+        val delta = smwHeaderDelta(header)
+        val out = ArrayList<SmwLevelListing>()
+        val slots = (0x001..0x024) + (0x101..0x13B)
+        for (lv in slots) {
+            val tm = SmwLayer1.parse(rom, delta, lv) ?: continue
+            if (tm.totalObjects == 0) continue
+            if (tm.unknownObjects * 10 > tm.totalObjects) continue // mismo gate que el mapa
+            val pct = 100 * (tm.totalObjects - tm.unknownObjects) / tm.totalObjects
+            val ts = SMW_TILESET_NAMES.getOrElse(tm.tileset) { "?" }
+            out.add(
+                SmwLevelListing(
+                    level = lv,
+                    name = "Nivel ${lv.toString(16).uppercase()} · $ts" +
+                        if (pct < 100) " · $pct%" else "",
+                    screens = tm.screens,
+                    coveragePct = pct,
+                    tilesetName = ts,
+                )
+            )
+        }
+        return out
+    }
+
     /**
      * Bloques Map16 FG (0..0x1FF) que el nivel 0x106 usa DE VERDAD, como máscara de
      * bits little-endian por byte (bit t%8 del byte t/8). Derivada del informe "Map16

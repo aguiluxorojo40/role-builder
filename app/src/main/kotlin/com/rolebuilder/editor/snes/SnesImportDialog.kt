@@ -138,8 +138,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     var spriteTiles by remember { mutableStateOf(1) }
     // Modo fácil: si la ROM es un juego con receta, sus gráficos ya extraídos.
     var recipeFindings by remember(romBytes) { mutableStateOf<List<SnesAutoExtractor.Finding>>(emptyList()) }
-    // Modo fácil (mapas): niveles reconstruidos como mapas jugables (tileset + tilemap).
-    var recipeMaps by remember(romBytes) { mutableStateOf<List<Triple<Int, String, SnesGameRecipes.SmwLevelMap>>>(emptyList()) }
+    // Modo fácil (mapas): TODOS los niveles del juego importables (ficha ligera;
+    // el mapa se construye al pulsar "Mapa", no antes).
+    var levelListings by remember(romBytes) { mutableStateOf<List<SnesGameRecipes.SmwLevelListing>>(emptyList()) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     // Juego reconocido con receta (modo fácil), o null.
@@ -379,40 +380,50 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     Button(onClick = {
                         val rom = romBytes; val hdr = header
                         if (rom != null && hdr != null) {
-                            recipeMaps = runCatching { SnesGameRecipes.extractSmwLevelMaps(rom, hdr) }.getOrDefault(emptyList())
-                            if (recipeMaps.isEmpty()) {
+                            levelListings = runCatching { SnesGameRecipes.listImportableSmwLevels(rom, hdr) }.getOrDefault(emptyList())
+                            if (levelListings.isEmpty()) {
                                 Toast.makeText(context, "No hay niveles reconstruibles en esta ROM", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }) { Text("Buscar niveles importables") }
-                    recipeMaps.forEach { entry ->
-                        val name = entry.second
-                        val m = entry.third
+                    if (levelListings.isNotEmpty()) {
+                        Text(
+                            "${levelListings.size} niveles del juego reconstruibles. \"Mapa\" lo importa " +
+                                "COMPLETO (con sus sub-niveles y warps); ▶ lo juega directo de la ROM.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    levelListings.forEach { listing ->
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            Image(
-                                bitmap = SnesImport.toBitmap(m.atlas).asImageBitmap(),
-                                contentDescription = name,
-                                filterQuality = FilterQuality.None,
-                                contentScale = ContentScale.FillHeight,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(32.dp)
-                                    .background(Color(0xFF202024), RoundedCornerShape(4.dp)),
+                            Text(
+                                "${listing.name} · ${listing.screens} pant.",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
                             )
                             TextButton(onClick = {
                                 val rom = romBytes; val hdr = header
                                 runCatching {
                                     if (rom == null || hdr == null) error("carga primero la ROM")
-                                    val msg = importSmwLevelBundle(state, rom, hdr, entry.first, name, m)
+                                    val msg = importSmwLevelBundle(state, rom, hdr, listing.level, "Nivel ${listing.level.toString(16).uppercase()}")
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }.onFailure {
                                     Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
                                 }
-                            }) { Text("Crear mapa") }
+                            }) { Text("Mapa") }
+                            TextButton(onClick = {
+                                val rom = romBytes ?: return@TextButton
+                                runCatching {
+                                    val tmp = java.io.File(context.cacheDir, "smw_play.sfc").apply { writeBytes(rom) }
+                                    context.startActivity(
+                                        com.rolebuilder.player.PlatformerActivity.intent(context, tmp, listing.level),
+                                    )
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo iniciar: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }) { Text("▶") }
                         }
                     }
 
@@ -669,11 +680,11 @@ private fun importSmwLevelBundle(
     hdr: SnesHeader,
     level: Int,
     name: String,
-    fallback: SnesGameRecipes.SmwLevelMap,
 ): String {
     val bundle = runCatching { SmwLevelBundle.extract(rom, hdr, level) }.getOrNull()
     val entries: List<Pair<Int, SnesGameRecipes.SmwLevelMap>> =
-        bundle?.levels?.zip(bundle.maps) ?: listOf(level to fallback)
+        bundle?.levels?.zip(bundle.maps)
+            ?: listOf(level to (SnesGameRecipes.extractSmwLevelAsMap(rom, hdr, level) ?: error("nivel no reconstruible")))
 
     // 1ª pasada: crea tileset + mapa por sub-nivel y apunta nivel SMW → id de mapa.
     val mapIdByLevel = HashMap<Int, Int>()
