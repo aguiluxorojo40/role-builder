@@ -42,13 +42,19 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
                     .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                     .build(),
             )
-            .setBufferSizeInBytes(minBuf * 2)
+            // Buffer holgado (4× el mínimo): con el justo, cualquier pausa del GC o
+            // un frame lento del sintetizador provoca UNDERRUNS periódicos, que se
+            // oyen como clicks/huecos RÍTMICOS sobre la música.
+            .setBufferSizeInBytes(minBuf * 4)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
         track = at
         running = true
         at.play()
         thread = Thread {
+            // Prioridad de AUDIO: sin ella, el hilo compite con el render GL y el
+            // motor a 60 fps y se salta plazos (misma sintomatología rítmica).
+            runCatching { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO) }
             val frames = 1024
             val buf = ShortArray(frames * 2)
             while (running) {

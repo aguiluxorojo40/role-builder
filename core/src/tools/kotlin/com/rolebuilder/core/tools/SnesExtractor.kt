@@ -252,6 +252,54 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --music: renderiza la MÚSICA del juego (N-SPC + S-DSP portados) a un
+    // .wav de escritorio — la forma de PROBAR cómo suena sin pasar por la app, y
+    // de cazar bugs de mezcla analizando la señal. --song elige la canción
+    // (1 = nivel), --seconds la duración.
+    if (opts.containsKey("music")) {
+        val song = opts["song"]?.let { parseInt(it) } ?: 1
+        val seconds = opts["seconds"]?.let { parseInt(it) } ?: 30
+        val delta = header.headerOffset - 0x7FC0 // delta por cabecera de copiador SMC
+        val bank = if (opts["bank"] == "overworld") {
+            com.rolebuilder.core.snes.SmwMusic.OVERWORLD_MUSIC
+        } else {
+            com.rolebuilder.core.snes.SmwMusic.LEVEL_MUSIC
+        }
+        val aram = com.rolebuilder.core.snes.SmwMusic.assembleAram(rom, delta, bank)
+        if (aram == null) { println("No se pudo ensamblar la ARAM (¿ROM no SMW?)."); return }
+        val renderer = com.rolebuilder.core.snes.SmwMusicRenderer(aram)
+        renderer.selectSong(song)
+        println("Renderizando canción $song, $seconds s…")
+        val pcm = renderer.render(seconds)
+        // WAV PCM 16-bit estéreo 32000 Hz.
+        val wav = File(outDir, "music_song$song.wav")
+        java.io.DataOutputStream(wav.outputStream().buffered()).use { o ->
+            val dataLen = pcm.size * 2
+            fun le32(v: Int) { o.write(v); o.write(v shr 8); o.write(v shr 16); o.write(v shr 24) }
+            fun le16(v: Int) { o.write(v); o.write(v shr 8) }
+            o.writeBytes("RIFF"); le32(36 + dataLen); o.writeBytes("WAVE")
+            o.writeBytes("fmt "); le32(16); le16(1); le16(2); le32(32000); le32(32000 * 4); le16(4); le16(16)
+            o.writeBytes("data"); le32(dataLen)
+            for (s in pcm) le16(s.toInt() and 0xFFFF)
+        }
+        // Diagnóstico de mezcla: saturación y envolvente por segundos.
+        var clipped = 0
+        for (s in pcm) if (s.toInt() == 32767 || s.toInt() == -32768) clipped++
+        println("WAV: ${wav.absolutePath} (${pcm.size / 2} frames)")
+        println("Muestras saturadas: $clipped (${"%.3f".format(100.0 * clipped / pcm.size)}%)")
+        val win = 32000 * 2 // 1 s estéreo
+        val env = StringBuilder("Envolvente RMS por segundo: ")
+        var t = 0
+        while (t + win <= pcm.size) {
+            var acc = 0.0
+            for (i in t until t + win) acc += pcm[i].toDouble() * pcm[i]
+            env.append("%.0f ".format(Math.sqrt(acc / win)))
+            t += win
+        }
+        println(env)
+        return
+    }
+
     // Modo --powerups: lista los estados de powerup de Mario y qué cambian.
     if (opts.containsKey("powerups")) {
         println("Powerups de Mario (id · alto · agacha/rompe/fuego/vuela):")
@@ -759,6 +807,8 @@ private fun printUsage() {
           --rom smw.sfc --level-info [--level 0x106]
                                               (FICHA del nivel: tamaño, modo, música, paletas, tiempo)
           --rom smw.sfc --enemies             (ATLAS de enemigos del catálogo con sprite/color real → enemies.png)
+          --rom smw.sfc --music [--song 1] [--seconds 30] [--bank overworld]
+                                              (MÚSICA renderizada a .wav: pruébala sin la app + diagnóstico de mezcla)
           --rom smw.sfc --powerups            (estados de powerup de Mario: tamaño y habilidades)
           --rom smw.sfc --play-sim [--level 0x106] [--frames 180] [--powerup big|cape|fire] [--env ice|water]
                                               (SIMULA el nivel en el motor: colisión+físicas+inicio, con powerup/entorno)
