@@ -337,6 +337,12 @@ object SnesGameRecipes {
         val animations: List<com.rolebuilder.core.model.TileAnimation> = emptyList(),
         /** Acción interactiva por tesela del atlas (ordinal de [SmwBlockAction]): moneda… */
         val blockActions: List<Int> = emptyList(),
+        /**
+         * FONDO (Layer 2) por casilla del mapa (mapWidth*mapHeight): índice en el atlas
+         * o -1 (sin fondo). Vacío si el nivel no tiene fondo renderizable. Es la capa que
+         * se dibuja DEBAJO del primer plano al importar.
+         */
+        val bgTiles: List<Int> = emptyList(),
     )
 
     /** ¿La definición del bloque Map16 usa alguna tesela de VRAM animada? */
@@ -409,7 +415,33 @@ object SnesGameRecipes {
         // el frame 0 (la tesela base) mantiene su índice y el mapa no cambia si no se anima.
         val animBlockIdx = orderedBlocks.indices.filter { blockIsAnimated(rom, defs, orderedBlocks[it]) }
         val extraTiles = animBlockIdx.size * (SMW_TILEANIM_FRAMES - 1)
-        val totalTiles = orderedBlocks.size + extraTiles
+        val fgTileCount = orderedBlocks.size + extraTiles
+
+        // FONDO (Layer 2): se rasteriza el fondo REAL del nivel y se trocea en teselas
+        // 16×16 DISTINTAS que se APENDAN al atlas tras el primer plano (así los índices
+        // del primer plano no cambian). Cada casilla del mapa de fondo apunta a su tesela
+        // del atlas (o -1 = sin fondo). El fondo repite en horizontal como en el juego
+        // (columna módulo ancho-del-fondo). Nota: aquí el fondo scrollea 1:1 con el primer
+        // plano (SIN paralaje), pero al menos es VISIBLE y editable como Layer 2 — el
+        // paralaje real es harina de otro costal.
+        val bgMap = IntArray(w * h) { -1 }
+        val bgCells = ArrayList<IntArray>() // píxeles ARGB 16×16 de cada tesela de fondo distinta
+        val bgImg = renderSmwBackground(rom, header, level)
+        if (bgImg != null) {
+            val bgCols = bgImg.width / 16; val bgRows = bgImg.height / 16
+            if (bgCols > 0 && bgRows > 0) {
+                val byKey = HashMap<List<Int>, Int>() // contenido de la tesela → índice en bgCells
+                for (y in 0 until minOf(h, bgRows)) for (x in 0 until w) {
+                    val sc = x % bgCols
+                    val px = IntArray(256)
+                    for (py in 0..15) for (pxx in 0..15) px[py * 16 + pxx] = bgImg.get(sc * 16 + pxx, y * 16 + py)
+                    val idx = byKey.getOrPut(px.toList()) { bgCells.add(px); bgCells.size - 1 }
+                    bgMap[y * w + x] = fgTileCount + idx
+                }
+            }
+        }
+
+        val totalTiles = fgTileCount + bgCells.size
         val rows = (totalTiles + columns - 1) / columns
         val atlas = ArgbImage(columns * 16, rows * 16)
         fun cell(i: Int) = (i % columns) * 16 to (i / columns) * 16
@@ -431,6 +463,13 @@ object SnesGameRecipes {
                 frameIdx.add(idx)
             }
             animations.add(com.rolebuilder.core.model.TileAnimation(bi, frameIdx, SMW_TILEANIM_PERIOD))
+        }
+        // Teselas de fondo (Layer 2), apendadas tras primer plano + fotogramas de animación.
+        // Su solidez/acción quedan en el valor por defecto (NONE/pasable): el fondo es
+        // decorado, no colisiona ni interactúa; la colisión la pone el primer plano.
+        for ((i, px) in bgCells.withIndex()) {
+            val (cx, cy) = cell(fgTileCount + i)
+            for (py in 0..15) for (pxx in 0..15) atlas.set(cx + pxx, cy + py, px[py * 16 + pxx])
         }
         // Colisión REAL de la ROM por tesela: clasifica cada bloque Map16 con la misma
         // rutina que el juego ([SmwBlockCollision]), así el mapa importado se juega con
@@ -467,7 +506,11 @@ object SnesGameRecipes {
             ?.map { Triple(it.id, it.xTile, it.yTile) }
             .orEmpty()
 
-        return SmwLevelMap(atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(), enemies, animations, blockActions.toList())
+        return SmwLevelMap(
+            atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(),
+            enemies, animations, blockActions.toList(),
+            bgTiles = if (bgCells.isNotEmpty()) bgMap.toList() else emptyList(),
+        )
     }
 
     /** Convierte los niveles escaparate en mapas (nivel#, nombre, mapa) para la app. */

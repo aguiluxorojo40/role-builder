@@ -702,11 +702,19 @@ private fun importSmwLevelBundle(
                 animations = m.animations, platformBlockActions = m.blockActions,
             )
         )
+        // Capas del mapa. Si el nivel trae fondo (Layer 2), va DEBAJO (capa 0) y el primer
+        // plano (Layer 1) encima; si no, primer plano en capa 0 + una capa vacía por
+        // compatibilidad. El editor y el motor dibujan las capas en orden (0 = fondo).
+        val layers = if (m.bgTiles.isNotEmpty()) {
+            listOf(m.bgTiles, m.tiles)
+        } else {
+            listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE })
+        }
         val stored = state.addImportedMap(
             GameMap(
                 id = 0, name = "SMW $subName", width = m.mapWidth, height = m.mapHeight,
                 tilesetId = tsId,
-                layers = listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE }),
+                layers = layers,
                 platformEnemies = m.enemies.map {
                     PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
                 },
@@ -734,6 +742,9 @@ private fun importSmwLevelBundle(
             warpCount += warps.size
         }
     }
+    // Deja abierto el nivel PRINCIPAL (el primero), no el último sub-nivel del
+    // bundle: si no, tras importar el editor mostraba una salita casi vacía.
+    created.firstOrNull()?.let { state.selectMap(it.second.id) }
     return if (created.size > 1) {
         "Nivel completo: ${created.size} mapas y $warpCount warps (SMW $name)"
     } else {
