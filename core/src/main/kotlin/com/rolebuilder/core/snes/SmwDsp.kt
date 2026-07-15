@@ -252,13 +252,18 @@ class SmwDsp(
                 c.gain -= ((c.gain - 1) shr 8) + 1
             }
             3 -> when (c.gainMode) { // gain
-                0 -> { c.gain -= 32; if (c.gain > 0x7ff) c.gain = 0 }
+                // El gain del DSP es uint16: al decrecer por debajo de 0 se desborda a
+                // ~0xFFF8 (> 0x7FF), lo que fuerza el apagado. En Kotlin (Int con signo)
+                // hay que enmascarar a 16 bits o la nota nunca se silencia y su volumen
+                // explota en negativo (zumbido digital que tapa la música).
+                0 -> { c.gain = (c.gain - 32) and 0xffff; if (c.gain > 0x7ff) c.gain = 0 }
                 1 -> { c.gain -= ((c.gain - 1) shr 8) + 1 }
                 2 -> { c.gain += 32; if (c.gain > 0x7ff) c.gain = 0x7ff }
                 3 -> { c.gain += if (c.gain < 0x600) 32 else 8; if (c.gain > 0x7ff) c.gain = 0x7ff }
             }
             4 -> { // release
-                c.gain -= 8
+                // uint16: el underflow debe detectarse como > 0x7FF y apagar la nota.
+                c.gain = (c.gain - 8) and 0xffff
                 if (c.gain > 0x7ff) c.gain = 0
             }
         }
