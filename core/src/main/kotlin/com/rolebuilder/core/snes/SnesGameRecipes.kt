@@ -557,10 +557,13 @@ object SnesGameRecipes {
             if (tm.unknownObjects * 10 > tm.totalObjects) continue // mismo gate que el mapa
             val pct = 100 * (tm.totalObjects - tm.unknownObjects) / tm.totalObjects
             val ts = SMW_TILESET_NAMES.getOrElse(tm.tileset) { "?" }
+            // Nombre REAL del nivel decodificado de la ROM (rutina UpdateLevelName del
+            // overworld); si es un sublevel sin nombre propio, cae al id hexadecimal.
+            val label = SmwLevelNames.nameOf(rom, delta, lv) ?: "Nivel ${lv.toString(16).uppercase()}"
             out.add(
                 SmwLevelListing(
                     level = lv,
-                    name = "Nivel ${lv.toString(16).uppercase()} · $ts" +
+                    name = "$label · $ts" +
                         if (pct < 100) " · $pct%" else "",
                     screens = tm.screens,
                     coveragePct = pct,
@@ -570,6 +573,10 @@ object SnesGameRecipes {
         }
         return out
     }
+
+    /** Nombre REAL del nivel (leveldata) decodificado de la ROM, o null si es sublevel. */
+    fun smwLevelName(rom: ByteArray, header: SnesHeader, level: Int): String? =
+        SmwLevelNames.nameOf(rom, smwHeaderDelta(header), level)
 
     /**
      * Bloques Map16 FG (0..0x1FF) que el nivel 0x106 usa DE VERDAD, como máscara de

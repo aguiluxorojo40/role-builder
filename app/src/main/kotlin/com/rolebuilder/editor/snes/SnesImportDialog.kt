@@ -407,7 +407,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 val rom = romBytes; val hdr = header
                                 runCatching {
                                     if (rom == null || hdr == null) error("carga primero la ROM")
-                                    val msg = importSmwLevelBundle(state, rom, hdr, listing.level, "Nivel ${listing.level.toString(16).uppercase()}")
+                                    val realName = SnesGameRecipes.smwLevelName(rom, hdr, listing.level)
+                                        ?: "Nivel ${listing.level.toString(16).uppercase()}"
+                                    val msg = importSmwLevelBundle(state, rom, hdr, listing.level, realName)
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }.onFailure {
                                     Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
