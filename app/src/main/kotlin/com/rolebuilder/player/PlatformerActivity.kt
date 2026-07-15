@@ -130,7 +130,7 @@ class PlatformerActivity : ComponentActivity() {
             val startX = intent.getIntExtra(EXTRA_START_X, project.startX)
             val startY = intent.getIntExtra(EXTRA_START_Y, project.startY)
             val engine = ProjectPlatformer.engine(map, tileset, startX, startY)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this))
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this), bigSpriteBitmaps = loadBigSprites())
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -187,6 +187,7 @@ class PlatformerActivity : ComponentActivity() {
             engine, null, marioBmp, loadEnemies(), audio,
             marioBigBmp, marioFireBmp, marioCapeBmp,
             romEnemyFrames = enemyFrames.ifEmpty { null },
+            bigSpriteBitmaps = loadBigSprites(),
         )
     }
 
@@ -195,6 +196,18 @@ class PlatformerActivity : ComponentActivity() {
 
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
     private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
+
+    /**
+     * Carga los sprites GRANDES empaquetados (assets/sprites/big/big_<id>.png): id de
+     * sprite → bitmap. El id se lee del nombre del fichero (hex). Vacío si no hay carpeta.
+     */
+    private fun loadBigSprites(): Map<Int, android.graphics.Bitmap> = runCatching {
+        (assets.list("sprites/big") ?: emptyArray()).mapNotNull { name ->
+            val id = Regex("big_([0-9a-fA-F]+)\\.png").matchEntire(name)?.groupValues?.get(1)
+                ?.toInt(16) ?: return@mapNotNull null
+            loadSprite("sprites/big/$name")?.let { id to it }
+        }.toMap()
+    }.getOrDefault(emptyMap())
 
     private fun loadSprite(path: String): android.graphics.Bitmap? = runCatching {
         assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }

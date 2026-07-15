@@ -58,6 +58,13 @@ class PlatformerRenderer(
      * Es la vía del modo ROM: Koopas CON caparazón y andar animado.
      */
     private val romEnemyFrames: Map<Int, List<Bitmap>>? = null,
+    /**
+     * Sprites GRANDES por id (assets/sprites/big/big_<id>.png): enemigos mayores de
+     * 16×16 (Thwomp de piedra, fuego grande…). Se dibujan a su tamaño real anclados
+     * por los pies y tienen PRIORIDAD sobre el resto; si falta el id, cae al render
+     * normal (aditivo, no rompe nada).
+     */
+    private val bigSpriteBitmaps: Map<Int, Bitmap> = emptyMap(),
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -96,6 +103,7 @@ class PlatformerRenderer(
     private var marioAnim = 0f
     private var enemyTex: Texture? = null
     private var romEnemyTex: Map<Int, List<Texture>> = emptyMap()
+    private var bigTex: Map<Int, Pair<Texture, Bitmap>> = emptyMap()
     private var tilesetTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
@@ -111,6 +119,7 @@ class PlatformerRenderer(
         marioCapeTex = marioCapeBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
         romEnemyTex = romEnemyFrames?.mapValues { (_, frames) -> frames.map { Texture(it) } } ?: emptyMap()
+        bigTex = bigSpriteBitmaps.mapValues { (_, bmp) -> Texture(bmp) to bmp }
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
@@ -245,7 +254,17 @@ class PlatformerRenderer(
             val ew = e.width / 16f
             val frame = ENEMY_FRAME[e.id]
             val live = romEnemyTex[e.id]
-            if (e.alive && live != null && live.isNotEmpty()) {
+            val big = bigTex[e.id]
+            if (e.alive && big != null) {
+                // Sprite GRANDE (Thwomp, fuego grande…): a su tamaño real (celdas = px/16),
+                // centrado en horizontal y anclado por los pies.
+                val (tex, bmp) = big
+                val wCells = bmp.width / 16f
+                val hCells = bmp.height / 16f
+                val cx = (e.x + e.width / 2f) / 16f - wCells / 2f
+                val feet = (e.y + e.height) / 16f - hCells
+                batch.draw(tex, cx, feet, wCells, hCells, flipX = e.vx > 0f)
+            } else if (e.alive && live != null && live.isNotEmpty()) {
                 // Celda 16×32 anclada por los pies (los apilados ocupan 2 casillas; los
                 // bajos llevan su 16×16 en la mitad inferior de la celda).
                 val walkFrame = live[((now / ENEMY_STEP_NS) % live.size).toInt()]
