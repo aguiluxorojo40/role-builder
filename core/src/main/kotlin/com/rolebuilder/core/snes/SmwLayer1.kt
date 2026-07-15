@@ -216,6 +216,8 @@ internal object SmwLayer1 {
                         0x37 -> ghostHorizontalLog()
                         0x38 -> ghostWoodenLedgeRun(size and 0xF, pos)
                         0x39 -> ghostVerticalLog()
+                        0x31 -> ghostFramedPanel()
+                        0x32 -> ghostRectTopPlank()
                         0x3A -> ghostBrickWallOrSpikes()
                         0x3B -> ghostWoodBeam()
                         0x3C -> ghostWoodRectWithBase()
@@ -244,6 +246,7 @@ internal object SmwLayer1 {
                 0x1D -> stdClimbingNetBottom()
                 0x1E -> stdClimbingNetSide()
                 0x1F -> stdSkinnyVerticalPipe()
+                0x20 -> stdHorizontalPlank()
                 0x21 -> stdLedge(size, 2)                        // wide-scale ground ledge
                 0x39 -> grassDiagonalPipeRight()
                 0x3A -> grassDiagonalLedgeLeft()
@@ -715,6 +718,70 @@ internal object SmwLayer1 {
                 restore(); vert()
                 rows = (rows - 1) and 0xFF
             } while (rows != 0xFF)
+        }
+
+        /**
+         * Objeto estándar 0x20 ($0D:B547): BARRA/TABLÓN horizontal de página 1 (tesela
+         * inicial 0x56, centrales 0x57, final 0x58). Objeto común (no específico de
+         * tileset); en casa fantasma es una pasarela de madera.
+         */
+        fun stdHorizontalPlank() {
+            var x = size and 0xF
+            var v1 = pos
+            setHi01(v1); v1 = horiz(v1, 0x56)
+            x = (x - 1) and 0xFF
+            while (x != 0) { setHi01(v1); v1 = horiz(v1, 0x57); x = (x - 1) and 0xFF }
+            setHi01(v1); setLo(v1, 0x58)
+        }
+
+        /**
+         * Objeto 0x32 de casa fantasma ($0D:EF67): PLATAFORMA con fila superior de 0x0E
+         * (página 1) y (nibble alto) filas de relleno 0xA3 (página 0), ancho nibble
+         * bajo +1.
+         */
+        fun ghostRectTopPlank() {
+            val w = size and 0xF
+            var rows = size shr 4
+            preserve()
+            run { var v1 = pos; var x = w; do { setHi01(v1); v1 = horiz(v1, 0x0E) } while (x-- != 0) }
+            while (rows != 0) {
+                restore(); vert()
+                var v1 = pos; var x = w
+                do { setHi00(v1); v1 = horiz(v1, 0xA3) } while (x-- != 0)
+                rows = (rows - 1) and 0xFF
+            }
+        }
+
+        /**
+         * Objeto 0x31 de casa fantasma ($0D:EFA8): PANEL ENMARCADO (estantería/ventana):
+         * fila superior 0x61/0x0D/0x62, (alto-1) filas centrales que ALTERNAN entre dos
+         * patrones (izq/relleno/der de las tablas $0D:EFA2/EFA4/EFA6, con el relleno en
+         * página 0), y fila inferior 0x6B/0x6C/0x6D. Marco en página 1.
+         */
+        fun ghostFramedPanel() {
+            val leftMid = intArrayOf(0x63, 0x65)
+            val fillMid = intArrayOf(0xC7, 0xC8)
+            val rightMid = intArrayOf(0x64, 0x6A)
+            val w = size and 0xF
+            var h = size shr 4
+            preserve()
+            var v1 = pos; var c = w
+            setHi01(v1); v1 = horiz(v1, 0x61); c = (c - 1) and 0xFF
+            while (c != 0) { setHi01(v1); v1 = horiz(v1, 0x0D); c = (c - 1) and 0xFF }
+            setHi01(v1); setLo(v1, 0x62)
+            var x = 1
+            restore(); x = x xor 1; vert(); h = (h - 1) and 0xFF
+            while (h != 0) {
+                v1 = pos; c = w
+                setHi01(v1); v1 = horiz(v1, leftMid[x]); c = (c - 1) and 0xFF
+                while (c != 0) { setHi00(v1); v1 = horiz(v1, fillMid[x]); c = (c - 1) and 0xFF }
+                setHi01(v1); setLo(v1, rightMid[x])
+                restore(); x = x xor 1; vert(); h = (h - 1) and 0xFF
+            }
+            v1 = pos; c = w
+            setHi01(v1); v1 = horiz(v1, 0x6B); c = (c - 1) and 0xFF
+            while (c != 0) { setHi01(v1); v1 = horiz(v1, 0x6C); c = (c - 1) and 0xFF }
+            setHi01(v1); setLo(v1, 0x6D)
         }
 
         /**
