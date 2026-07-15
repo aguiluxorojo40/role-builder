@@ -217,6 +217,11 @@ internal object SmwLayer1 {
                         0x38 -> ghostWoodenLedgeRun(size and 0xF, pos)
                         0x39 -> ghostVerticalLog()
                         0x3A -> ghostBrickWallOrSpikes()
+                        0x3B -> ghostWoodBeam()
+                        0x3C -> ghostWoodRectWithBase()
+                        0x3D -> ghostWoodRectWithTop()
+                        0x3E -> ghostWoodRectRightEdge()
+                        0x3F -> ghostWoodRectLeftEdge()
                         else -> unkStd(obj)
                     }
                     else -> unkStd(obj)
@@ -269,8 +274,39 @@ internal object SmwLayer1 {
                 0x86 -> extGoalSign()
                 0x87 -> extSwitchBlockGreen()
                 0x8E -> extSwitchBlockYellow()
+                in 0x57..0x5E -> extGhostSingleTile(k)
+                0x64, 0x65 -> extGhost2x2(k)
                 else -> unkExt(k)
             }
+        }
+
+        /**
+         * Objetos extendidos 0x57-0x5E de casa fantasma ($0D:E95F): una sola tesela de
+         * página 0 tomada de la tabla $0D:E957 según (ext - 0x57). Puertas/ventanas y
+         * detalles del decorado de casa fantasma.
+         */
+        fun extGhostSingleTile(k: Int) {
+            val tiles = intArrayOf(0x73, 0x74, 0x75, 0x76, 0x93, 0x94, 0x95, 0x96)
+            val v = pos
+            setHi00(v); setLo(v, tiles[k - 0x57])
+        }
+
+        /**
+         * Objetos extendidos 0x64/0x65 de casa fantasma ($0D:E9ED): bloque 2×2 de
+         * página 0 tomado de la tabla $0D:E9E1 en grupos de 4 según (ext - 0x64). El
+         * 0x25 de la tabla es aire (se deja pasar), como en el original.
+         */
+        fun extGhost2x2(k: Int) {
+            val data = intArrayOf(0x8C, 0x8D, 0x25, 0x8E, 0x90, 0x91, 0x8F, 0x25)
+            var x = (k - 0x64) * 4
+            preserve()
+            var rows = 1
+            do {
+                var v1 = pos; var cnt = 1
+                do { setHi00(v1); v1 = horiz(v1, data[x]); x++ } while (cnt-- != 0)
+                restore(); vert()
+                rows = (rows - 1) and 0xFF
+            } while (rows != 0xFF)
         }
 
         // --------------------------- objetos extendidos ---------------------------
@@ -589,6 +625,96 @@ internal object SmwLayer1 {
                 v2 = vert()
                 r0 = (r0 - 1) and 0xFF
             } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto 0x3B de casa fantasma: VIGA HORIZONTAL de madera ($0D:EDB9): tesela
+         * inicial 0x07, (n-1) teselas centrales 0x08 y tesela final 0x09, página 1.
+         */
+        fun ghostWoodBeam() {
+            var x = size and 0xF
+            var v1 = pos
+            setHi01(v1); v1 = horiz(v1, 0x07)
+            x = (x - 1) and 0xFF
+            while (x != 0) { setHi01(v1); v1 = horiz(v1, 0x08); x = (x - 1) and 0xFF }
+            setHi01(v1); setLo(v1, 0x09)
+        }
+
+        /**
+         * Objeto 0x3C de casa fantasma: LOSA de madera ($0D:EDDB): rectángulo de
+         * (nibble bajo +1) de ancho, con (nibble alto) filas de 0x53 y una fila
+         * inferior de remate 0x54, página 1.
+         */
+        fun ghostWoodRectWithBase() {
+            val w = size and 0xF
+            var rows = size shr 4
+            preserve()
+            while (rows != 0) {
+                var v1 = pos; var x = w
+                do { setHi01(v1); v1 = horiz(v1, 0x53) } while (x-- != 0)
+                restore(); vert()
+                rows = (rows - 1) and 0xFF
+            }
+            var v1 = pos; var x = w
+            do { setHi01(v1); v1 = horiz(v1, 0x54) } while (x-- != 0)
+        }
+
+        /**
+         * Objeto 0x3D de casa fantasma: LOSA con REMATE SUPERIOR ($0D:EE17): una fila
+         * superior de 0x5D y (nibble alto) filas de 0x53 debajo, ancho nibble bajo +1,
+         * página 1.
+         */
+        fun ghostWoodRectWithTop() {
+            val w = size and 0xF
+            var rows = size shr 4
+            preserve()
+            run { var v1 = pos; var x = w; do { setHi01(v1); v1 = horiz(v1, 0x5D) } while (x-- != 0) }
+            restore(); vert()
+            while (rows != 0) {
+                var v1 = pos; var x = w
+                do { setHi01(v1); v1 = horiz(v1, 0x53) } while (x-- != 0)
+                restore(); vert()
+                rows = (rows - 1) and 0xFF
+            }
+        }
+
+        /**
+         * Objeto 0x3E de casa fantasma: LOSA con BORDE DERECHO ($0D:EE52): (nibble
+         * alto +1) filas, cada una con (nibble bajo) teselas 0x53 y una tesela de
+         * borde 0x55 a la derecha, página 1.
+         */
+        fun ghostWoodRectRightEdge() {
+            val w = size and 0xF
+            var rows = size shr 4
+            preserve()
+            do {
+                var v1 = pos; var x = w
+                while (x != 0) { setHi01(v1); v1 = horiz(v1, 0x53); x = (x - 1) and 0xFF }
+                setHi01(v1); v1 = horiz(v1, 0x55)
+                restore(); vert()
+                rows = (rows - 1) and 0xFF
+            } while (rows != 0xFF)
+        }
+
+        /**
+         * Objeto 0x3F de casa fantasma: LOSA con BORDE IZQUIERDO ($0D:EE89): (nibble
+         * alto +1) filas, cada una con una tesela de borde 0x5C a la izquierda y
+         * (nibble bajo +1) teselas 0x53 si el ancho no es 0, página 1.
+         */
+        fun ghostWoodRectLeftEdge() {
+            val w = size and 0xF
+            var rows = size shr 4
+            preserve()
+            do {
+                var v1 = pos
+                setHi01(v1); v1 = horiz(v1, 0x5C)
+                if (w != 0) {
+                    var x = w
+                    do { setHi01(v1); v1 = horiz(v1, 0x53) } while (x-- != 0)
+                }
+                restore(); vert()
+                rows = (rows - 1) and 0xFF
+            } while (rows != 0xFF)
         }
 
         /**
