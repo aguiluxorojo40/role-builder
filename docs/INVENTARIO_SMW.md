@@ -113,6 +113,17 @@ completa (caparazón + alas con sus offsets), no la vía genérica.
   (castle 3D). El parser REGISTRA los ids sin portar
   (SmwLevelTilemap.unknownIds), así que medir el siguiente nivel es
   inmediato.
+- **CASA FANTASMA casi completa (v0.12.0): 49/56 niveles al 100%** (antes 16).
+  Portados los objetos que faltaban: estándar 0x20 (tablón), 0x31 (panel
+  enmarcado/ventana con patrón alternante), 0x32, 0x3B–0x3F (vigas y losas), y
+  extendidos 0x57–0x5E (detalles), 0x64/0x65 (bloques 2×2) y 0x49 (mural 6×13 de
+  pared). La Casa Fantasma #1 (nivel 0x4) se reconstruye entera. Global Layer 1:
+  **419/477 niveles al 100%**. Cola pendiente (7 niveles): ext 0x97, std 0x2E/0x30,
+  ext 0x8A-0x8D/0x62/0x63/0x85 (1-4× cada uno).
+- **Nombres reales de nivel/sprite** (`SmwLevelNames`/`SmwSpriteNames`, banco $04):
+  el listado y el mapa muestran "YOSHI'S ISLAND 1" en vez de "Nivel 105".
+- **Herramienta `--scene`**: renderiza un nivel importado (Layer 2 + Layer 1) a
+  PNG sin la app; clave para verificar el parser sin emulador.
 
 - **Colores animados de la CGRAM** (resuelto): las tablas fijas guardan un
   MAGENTA placeholder en los índices 0x64/0x6D (dorado del brillo de monedas y

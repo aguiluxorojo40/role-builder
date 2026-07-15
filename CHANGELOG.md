@@ -11,6 +11,40 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 
 ---
 
+## [0.12.0] — 2026-07-15 — Audio fiel, casa fantasma y nombres reales
+
+### Corregido
+- **Audio: bug del gain del DSP** que reventaba la música. El envolvente `gain`
+  del S-DSP es un uint16: al decrecer por debajo de 0 se desborda (~0xFFF8 > 0x7FF)
+  y eso apaga la nota. En Kotlin era un `Int` con signo, así que en los estados
+  que decrecen (release y gain-mode 0) la nota nunca se silenciaba y su volumen
+  crecía en negativo → zumbido digital que tapaba la canción al soltar la primera
+  nota. Arreglado enmascarando a 16 bits. Verificado: 0% de saturación y RMS
+  estable ~500-800 (antes se disparaba a miles).
+
+### Añadido
+- **Casa fantasma: de 16 a 49/56 niveles reconstruidos al 100%.** Port fiel (1:1
+  contra SMWDisX) de los objetos Layer 1 que faltaban: estándar `0x20`, `0x31`
+  (paneles/ventanas con patrón alternante), `0x32`, `0x3B–0x3F` (vigas y losas), y
+  extendidos `0x57–0x5E` (detalles), `0x64/0x65` (bloques 2×2) y `0x49` (el mural
+  6×13 de la pared). La Casa Fantasma #1 (nivel 0x4) se reconstruye entera. Global
+  Layer 1: 419/477 niveles al 100%.
+- **Nombres reales de niveles y sprites** (traídos de la rama `…-wk1dwx`): el
+  diálogo de importación y el mapa muestran "YOSHI'S ISLAND 1" o "#1 IGGY'S
+  CASTLE" (rutina `UpdateLevelName` del banco $04, verificada 1:1 contra la ROM),
+  y `SmwSpriteNames` da el nombre canónico de cada enemigo por id.
+- **Herramienta `--scene`** (extractor CLI): renderiza un nivel tal como se importa
+  a la app (Layer 2 + Layer 1) a un PNG, para verlo sin abrir la app.
+- **Layer 2 (fondo) importada como capa editable**: el fondo real del nivel se
+  trocea en teselas y se coloca debajo del primer plano, visible y editable.
+
+### Limitaciones conocidas
+- Quedan 7 niveles de casa fantasma con cola de objetos que salen 1-4 veces
+  (`ext:97`, `std:2E/30`, `ext:8A-8D/62/63/85`).
+- El fondo (Layer 2) scrollea 1:1, sin paralaje.
+
+---
+
 ## [0.11.0] — 2026-07-14 — Pipeline SMW → nivel jugable
 
 Hito de la línea SNES (rama `claude/snes-sprite-color-automation-918asc`): un

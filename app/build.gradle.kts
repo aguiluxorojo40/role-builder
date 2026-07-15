@@ -13,8 +13,8 @@ android {
         applicationId = "com.rolebuilder"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.11.0"
+        versionCode = 3
+        versionName = "0.12.0"
     }
 
     buildTypes {
