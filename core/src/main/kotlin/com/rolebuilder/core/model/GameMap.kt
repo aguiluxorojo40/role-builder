@@ -31,6 +31,11 @@ data class GameMap(
      * consume el motor de Platform Builder para enlazar los sub-niveles de un nivel SMW.
      */
     val platformWarps: List<MapWarp> = emptyList(),
+    /**
+     * Ítems de plataformas colocados en el mapa (moneda/meta + celda de 16px). Los
+     * instancia el motor de Platform Builder; el RPG los ignora.
+     */
+    val platformItems: List<PlatformItemMark> = emptyList(),
     /** Pista de música de fondo del mapa (ver MusicTracks); null = silencio. */
     val bgm: String? = null,
     /** Clima ambiental al entrar al mapa. */
@@ -79,6 +84,8 @@ data class GameMap(
             layers = newLayers,
             events = events.filter { it.x < newWidth && it.y < newHeight },
             spawns = spawns.filter { it.x < newWidth && it.y < newHeight },
+            platformEnemies = platformEnemies.filter { it.x < newWidth && it.y < newHeight },
+            platformItems = platformItems.filter { it.x < newWidth && it.y < newHeight },
         )
     }
 
@@ -154,6 +161,27 @@ data class MapWarp(
 @Serializable
 data class PlatformEnemyMark(
     val spriteId: Int,
+    val x: Int,
+    val y: Int,
+)
+
+/** Tipo de ítem de plataformas colocable en el editor. */
+@Serializable
+enum class PlatformItemType {
+    /** Moneda: se recoge al tocarla y suma al contador. */
+    COIN,
+
+    /** Meta / bandera: al tocarla se completa el nivel. */
+    GOAL,
+}
+
+/**
+ * Un ítem de plataformas (moneda o meta) en la celda (x,y) de 16px. El motor de
+ * Platform Builder lo instancia; las monedas se recogen y la meta gana el nivel.
+ */
+@Serializable
+data class PlatformItemMark(
+    val type: PlatformItemType,
     val x: Int,
     val y: Int,
 )

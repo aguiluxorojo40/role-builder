@@ -667,6 +667,47 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     }
 }
 
+/** Máximo de niveles que auto-carga el Platform Builder de una ROM de un toque. */
+internal const val AUTO_MAX_LEVELS = 8
+
+/**
+ * Importa UN nivel de SMW como mapa jugable del proyecto (tileset con colisión real +
+ * acciones de bloque + Layer 2 de fondo editable + enemigos). Devuelve el id del
+ * tileset creado. Lo usa el Platform Builder para auto-cargar los niveles de una ROM.
+ */
+internal fun importSmwLevelMap(
+    state: EditorState,
+    name: String,
+    m: SnesGameRecipes.SmwLevelMap,
+): Int {
+    val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
+    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
+    val tsId = state.nextTilesetId()
+    state.addTileset(
+        Tileset(
+            id = tsId, name = "$name (SMW)", image = fileName,
+            tileSize = 16, columns = m.columns, rows = m.rows,
+            passable = m.passable, platformSolidity = m.solidity,
+            animations = m.animations, platformBlockActions = m.blockActions,
+        ),
+    )
+    val layers = if (m.bgTiles.isNotEmpty()) {
+        listOf(m.bgTiles, m.tiles)
+    } else {
+        listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE })
+    }
+    state.addImportedMap(
+        GameMap(
+            id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
+            tilesetId = tsId, layers = layers,
+            platformEnemies = m.enemies.map {
+                PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
+            },
+        ),
+    )
+    return tsId
+}
+
 /**
  * Importa el nivel [level] de SMW como MAPAS del proyecto: el nivel elegido MÁS sus
  * sub-niveles enlazados ([SmwLevelBundle]: a donde llevan sus tuberías y puertas),

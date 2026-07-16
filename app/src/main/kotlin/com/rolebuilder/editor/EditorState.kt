@@ -134,6 +134,38 @@ class EditorState(val projectDir: File) {
         updateDatabase(database.copy(tilesets = database.tilesets + tileset))
     }
 
+    /** Reemplaza un tileset existente en la base de datos (mismo id). */
+    fun updateTileset(tileset: com.rolebuilder.core.model.Tileset) {
+        updateDatabase(
+            database.copy(tilesets = database.tilesets.map { if (it.id == tileset.id) tileset else it }),
+        )
+    }
+
+    /**
+     * Crea un nivel de plataformas VACÍO con un suelo de [groundTile] en las dos filas
+     * inferiores y lo abre como mapa de inicio. Lo usa el Platform Builder al crear un
+     * nivel desde cero.
+     */
+    fun addPlatformLevel(name: String, width: Int, height: Int, tilesetId: Int, groundTile: Int): GameMap {
+        val id = (project.mapIds.maxOrNull() ?: 0) + 1
+        val floorTop = height - 2
+        val ground = MutableList(width * height) { com.rolebuilder.core.model.EMPTY_TILE }
+        for (r in floorTop until height) for (c in 0 until width) ground[r * width + c] = groundTile
+        val map = GameMap(
+            id = id,
+            name = name.ifBlank { "Nivel $id" },
+            width = width,
+            height = height,
+            tilesetId = tilesetId,
+            layers = listOf(ground, List(width * height) { com.rolebuilder.core.model.EMPTY_TILE }),
+        )
+        maps[id] = map
+        project = project.copy(mapIds = project.mapIds + id, startMapId = id, startX = 2, startY = floorTop - 1)
+        currentMapId = id
+        dirty = true
+        return map
+    }
+
     fun save() {
         ProjectIo.saveProject(projectDir, project)
         ProjectIo.saveDatabase(projectDir, database)
