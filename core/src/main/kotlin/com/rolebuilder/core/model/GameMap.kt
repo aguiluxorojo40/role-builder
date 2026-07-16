@@ -42,6 +42,8 @@ data class GameMap(
     val weather: Weather = Weather.NONE,
     /** Capas de parallax (cielo lejano, niebla...) que dibuja el runtime. */
     val parallaxLayers: List<ParallaxLayer> = emptyList(),
+    /** Color de cielo del nivel (ARGB como Long); null = el del tema. Lo usa el Platform Builder. */
+    val skyColor: Long? = null,
     /**
      * Zonas conectadas por los bordes: id del mapa vecino en cada dirección
      * (null = borde cerrado). Al cruzar el borde caminando, el jugador pasa
