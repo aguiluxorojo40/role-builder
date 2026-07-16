@@ -337,7 +337,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, top = 8.dp, bottom = 4.dp)
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 4.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Glass)
                     .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
@@ -374,7 +374,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, bottom = 4.dp)
+                    .padding(start = 8.dp, end = 8.dp, bottom = 4.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Glass)
                     .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
