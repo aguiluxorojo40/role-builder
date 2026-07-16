@@ -171,10 +171,67 @@ class SmwSfxCatalogTest {
         assertEquals(SmwSfxCatalog.Event.COIN, clip.event)
         assertEquals(22050, clip.sampleRate)
         assertTrue(clip.pcm.isNotEmpty())
-        // clipFor extiende la muestra (en bucle si tiene loop) a una duración AUDIBLE
-        // con envolvente: COIN dura 0.25 s → 22050*0.25 muestras, no un clip de pocos ms.
-        assertEquals((22050 * 0.25f).toInt(), clip.pcm.size, "duración audible de COIN")
+        // clipFor renderiza la SECUENCIA: una nota sin prefijo de duración usa la
+        // duración por defecto (8 ticks × 2 ms = 16 ms), no un estirado fijo de 0.25 s.
+        assertEquals((22050 * 8 * SmwSfxCatalog.ENGINE_TICK_SEC).toInt(), clip.pcm.size, "duración de la secuencia de COIN")
         assertTrue(clip.pcm.any { it.toInt() != 0 }, "el clip no es silencio")
+    }
+
+    // ------------------------------------------------- secuencia completa (Sfx0/Sfx3)
+
+    @Test
+    fun `renderSequencePcm toca TODAS las notas con su duracion en ticks de 2 ms`() {
+        val aram = ByteArray(0x10000)
+        val seq = 0x6100
+        // [len=0x20] [DA 00] [nota A0] [len=0x10] [nota A4] [fin]
+        aram[seq + 0] = 0x20
+        aram[seq + 1] = 0xDA.toByte(); aram[seq + 2] = 0x00
+        aram[seq + 3] = 0xA0.toByte()
+        aram[seq + 4] = 0x10
+        aram[seq + 5] = 0xA4.toByte()
+        aram[seq + 6] = 0x00
+        putInstrument(aram, 0, srcn = 0, pitchBase = 0) // pitch 0 → tono nativo
+        val pcm = ShortArray(256) { (1000 * kotlin.math.sin(it / 3.0)).toInt().toShort() }
+        val bank = SmwSoundFx.SoundBank(listOf(sample(0, pcm)), 0x10000)
+
+        val out = SmwSfxCatalog.renderSequencePcm(aram, bank, seq, outRate = 22050)
+        assertNotNull(out)
+        // Nota 1: 0x20 ticks × 2 ms = 64 ms; nota 2: 0x10 × 2 ms = 32 ms → 96 ms total.
+        val expected = (22050 * 0.032f * 3).toInt()
+        assertTrue(
+            out.size in (expected - 8)..(expected + 8),
+            "dura la suma de las notas (${out.size} vs ~$expected)",
+        )
+        assertTrue(out.any { it.toInt() != 0 }, "no es silencio")
+    }
+
+    @Test
+    fun `dos secuencias distintas ya no suenan al mismo bip`() {
+        val aram = ByteArray(0x10000)
+        // Secuencia A: una nota grave larga. Secuencia B: dos notas agudas cortas.
+        val seqA = 0x6200
+        aram[seqA + 0] = 0x30; aram[seqA + 1] = 0xDA.toByte(); aram[seqA + 2] = 0x00
+        aram[seqA + 3] = 0x84.toByte(); aram[seqA + 4] = 0x00
+        val seqB = 0x6300
+        aram[seqB + 0] = 0x08; aram[seqB + 1] = 0xDA.toByte(); aram[seqB + 2] = 0x00
+        aram[seqB + 3] = 0xC0.toByte(); aram[seqB + 4] = 0xC2.toByte(); aram[seqB + 5] = 0x00
+        putInstrument(aram, 0, srcn = 0, pitchBase = 0x10)
+        val pcm = ShortArray(256) { (1000 * kotlin.math.sin(it / 3.0)).toInt().toShort() }
+        val bank = SmwSoundFx.SoundBank(listOf(sample(0, pcm)), 0x10000)
+
+        val a = SmwSfxCatalog.renderSequencePcm(aram, bank, seqA, outRate = 22050)
+        val b = SmwSfxCatalog.renderSequencePcm(aram, bank, seqB, outRate = 22050)
+        assertNotNull(a); assertNotNull(b)
+        assertTrue(a.size != b.size || !a.contentEquals(b), "secuencias distintas → PCM distinto")
+    }
+
+    @Test
+    fun `renderSequencePcm devuelve null si la secuencia no toca ninguna nota`() {
+        val aram = ByteArray(0x10000)
+        val seq = 0x6400
+        aram[seq] = 0xDA.toByte(); aram[seq + 1] = 0x00; aram[seq + 2] = 0x00 // instr y fin
+        val bank = SmwSoundFx.SoundBank(listOf(sample(0, shortArrayOf(1, 2, 3))), 0x10000)
+        assertNull(SmwSfxCatalog.renderSequencePcm(aram, bank, seq))
     }
 
     @Test

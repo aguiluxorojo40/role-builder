@@ -266,6 +266,20 @@ object SmwSfxCatalog {
         outRate: Int = DEFAULT_OUTPUT_RATE,
     ): PcmClip? {
         val source = EVENT_SOURCE[event] ?: return null
+        // Los SFX de TABLA (Sfx0/Sfx3) son SECUENCIAS (la moneda son dos notas, el
+        // powerup una escalerilla…): se renderiza la secuencia ENTERA. Colapsarla a la
+        // primera nota estirada —la vía antigua, que queda solo de reserva— hacía que
+        // casi todos los eventos sonaran al MISMO bip a distinta altura.
+        val seqStart = when (source.bank) {
+            0 -> u16(aram, SFX0_PTR_TABLE + source.id * 2)
+            3 -> u16(aram, SFX3_PTR_TABLE + source.id * 2)
+            else -> -1
+        }
+        if (seqStart > 0) {
+            renderSequencePcm(aram, bank, seqStart, outRate)?.let {
+                return PcmClip(event, it, outRate)
+            }
+        }
         val voice = resolveVoice(aram, source) ?: return null
         if (voice.instrument < 0) return null
         val srcn = instrumentSample(aram, voice.instrument)
@@ -338,6 +352,150 @@ object SmwSfxCatalog {
             val fromEnd = outLen - i
             if (fromEnd < release) gain *= fromEnd / release
             out[i] = (s * gain).toInt().coerceIn(-32768, 32767).toShort()
+            pos += step
+        }
+        return out
+    }
+
+    // ------------------------------------------------- secuencia completa (Sfx0/Sfx3)
+
+    /**
+     * Un TICK del motor N-SPC de SMW = 64 muestras a 32 kHz = 2 ms exactos (es el
+     * `timerCycles >= 64` del port de música, SmwMusicRenderer). Las duraciones de
+     * nota de las secuencias de SFX están en estos ticks.
+     */
+    const val ENGINE_TICK_SEC = 64f / 32000f
+
+    /**
+     * Renderiza a PCM la SECUENCIA COMPLETA de un SFX de tabla (Sfx0/Sfx3) desde
+     * [seqStart]: cada nota con su duración real en ticks de 2 ms, su instrumento
+     * (`DA`) y la ganancia del prefijo de volumen. Mismo descodificador de comandos
+     * que [resolveSequenceVoice], pero tocando todas las notas en vez de devolver la
+     * primera. `null` si la secuencia no toca ninguna nota o excede el tope de 2 s.
+     */
+    fun renderSequencePcm(
+        aram: ByteArray,
+        bank: SmwSoundFx.SoundBank,
+        seqStart: Int,
+        outRate: Int = DEFAULT_OUTPUT_RATE,
+    ): ShortArray? {
+        var p = seqStart and 0xFFFF
+        var instrument = -1
+        var lenTicks = 8
+        var gain = 1f
+        var lastNote = -1
+        var guard = 0
+        val chunks = ArrayList<ShortArray>()
+        var totalSamples = 0
+        val maxSamples = outRate * 2 // tope de cordura: 2 s
+
+        fun addChunk(c: ShortArray) {
+            if (totalSamples + c.size > maxSamples) return
+            chunks.add(c); totalSamples += c.size
+        }
+
+        fun playNote(note: Int) {
+            lastNote = note
+            if (instrument < 0) return
+            val srcn = instrumentSample(aram, instrument)
+            val sample = bank.samples.firstOrNull { it.index == srcn } ?: return
+            if (sample.pcm.isEmpty()) return
+            val pitch = dspPitch(note, instrumentPitchBase(aram, instrument))
+            val srcRate =
+                if (pitch <= 0) sample.sampleRate.toFloat()
+                else sample.sampleRate * (pitch.toFloat() / NATIVE_PITCH)
+            addChunk(renderNotePcm(sample, srcRate, outRate.toFloat(), lenTicks * ENGINE_TICK_SEC, gain))
+        }
+
+        while (guard++ < 1024 && totalSamples < maxSamples) {
+            var cmd = byteAt(aram, p)
+            if (cmd == 0x00 || cmd == 0xFF) break
+            if (cmd < 0x80) { // prefijo: duración (+ volL + volR opcionales)
+                lenTicks = cmd.coerceAtLeast(1)
+                p = (p + 1) and 0xFFFF; cmd = byteAt(aram, p)
+                if (cmd < 0x80) {
+                    var v = cmd
+                    p = (p + 1) and 0xFFFF; cmd = byteAt(aram, p)
+                    if (cmd < 0x80) {
+                        v = (v + cmd) / 2
+                        p = (p + 1) and 0xFFFF; cmd = byteAt(aram, p)
+                    }
+                    gain = (v / 127f).coerceIn(0f, 1f)
+                }
+            }
+            when {
+                cmd == 0xDA -> { // fija instrumento
+                    p = (p + 1) and 0xFFFF
+                    instrument = byteAt(aram, p)
+                    p = (p + 1) and 0xFFFF
+                }
+                cmd == 0xDD -> { // nota explícita
+                    p = (p + 1) and 0xFFFF
+                    playNote(byteAt(aram, p))
+                    p = (p + 1) and 0xFFFF
+                }
+                cmd == 0xEB -> p = (p + 4) and 0xFFFF // envolvente de tono: se omite
+                cmd in 0x80..0xC5 -> { playNote(cmd); p = (p + 1) and 0xFFFF }
+                cmd == 0xC6 -> { // ligadura: sostiene la última nota otro tramo
+                    if (lastNote >= 0) playNote(lastNote)
+                    p = (p + 1) and 0xFFFF
+                }
+                cmd == 0xC7 -> { // silencio
+                    addChunk(ShortArray((outRate * lenTicks * ENGINE_TICK_SEC).toInt().coerceAtLeast(1)))
+                    p = (p + 1) and 0xFFFF
+                }
+                else -> p = (p + 1) and 0xFFFF // comando desconocido: salta un byte
+            }
+        }
+        if (chunks.isEmpty() || totalSamples == 0) return null
+        val pcm = ShortArray(totalSamples)
+        var o = 0
+        for (c in chunks) { c.copyInto(pcm, o); o += c.size }
+        return pcm
+    }
+
+    /**
+     * Una NOTA de secuencia a PCM: la [sample] al tono [srcRate] durante [durationSec],
+     * siguiendo su bucle BRR, con [gain] y una envolvente corta (2 ms de ataque y una
+     * caída breve al final) para que las notas encadenen sin chasquidos.
+     */
+    private fun renderNotePcm(
+        sample: SmwSoundFx.BrrSample,
+        srcRate: Float,
+        outRate: Float,
+        durationSec: Float,
+        gain: Float,
+    ): ShortArray {
+        val src = sample.pcm
+        val outLen = (outRate * durationSec).toInt().coerceAtLeast(1)
+        if (src.isEmpty()) return ShortArray(outLen)
+        val step = srcRate / outRate
+        val loopStart = sample.loopStartSample.coerceIn(0, src.size - 1)
+        val loopLen = src.size - loopStart
+        val canLoop = sample.hasLoop && loopLen > 1
+        val attack = (outRate * 0.002f).coerceAtLeast(1f)              // 2 ms
+        val release = minOf(outLen * 0.25f, outRate * 0.02f)           // ≤20 ms
+        val out = ShortArray(outLen)
+        var pos = 0f
+        for (i in 0 until outLen) {
+            var p = pos
+            if (p >= loopStart) {
+                p = if (canLoop) loopStart + ((p - loopStart) % loopLen)
+                else if (p < src.size) p else Float.NaN
+            }
+            var s = 0f
+            if (!p.isNaN()) {
+                val i0 = p.toInt()
+                val frac = p - i0
+                val a = src[i0.coerceIn(0, src.size - 1)].toFloat()
+                val b = src[(i0 + 1).coerceIn(0, src.size - 1)].toFloat()
+                s = a + (b - a) * frac
+            }
+            var g = gain
+            if (i < attack) g *= i / attack
+            val fromEnd = outLen - i
+            if (fromEnd < release) g *= fromEnd / release
+            out[i] = (s * g).toInt().coerceIn(-32768, 32767).toShort()
             pos += step
         }
         return out
