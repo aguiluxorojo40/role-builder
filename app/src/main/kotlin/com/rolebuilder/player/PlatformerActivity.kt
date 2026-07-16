@@ -76,8 +76,10 @@ class PlatformerActivity : ComponentActivity() {
         } else {
             buildRomRenderer() ?: run { finish(); return }
         }
-        // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming.
-        music = PlatformerMusic.fromAssets(this)?.also { it.start() }
+        // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming. En
+        // la ruta ROM (▶) suena la música REAL del nivel (su musicIndex del header);
+        // si falla o es ruta proyecto, cae a la pista pre-horneada.
+        music = (buildRomMusic() ?: PlatformerMusic.fromAssets(this))?.also { it.start() }
         setContent {
             PlatformerScreen(
                 renderer,
@@ -189,6 +191,22 @@ class PlatformerActivity : ComponentActivity() {
             romEnemyFrames = enemyFrames.ifEmpty { null },
             bigSpriteBitmaps = loadBigSprites(),
         )
+    }
+
+    /**
+     * Música DERIVADA de la ROM para la ruta ▶ (solo modo ROM): lee el musicIndex del
+     * header del nivel y reproduce SU canción real del banco de música de nivel. El
+     * mapeo es songId = musicIndex + 1 (la canción 0 del banco es silencio; los niveles
+     * estándar tienen musicIndex 0 → canción 1, el tema de nivel clásico). Null si no es
+     * ruta ROM o la ROM no permite ensamblar la música → cae al asset pre-horneado.
+     */
+    private fun buildRomMusic(): PlatformerMusic? {
+        val romPath = intent.getStringExtra(EXTRA_ROM_PATH) ?: return null
+        val level = intent.getIntExtra(EXTRA_LEVEL, 0x106)
+        val rom = runCatching { File(romPath).readBytes() }.getOrNull() ?: return null
+        val header = SnesDecoder.parseHeader(rom)
+        val musicIndex = SnesGameRecipes.smwLevelInfo(rom, header, level)?.musicIndex ?: return null
+        return PlatformerMusic.fromRom(rom, musicIndex + 1)
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */

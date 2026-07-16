@@ -91,5 +91,23 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
             renderer.selectSong(songId)
             return PlatformerMusic(renderer)
         }
+
+        /**
+         * Deriva la música del banco de NIVEL directamente de la ROM del usuario (con
+         * [SmwMusic.assembleAram], sin el asset pre-horneado) y prepara el reproductor
+         * con la canción [songId] — así cada nivel suena SU música real. Devuelve null
+         * si no se puede ensamblar el ARAM (ROM no compatible), para caer al asset.
+         */
+        fun fromRom(rom: ByteArray, songId: Int): PlatformerMusic? {
+            val header = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+            val delta = header.headerOffset - 0x7FC0
+            val aram = com.rolebuilder.core.snes.SmwMusic.assembleAram(
+                rom, delta, com.rolebuilder.core.snes.SmwMusic.LEVEL_MUSIC,
+            ) ?: return null
+            if (aram.size != 0x10000) return null
+            val renderer = SmwMusicRenderer(aram)
+            renderer.selectSong(songId)
+            return PlatformerMusic(renderer)
+        }
     }
 }
