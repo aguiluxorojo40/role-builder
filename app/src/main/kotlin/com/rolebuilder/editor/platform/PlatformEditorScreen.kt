@@ -98,14 +98,18 @@ import kotlin.math.floor
 
 // Paleta visual propia del Platform Builder (verdes/cielo estilo SMW), para que
 // se distinga de un vistazo del editor top-down del Role Builder.
+// Paleta Nintendo (colores de marca de Mario): rojo Nintendo, azul, amarillo
+// moneda y verde Luigi, sobre paneles translúcidos oscuros (efecto glass).
 private val SkyBlue = Color(0xFF5C94FC)
-private val LeafGreen = Color(0xFF3DFFB0)   // acento neón (menta) — look "gamer"
-private val NeonCyan = Color(0xFF00E5FF)
-private val Canvas0 = Color(0xFF0B1E12)
-// Paneles translúcidos (efecto glass) que dejan ver el cielo por detrás.
-private val Panel = Color(0xCC0A1712)
-private val Glass = Color(0x990A1712)
-private val GlassStroke = Color(0x33BFFFE6)
+private val MarioRed = Color(0xFFE60012)    // rojo Nintendo — acento principal
+private val MarioBlue = Color(0xFF049CD8)   // azul Mario
+private val CoinYellow = Color(0xFFFBD000)  // amarillo moneda/estrella
+private val LuigiGreen = Color(0xFF43B047)  // verde Luigi/tubería
+private val Canvas0 = Color(0xFF0B1220)
+// Paneles translúcidos (glass) que dejan ver el fondo por detrás.
+private val Panel = Color(0xCC10131C)
+private val Glass = Color(0x9910131C)
+private val GlassStroke = Color(0x33FFFFFF)
 
 /** Herramientas del editor de plataformas. */
 private enum class PTool(val label: String) {
@@ -357,13 +361,13 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 }
                 Button(
                     onClick = { romPicker.launch("*/*") },
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MarioRed, contentColor = Color.Black),
                 ) { Text("⚡ Cargar ROM") }
                 TextButton(onClick = { showMap16 = true }) {
-                    Text("Bloques Map16", color = LeafGreen)
+                    Text("Bloques Map16", color = LuigiGreen)
                 }
                 TextButton(onClick = { showRomImport = true }) {
-                    Text("Avanzado", color = NeonCyan)
+                    Text("Avanzado", color = MarioBlue)
                 }
             }
             // ---------- fila 2: herramientas de edición ----------
@@ -385,7 +389,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         onClick = { tool = t },
                         label = { Text(t.label) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = LeafGreen,
+                            selectedContainerColor = MarioRed,
                             selectedLabelColor = Color.Black,
                         ),
                     )
@@ -556,7 +560,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         Button(
                             onClick = { romPicker.launch("*/*") },
                             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                containerColor = LeafGreen, contentColor = Color.Black,
+                                containerColor = MarioRed, contentColor = Color.Black,
                             ),
                             modifier = Modifier.padding(top = 12.dp),
                         ) { Text("⚡ Cargar ROM de SMW") }
@@ -714,7 +718,7 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
                 modifier = Modifier.size(44.dp)
                     .border(
                         width = if (selected == tile) 3.dp else 1.dp,
-                        color = if (selected == tile) LeafGreen else Color(0x33FFFFFF),
+                        color = if (selected == tile) MarioRed else Color(0x33FFFFFF),
                         shape = RoundedCornerShape(4.dp),
                     )
                     .clickable { onSelect(tile) },
@@ -747,7 +751,7 @@ private fun EnemyPalette(atlas: ImageBitmap?, selected: Int, onSelect: (Int) -> 
                     modifier = Modifier.size(52.dp)
                         .border(
                             width = if (selected == id) 3.dp else 1.dp,
-                            color = if (selected == id) LeafGreen else Color(0x33FFFFFF),
+                            color = if (selected == id) MarioRed else Color(0x33FFFFFF),
                             shape = RoundedCornerShape(6.dp),
                         )
                         .clickable { onSelect(id) },
@@ -796,7 +800,7 @@ private fun CollisionPanel(
                     onClick = { onSetSolidity(s) },
                     label = { Text(solidityLabel(s)) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LeafGreen,
+                        selectedContainerColor = MarioRed,
                         selectedLabelColor = Color.Black,
                     ),
                 )
@@ -1028,9 +1032,9 @@ private fun DrawScope.drawLevel(
         }
     }
 
-    // Resaltado del objeto seleccionado (modo Seleccionar).
+    // Resaltado del objeto seleccionado (modo Seleccionar) — amarillo moneda.
     selected?.let { sel ->
         val topLeft = Offset(pan.x + sel.x * tilePx, pan.y + sel.y * tilePx)
-        drawRect(Color(0xFFFFEB3B), topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
+        drawRect(CoinYellow, topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
     }
 }
