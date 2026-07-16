@@ -60,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -98,9 +99,13 @@ import kotlin.math.floor
 // Paleta visual propia del Platform Builder (verdes/cielo estilo SMW), para que
 // se distinga de un vistazo del editor top-down del Role Builder.
 private val SkyBlue = Color(0xFF5C94FC)
-private val LeafGreen = Color(0xFF3CB043)
+private val LeafGreen = Color(0xFF3DFFB0)   // acento neón (menta) — look "gamer"
+private val NeonCyan = Color(0xFF00E5FF)
 private val Canvas0 = Color(0xFF0B1E12)
-private val Panel = Color(0xFF10261A)
+// Paneles translúcidos (efecto glass) que dejan ver el cielo por detrás.
+private val Panel = Color(0xCC0A1712)
+private val Glass = Color(0x990A1712)
+private val GlassStroke = Color(0x33BFFFE6)
 
 /** Herramientas del editor de plataformas. */
 private enum class PTool(val label: String) {
@@ -328,9 +333,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Panel)
+                    .padding(horizontal = 8.dp, top = 8.dp, bottom = 4.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Glass)
+                    .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -355,16 +363,19 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     Text("Bloques Map16", color = LeafGreen)
                 }
                 TextButton(onClick = { showRomImport = true }) {
-                    Text("Avanzado", color = SkyBlue)
+                    Text("Avanzado", color = NeonCyan)
                 }
             }
             // ---------- fila 2: herramientas de edición ----------
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Panel.copy(alpha = 0.85f))
+                    .padding(horizontal = 8.dp, bottom = 4.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Glass)
+                    .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
