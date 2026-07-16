@@ -59,6 +59,18 @@ class Fireball(var x: Float, var y: Float, var vx: Float) {
 /** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
 class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
 
+/** Tipo de ítem COLOCADO en el editor de plataformas. */
+enum class ItemKind { COIN, GOAL }
+
+/** Semilla de un ítem colocado: posición en píxeles y tipo (moneda/meta). */
+class ItemSeed(val xPixel: Int, val yPixel: Int, val kind: ItemKind)
+
+/** Ítem colocado en ejecución (16×16): moneda que se recoge o meta que gana el nivel. */
+class PlacedItem(val x: Float, val y: Float, val kind: ItemKind) {
+    val size = 16f
+    var collected = false
+}
+
 /**
  * Acción interactiva de una celda del mapa, a nivel de motor (independiente de la
  * clasificación de bloques Map16 de SMW, que se mapea a esto al montar el nivel):
@@ -128,6 +140,7 @@ class PlatformerEngine(
     enemySeeds: List<EnemySeed> = emptyList(),
     blockActions: IntArray? = null,
     warps: List<EngineWarp> = emptyList(),
+    itemSeeds: List<ItemSeed> = emptyList(),
 ) {
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat()).also {
         // Si el tuning ya viene de Mario grande (26 px), el estado arranca grande.
@@ -169,6 +182,14 @@ class PlatformerEngine(
     /** Enemigos vivos del nivel, instanciados de las semillas. */
     val enemies: List<PlatformerEnemy> =
         enemySeeds.map { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
+
+    /** Ítems COLOCADOS en el editor (monedas/meta), instanciados de las semillas. */
+    val placedItems: List<PlacedItem> =
+        itemSeeds.map { PlacedItem(it.xPixel.toFloat(), it.yPixel.toFloat(), it.kind) }
+
+    /** true cuando el jugador toca una META colocada (nivel completado). */
+    var won = false
+        private set
 
     /**
      * Rejilla MUTABLE de acciones de celda (ordinal de [BlockAction], cols*rows) o null
@@ -378,6 +399,7 @@ class PlatformerEngine(
         updateFireballs()
         handlePlayerEnemyContact()
         collectCoins()
+        collectPlacedItems()
         checkWarps()
 
         checkDeadly()
@@ -423,6 +445,27 @@ class PlatformerEngine(
                 setAction(c, r, BlockAction.NONE)
                 coins++
                 coinEvents++
+            }
+        }
+    }
+
+    /**
+     * Recoge los ítems COLOCADOS en el editor que solape la caja del jugador: las
+     * monedas suman al contador (con SFX vía [coinEvents]); tocar la META marca [won].
+     */
+    private fun collectPlacedItems() {
+        if (placedItems.isEmpty()) return
+        val p = player
+        val pw = tuning.playerWidth
+        val ph = playerHeight
+        for (item in placedItems) {
+            if (item.collected) continue
+            val overlap = p.x < item.x + item.size && p.x + pw > item.x &&
+                p.y < item.y + item.size && p.y + ph > item.y
+            if (!overlap) continue
+            when (item.kind) {
+                ItemKind.COIN -> { item.collected = true; coins++; coinEvents++ }
+                ItemKind.GOAL -> won = true
             }
         }
     }

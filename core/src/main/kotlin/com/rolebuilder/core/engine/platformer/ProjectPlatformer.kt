@@ -3,6 +3,8 @@ package com.rolebuilder.core.engine.platformer
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.PlatformEnemyMark
+import com.rolebuilder.core.model.PlatformItemMark
+import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
 import com.rolebuilder.core.snes.SmwSolidity
@@ -79,9 +81,21 @@ object ProjectPlatformer {
         warps = map.platformWarps.map {
             EngineWarp(it.x, it.y, WARP_INPUTS.getOrElse(it.input) { WarpInput.DOWN }, it.destMapId, it.destX, it.destY)
         },
+        itemSeeds = map.platformItems.map { itemSeed(it) },
     )
 
     private val WARP_INPUTS = WarpInput.values()
+
+    /** Convierte un ítem colocado (celda) en semilla del motor (píxeles). */
+    private fun itemSeed(mark: PlatformItemMark): ItemSeed =
+        ItemSeed(
+            mark.x * TILE,
+            mark.y * TILE,
+            when (mark.type) {
+                PlatformItemType.COIN -> ItemKind.COIN
+                PlatformItemType.GOAL -> ItemKind.GOAL
+            },
+        )
 
     /**
      * Rejilla de acciones interactivas (moneda…) por celda para el motor, a partir de

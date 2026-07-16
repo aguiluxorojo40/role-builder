@@ -244,6 +244,24 @@ class PlatformerRenderer(
             }
         }
 
+        // Ítems COLOCADOS en el editor: monedas (cuadrado dorado que parpadea) y meta
+        // (poste con banderín verde). Dibujo de motor (rectángulos), no sprites de ROM.
+        for (item in engine.placedItems) {
+            if (item.collected) continue
+            val ix = item.x / 16f
+            val iy = item.y / 16f
+            when (item.kind) {
+                com.rolebuilder.core.engine.platformer.ItemKind.COIN -> {
+                    val blink = 0.85f + 0.15f * kotlin.math.sin(now / 120_000_000.0).toFloat()
+                    batch.draw(white, ix + 0.28f, iy + 0.15f, 0.44f, 0.7f, r = 0.98f * blink, g = 0.82f * blink, b = 0.16f, a = 1f)
+                }
+                com.rolebuilder.core.engine.platformer.ItemKind.GOAL -> {
+                    batch.draw(white, ix + 0.44f, iy - 1f, 0.12f, 2f, r = 0.85f, g = 0.85f, b = 0.9f, a = 1f)
+                    batch.draw(white, ix + 0.56f, iy - 1f, 0.5f, 0.4f, r = 0.15f, g = 0.8f, b = 0.3f, a = 1f)
+                }
+            }
+        }
+
         // Enemigos: primero los fotogramas VIVOS de la ROM (Koopa CON caparazón, andar
         // animado a la cadencia real de SMW: cambia cada 8 fotogramas); si no, el atlas
         // horneado; si no, un rectángulo. Aplastados = franja fina al pisarlos.
