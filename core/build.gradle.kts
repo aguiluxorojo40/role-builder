@@ -49,3 +49,11 @@ tasks.register<JavaExec>("extractSnesTileset") {
     mainClass.set("com.rolebuilder.core.tools.SnesExtractorKt")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("dumpOverworldDoc") {
+    group = "rolebuilder"
+    description = "Documenta la capa estática del overworld de SMW (Star Road + eventos) a Markdown"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SmwOverworldDocKt")
+    systemProperty("java.awt.headless", "true")
+}
