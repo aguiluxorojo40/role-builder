@@ -287,6 +287,27 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --coin: hornea la HOJA de la moneda animada real de SMW (bloque Map16
+    // 0x2B) en una tira de 4 fotogramas de 16×16 con VRAM/CGRAM reales de la ROM.
+    // Es el horneado oficial de app/src/main/assets/sprites/coin.png: la moneda que
+    // el motor dibuja para los ítems colocados en el editor. --level elige el nivel
+    // de referencia (por defecto 0x106, cuya paleta y set de gráficos dan la moneda
+    // dorada clásica).
+    if (opts.containsKey("coin")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x106
+        val sheet = SnesGameRecipes.smwCoinSheet(rom, header, level)
+        if (sheet == null) {
+            println("No se pudo montar la moneda en el nivel 0x${level.toString(16).uppercase()}")
+            return
+        }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "coin.png")
+        ImageIO.write(toBufferedImage(sheet), "png", png)
+        println("Moneda: ${sheet.width}x${sheet.height}px (${sheet.width / 16} fotogramas)" +
+            " del nivel 0x${level.toString(16).uppercase()} -> images/${png.name}")
+        return
+    }
+
     // Modo --music: renderiza la MÚSICA del juego (N-SPC + S-DSP portados) a un
     // .wav de escritorio — la forma de PROBAR cómo suena sin pasar por la app, y
     // de cazar bugs de mezcla analizando la señal. --song elige la canción
@@ -857,6 +878,8 @@ private fun printUsage() {
           --rom smw.sfc --level-info [--level 0x106]
                                               (FICHA del nivel: tamaño, modo, música, paletas, tiempo)
           --rom smw.sfc --enemies             (ATLAS de enemigos del catálogo con sprite/color real → enemies.png)
+          --rom smw.sfc --coin [--level 0x106]
+                                              (HOJA de la moneda animada real (bloque 0x2B, 4 fotogramas 16×16) → coin.png)
           --rom smw.sfc --music [--song 1] [--seconds 30] [--bank overworld]
                                               (MÚSICA renderizada a .wav: pruébala sin la app + diagnóstico de mezcla)
           --rom smw.sfc --powerups            (estados de powerup de Mario: tamaño y habilidades)

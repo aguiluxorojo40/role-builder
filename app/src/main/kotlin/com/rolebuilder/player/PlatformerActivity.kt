@@ -146,7 +146,7 @@ class PlatformerActivity : ComponentActivity() {
             // los niveles ya importados y los tilesets propios funcionan sin más.
             val autoProfiles = autoSlopeProfiles(projectDir, tileset)
             val engine = ProjectPlatformer.engine(map, tileset, startX, startY, autoSlopeProfiles = autoProfiles)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this), bigSpriteBitmaps = loadBigSprites())
+            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this), bigSpriteBitmaps = loadBigSprites(), coinBitmap = loadCoin())
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -204,6 +204,7 @@ class PlatformerActivity : ComponentActivity() {
             marioBigBmp, marioFireBmp, marioCapeBmp,
             romEnemyFrames = enemyFrames.ifEmpty { null },
             bigSpriteBitmaps = loadBigSprites(),
+            coinBitmap = loadCoin(),
         )
     }
 
@@ -260,6 +261,9 @@ class PlatformerActivity : ComponentActivity() {
 
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
     private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
+
+    /** Carga la hoja de la moneda animada real (assets/sprites/coin.png), o null si falta. */
+    private fun loadCoin(): android.graphics.Bitmap? = loadSprite("sprites/coin.png")
 
     /**
      * Carga los sprites GRANDES empaquetados (assets/sprites/big/big_<id>.png): id de

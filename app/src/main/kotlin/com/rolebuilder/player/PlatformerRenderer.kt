@@ -65,6 +65,13 @@ class PlatformerRenderer(
      * normal (aditivo, no rompe nada).
      */
     private val bigSpriteBitmaps: Map<Int, Bitmap> = emptyMap(),
+    /**
+     * Hoja de la moneda animada real de SMW (bloque Map16 0x2B, 4 fotogramas de
+     * 16×16 en fila = 64×16) horneada de la ROM (assets/sprites/coin.png). Es la
+     * moneda que se dibuja para los ítems COIN colocados en el editor; si falta,
+     * cae al cuadrado dorado que parpadea.
+     */
+    private val coinBitmap: Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -125,6 +132,7 @@ class PlatformerRenderer(
     private var enemyTex: Texture? = null
     private var romEnemyTex: Map<Int, List<Texture>> = emptyMap()
     private var bigTex: Map<Int, Pair<Texture, Bitmap>> = emptyMap()
+    private var coinFrames: List<Texture> = emptyList()
     private var tilesetTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
@@ -141,6 +149,12 @@ class PlatformerRenderer(
         enemyTex = enemyBitmap?.let { Texture(it) }
         romEnemyTex = romEnemyFrames?.mapValues { (_, frames) -> frames.map { Texture(it) } } ?: emptyMap()
         bigTex = bigSpriteBitmaps.mapValues { (_, bmp) -> Texture(bmp) to bmp }
+        coinFrames = coinBitmap?.let { bmp ->
+            val n = (bmp.width / 16).coerceAtLeast(1)
+            (0 until n).map { fi ->
+                Texture(Bitmap.createBitmap(bmp, fi * 16, 0, 16, minOf(16, bmp.height)))
+            }
+        } ?: emptyList()
         tilesetTex = world?.let {
             runCatching { Texture.fromFile(ProjectIo.imageFile(it.projectDir, it.tileset.image)) }.getOrNull()
         }
@@ -280,16 +294,23 @@ class PlatformerRenderer(
             }
         }
 
-        // Ítems COLOCADOS en el editor: monedas (cuadrado dorado que parpadea) y meta
-        // (poste con banderín verde). Dibujo de motor (rectángulos), no sprites de ROM.
+        // Ítems COLOCADOS en el editor: monedas (sprite REAL de SMW girando, bloque
+        // 0x2B de la ROM; si falta el asset, cuadrado dorado que parpadea) y meta
+        // (poste con banderín verde).
         for (item in engine.placedItems) {
             if (item.collected) continue
             val ix = item.x / 16f
             val iy = item.y / 16f
             when (item.kind) {
                 com.rolebuilder.core.engine.platformer.ItemKind.COIN -> {
-                    val blink = 0.85f + 0.15f * kotlin.math.sin(now / 120_000_000.0).toFloat()
-                    batch.draw(white, ix + 0.28f, iy + 0.15f, 0.44f, 0.7f, r = 0.98f * blink, g = 0.82f * blink, b = 0.16f, a = 1f)
+                    if (coinFrames.isNotEmpty()) {
+                        // Gira a la cadencia clásica: ~8 fotogramas de juego por cuadro (≈133 ms).
+                        val fi = ((now / 133_000_000L) % coinFrames.size).toInt()
+                        batch.draw(coinFrames[fi], ix, iy, 1f, 1f)
+                    } else {
+                        val blink = 0.85f + 0.15f * kotlin.math.sin(now / 120_000_000.0).toFloat()
+                        batch.draw(white, ix + 0.28f, iy + 0.15f, 0.44f, 0.7f, r = 0.98f * blink, g = 0.82f * blink, b = 0.16f, a = 1f)
+                    }
                 }
                 com.rolebuilder.core.engine.platformer.ItemKind.GOAL -> {
                     batch.draw(white, ix + 0.44f, iy - 1f, 0.12f, 2f, r = 0.85f, g = 0.85f, b = 0.9f, a = 1f)

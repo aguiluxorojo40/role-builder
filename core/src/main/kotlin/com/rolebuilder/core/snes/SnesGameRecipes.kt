@@ -535,6 +535,45 @@ object SnesGameRecipes {
             Triple<Int, String, SmwLevelMap>(lv, "Nivel ${lv.toString(16).uppercase()}", m)
         }
 
+    /**
+     * Hoja del sprite de MONEDA REAL de SMW: el bloque Map16 0x2B (la moneda, según
+     * [SmwBlockBehavior]) renderizado en sus [SMW_TILEANIM_FRAMES] fotogramas de
+     * animación (la moneda GIRA) con el color real de la CGRAM. Devuelve una tira
+     * horizontal de 16×16 por frame, o null. Usa un nivel de referencia [level] cuyo
+     * tileset carga la animación de moneda (por defecto YI2, que tiene monedas).
+     */
+    fun smwCoinSheet(rom: ByteArray, header: SnesHeader, level: Int = 0x106): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val tm = SmwLayer1.parse(rom, delta, level) ?: return null
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
+        val fgbgSetting = byte(rom, lpc + 4) and 0x0F
+        val se = SMW_FGBG_GFX_TABLE_PC + delta + 4 * fgbgSetting
+        val slotFiles = intArrayOf(SMW_FG1_GFX, SMW_FG2_GFX, byte(rom, se + 2), byte(rom, se + 3))
+        val vram = arrayOfNulls<IntArray>(512)
+        for (s in 0..3) {
+            val file = slotFiles[s]; if (file == SMW_SLOT_EMPTY) continue
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+            }
+        }
+        if (vram.all { it == null }) return null
+        val cgram = assembleSmwCgram(rom, delta, level)
+        val defs = smwMap16DefTable(rom, delta, tm.tileset)
+        val coinBlock = 0x2B
+        val sheet = ArgbImage(16 * SMW_TILEANIM_FRAMES, 16)
+        for (f in 0 until SMW_TILEANIM_FRAMES) {
+            val vramF = vram.copyOf().also { fillSmwAnimatedTiles(rom, delta, tm.tileset, it, f) }
+            drawSmwBlock(rom, defs, coinBlock, vramF, cgram, sheet, f * 16, 0)
+        }
+        return sheet
+    }
+
     /** Ficha ligera de un nivel importable, SIN construir su mapa (eso es caro). */
     class SmwLevelListing(
         val level: Int,
