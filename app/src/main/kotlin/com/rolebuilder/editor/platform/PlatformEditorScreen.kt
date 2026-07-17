@@ -767,12 +767,16 @@ private fun EnemyPalette(atlas: ImageBitmap?, selected: Int, onSelect: (Int) -> 
                         .clickable { onSelect(id) },
                 ) {
                     if (atlas != null && frameW > 0) {
+                        // Sprite 16×32: se dibuja respetando su proporción (alto = 2×ancho),
+                        // anclado abajo y centrado, para que no salga estirado ni partido.
+                        val dstH = size.height
+                        val dstW = dstH * frameW / atlas.height.coerceAtLeast(1)
                         drawImage(
                             image = atlas,
                             srcOffset = IntOffset(index * frameW, 0),
                             srcSize = IntSize(frameW, atlas.height),
-                            dstOffset = IntOffset.Zero,
-                            dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                            dstOffset = IntOffset(((size.width - dstW) / 2f).toInt(), 0),
+                            dstSize = IntSize(dstW.toInt(), dstH.toInt()),
                         )
                     } else {
                         drawRect(Color(0xFFB0303C), size = size)
@@ -1028,25 +1032,31 @@ private fun DrawScope.drawLevel(
         }
     }
 
-    // Enemigos.
+    // Enemigos: el atlas guarda cada uno ENTERO en una celda 16×32 anclada por los
+    // pies (los apilados —Koopa con caparazón— ocupan 2 casillas; los bajos van en la
+    // mitad inferior). Se dibuja a ese tamaño real, nunca aplastado a 16×16: la casilla
+    // colocada es donde APOYA los pies, y el sprite crece hacia arriba.
     val ids = SmwEnemyGraphics.curatedIds
     val frameW = enemyAtlas?.let { it.width / ids.size.coerceAtLeast(1) } ?: 0
     for (e in map.platformEnemies) {
         if (e.x < minX - 1 || e.x > maxX + 1) continue
-        val dst = IntOffset((pan.x + e.x * tilePx).toInt(), (pan.y + e.y * tilePx).toInt())
         val idx = ids.indexOf(e.spriteId)
         if (enemyAtlas != null && frameW > 0 && idx >= 0) {
+            // 1 casilla de ancho × 2 de alto, con los pies al fondo de la casilla e.y.
             drawImage(
                 image = enemyAtlas,
                 srcOffset = IntOffset(idx * frameW, 0),
                 srcSize = IntSize(frameW, enemyAtlas.height),
-                dstOffset = dst,
-                dstSize = IntSize(tilePx.toInt(), tilePx.toInt()),
+                dstOffset = IntOffset(
+                    (pan.x + e.x * tilePx).toInt(),
+                    (pan.y + (e.y - 1) * tilePx).toInt(),
+                ),
+                dstSize = IntSize(tilePx.toInt(), (tilePx * 2f).toInt()),
             )
         } else {
             drawRect(
                 Color(0xCCB0303C),
-                topLeft = Offset(dst.x.toFloat(), dst.y.toFloat()),
+                topLeft = Offset(pan.x + e.x * tilePx, pan.y + e.y * tilePx),
                 size = Size(tilePx, tilePx),
             )
         }

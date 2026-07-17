@@ -250,22 +250,27 @@ fun main(args: Array<String>) {
             }
         }
         val fallbackLevels = listOf(0x106, 0x024, 0x0C7, 0x022, 0x0C5, 0x101, 0x105, 0x001, 0x002)
-        val atlas = ArgbImage(ids.size * 16, 16)
+        // Celda UNIFORME de 16×32 anclada por los pies: los apilados (Koopa con
+        // caparazón) usan sus dos bloques; los bajos van en la mitad inferior. Así el
+        // atlas conserva el sprite ENTERO —nunca una "cabeza suelta"— y el editor y el
+        // jugador lo dibujan a su tamaño real sin partirlo por la rejilla de 16. El
+        // primer fotograma del ciclo de andar es el aspecto en reposo.
+        val atlas = ArgbImage(ids.size * 16, 32)
         var missing = 0
-        println("Atlas de enemigos (${ids.size} fotogramas de 16×16, aspecto por mayoría):")
+        println("Atlas de enemigos (${ids.size} fotogramas de 16×32, aspecto por mayoría):")
         ids.forEachIndexed { frame, id ->
             val candidates = (levelsWithId[id] ?: fallbackLevels).take(16)
             // hash de píxeles → (imagen, niveles que la producen)
             val variants = LinkedHashMap<Int, Pair<ArgbImage, MutableList<Int>>>()
             for (l in candidates) {
-                val img = enemyGfx.spriteImage(rom, header, l, id) ?: continue
+                val img = enemyGfx.spriteFrames(rom, header, l, id)?.firstOrNull() ?: continue
                 val key = img.pixels.contentHashCode()
                 variants.getOrPut(key) { img to ArrayList() }.second.add(l)
             }
             val winner = variants.values.maxByOrNull { it.second.size }
             if (winner != null) {
                 val img = winner.first
-                for (y in 0 until 16) for (x in 0 until 16) {
+                for (y in 0 until 32) for (x in 0 until 16) {
                     atlas.set(frame * 16 + x, y, img.pixels[y * 16 + x])
                 }
             } else {

@@ -347,12 +347,14 @@ class PlatformerRenderer(
                 val feet = (e.y + e.height) / 16f
                 batch.draw(walkFrame, cx, feet - 2f, 1f, 2f, flipX = e.vx > 0f)
             } else if (e.alive && etex != null && frame != null) {
-                // Sprite 16×16 centrado sobre la caja del enemigo, con los pies abajo.
+                // Celda 16×32 anclada por los pies (igual que la vía ROM): el atlas guarda
+                // el sprite ENTERO, así los apilados (Koopa con caparazón) no salen como
+                // una cabeza suelta ni aplastados a 16×16.
                 val cx = (e.x + e.width / 2f) / 16f - 0.5f
-                val feet = (e.y + e.height) / 16f - 1f
+                val feet = (e.y + e.height) / 16f
                 val u0 = frame * ENEMY_UV
                 batch.draw(
-                    etex, cx, feet, 1f, 1f,
+                    etex, cx, feet - 2f, 1f, 2f,
                     u0 = u0, v0 = 0f, u1 = u0 + ENEMY_UV, v1 = 1f,
                     flipX = e.vx > 0f,
                 )
