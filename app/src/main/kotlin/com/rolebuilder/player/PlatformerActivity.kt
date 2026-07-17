@@ -142,7 +142,10 @@ class PlatformerActivity : ComponentActivity() {
             // Inicio: el del proyecto, o el punto de entrada del warp que nos trajo aquí.
             val startX = intent.getIntExtra(EXTRA_START_X, project.startX)
             val startY = intent.getIntExtra(EXTRA_START_Y, project.startY)
-            val engine = ProjectPlatformer.engine(map, tileset, startX, startY)
+            // Perfiles de rampa AUTOMÁTICOS desde el DIBUJO de los tiles de cuesta:
+            // los niveles ya importados y los tilesets propios funcionan sin más.
+            val autoProfiles = autoSlopeProfiles(projectDir, tileset)
+            val engine = ProjectPlatformer.engine(map, tileset, startX, startY, autoSlopeProfiles = autoProfiles)
             PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this), bigSpriteBitmaps = loadBigSprites())
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
@@ -221,6 +224,38 @@ class PlatformerActivity : ComponentActivity() {
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
+    /**
+     * Perfiles de rampa AUTOMÁTICOS por tile: para cada tile de solidez "cuesta" SIN
+     * forma explícita, deduce la altura del suelo del propio DIBUJO del tile
+     * ([com.rolebuilder.core.snes.SmwSlopes.profileFromTilePixels]: primer píxel opaco
+     * por columna). Es lo que hace las cuestas GENERALES: los niveles ya importados
+     * funcionan sin reimportar y los tilesets dibujados a mano, sin configurar nada.
+     * Si la silueta no es útil (tile macizo), la cuesta se queda como bloque (seguro).
+     */
+    private fun autoSlopeProfiles(projectDir: File, tileset: com.rolebuilder.core.model.Tileset): Map<Int, IntArray> {
+        if (tileset.platformSolidity.isEmpty() || tileset.tileSize != 16) return emptyMap()
+        val file = ProjectIo.imageFile(projectDir, tileset.image)
+        val bmp = runCatching { android.graphics.BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+            ?: return emptyMap()
+        val out = HashMap<Int, IntArray>()
+        val px = IntArray(256)
+        val slopeOrd = com.rolebuilder.core.snes.SmwSolidity.SLOPE.ordinal
+        val steepOrd = com.rolebuilder.core.snes.SmwSolidity.SLOPE_STEEP.ordinal
+        for (tile in 0 until tileset.tileCount) {
+            val ord = tileset.platformSolidity.getOrNull(tile) ?: continue
+            if (ord != slopeOrd && ord != steepOrd) continue
+            val explicit = tileset.platformSlopeShape.getOrNull(tile)
+                ?: com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE
+            if (com.rolebuilder.core.snes.SmwSlopes.floorOffsets(explicit) != null) continue
+            val x = (tile % tileset.columns) * 16
+            val y = (tile / tileset.columns) * 16
+            if (x + 16 > bmp.width || y + 16 > bmp.height) continue
+            bmp.getPixels(px, 0, 16, x, y, 16, 16)
+            com.rolebuilder.core.snes.SmwSlopes.profileFromTilePixels(px)?.let { out[tile] = it.copyOf() }
+        }
+        return out
+    }
+
     private fun loadMario(): android.graphics.Bitmap? = loadSprite("sprites/mario.png")
 
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
@@ -291,7 +326,9 @@ class PlatformerActivity : ComponentActivity() {
             warps = warps,
             // Formas de RAMPA reales de la ROM (tabla $00:E55E): las cuestas se juegan
             // como rampas, con deslizamiento.
-            slopeShapeAt = { c, r -> col.slopeShapeAt(c, r) },
+            slopeOffsetsAt = { c, r ->
+                com.rolebuilder.core.snes.SmwSlopes.floorOffsets(col.slopeShapeAt(c, r))
+            },
         )
     }
 

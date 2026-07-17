@@ -105,4 +105,41 @@ object SmwSlopes {
      */
     fun gradient(shape: Int): Float =
         (floorOffset(shape, 15) - floorOffset(shape, 0)) / 15f
+
+    /**
+     * PERFIL de la forma: las 16 alturas de suelo (offset desde arriba, 0..16) de la
+     * forma [shape], o null si no es una forma de suelo utilizable. Es el formato
+     * GENERAL que consume el motor ([slopeOffsetsAt]): la ROM y el editor dan formas
+     * de esta tabla, y cualquier otra fuente (p. ej. el perfil deducido del DIBUJO de
+     * un tile) puede dar el suyo propio.
+     */
+    fun floorOffsets(shape: Int): IntArray? {
+        if (!isFloorShape(shape)) return null
+        return IntArray(16) { floorOffset(shape, it) }
+    }
+
+    /**
+     * Perfil de rampa deducido del DIBUJO de un tile de 16×16 ([pixels] ARGB por
+     * filas): el primer píxel OPACO (alfa > 0x7F) de cada columna marca la altura del
+     * suelo. Es lo que hace GENERAL el sistema: cualquier tile marcado "cuesta" sin
+     * forma explícita se juega como rampa según su propia silueta — niveles ya
+     * importados incluidos, sin reimportar. Devuelve null si la silueta no es una
+     * rampa útil (columna llena arriba del todo en TODAS las columnas = bloque
+     * macizo, o vacía del todo).
+     */
+    fun profileFromTilePixels(pixels: IntArray): IntArray? {
+        if (pixels.size < 256) return null
+        val off = IntArray(16) { 16 }
+        for (x in 0 until 16) {
+            for (y in 0 until 16) {
+                if ((pixels[y * 16 + x] ushr 24) > 0x7F) { off[x] = y; break }
+            }
+        }
+        val any = off.any { it < 16 }
+        val allTop = off.all { it == 0 }
+        val flat = off.distinct().size == 1
+        // Sin silueta útil: vacío, bloque macizo (todo arriba) o franja plana.
+        if (!any || allTop || flat) return null
+        return off
+    }
 }

@@ -553,7 +553,9 @@ class PlatformerEngineTest {
             cols, rows, solidityAt = { c, r -> grid[r][c] },
             startPixelX = startCol * 16, startPixelY = 10 * 16 - 15,
             tuning = tuning,
-            slopeShapeAt = { c, r -> if (c == 6 && r == 9) shape else com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE },
+            slopeOffsetsAt = { c, r ->
+                if (c == 6 && r == 9) com.rolebuilder.core.snes.SmwSlopes.floorOffsets(shape) else null
+            },
         )
     }
 
@@ -596,7 +598,11 @@ class PlatformerEngineTest {
             startPixelX = 5 * 16 - 4, startPixelY = 9 * 16 - 15,
             tuning = tuning,
             enemySeeds = listOf(EnemySeed(8 * 16, 10 * 16 - 14, 0)), // enemigo cuesta abajo
-            slopeShapeAt = { c, r -> if (c == 5 && r == 9) com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_DOWN_RIGHT else com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE },
+            slopeOffsetsAt = { c, r ->
+                if (c == 5 && r == 9) {
+                    com.rolebuilder.core.snes.SmwSlopes.floorOffsets(com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_DOWN_RIGHT)
+                } else null
+            },
         )
         e.run(20) // se posa sobre la rampa
         e.inputDown = true // agachado: TOBOGÁN
@@ -607,6 +613,39 @@ class PlatformerEngineTest {
         val enemy = e.enemies.single()
         assertFalse(enemy.alive, "el tobogán arrolla al enemigo")
         assertFalse(e.player.dead, "sin daño para Mario")
+    }
+
+    @Test
+    fun `el perfil se deduce del DIBUJO del tile (rampas generales sin configurar)`() {
+        // Tile 16×16 con diagonal «/»: transparente arriba, opaco debajo de y = 15-x.
+        val px = IntArray(256)
+        for (y in 0 until 16) for (x in 0 until 16) {
+            if (y >= 15 - x) px[y * 16 + x] = 0xFF000000.toInt()
+        }
+        val profile = com.rolebuilder.core.snes.SmwSlopes.profileFromTilePixels(px)
+        assertTrue(profile != null, "la silueta diagonal da perfil")
+        assertEquals(15, profile!![0], "columna 0: suelo abajo")
+        assertEquals(0, profile[15], "columna 15: suelo arriba")
+        // Un tile macizo o vacío NO da perfil (queda como bloque, seguro).
+        assertTrue(com.rolebuilder.core.snes.SmwSlopes.profileFromTilePixels(IntArray(256) { 0xFF000000.toInt() }) == null)
+        assertTrue(com.rolebuilder.core.snes.SmwSlopes.profileFromTilePixels(IntArray(256)) == null)
+        // Y el motor lo juega tal cual: rampa «/» desde el perfil del dibujo.
+        val cols = 14; val rows = 12
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[10][c] = SmwSolidity.SOLID
+        grid[9][6] = SmwSolidity.SLOPE
+        for (c in 7 until cols) grid[9][c] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 3 * 16, startPixelY = 10 * 16 - 15,
+            tuning = tuning,
+            slopeOffsetsAt = { c, r -> if (c == 6 && r == 9) profile else null },
+        )
+        e.run(30)
+        e.moveX = 1f
+        e.run(180)
+        assertTrue(e.player.x > 7 * 16f, "sube la rampa deducida del dibujo (x=${e.player.x})")
+        assertTrue(e.player.onGround)
     }
 
     @Test

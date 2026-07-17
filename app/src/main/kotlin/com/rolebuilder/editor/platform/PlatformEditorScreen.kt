@@ -858,7 +858,7 @@ private val SLOPE_SHAPE_OPTIONS: List<Pair<String, Int>> = listOf(
     "╱ suave B" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_UP_RIGHT_B,
     "╲ suave A" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_DOWN_RIGHT_A,
     "╲ suave B" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_DOWN_RIGHT_B,
-    "Sin forma (macizo)" to com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
+    "Auto (según el dibujo)" to com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
 )
 
 private fun solidityLabel(s: SmwSolidity): String = when (s) {

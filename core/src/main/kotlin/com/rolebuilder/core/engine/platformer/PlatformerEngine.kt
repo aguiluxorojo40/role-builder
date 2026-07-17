@@ -146,13 +146,15 @@ class PlatformerEngine(
     warps: List<EngineWarp> = emptyList(),
     itemSeeds: List<ItemSeed> = emptyList(),
     /**
-     * FORMA de cuesta de cada celda ([SmwSlopes], 0..31) o [SmwSlopes.NO_SLOPE].
-     * Solo se consulta en celdas cuya solidez es cuesta: con forma conocida, la celda
-     * se comporta como una RAMPA REAL (el suelo sigue la altura por columna de píxel,
-     * no bloquea de lado y se puede uno deslizar); sin forma, como bloque macizo (el
-     * comportamiento de siempre).
+     * PERFIL de rampa de cada celda: las 16 alturas del suelo (offset desde arriba,
+     * 0..16; 16 = sin suelo en esa columna) o null. Solo se consulta en celdas cuya
+     * solidez es cuesta: con perfil, la celda es una RAMPA REAL (el suelo sigue la
+     * altura por columna de píxel, no bloquea de lado y se puede uno deslizar); sin
+     * él, bloque macizo (el comportamiento de siempre). Las fuentes son GENERALES:
+     * formas de la ROM/editor ([SmwSlopes.floorOffsets]) o el perfil deducido del
+     * dibujo del tile ([SmwSlopes.profileFromTilePixels]).
      */
-    private val slopeShapeAt: (col: Int, row: Int) -> Int = { _, _ -> SmwSlopes.NO_SLOPE },
+    private val slopeOffsetsAt: (col: Int, row: Int) -> IntArray? = { _, _ -> null },
 ) {
     /**
      * Físicas ACTUALES del motor. Son MUTABLES en caliente: el panel de físicas del
@@ -380,45 +382,41 @@ class PlatformerEngine(
     // ------------------------------------------------------------------- cuestas
 
     /**
-     * Forma de cuesta UTILIZABLE de la celda (una de suelo de [SmwSlopes]), o
-     * [SmwSlopes.NO_SLOPE]. Solo celdas con solidez de cuesta; las formas de techo o
-     * desconocidas caen al comportamiento macizo de siempre.
+     * PERFIL de rampa UTILIZABLE de la celda (16 alturas de suelo), o null. Solo
+     * celdas con solidez de cuesta; sin perfil caen al comportamiento macizo.
      */
-    private fun floorSlopeShape(col: Int, row: Int): Int {
+    private fun cellSlopeOffsets(col: Int, row: Int): IntArray? {
         val s = solidity(col, row)
-        if (s != SmwSolidity.SLOPE && s != SmwSolidity.SLOPE_STEEP) return SmwSlopes.NO_SLOPE
-        val shape = slopeShapeAt(col, row)
-        return if (SmwSlopes.isFloorShape(shape)) shape else SmwSlopes.NO_SLOPE
+        if (s != SmwSolidity.SLOPE && s != SmwSolidity.SLOPE_STEEP) return null
+        val off = slopeOffsetsAt(col, row) ?: return null
+        return if (off.size >= 16) off else null
     }
 
     /** ¿La celda es una RAMPA real (no bloquea de lado ni al subir)? */
-    private fun isSlopeCell(col: Int, row: Int): Boolean =
-        floorSlopeShape(col, row) != SmwSlopes.NO_SLOPE
+    private fun isSlopeCell(col: Int, row: Int): Boolean = cellSlopeOffsets(col, row) != null
 
-    /** Forma de RAMPA visible de la celda (para el dibujado), o NO_SLOPE. */
-    fun slopeShape(col: Int, row: Int): Int = floorSlopeShape(col, row)
+    /** Perfil de RAMPA visible de la celda (para el dibujado), o null. */
+    fun slopeOffsets(col: Int, row: Int): IntArray? = cellSlopeOffsets(col, row)
 
     /**
      * Y del SUELO de la rampa en la celda (col,row) bajo la columna de píxel de
      * [xPixel] (el juego usa el CENTRO del jugador), o null si la celda no es rampa
-     * o su columna no tiene suelo (offset 0x10 de los medios bordes).
+     * o su columna no tiene suelo (offset 16 de los medios bordes).
      */
     private fun slopeSurfaceY(col: Int, row: Int, xPixel: Float): Float? {
-        val shape = floorSlopeShape(col, row)
-        if (shape == SmwSlopes.NO_SLOPE) return null
+        val off = cellSlopeOffsets(col, row) ?: return null
         val xLocal = (xPixel - col * tileSize).toInt().coerceIn(0, 15)
-        val off = SmwSlopes.floorOffset(shape, xLocal)
-        return if (off >= 16) null else row * tileSize + off.toFloat()
+        val o = off[xLocal]
+        return if (o >= 16) null else row * tileSize + o.toFloat()
     }
 
-    /** Forma de la rampa que SOSTIENE al jugador (celda de los pies o la de debajo). */
-    private fun supportSlopeShape(): Int {
+    /** Perfil de la rampa que SOSTIENE al jugador (celda de los pies o la de debajo). */
+    private fun supportSlopeOffsets(): IntArray? {
         val centerX = player.x + tuning.playerWidth / 2f
         val ccol = (centerX / tileSize).toInt()
         val feet = player.y + playerHeight
-        val a = floorSlopeShape(ccol, ((feet + 1f) / tileSize).toInt())
-        if (a != SmwSlopes.NO_SLOPE) return a
-        return floorSlopeShape(ccol, ((feet - 1f) / tileSize).toInt())
+        return cellSlopeOffsets(ccol, ((feet + 1f) / tileSize).toInt())
+            ?: cellSlopeOffsets(ccol, ((feet - 1f) / tileSize).toInt())
     }
 
     /**
@@ -465,11 +463,11 @@ class PlatformerEngine(
         // Mientras se desliza NO hay control ni rozamiento: manda la pendiente. ---
         p.sliding = false
         if (inputDown && p.onGround) {
-            val shape = supportSlopeShape()
-            if (shape != SmwSlopes.NO_SLOPE) {
+            val off = supportSlopeOffsets()
+            if (off != null) {
                 p.sliding = true
-                // gradient > 0 = el suelo baja hacia la derecha → acelera a +X.
-                val g = SmwSlopes.gradient(shape)
+                // pendiente > 0 = el suelo baja hacia la derecha → acelera a +X.
+                val g = (off[15].coerceAtMost(16) - off[0].coerceAtMost(16)) / 15f
                 p.vx = (p.vx + g * SLIDE_ACCEL).coerceIn(-SLIDE_MAX_SPEED, SLIDE_MAX_SPEED)
                 if (g != 0f) p.facingRight = g > 0f
             } else if (abs(p.vx) > 0.5f) {
@@ -803,7 +801,7 @@ class PlatformerEngine(
         // rampa, el remate contra la meseta (un escalón de pocos px a la altura de
         // los pies) se SUBE en vez de chocar — es el equivalente al sensor central
         // de SMW, que corona la cuesta sin encallarse en la esquina del bloque.
-        val onSlope = supportSlopeShape() != SmwSlopes.NO_SLOPE
+        val onSlope = supportSlopeOffsets() != null
         fun tryMove(col: Int, clampX: Float) {
             val blockers = (minRow..maxRow).filter { !isSlopeCell(col, it) && blocksSide(solidity(col, it)) }
             if (blockers.isEmpty()) return

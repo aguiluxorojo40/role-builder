@@ -70,6 +70,12 @@ object ProjectPlatformer {
         startCol: Int,
         startRow: Int,
         tuning: PlatformerTuning = PlatformerTuning.default(),
+        /**
+         * Perfiles de rampa AUTOMÁTICOS por tile (deducidos del dibujo con
+         * [SmwSlopes.profileFromTilePixels]); la app los calcula del bitmap del
+         * tileset. Vacío = solo formas explícitas.
+         */
+        autoSlopeProfiles: Map<Int, IntArray> = emptyMap(),
     ): PlatformerEngine = PlatformerEngine(
         cols = map.width,
         rows = map.height,
@@ -83,23 +89,35 @@ object ProjectPlatformer {
             EngineWarp(it.x, it.y, WARP_INPUTS.getOrElse(it.input) { WarpInput.DOWN }, it.destMapId, it.destX, it.destY)
         },
         itemSeeds = map.platformItems.map { itemSeed(it) },
-        slopeShapeAt = { c, r -> slopeShapeAt(map, tileset, c, r) },
+        slopeOffsetsAt = { c, r -> slopeOffsetsAt(map, tileset, autoSlopeProfiles, c, r) },
     )
 
     /**
-     * FORMA de rampa de la celda: la del primer tile (por capas) con forma de suelo
-     * conocida en [Tileset.platformSlopeShape], o NO_SLOPE. Complementa a [solidityAt]
-     * para que las cuestas del proyecto se jueguen como rampas reales.
+     * PERFIL de rampa de la celda, GENERAL para cualquier proyecto: por capas, el
+     * primer tile de cuesta con perfil resoluble —
+     *  1. la FORMA explícita del tile ([Tileset.platformSlopeShape]: importación SMW
+     *     o la herramienta de cuestas del editor), o
+     *  2. el perfil AUTOMÁTICO deducido del DIBUJO del tile ([autoProfiles], que la
+     *     app calcula con [SmwSlopes.profileFromTilePixels]) — esto hace que los
+     *     niveles ya importados y los tilesets dibujados a mano funcionen SOLOS,
+     *     sin reimportar ni configurar nada.
      */
-    private fun slopeShapeAt(map: GameMap, tileset: Tileset, col: Int, row: Int): Int {
-        if (tileset.platformSlopeShape.isEmpty() || !map.inBounds(col, row)) return SmwSlopes.NO_SLOPE
+    private fun slopeOffsetsAt(
+        map: GameMap,
+        tileset: Tileset,
+        autoProfiles: Map<Int, IntArray>,
+        col: Int,
+        row: Int,
+    ): IntArray? {
+        if (!map.inBounds(col, row)) return null
         for (layer in map.layers.indices) {
             val tile = map.tileAt(layer, col, row)
             if (tile == EMPTY_TILE) continue
-            val shape = tileset.platformSlopeShape.getOrNull(tile) ?: continue
-            if (SmwSlopes.isFloorShape(shape)) return shape
+            val shape = tileset.platformSlopeShape.getOrNull(tile) ?: SmwSlopes.NO_SLOPE
+            SmwSlopes.floorOffsets(shape)?.let { return it }
+            autoProfiles[tile]?.let { return it }
         }
-        return SmwSlopes.NO_SLOPE
+        return null
     }
 
     private val WARP_INPUTS = WarpInput.values()

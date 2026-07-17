@@ -262,10 +262,10 @@ class PlatformerRenderer(
                     val s = engine.solidity(c, r)
                     if (s == SmwSolidity.NONE) continue
                     val col = colorOf(s)
-                    val shape = engine.slopeShape(c, r)
-                    if (shape != com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE) {
+                    val slopeOff = engine.slopeOffsets(c, r)
+                    if (slopeOff != null) {
                         for (x in 0 until 16) {
-                            val off = com.rolebuilder.core.snes.SmwSlopes.floorOffset(shape, x)
+                            val off = slopeOff[x]
                             if (off >= 16) continue
                             batch.draw(
                                 white,
@@ -409,10 +409,10 @@ class PlatformerRenderer(
             val s = engine.solidity(c, r)
             if (s == SmwSolidity.NONE) continue
             val col = colorOf(s)
-            val shape = engine.slopeShape(c, r)
-            if (shape != com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE) {
+            val slopeOff = engine.slopeOffsets(c, r)
+            if (slopeOff != null) {
                 for (x in 0 until 16) {
-                    val off = com.rolebuilder.core.snes.SmwSlopes.floorOffset(shape, x)
+                    val off = slopeOff[x]
                     if (off >= 16) continue
                     batch.draw(white, c + x / 16f, r + off / 16f, 1f / 16f, t, r = col[0], g = col[1], b = col[2], a = 0.95f)
                 }
