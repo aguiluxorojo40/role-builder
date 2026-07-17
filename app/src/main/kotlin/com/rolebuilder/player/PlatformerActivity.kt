@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -469,6 +470,13 @@ private fun PhysicsPanel(
     var t by remember { mutableStateOf(renderer.tuning) }
     fun apply(n: PlatformerTuning) { t = n; renderer.tuning = n }
 
+    // Cajas de colisión (hitboxes): estado de los sliders y valores de arranque.
+    var showBoxes by remember { mutableStateOf(renderer.showHitboxes) }
+    val originalSmallH = remember { renderer.playerSmallHeight }
+    val originalEnemyBox = remember { renderer.enemyBoxSize() }
+    var smallH by remember { mutableStateOf(renderer.playerSmallHeight) }
+    var enemyBox by remember { mutableStateOf(renderer.enemyBoxSize()) }
+
     Column(
         modifier = modifier
             .width(290.dp)
@@ -480,7 +488,11 @@ private fun PhysicsPanel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Físicas", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Box(Modifier.weight(1f))
-            TextButton(onClick = { apply(original) }) {
+            TextButton(onClick = {
+                apply(original)
+                smallH = originalSmallH; renderer.playerSmallHeight = originalSmallH
+                enemyBox = originalEnemyBox; renderer.setEnemyBoxSize(originalEnemyBox)
+            }) {
                 Text("Original", color = Color(0xFFFFD54D), fontSize = 13.sp)
             }
             TextButton(onClick = onClose) { Text("✕", color = Color.White) }
@@ -495,6 +507,28 @@ private fun PhysicsPanel(
         PhysSlider("Velocidad corriendo", t.maxRunSpeed, 1f..5f) { apply(t.copy(maxRunSpeed = it)) }
         PhysSlider("Aceleración", t.runAccel, 0.02f..0.4f) { apply(t.copy(runAccel = it)) }
         PhysSlider("Rozamiento", t.friction, 0.02f..0.8f) { apply(t.copy(friction = it)) }
+
+        // ------------------------------------------------ cajas de colisión (hitboxes)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Cajas de colisión", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Box(Modifier.weight(1f))
+            Switch(checked = showBoxes, onCheckedChange = { showBoxes = it; renderer.showHitboxes = it })
+        }
+        Text(
+            "Ver las cajas REALES del motor sobre el juego: Mario (verde), enemigos " +
+                "(rojo), powerups (amarillo), bolas (naranja), warps (cian) y la " +
+                "rejilla de solidez con el color de cada tipo.",
+            color = Color.White.copy(alpha = 0.6f),
+            fontSize = 10.sp,
+        )
+        PhysSlider("Ancho de Mario (px)", t.playerWidth, 6f..16f) { apply(t.copy(playerWidth = it)) }
+        PhysSlider("Alto de Mario pequeño (px)", smallH, 6f..24f) {
+            smallH = it; renderer.playerSmallHeight = it
+        }
+        PhysSlider("Caja de enemigos (px)", enemyBox, 6f..20f) {
+            enemyBox = it; renderer.setEnemyBoxSize(it)
+        }
+
         Text(
             "Valores en píxeles/fotograma a 60 fps, como el juego original.",
             color = Color.White.copy(alpha = 0.5f),

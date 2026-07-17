@@ -519,6 +519,22 @@ class PlatformerEngineTest {
         assertTrue(min2 < min1 - 8f, "con más impulso sube claramente más alto ($min2 vs $min1)")
     }
 
+    @Test
+    fun `cambiar la altura de la caja en caliente conserva los pies`() {
+        val e = engine(10, 12, startCol = 2, startRow = 9) { g ->
+            for (c in 0 until 10) g[10][c] = SmwSolidity.SOLID
+        }
+        e.run(60) // se posa: los pies en y + alto = 10*16
+        val feet = e.player.y + e.playerHeight
+        e.setSmallHeight(8f)
+        assertEquals(8f, e.playerHeight, 0.001f, "la caja usa la altura nueva")
+        assertEquals(feet, e.player.y + e.playerHeight, 0.001f, "los pies no se mueven al encoger")
+        e.setSmallHeight(20f)
+        assertEquals(feet, e.player.y + e.playerHeight, 0.001f, "ni al agrandar")
+        e.run(30)
+        assertTrue(e.player.onGround, "sigue de pie sobre el suelo")
+    }
+
     // -------------------------------------------------------------------- warps
 
     @Test

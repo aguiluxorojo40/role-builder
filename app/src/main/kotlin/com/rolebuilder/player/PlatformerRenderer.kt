@@ -99,6 +99,22 @@ class PlatformerRenderer(
         get() = engine.tuning
         set(value) { engine.tuning = value }
 
+    /** Muestra el overlay de COLISIÓN (hitboxes + rejilla de solidez + warps). */
+    @Volatile var showHitboxes = false
+
+    /** Alto de la caja de Mario PEQUEÑO (px); el panel lo ajusta conservando los pies. */
+    var playerSmallHeight: Float
+        get() = engine.smallHeight
+        set(value) { engine.setSmallHeight(value) }
+
+    /** Caja (cuadrada) de TODOS los enemigos en caliente (px). */
+    fun setEnemyBoxSize(px: Float) {
+        for (e in engine.enemies) { e.width = px; e.height = px }
+    }
+
+    /** Tamaño de caja actual de los enemigos (para inicializar el slider). */
+    fun enemyBoxSize(): Float = engine.enemies.firstOrNull()?.width ?: 14f
+
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
     private var marioTex: Texture? = null
@@ -350,7 +366,54 @@ class PlatformerRenderer(
 
         drawMario(dt)
 
+        // Overlay de COLISIÓN por encima de todo (activado desde el panel ⚙).
+        if (showHitboxes) drawHitboxes(minC, maxC, minR, maxR)
+
         batch.end()
+    }
+
+    /**
+     * Overlay de HITBOXES: dibuja las cajas AABB REALES del motor — las mismas con las
+     * que se resuelven los choques, no las de los sprites — y la rejilla de solidez:
+     *  - celdas sólidas/un sentido/cuesta/pinchos con el contorno de su color,
+     *  - celdas de warp en cian,
+     *  - Mario en verde, enemigos en rojo, powerups en amarillo, bolas en naranja,
+     *    monedas/meta colocadas en blanco.
+     */
+    private fun drawHitboxes(minC: Int, maxC: Int, minR: Int, maxR: Int) {
+        val t = 0.07f // grosor del contorno, en casillas
+        fun outline(x: Float, y: Float, w: Float, h: Float, r: Float, g: Float, b: Float, a: Float = 0.95f) {
+            batch.draw(white, x, y, w, t, r = r, g = g, b = b, a = a)
+            batch.draw(white, x, y + h - t, w, t, r = r, g = g, b = b, a = a)
+            batch.draw(white, x, y + t, t, h - 2 * t, r = r, g = g, b = b, a = a)
+            batch.draw(white, x + w - t, y + t, t, h - 2 * t, r = r, g = g, b = b, a = a)
+        }
+        // Rejilla de solidez visible, con el color de cada tipo.
+        for (r in minR..maxR) for (c in minC..maxC) {
+            val s = engine.solidity(c, r)
+            if (s == SmwSolidity.NONE) continue
+            val col = colorOf(s)
+            outline(c.toFloat(), r.toFloat(), 1f, 1f, col[0], col[1], col[2], 0.7f)
+        }
+        for (w in engine.warpCells) {
+            if (w.col in minC..maxC && w.row in minR..maxR) {
+                outline(w.col.toFloat(), w.row.toFloat(), 1f, 1f, 0.15f, 0.95f, 0.95f)
+            }
+        }
+        val p = engine.player
+        outline(p.x / 16f, p.y / 16f, engine.tuning.playerWidth / 16f, engine.playerHeight / 16f, 0.2f, 1f, 0.3f)
+        for (e in engine.enemies) {
+            if (e.alive) outline(e.x / 16f, e.y / 16f, e.width / 16f, e.height / 16f, 1f, 0.25f, 0.25f)
+        }
+        for (m in engine.items) {
+            if (m.alive) outline(m.x / 16f, m.y / 16f, m.width / 16f, m.height / 16f, 1f, 0.9f, 0.2f)
+        }
+        for (fb in engine.fireballs) {
+            if (fb.alive) outline(fb.x / 16f, fb.y / 16f, fb.width / 16f, fb.height / 16f, 1f, 0.6f, 0.1f)
+        }
+        for (pi in engine.placedItems) {
+            if (!pi.collected) outline(pi.x / 16f, pi.y / 16f, pi.size / 16f, pi.size / 16f, 1f, 1f, 1f)
+        }
     }
 
     /**

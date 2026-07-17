@@ -104,8 +104,9 @@ private fun cellKey(col: Int, row: Int): Long = (col.toLong() shl 32) or (row.to
 
 /** Enemigo en ejecución (píxeles): camina, cae con gravedad y se puede pisar. */
 class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
-    val width = 14f
-    val height = 14f
+    /** Caja de colisión (px). Editable en caliente desde el panel de hitboxes. */
+    var width = 14f
+    var height = 14f
     var vx = -0.5f    // patrulla: arranca hacia la izquierda, como los Goomba de SMW
     var vy = 0f
     var onGround = false
@@ -164,14 +165,29 @@ class PlatformerEngine(
         get() = if (player.big) BIG_HEIGHT else smallHeight
 
     /** Altura de pequeño: la del tuning, o la canónica si el tuning ya era de grande. */
-    private val smallHeight =
+    @Volatile var smallHeight =
         if (tuning.playerHeight >= BIG_HEIGHT) SMALL_HEIGHT else tuning.playerHeight
+        private set
+
+    /**
+     * Cambia en CALIENTE la altura de la caja de Mario pequeño (panel de hitboxes),
+     * conservando los PIES en su sitio (como crecer/encoger) para no hundirse en el
+     * suelo ni quedar flotando.
+     */
+    fun setSmallHeight(h: Float) {
+        val clamped = h.coerceIn(4f, BIG_HEIGHT)
+        if (!player.big) player.y += smallHeight - clamped
+        smallHeight = clamped
+    }
 
     /** Powerups en marcha (seta/flor; vivas o no; la capa de dibujo filtra por alive). */
     val items = ArrayList<PowerupItem>()
 
     /** Bolas de fuego en vuelo lanzadas por Mario de fuego. */
     val fireballs = ArrayList<Fireball>()
+
+    /** Celdas de warp del nivel (expuestas para el overlay de hitboxes). */
+    val warpCells: List<EngineWarp> = warps
 
     /** Warps por celda (col,row) del nivel; se activan al entrar con el input correcto. */
     private val warpAt: Map<Long, EngineWarp> = warps.associateBy { cellKey(it.col, it.row) }
