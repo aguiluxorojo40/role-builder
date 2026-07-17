@@ -13,12 +13,19 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -397,6 +404,26 @@ private fun PlatformerScreen(
             TextButton(onClick = onExit, modifier = Modifier.align(Alignment.TopStart)) {
                 Text("Salir", color = Color.White.copy(alpha = 0.8f))
             }
+
+            // Panel de FÍSICAS en vivo: ver los valores reales del motor y ajustarlos
+            // con sliders MIENTRAS se juega (joystick a la izquierda, panel a la
+            // derecha); "Original" restaura los valores de la ROM/proyecto.
+            var showPhysics by remember { mutableStateOf(false) }
+            val originalTuning = remember { renderer.tuning }
+            TextButton(
+                onClick = { showPhysics = !showPhysics },
+                modifier = Modifier.align(Alignment.TopEnd).padding(end = 52.dp),
+            ) {
+                Text("⚙", color = Color.White, fontSize = 20.sp)
+            }
+            if (showPhysics) {
+                PhysicsPanel(
+                    renderer = renderer,
+                    original = originalTuning,
+                    onClose = { showPhysics = false },
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp, top = 48.dp, bottom = 96.dp),
+                )
+            }
         }
     }
 }
@@ -423,4 +450,67 @@ private fun HoldButton(label: String, color: Color, onHold: (Boolean) -> Unit) {
     ) {
         Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
     }
+}
+
+/**
+ * Panel de FÍSICAS en vivo: muestra los valores REALES que mueven el motor (los
+ * extraídos de la ROM de SMW o los del proyecto) y los ajusta con sliders mientras
+ * se juega — cada cambio se aplica al fotograma siguiente, así se SIENTE al
+ * instante. "Original" restaura los valores con los que arrancó el nivel. Las
+ * dimensiones de la caja no se tocan (cambiarlas en caliente atraviesa paredes).
+ */
+@Composable
+private fun PhysicsPanel(
+    renderer: PlatformerRenderer,
+    original: PlatformerTuning,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var t by remember { mutableStateOf(renderer.tuning) }
+    fun apply(n: PlatformerTuning) { t = n; renderer.tuning = n }
+
+    Column(
+        modifier = modifier
+            .width(290.dp)
+            .fillMaxHeight()
+            .background(Color(0xE0101024), RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Físicas", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Box(Modifier.weight(1f))
+            TextButton(onClick = { apply(original) }) {
+                Text("Original", color = Color(0xFFFFD54D), fontSize = 13.sp)
+            }
+            TextButton(onClick = onClose) { Text("✕", color = Color.White) }
+        }
+        // El salto se edita como IMPULSO positivo (más = salta más alto); el motor
+        // lo guarda negativo (hacia arriba).
+        PhysSlider("Impulso de salto", -t.jumpSpeed, 2f..8f) { apply(t.copy(jumpSpeed = -it)) }
+        PhysSlider("Gravedad (caída)", t.gravityFall, 0.05f..1f) { apply(t.copy(gravityFall = it)) }
+        PhysSlider("Gravedad (salto mantenido)", t.gravityHold, 0.02f..1f) { apply(t.copy(gravityHold = it)) }
+        PhysSlider("Caída máxima", t.maxFallSpeed, 1f..8f) { apply(t.copy(maxFallSpeed = it)) }
+        PhysSlider("Velocidad andando", t.maxWalkSpeed, 0.5f..3f) { apply(t.copy(maxWalkSpeed = it)) }
+        PhysSlider("Velocidad corriendo", t.maxRunSpeed, 1f..5f) { apply(t.copy(maxRunSpeed = it)) }
+        PhysSlider("Aceleración", t.runAccel, 0.02f..0.4f) { apply(t.copy(runAccel = it)) }
+        PhysSlider("Rozamiento", t.friction, 0.02f..0.8f) { apply(t.copy(friction = it)) }
+        Text(
+            "Valores en píxeles/fotograma a 60 fps, como el juego original.",
+            color = Color.White.copy(alpha = 0.5f),
+            fontSize = 10.sp,
+        )
+    }
+}
+
+/** Slider etiquetado del panel de físicas, con el valor actual a dos decimales. */
+@Composable
+private fun PhysSlider(
+    label: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    onChange: (Float) -> Unit,
+) {
+    Text("$label · ${"%.2f".format(value)}", color = Color.White, fontSize = 12.sp)
+    Slider(value = value, onValueChange = onChange, valueRange = range)
 }

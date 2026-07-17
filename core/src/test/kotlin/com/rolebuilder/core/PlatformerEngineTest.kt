@@ -498,6 +498,27 @@ class PlatformerEngineTest {
         assertFalse(e.player.big, "y queda pequeño")
     }
 
+    // ---------------------------------------------------------- físicas en caliente
+
+    @Test
+    fun `las fisicas se pueden cambiar en caliente y el motor las usa al instante`() {
+        val e = engine(10, 12, startCol = 2, startRow = 9) { g ->
+            for (c in 0 until 10) g[10][c] = SmwSolidity.SOLID
+        }
+        e.run(30) // se posa
+        // Salto con el tuning original: registra la altura máxima.
+        e.setJumpHeld(true); e.pressJump()
+        var min1 = e.player.y
+        repeat(90) { e.tick(); if (e.player.y < min1) min1 = e.player.y }
+        e.setJumpHeld(false); e.run(120) // vuelve al suelo
+        // Cambia el IMPULSO en caliente (lo que hace el panel de físicas) y re-salta.
+        e.tuning = e.tuning.copy(jumpSpeed = e.tuning.jumpSpeed * 1.5f)
+        e.setJumpHeld(true); e.pressJump()
+        var min2 = e.player.y
+        repeat(120) { e.tick(); if (e.player.y < min2) min2 = e.player.y }
+        assertTrue(min2 < min1 - 8f, "con más impulso sube claramente más alto ($min2 vs $min1)")
+    }
+
     // -------------------------------------------------------------------- warps
 
     @Test

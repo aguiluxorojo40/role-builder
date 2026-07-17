@@ -94,6 +94,11 @@ class PlatformerRenderer(
     @Volatile var coins = 0
         private set
 
+    /** Físicas ACTUALES del motor: el panel de físicas las lee y las ajusta EN VIVO. */
+    var tuning: com.rolebuilder.core.engine.platformer.PlatformerTuning
+        get() = engine.tuning
+        set(value) { engine.tuning = value }
+
     private lateinit var batch: SpriteBatch
     private lateinit var white: Texture
     private var marioTex: Texture? = null

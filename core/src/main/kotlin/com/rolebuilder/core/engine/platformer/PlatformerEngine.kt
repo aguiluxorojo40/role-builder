@@ -136,12 +136,20 @@ class PlatformerEngine(
     private val solidityAt: (col: Int, row: Int) -> SmwSolidity,
     startPixelX: Int,
     startPixelY: Int,
-    val tuning: PlatformerTuning,
+    tuning: PlatformerTuning,
     enemySeeds: List<EnemySeed> = emptyList(),
     blockActions: IntArray? = null,
     warps: List<EngineWarp> = emptyList(),
     itemSeeds: List<ItemSeed> = emptyList(),
 ) {
+    /**
+     * Físicas ACTUALES del motor. Son MUTABLES en caliente: el panel de físicas del
+     * jugador las sustituye en vivo (el tick lee esta referencia cada fotograma, así
+     * el cambio se siente al instante). Las dimensiones de la caja (playerWidth/
+     * playerHeight) se fijan al construir y no deben cambiarse en caliente.
+     */
+    @Volatile var tuning: PlatformerTuning = tuning
+
     val player = PlatformerBody(startPixelX.toFloat(), startPixelY.toFloat()).also {
         // Si el tuning ya viene de Mario grande (26 px), el estado arranca grande.
         it.big = tuning.playerHeight >= BIG_HEIGHT
