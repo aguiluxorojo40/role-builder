@@ -331,6 +331,12 @@ object SnesGameRecipes {
         val tiles: List<Int>, // mapWidth*mapHeight, índice en el atlas o -1 (aire)
         /** Solidez REAL por tesela del atlas (ordinal de [SmwSolidity]); para el motor de plataformas. */
         val solidity: List<Int> = emptyList(),
+        /**
+         * FORMA de cuesta por tesela del atlas ([SmwSlopes], 0..31 o NO_SLOPE): con
+         * ella las teselas de cuesta se juegan como RAMPAS reales (altura por columna
+         * de píxel), no como bloques macizos.
+         */
+        val slopeShapes: List<Int> = emptyList(),
         /** Enemigos del nivel: (id de sprite, x, y) en celdas de 16px, ya recortados al mapa. */
         val enemies: List<Triple<Int, Int, Int>> = emptyList(),
         /** Teselas animadas del atlas (monedas, bloques ?, agua). */
@@ -478,13 +484,21 @@ object SnesGameRecipes {
         // fotogramas extra heredan la solidez de su bloque base.
         val solidity = IntArray(columns * rows) { SmwSolidity.NONE.ordinal }
         val passable = BooleanArray(columns * rows) { true }
-        fun setCollision(idx: Int, s: SmwSolidity) {
-            if (idx < solidity.size) { solidity[idx] = s.ordinal; passable[idx] = s == SmwSolidity.NONE }
+        // Forma de RAMPA por tesela ([SmwSlopes]): del byte bajo del bloque Map16, la
+        // misma tabla $00:E55E del juego. Con ella las cuestas se juegan de verdad.
+        val slopeShapes = IntArray(columns * rows) { SmwSlopes.NO_SLOPE }
+        fun setCollision(idx: Int, s: SmwSolidity, block: Int) {
+            if (idx < solidity.size) {
+                solidity[idx] = s.ordinal
+                passable[idx] = s == SmwSolidity.NONE
+                slopeShapes[idx] = SmwSlopes.shapeForBlockLo(block and 0xFF)
+            }
         }
-        orderedBlocks.forEachIndexed { i, block -> setCollision(i, SmwBlockCollision.classify(block)) }
+        orderedBlocks.forEachIndexed { i, block -> setCollision(i, SmwBlockCollision.classify(block), block) }
         for ((ai, bi) in animBlockIdx.withIndex()) {
-            val s = SmwBlockCollision.classify(orderedBlocks[bi])
-            for (f in 0 until SMW_TILEANIM_FRAMES - 1) setCollision(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, s)
+            val block = orderedBlocks[bi]
+            val s = SmwBlockCollision.classify(block)
+            for (f in 0 until SMW_TILEANIM_FRAMES - 1) setCollision(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, s, block)
         }
 
         // Acción interactiva por tesela ([SmwBlockBehavior]): las monedas se recogen. Los
@@ -508,7 +522,8 @@ object SnesGameRecipes {
 
         return SmwLevelMap(
             atlas, columns, rows, passable.toList(), w, h, tiles.toList(), solidity.toList(),
-            enemies, animations, blockActions.toList(),
+            slopeShapes = slopeShapes.toList(),
+            enemies = enemies, animations = animations, blockActions = blockActions.toList(),
             bgTiles = if (bgCells.isNotEmpty()) bgMap.toList() else emptyList(),
         )
     }
@@ -811,6 +826,10 @@ object SnesGameRecipes {
         fun blockAt(col: Int, row: Int): Int = blocks[row * cols + col]
 
         fun solidityAt(col: Int, row: Int): SmwSolidity = solidity[row * cols + col]
+
+        /** Forma de RAMPA de la celda ([SmwSlopes], de la tabla $00:E55E) o NO_SLOPE. */
+        fun slopeShapeAt(col: Int, row: Int): Int =
+            SmwSlopes.shapeForBlockLo(blockAt(col, row) and 0xFF)
     }
 
     /**

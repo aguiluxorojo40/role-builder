@@ -688,6 +688,7 @@ internal fun importSmwLevelMap(
             id = tsId, name = "$name (SMW)", image = fileName,
             tileSize = 16, columns = m.columns, rows = m.rows,
             passable = m.passable, platformSolidity = m.solidity,
+            platformSlopeShape = m.slopeShapes,
             animations = m.animations, platformBlockActions = m.blockActions,
         ),
     )
@@ -742,6 +743,7 @@ private fun importSmwLevelBundle(
                 id = tsId, name = "$subName (SMW)", image = fileName,
                 tileSize = 16, columns = m.columns, rows = m.rows,
                 passable = m.passable, platformSolidity = m.solidity,
+                platformSlopeShape = m.slopeShapes,
                 animations = m.animations, platformBlockActions = m.blockActions,
             )
         )

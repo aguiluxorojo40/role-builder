@@ -289,6 +289,9 @@ class PlatformerActivity : ComponentActivity() {
             enemySeeds = enemySeeds,
             blockActions = if (anyAction) actions else null,
             warps = warps,
+            // Formas de RAMPA reales de la ROM (tabla $00:E55E): las cuestas se juegan
+            // como rampas, con deslizamiento.
+            slopeShapeAt = { c, r -> col.slopeShapeAt(c, r) },
         )
     }
 

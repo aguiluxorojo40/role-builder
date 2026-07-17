@@ -535,6 +535,91 @@ class PlatformerEngineTest {
         assertTrue(e.player.onGround, "sigue de pie sobre el suelo")
     }
 
+    // ------------------------------------------------------------------- rampas
+
+    /**
+     * Motor con suelo llano y una RAMPA de 45° en (6,9): forma 12 («/», sube a la
+     * derecha) o 13 («\», baja a la derecha), con meseta sólida en (7..,9) para la 12.
+     */
+    private fun slopeEngine(shape: Int, startCol: Int): com.rolebuilder.core.engine.platformer.PlatformerEngine {
+        val cols = 14; val rows = 12
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[10][c] = SmwSolidity.SOLID          // suelo llano
+        grid[9][6] = SmwSolidity.SLOPE                                    // la rampa
+        if (shape == com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_UP_RIGHT) {
+            for (c in 7 until cols) grid[9][c] = SmwSolidity.SOLID        // meseta arriba
+        }
+        return PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = startCol * 16, startPixelY = 10 * 16 - 15,
+            tuning = tuning,
+            slopeShapeAt = { c, r -> if (c == 6 && r == 9) shape else com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE },
+        )
+    }
+
+    @Test
+    fun `la rampa no bloquea de lado y Mario SUBE andando por ella`() {
+        val e = slopeEngine(com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_UP_RIGHT, startCol = 3)
+        e.run(30) // se posa en el suelo llano (pies en 160)
+        e.moveX = 1f
+        e.run(180) // anda hacia la rampa y la sube
+        assertTrue(e.player.x > 7 * 16f, "no se queda parado en la pared de la rampa (x=${e.player.x})")
+        assertTrue(e.player.onGround, "acaba de pie")
+        val feet = e.player.y + e.playerHeight
+        assertTrue(feet <= 9 * 16f + 1f, "los pies acabaron a la altura de la meseta (feet=$feet)")
+    }
+
+    @Test
+    fun `bajar la rampa mantiene los pies pegados (sin escalones voladores)`() {
+        // Rampa «\» que baja a la derecha; Mario arranca sobre su borde alto.
+        val e = slopeEngine(com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_DOWN_RIGHT, startCol = 5)
+        e.run(40) // se posa
+        e.moveX = 1f
+        var airborne = 0
+        var maxAirborne = 0
+        repeat(90) {
+            e.tick()
+            if (!e.player.onGround) { airborne++; if (airborne > maxAirborne) maxAirborne = airborne }
+            else airborne = 0
+        }
+        assertTrue(maxAirborne <= 2, "bajando la cuesta no se queda flotando ($maxAirborne ticks en el aire)")
+    }
+
+    @Test
+    fun `agachado sobre la rampa Mario se desliza y arrolla al enemigo`() {
+        val cols = 14; val rows = 12
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[10][c] = SmwSolidity.SOLID
+        grid[9][5] = SmwSolidity.SLOPE // rampa «\» baja hacia la derecha
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 5 * 16 - 4, startPixelY = 9 * 16 - 15,
+            tuning = tuning,
+            enemySeeds = listOf(EnemySeed(8 * 16, 10 * 16 - 14, 0)), // enemigo cuesta abajo
+            slopeShapeAt = { c, r -> if (c == 5 && r == 9) com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_DOWN_RIGHT else com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE },
+        )
+        e.run(20) // se posa sobre la rampa
+        e.inputDown = true // agachado: TOBOGÁN
+        e.run(6)
+        assertTrue(e.player.sliding, "se está deslizando")
+        assertTrue(e.player.vx > 0.4f, "acelera cuesta abajo (vx=${e.player.vx})")
+        e.run(90) // baja la rampa y sigue arrollando por el llano con la inercia
+        val enemy = e.enemies.single()
+        assertFalse(enemy.alive, "el tobogán arrolla al enemigo")
+        assertFalse(e.player.dead, "sin daño para Mario")
+    }
+
+    @Test
+    fun `una cuesta SIN forma sigue siendo bloque macizo (compatibilidad)`() {
+        val e = engine(10, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+            for (r in 0 until 8) g[r][6] = SmwSolidity.SLOPE // muro de "cuesta" sin forma
+        }
+        e.run(20)
+        e.moveX = 1f; e.run(120)
+        assertTrue(e.player.x <= 96f - tuning.playerWidth + 0.5f, "sin forma, la cuesta bloquea como pared")
+    }
+
     // -------------------------------------------------------------------- warps
 
     @Test

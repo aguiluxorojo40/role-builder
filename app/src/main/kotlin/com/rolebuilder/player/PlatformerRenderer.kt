@@ -254,12 +254,27 @@ class PlatformerRenderer(
                 }
             }
         } else {
-            // Sin proyecto: pinta la colisión por colores (modo ROM cruda).
+            // Sin proyecto: pinta la colisión por colores (modo ROM cruda). Las RAMPAS
+            // con forma se pintan como su TRIÁNGULO real (16 franjas de columna
+            // siguiendo la altura del suelo), no como bloque entero.
             for (r in minR..maxR) {
                 for (c in minC..maxC) {
                     val s = engine.solidity(c, r)
                     if (s == SmwSolidity.NONE) continue
                     val col = colorOf(s)
+                    val shape = engine.slopeShape(c, r)
+                    if (shape != com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE) {
+                        for (x in 0 until 16) {
+                            val off = com.rolebuilder.core.snes.SmwSlopes.floorOffset(shape, x)
+                            if (off >= 16) continue
+                            batch.draw(
+                                white,
+                                c + x / 16f, r + off / 16f, 1f / 16f, (16 - off) / 16f,
+                                r = col[0], g = col[1], b = col[2], a = 1f,
+                            )
+                        }
+                        continue
+                    }
                     batch.draw(white, c.toFloat(), r.toFloat(), 1f, 1f, r = col[0], g = col[1], b = col[2], a = 1f)
                 }
             }
@@ -388,11 +403,21 @@ class PlatformerRenderer(
             batch.draw(white, x, y + t, t, h - 2 * t, r = r, g = g, b = b, a = a)
             batch.draw(white, x + w - t, y + t, t, h - 2 * t, r = r, g = g, b = b, a = a)
         }
-        // Rejilla de solidez visible, con el color de cada tipo.
+        // Rejilla de solidez visible, con el color de cada tipo. Las RAMPAS enseñan
+        // su LÍNEA de superficie real (la que pisan los pies), no la caja del bloque.
         for (r in minR..maxR) for (c in minC..maxC) {
             val s = engine.solidity(c, r)
             if (s == SmwSolidity.NONE) continue
             val col = colorOf(s)
+            val shape = engine.slopeShape(c, r)
+            if (shape != com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE) {
+                for (x in 0 until 16) {
+                    val off = com.rolebuilder.core.snes.SmwSlopes.floorOffset(shape, x)
+                    if (off >= 16) continue
+                    batch.draw(white, c + x / 16f, r + off / 16f, 1f / 16f, t, r = col[0], g = col[1], b = col[2], a = 0.95f)
+                }
+                continue
+            }
             outline(c.toFloat(), r.toFloat(), 1f, 1f, col[0], col[1], col[2], 0.7f)
         }
         for (w in engine.warpCells) {

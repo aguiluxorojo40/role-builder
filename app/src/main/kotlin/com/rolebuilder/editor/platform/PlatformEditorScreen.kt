@@ -596,6 +596,16 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         state.updateTileset(ts.copy(platformSolidity = list))
                     },
                     currentSolidity = solidityOfTile(tileset, selectedTile),
+                    onSetSlopeShape = { shape ->
+                        val ts = tileset ?: return@CollisionPanel
+                        val list = MutableList(ts.tileCount) {
+                            ts.platformSlopeShape.getOrNull(it) ?: com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE
+                        }
+                        if (selectedTile in list.indices) list[selectedTile] = shape
+                        state.updateTileset(ts.copy(platformSlopeShape = list))
+                    },
+                    currentShape = tileset?.platformSlopeShape?.getOrNull(selectedTile)
+                        ?: com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
                 )
                 else -> {
                     if (tileset != null && tilesetBitmap != null) {
@@ -786,6 +796,8 @@ private fun CollisionPanel(
     onSelectTile: (Int) -> Unit,
     onSetSolidity: (SmwSolidity) -> Unit,
     currentSolidity: SmwSolidity,
+    onSetSlopeShape: (Int) -> Unit = {},
+    currentShape: Int = com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
 ) {
     Column(Modifier.fillMaxWidth().background(Panel)) {
         Row(
@@ -806,11 +818,48 @@ private fun CollisionPanel(
                 )
             }
         }
+        // FORMA de la rampa (estilo Lunar Magic): con solidez "Cuesta", elige cómo es
+        // la pendiente del tile; el motor la juega como rampa real (con tobogán).
+        if (currentSolidity == SmwSolidity.SLOPE || currentSolidity == SmwSolidity.SLOPE_STEEP) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Forma de la rampa:", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                SLOPE_SHAPE_OPTIONS.forEach { (label, shape) ->
+                    FilterChip(
+                        selected = currentShape == shape,
+                        onClick = { onSetSlopeShape(shape) },
+                        label = { Text(label) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MarioRed,
+                            selectedLabelColor = Color.Black,
+                        ),
+                    )
+                }
+            }
+        }
         if (tileset != null && bitmap != null) {
             TilePalette(tileset, bitmap, selectedTile, onSelectTile)
         }
     }
 }
+
+/**
+ * Formas de rampa que ofrece la herramienta (de [com.rolebuilder.core.snes.SmwSlopes]):
+ * las de 45° y las suaves 1:2 (que ocupan DOS tiles: mitad A y B, de izquierda a
+ * derecha). Sin forma, la cuesta se comporta como bloque macizo (lo de antes).
+ */
+private val SLOPE_SHAPE_OPTIONS: List<Pair<String, Int>> = listOf(
+    "╱ 45°" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_UP_RIGHT,
+    "╲ 45°" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_DOWN_RIGHT,
+    "╱ suave A" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_UP_RIGHT_A,
+    "╱ suave B" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_UP_RIGHT_B,
+    "╲ suave A" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_DOWN_RIGHT_A,
+    "╲ suave B" to com.rolebuilder.core.snes.SmwSlopes.SHAPE_GENTLE_DOWN_RIGHT_B,
+    "Sin forma (macizo)" to com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
+)
 
 private fun solidityLabel(s: SmwSolidity): String = when (s) {
     SmwSolidity.NONE -> "Aire"

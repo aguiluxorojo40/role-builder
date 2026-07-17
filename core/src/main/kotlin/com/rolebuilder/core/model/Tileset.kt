@@ -44,6 +44,14 @@ data class Tileset(
      * interactivos. Lo rellena la importación de niveles SMW.
      */
     val platformBlockActions: List<Int> = emptyList(),
+    /**
+     * FORMA de cuesta por índice de tile (`SmwSlopes`, 0..31; -1 = sin forma) para el
+     * motor de Platform Builder: con forma, los tiles de solidez "cuesta" se juegan
+     * como RAMPAS reales (el suelo sigue la altura por columna de píxel y Mario se
+     * desliza); sin ella, como bloque macizo. La rellena la importación de SMW y la
+     * herramienta de cuestas del editor.
+     */
+    val platformSlopeShape: List<Int> = emptyList(),
 ) {
     val tileCount: Int get() = columns * rows
 

@@ -7,6 +7,7 @@ import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
+import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 
 /**
@@ -82,7 +83,24 @@ object ProjectPlatformer {
             EngineWarp(it.x, it.y, WARP_INPUTS.getOrElse(it.input) { WarpInput.DOWN }, it.destMapId, it.destX, it.destY)
         },
         itemSeeds = map.platformItems.map { itemSeed(it) },
+        slopeShapeAt = { c, r -> slopeShapeAt(map, tileset, c, r) },
     )
+
+    /**
+     * FORMA de rampa de la celda: la del primer tile (por capas) con forma de suelo
+     * conocida en [Tileset.platformSlopeShape], o NO_SLOPE. Complementa a [solidityAt]
+     * para que las cuestas del proyecto se jueguen como rampas reales.
+     */
+    private fun slopeShapeAt(map: GameMap, tileset: Tileset, col: Int, row: Int): Int {
+        if (tileset.platformSlopeShape.isEmpty() || !map.inBounds(col, row)) return SmwSlopes.NO_SLOPE
+        for (layer in map.layers.indices) {
+            val tile = map.tileAt(layer, col, row)
+            if (tile == EMPTY_TILE) continue
+            val shape = tileset.platformSlopeShape.getOrNull(tile) ?: continue
+            if (SmwSlopes.isFloorShape(shape)) return shape
+        }
+        return SmwSlopes.NO_SLOPE
+    }
 
     private val WARP_INPUTS = WarpInput.values()
 

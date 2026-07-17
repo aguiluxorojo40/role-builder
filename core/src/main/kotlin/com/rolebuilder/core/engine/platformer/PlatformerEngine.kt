@@ -1,5 +1,6 @@
 package com.rolebuilder.core.engine.platformer
 
+import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.math.abs
 import kotlin.math.max
@@ -20,6 +21,8 @@ class PlatformerBody(var x: Float, var y: Float) {
     var fire = false
     /** ¿Mario CAPA? (pluma recogida). Implica grande y permite PLANEAR al caer. */
     var cape = false
+    /** ¿Deslizándose por una cuesta (agachado)? Mata a los enemigos que arrolla. */
+    var sliding = false
     /** Fotogramas de invulnerabilidad restantes tras encoger por un golpe. */
     var invulnFrames = 0
 }
@@ -142,6 +145,14 @@ class PlatformerEngine(
     blockActions: IntArray? = null,
     warps: List<EngineWarp> = emptyList(),
     itemSeeds: List<ItemSeed> = emptyList(),
+    /**
+     * FORMA de cuesta de cada celda ([SmwSlopes], 0..31) o [SmwSlopes.NO_SLOPE].
+     * Solo se consulta en celdas cuya solidez es cuesta: con forma conocida, la celda
+     * se comporta como una RAMPA REAL (el suelo sigue la altura por columna de píxel,
+     * no bloquea de lado y se puede uno deslizar); sin forma, como bloque macizo (el
+     * comportamiento de siempre).
+     */
+    private val slopeShapeAt: (col: Int, row: Int) -> Int = { _, _ -> SmwSlopes.NO_SLOPE },
 ) {
     /**
      * Físicas ACTUALES del motor. Son MUTABLES en caliente: el panel de físicas del
@@ -366,6 +377,76 @@ class PlatformerEngine(
     private fun blocksFloor(s: SmwSolidity) = s == SmwSolidity.SOLID ||
         s == SmwSolidity.LEDGE_TOP || s == SmwSolidity.SLOPE || s == SmwSolidity.SLOPE_STEEP
 
+    // ------------------------------------------------------------------- cuestas
+
+    /**
+     * Forma de cuesta UTILIZABLE de la celda (una de suelo de [SmwSlopes]), o
+     * [SmwSlopes.NO_SLOPE]. Solo celdas con solidez de cuesta; las formas de techo o
+     * desconocidas caen al comportamiento macizo de siempre.
+     */
+    private fun floorSlopeShape(col: Int, row: Int): Int {
+        val s = solidity(col, row)
+        if (s != SmwSolidity.SLOPE && s != SmwSolidity.SLOPE_STEEP) return SmwSlopes.NO_SLOPE
+        val shape = slopeShapeAt(col, row)
+        return if (SmwSlopes.isFloorShape(shape)) shape else SmwSlopes.NO_SLOPE
+    }
+
+    /** ¿La celda es una RAMPA real (no bloquea de lado ni al subir)? */
+    private fun isSlopeCell(col: Int, row: Int): Boolean =
+        floorSlopeShape(col, row) != SmwSlopes.NO_SLOPE
+
+    /** Forma de RAMPA visible de la celda (para el dibujado), o NO_SLOPE. */
+    fun slopeShape(col: Int, row: Int): Int = floorSlopeShape(col, row)
+
+    /**
+     * Y del SUELO de la rampa en la celda (col,row) bajo la columna de píxel de
+     * [xPixel] (el juego usa el CENTRO del jugador), o null si la celda no es rampa
+     * o su columna no tiene suelo (offset 0x10 de los medios bordes).
+     */
+    private fun slopeSurfaceY(col: Int, row: Int, xPixel: Float): Float? {
+        val shape = floorSlopeShape(col, row)
+        if (shape == SmwSlopes.NO_SLOPE) return null
+        val xLocal = (xPixel - col * tileSize).toInt().coerceIn(0, 15)
+        val off = SmwSlopes.floorOffset(shape, xLocal)
+        return if (off >= 16) null else row * tileSize + off.toFloat()
+    }
+
+    /** Forma de la rampa que SOSTIENE al jugador (celda de los pies o la de debajo). */
+    private fun supportSlopeShape(): Int {
+        val centerX = player.x + tuning.playerWidth / 2f
+        val ccol = (centerX / tileSize).toInt()
+        val feet = player.y + playerHeight
+        val a = floorSlopeShape(ccol, ((feet + 1f) / tileSize).toInt())
+        if (a != SmwSlopes.NO_SLOPE) return a
+        return floorSlopeShape(ccol, ((feet - 1f) / tileSize).toInt())
+    }
+
+    /**
+     * Pega los pies a la RAMPA (el snap-to-slope de SMW): al andar cuesta abajo evita
+     * el "escalón volador" (quedarse en el aire un tramo) y al subir aúpa sobre la
+     * superficie. Solo actúa sin velocidad de subida y cerca de la superficie.
+     */
+    private fun snapToSlope() {
+        val p = player
+        if (p.vy < 0f || p.jumping) return
+        val h = playerHeight
+        val centerX = p.x + tuning.playerWidth / 2f
+        val ccol = (centerX / tileSize).toInt()
+        val feet = p.y + h
+        val feetRow = (feet / tileSize).toInt()
+        for (r in feetRow..feetRow + 1) {
+            val surf = slopeSurfaceY(ccol, r, centerX) ?: continue
+            // Hasta 9 px POR ENCIMA de la superficie (bajando la cuesta: pega los pies
+            // hacia abajo) o 5 px METIDO en la rampa (subiendo: aúpa hacia arriba).
+            if (feet >= surf - 9f && feet <= surf + 5f) {
+                p.y = surf - h - 0.01f
+                if (p.vy > 0f) p.vy = 0f
+                p.onGround = true
+                return
+            }
+        }
+    }
+
     /** Avanza un fotograma. */
     fun tick() {
         val p = player
@@ -379,9 +460,30 @@ class PlatformerEngine(
         }
         val t = tuning
 
+        // --- TOBOGÁN: agachado (abajo) sobre una rampa, se desliza cuesta abajo; al
+        // llegar al llano SIGUE arrollando con la inercia hasta frenarse, como SMW.
+        // Mientras se desliza NO hay control ni rozamiento: manda la pendiente. ---
+        p.sliding = false
+        if (inputDown && p.onGround) {
+            val shape = supportSlopeShape()
+            if (shape != SmwSlopes.NO_SLOPE) {
+                p.sliding = true
+                // gradient > 0 = el suelo baja hacia la derecha → acelera a +X.
+                val g = SmwSlopes.gradient(shape)
+                p.vx = (p.vx + g * SLIDE_ACCEL).coerceIn(-SLIDE_MAX_SPEED, SLIDE_MAX_SPEED)
+                if (g != 0f) p.facingRight = g > 0f
+            } else if (abs(p.vx) > 0.5f) {
+                p.sliding = true // en llano, sigue deslizando mientras conserve impulso
+                // frenado suave (mucho menor que el rozamiento normal)
+                p.vx = if (p.vx > 0) max(0f, p.vx - t.friction * 0.15f) else min(0f, p.vx + t.friction * 0.15f)
+            }
+        }
+
         // --- horizontal: aceleración hacia el tope, o rozamiento ---
         val maxSpeed = if (running) t.maxRunSpeed else t.maxWalkSpeed
-        if (abs(moveX) > 0.1f) {
+        if (p.sliding) {
+            // deslizándose no se acelera ni frena a mano
+        } else if (abs(moveX) > 0.1f) {
             p.facingRight = moveX > 0
             p.vx += (if (moveX > 0) t.runAccel else -t.runAccel)
             p.vx = p.vx.coerceIn(-maxSpeed, maxSpeed)
@@ -415,6 +517,7 @@ class PlatformerEngine(
         // --- integración con colisión, eje a eje ---
         moveHorizontal(p.vx)
         moveVertical(p.vy)
+        snapToSlope()
 
         if (p.invulnFrames > 0) p.invulnFrames--
 
@@ -662,6 +765,13 @@ class PlatformerEngine(
             val overlap = p.x < e.x + e.width && p.x + pw > e.x &&
                 p.y < e.y + e.height && p.y + ph > e.y
             if (!overlap) continue
+            // Deslizándose por la cuesta ARROLLA al enemigo (el tobogán de SMW).
+            if (p.sliding) {
+                e.alive = false
+                e.squashTimer = 12
+                stompEvents++
+                continue
+            }
             // Viene cayendo y sus pies están cerca de la cabeza del enemigo → pisotón.
             val stomp = p.vy > 0f && (p.y + ph) - e.y < e.height * 0.6f
             if (stomp) {
@@ -688,18 +798,30 @@ class PlatformerEngine(
         val bottom = p.y + h - 0.01f
         val minRow = (top / tileSize).toInt()
         val maxRow = (bottom / tileSize).toInt()
+        // Las RAMPAS con forma conocida no bloquean de lado: se entra en ellas y el
+        // snap vertical aúpa/pega los pies a la superficie. Además, YENDO por una
+        // rampa, el remate contra la meseta (un escalón de pocos px a la altura de
+        // los pies) se SUBE en vez de chocar — es el equivalente al sensor central
+        // de SMW, que corona la cuesta sin encallarse en la esquina del bloque.
+        val onSlope = supportSlopeShape() != SmwSlopes.NO_SLOPE
+        fun tryMove(col: Int, clampX: Float) {
+            val blockers = (minRow..maxRow).filter { !isSlopeCell(col, it) && blocksSide(solidity(col, it)) }
+            if (blockers.isEmpty()) return
+            val stepTop = blockers.min() * tileSize.toFloat()
+            val feet = p.y + h
+            if (onSlope && feet - stepTop <= 8f) {
+                p.y = stepTop - h - 0.01f // corona el escalón
+            } else {
+                nx = clampX
+                p.vx = 0f
+            }
+        }
         if (dx > 0) {
             val col = ((nx + w) / tileSize).toInt()
-            if ((minRow..maxRow).any { blocksSide(solidity(col, it)) }) {
-                nx = col * tileSize - w - 0.01f
-                p.vx = 0f
-            }
+            tryMove(col, col * tileSize - w - 0.01f)
         } else {
             val col = (nx / tileSize).toInt()
-            if ((minRow..maxRow).any { blocksSide(solidity(col, it)) }) {
-                nx = (col + 1) * tileSize + 0.01f
-                p.vx = 0f
-            }
+            tryMove(col, (col + 1) * tileSize + 0.01f)
         }
         p.x = nx
     }
@@ -715,19 +837,40 @@ class PlatformerEngine(
         val maxCol = (right / tileSize).toInt()
         p.onGround = false
         if (dy > 0) {
-            // Cayendo: pisa suelo. Los bordes de un sentido solo cuentan si los
-            // pies cruzan el borde superior de la celda desde arriba este fotograma.
+            // Cayendo. Primero las RAMPAS: el soporte se mide bajo el CENTRO de Mario
+            // y aterriza sobre la superficie de la forma (altura por columna de píxel).
             val prevBottom = p.y + h
-            val row = ((ny + h) / tileSize).toInt()
-            val tileTop = row * tileSize
-            val hit = (minCol..maxCol).any {
-                val s = solidity(it, row)
-                blocksFloor(s) && (s != SmwSolidity.LEDGE_TOP || prevBottom <= tileTop + 0.01f)
+            val centerX = p.x + w / 2f
+            val ccol = (centerX / tileSize).toInt()
+            var landedOnSlope = false
+            val rowFrom = (prevBottom / tileSize).toInt()
+            val rowTo = ((ny + h) / tileSize).toInt()
+            for (r in rowFrom..rowTo) {
+                val surf = slopeSurfaceY(ccol, r, centerX) ?: continue
+                if (ny + h >= surf) {
+                    ny = surf - h - 0.01f
+                    p.vy = 0f
+                    p.onGround = true
+                    landedOnSlope = true
+                    break
+                }
             }
-            if (hit) {
-                ny = row * tileSize - h - 0.01f
-                p.vy = 0f
-                p.onGround = true
+            // Suelo normal (excluyendo rampas: su celda no bloquea como bloque). Los
+            // bordes de un sentido solo cuentan si los pies cruzan el borde superior
+            // de la celda desde arriba este fotograma.
+            if (!landedOnSlope) {
+                val row = ((ny + h) / tileSize).toInt()
+                val tileTop = row * tileSize
+                val hit = (minCol..maxCol).any {
+                    val s = solidity(it, row)
+                    !isSlopeCell(it, row) && blocksFloor(s) &&
+                        (s != SmwSolidity.LEDGE_TOP || prevBottom <= tileTop + 0.01f)
+                }
+                if (hit) {
+                    ny = row * tileSize - h - 0.01f
+                    p.vy = 0f
+                    p.onGround = true
+                }
             }
         } else if (dy < 0) {
             // Subiendo: golpe de cabeza solo contra sólidos (no los de un sentido).
@@ -784,5 +927,9 @@ class PlatformerEngine(
         const val CAPE_GLIDE_SPEED = 1.0f
         /** "Pop" de muerte de SMW: -112 dieciseisavos de px/f ($00:F606) = -7 px/f. */
         const val DEATH_POP_SPEED = -7f
+        /** Aceleración del TOBOGÁN por unidad de pendiente (px/f²): supera al rozamiento. */
+        const val SLIDE_ACCEL = 0.25f
+        /** Tope de velocidad deslizándose (px/f): el 0x40 dieciseisavos de SMW = 4.0. */
+        const val SLIDE_MAX_SPEED = 4f
     }
 }
