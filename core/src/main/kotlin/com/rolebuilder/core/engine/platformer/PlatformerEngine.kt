@@ -129,8 +129,11 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
  *  - [SmwSolidity.SOLID] frena por los cuatro lados.
  *  - [SmwSolidity.LEDGE_TOP] es plataforma de UN SENTIDO: solo frena la caída (te
  *    paras encima), se atraviesa de lado y saltando desde abajo — igual que SMW.
- *  - [SmwSolidity.SLOPE]/[SmwSolidity.SLOPE_STEEP] se tratan de momento como sólidas
- *    (bloque completo); la forma sub-píxel de la cuesta queda para un refinamiento.
+ *  - [SmwSolidity.SLOPE] con perfil ([slopeOffsetsAt]) es una RAMPA real (el suelo
+ *    sigue la altura por columna, sin bloquear de lado); sin perfil, bloque macizo.
+ *  - [SmwSolidity.SLOPE_STEEP] es la familia RELLENO de cuesta (lo 0xD8+ de SMW):
+ *    con perfil, rampa; sin él, NO colisiona (difiere al bloque de debajo), fiel al
+ *    dispatch real $00:EB77 — antes hacía de muro invisible en las diagonales.
  *  - [SmwSolidity.SPIKE] daña al jugador al tocarla (grande encoge; pequeño muere).
  *  - [SmwSolidity.NONE] no colisiona.
  */
@@ -395,6 +398,31 @@ class PlatformerEngine(
     /** ¿La celda es una RAMPA real (no bloquea de lado ni al subir)? */
     private fun isSlopeCell(col: Int, row: Int): Boolean = cellSlopeOffsets(col, row) != null
 
+    /**
+     * ¿La celda hace de PARED lateral? Fiel al dispatch real ($00:EB77): los bloques
+     * de la familia cuesta (lo ≥ 0x6E) NUNCA empujan de lado — ni las rampas ni los
+     * RELLENOS sobre/bajo cuesta (lo 0xD8+, nuestra SLOPE_STEEP sin perfil, que
+     * difieren al bloque de debajo). Antes esos rellenos hacían de muro invisible a
+     * mitad de diagonal. La cuesta simple SIN perfil se mantiene maciza (compatibilidad
+     * con proyectos que la usan como bloque).
+     */
+    private fun wallsAt(col: Int, row: Int): Boolean = when (solidity(col, row)) {
+        SmwSolidity.SOLID -> true
+        SmwSolidity.SLOPE -> !isSlopeCell(col, row)
+        else -> false
+    }
+
+    /**
+     * ¿La celda hace de SUELO macizo (aparte de las rampas por perfil)? Los rellenos
+     * de cuesta (STEEP sin perfil) NO: en el juego difieren al bloque de debajo, y
+     * nuestro barrido de rampas/suelo ya encuentra ese soporte al pasar de largo.
+     */
+    private fun floorsAt(col: Int, row: Int): Boolean = when (solidity(col, row)) {
+        SmwSolidity.SOLID, SmwSolidity.LEDGE_TOP -> true
+        SmwSolidity.SLOPE -> !isSlopeCell(col, row)
+        else -> false
+    }
+
     /** Perfil de RAMPA visible de la celda (para el dibujado), o null. */
     fun slopeOffsets(col: Int, row: Int): IntArray? = cellSlopeOffsets(col, row)
 
@@ -417,6 +445,38 @@ class PlatformerEngine(
         val feet = player.y + playerHeight
         return cellSlopeOffsets(ccol, ((feet + 1f) / tileSize).toInt())
             ?: cellSlopeOffsets(ccol, ((feet - 1f) / tileSize).toInt())
+    }
+
+    /**
+     * Aterrizaje sobre RAMPA de una ENTIDAD cayendo (centro en [cx], pies que pasan
+     * de [feetFrom] a [feetTo]): la Y del suelo de la rampa alcanzada, o null. Lo
+     * comparten jugador, enemigos, powerups y bolas para que TODO el mundo siga las
+     * rampas, no solo Mario.
+     */
+    private fun slopeLandingY(cx: Float, feetFrom: Float, feetTo: Float): Float? {
+        val ccol = (cx / tileSize).toInt()
+        val rowFrom = (feetFrom / tileSize).toInt()
+        val rowTo = (feetTo / tileSize).toInt()
+        for (r in rowFrom..rowTo) {
+            val surf = slopeSurfaceY(ccol, r, cx) ?: continue
+            if (feetTo >= surf) return surf
+        }
+        return null
+    }
+
+    /**
+     * Snap de RAMPA para una entidad apoyada (centro [cx], pies en [feet]): la Y de
+     * superficie a la que pegarse si está a ≤6 px, o null. Evita que enemigos y setas
+     * "floten" al bajar una rampa.
+     */
+    private fun slopeSnapY(cx: Float, feet: Float): Float? {
+        val ccol = (cx / tileSize).toInt()
+        val feetRow = (feet / tileSize).toInt()
+        for (r in feetRow..feetRow + 1) {
+            val surf = slopeSurfaceY(ccol, r, cx) ?: continue
+            if (feet >= surf - 6f && feet <= surf + 5f) return surf
+        }
+        return null
     }
 
     /**
@@ -607,28 +667,43 @@ class PlatformerEngine(
         val ph = playerHeight
         for (m in items) {
             if (!m.alive) continue
-            // Vertical: gravedad y aterrizaje (mismos criterios que los enemigos).
+            // Vertical: gravedad y aterrizaje (mismos criterios que los enemigos, con
+            // las RAMPAS primero: la seta rueda cuesta abajo en vez de flotar).
             m.vy = min(m.vy + tuning.gravityFall, tuning.maxFallSpeed)
             var ny = m.y + m.vy
             val minCol = (m.x / tileSize).toInt()
             val maxCol = ((m.x + m.width - 0.01f) / tileSize).toInt()
             m.onGround = false
             if (m.vy > 0) {
-                val row = ((ny + m.height) / tileSize).toInt()
-                if ((minCol..maxCol).any { c -> blocksFloor(solidity(c, row)) }) {
-                    ny = row * tileSize - m.height - 0.01f
+                val surf = slopeLandingY(m.x + m.width / 2f, m.y + m.height, ny + m.height)
+                if (surf != null) {
+                    ny = surf - m.height - 0.01f
                     m.vy = 0f
                     m.onGround = true
+                } else {
+                    val row = ((ny + m.height) / tileSize).toInt()
+                    if ((minCol..maxCol).any { c -> floorsAt(c, row) }) {
+                        ny = row * tileSize - m.height - 0.01f
+                        m.vy = 0f
+                        m.onGround = true
+                    }
                 }
             }
             m.y = ny
-            // Horizontal: rebota SOLO en paredes (por los bordes se cae, no se gira).
+            // Horizontal: rebota SOLO en paredes (las rampas no lo son; por los
+            // bordes se cae, no se gira), pegándose a la rampa al recorrerla.
             val nx = m.x + m.vx
             val minRow = (m.y / tileSize).toInt()
             val maxRow = ((m.y + m.height - 0.01f) / tileSize).toInt()
             val frontCol = if (m.vx > 0) ((nx + m.width) / tileSize).toInt() else (nx / tileSize).toInt()
-            if ((minRow..maxRow).any { r -> blocksSide(solidity(frontCol, r)) }) m.vx = -m.vx
-            else m.x = nx
+            if ((minRow..maxRow).any { r -> wallsAt(frontCol, r) }) {
+                m.vx = -m.vx
+            } else {
+                m.x = nx
+                if (m.onGround) {
+                    slopeSnapY(m.x + m.width / 2f, m.y + m.height)?.let { m.y = it - m.height - 0.01f }
+                }
+            }
             if (m.y > (rows + 3) * tileSize) { m.alive = false; continue }
             // Recogida por solape con la caja del jugador.
             val overlap = p.x < m.x + m.width && p.x + pw > m.x &&
@@ -657,16 +732,23 @@ class PlatformerEngine(
             val fb = it.next()
             if (!fb.alive) { it.remove(); continue }
             if (--fb.life <= 0) { fb.alive = false; it.remove(); continue }
-            // Vertical: gravedad y rebote contra el suelo.
+            // Vertical: gravedad y rebote contra el suelo (las RAMPAS también botan,
+            // sobre su superficie real).
             fb.vy = min(fb.vy + tuning.gravityFall, tuning.maxFallSpeed)
             var ny = fb.y + fb.vy
             val minCol = (fb.x / tileSize).toInt()
             val maxCol = ((fb.x + fb.width - 0.01f) / tileSize).toInt()
             if (fb.vy > 0) {
-                val row = ((ny + fb.height) / tileSize).toInt()
-                if ((minCol..maxCol).any { c -> blocksFloor(solidity(c, row)) }) {
-                    ny = row * tileSize - fb.height - 0.01f
+                val surf = slopeLandingY(fb.x + fb.width / 2f, fb.y + fb.height, ny + fb.height)
+                if (surf != null) {
+                    ny = surf - fb.height - 0.01f
                     fb.vy = -2.5f // rebota hacia arriba
+                } else {
+                    val row = ((ny + fb.height) / tileSize).toInt()
+                    if ((minCol..maxCol).any { c -> floorsAt(c, row) }) {
+                        ny = row * tileSize - fb.height - 0.01f
+                        fb.vy = -2.5f // rebota hacia arriba
+                    }
                 }
             }
             fb.y = ny
@@ -675,7 +757,7 @@ class PlatformerEngine(
             val minRow = (fb.y / tileSize).toInt()
             val maxRow = ((fb.y + fb.height - 0.01f) / tileSize).toInt()
             val frontCol = if (fb.vx > 0) ((nx + fb.width) / tileSize).toInt() else (nx / tileSize).toInt()
-            if ((minRow..maxRow).any { r -> blocksSide(solidity(frontCol, r)) }) {
+            if ((minRow..maxRow).any { r -> wallsAt(frontCol, r) }) {
                 fb.alive = false; it.remove(); continue
             }
             fb.x = nx
@@ -721,11 +803,20 @@ class PlatformerEngine(
         val minRow = (top / tileSize).toInt()
         val maxRow = (bottom / tileSize).toInt()
         val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
-        val wall = (minRow..maxRow).any { blocksSide(solidity(frontCol, it)) }
+        // Las RAMPAS no son pared para el enemigo: entra y el snap lo pega al suelo.
+        val wall = (minRow..maxRow).any { wallsAt(frontCol, it) }
         // Se da la vuelta en el borde de una plataforma (no se tira al vacío), como en SMW.
         val footRow = ((e.y + e.height + 1f) / tileSize).toInt()
         val ledge = e.onGround && !blocksFloor(solidity(frontCol, footRow))
-        if (wall || ledge) e.vx = -e.vx else e.x = nx
+        if (wall || ledge) {
+            e.vx = -e.vx
+        } else {
+            e.x = nx
+            // Pegado a la rampa al recorrerla (baja sin flotar, sube sin hundirse).
+            if (e.onGround) {
+                slopeSnapY(e.x + e.width / 2f, e.y + e.height)?.let { e.y = it - e.height - 0.01f }
+            }
+        }
     }
 
     private fun moveEnemyVertical(e: PlatformerEnemy) {
@@ -736,11 +827,19 @@ class PlatformerEngine(
         val maxCol = (right / tileSize).toInt()
         e.onGround = false
         if (e.vy > 0) {
-            val row = ((ny + e.height) / tileSize).toInt()
-            if ((minCol..maxCol).any { blocksFloor(solidity(it, row)) }) {
-                ny = row * tileSize - e.height - 0.01f
+            // Primero las RAMPAS (superficie bajo el centro); luego el suelo normal.
+            val surf = slopeLandingY(e.x + e.width / 2f, e.y + e.height, ny + e.height)
+            if (surf != null) {
+                ny = surf - e.height - 0.01f
                 e.vy = 0f
                 e.onGround = true
+            } else {
+                val row = ((ny + e.height) / tileSize).toInt()
+                if ((minCol..maxCol).any { floorsAt(it, row) }) {
+                    ny = row * tileSize - e.height - 0.01f
+                    e.vy = 0f
+                    e.onGround = true
+                }
             }
         } else if (e.vy < 0) {
             val row = (ny / tileSize).toInt()
@@ -803,7 +902,7 @@ class PlatformerEngine(
         // de SMW, que corona la cuesta sin encallarse en la esquina del bloque.
         val onSlope = supportSlopeOffsets() != null
         fun tryMove(col: Int, clampX: Float) {
-            val blockers = (minRow..maxRow).filter { !isSlopeCell(col, it) && blocksSide(solidity(col, it)) }
+            val blockers = (minRow..maxRow).filter { wallsAt(col, it) }
             if (blockers.isEmpty()) return
             val stepTop = blockers.min() * tileSize.toFloat()
             val feet = p.y + h
@@ -861,8 +960,7 @@ class PlatformerEngine(
                 val tileTop = row * tileSize
                 val hit = (minCol..maxCol).any {
                     val s = solidity(it, row)
-                    !isSlopeCell(it, row) && blocksFloor(s) &&
-                        (s != SmwSolidity.LEDGE_TOP || prevBottom <= tileTop + 0.01f)
+                    floorsAt(it, row) && (s != SmwSolidity.LEDGE_TOP || prevBottom <= tileTop + 0.01f)
                 }
                 if (hit) {
                     ny = row * tileSize - h - 0.01f
