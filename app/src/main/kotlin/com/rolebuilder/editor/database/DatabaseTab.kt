@@ -3,11 +3,13 @@ package com.rolebuilder.editor.database
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,11 +30,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +61,7 @@ import com.rolebuilder.core.model.Item
 import com.rolebuilder.core.model.ItemEffect
 import com.rolebuilder.core.model.Skill
 import com.rolebuilder.core.model.SkillKind
+import com.rolebuilder.core.model.TileAnimation
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.loadImageBitmap
@@ -410,8 +415,10 @@ private fun TilesetEditor(state: EditorState) {
         return
     }
     val bitmap = remember(tileset.image) { loadImageBitmap(state.projectDir, tileset.image) }
-    // 0 = editar paso (colisión), 1 = editar tiles de pie (billboard 2.5D).
+    // 0 = editar paso (colisión), 1 = tiles de pie (billboard 2.5D), 2 = animaciones.
     var mode by remember { mutableIntStateOf(0) }
+    // Tile cuya animación se está editando en el diálogo, o null.
+    var animTile by remember { mutableStateOf<Int?>(null) }
 
     fun updateTileset(new: Tileset) = state.updateDatabase(
         state.database.copy(
@@ -431,13 +438,20 @@ private fun TilesetEditor(state: EditorState) {
                 onClick = { mode = 1 },
                 label = { Text("De pie (2.5D)") },
             )
+            FilterChip(
+                selected = mode == 2,
+                onClick = { mode = 2 },
+                label = { Text("Animación") },
+            )
         }
         Text(
-            if (mode == 0) {
-                "Toca un tile para alternar si se puede caminar sobre él (verde = paso libre, rojo = bloqueado)."
-            } else {
-                "Toca un tile para alternar si el diorama 2.5D lo dibuja de pie cuando está " +
+            when (mode) {
+                0 -> "Toca un tile para alternar si se puede caminar sobre él (verde = paso libre, rojo = bloqueado)."
+                1 -> "Toca un tile para alternar si el diorama 2.5D lo dibuja de pie cuando está " +
                     "en la capa 2 (azul = de pie, gris = plano). Ideal para árboles, arbustos, puertas o rocas."
+                else -> "Toca un tile para editar su ANIMACIÓN (naranja = animado): fotogramas por los " +
+                    "que cicla y a qué velocidad, con vista previa en vivo. Las importadas de SMW " +
+                    "(monedas, bloques ?, agua) también se pueden retocar aquí."
             },
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(vertical = 8.dp),
@@ -450,31 +464,158 @@ private fun TilesetEditor(state: EditorState) {
             items((0 until tileset.tileCount).toList()) { tile ->
                 val passable = tileset.isPassable(tile)
                 val standing = tile in tileset.standingTiles
+                val animated = tileset.animations.any { it.baseTile == tile }
                 TileCell(
                     bitmap = bitmap,
                     tileset = tileset,
                     tile = tile,
-                    borderColor = if (mode == 0) {
-                        if (passable) Color(0xFF4CAF50) else Color(0xFFE53935)
-                    } else {
-                        if (standing) Color(0xFF42A5F5) else Color(0xFF616161)
+                    borderColor = when (mode) {
+                        0 -> if (passable) Color(0xFF4CAF50) else Color(0xFFE53935)
+                        1 -> if (standing) Color(0xFF42A5F5) else Color(0xFF616161)
+                        else -> if (animated) Color(0xFFFF9800) else Color(0xFF616161)
                     },
                     onClick = {
-                        if (mode == 0) {
-                            val newPassable = tileset.passable.toMutableList().also {
-                                while (it.size < tileset.tileCount) it.add(true)
-                                it[tile] = !passable
+                        when (mode) {
+                            0 -> {
+                                val newPassable = tileset.passable.toMutableList().also {
+                                    while (it.size < tileset.tileCount) it.add(true)
+                                    it[tile] = !passable
+                                }
+                                updateTileset(tileset.copy(passable = newPassable))
                             }
-                            updateTileset(tileset.copy(passable = newPassable))
-                        } else {
-                            val newStanding =
-                                if (standing) tileset.standingTiles - tile
-                                else (tileset.standingTiles + tile).sorted()
-                            updateTileset(tileset.copy(standingTiles = newStanding))
+                            1 -> {
+                                val newStanding =
+                                    if (standing) tileset.standingTiles - tile
+                                    else (tileset.standingTiles + tile).sorted()
+                                updateTileset(tileset.copy(standingTiles = newStanding))
+                            }
+                            else -> animTile = tile
                         }
                     },
                 )
             }
+        }
+    }
+
+    animTile?.let { tile ->
+        TileAnimationDialog(
+            tileset = tileset,
+            bitmap = bitmap,
+            tile = tile,
+            onUpdate = ::updateTileset,
+            onDismiss = { animTile = null },
+        )
+    }
+}
+
+/**
+ * Editor de la ANIMACIÓN de un tile: vista previa EN VIVO (cicla como en el juego, a
+ * 60 fps de referencia), lista de fotogramas en orden (tocar uno lo quita), añadir
+ * fotogramas eligiéndolos del tileset, y la velocidad en fotogramas de juego por
+ * paso. Guardar sustituye la entrada del tile en `tileset.animations`; "Quitar" la
+ * elimina. Es la misma estructura ([TileAnimation]) que hornea la importación de SMW,
+ * así que sus animaciones también se pueden retocar aquí.
+ */
+@Composable
+private fun TileAnimationDialog(
+    tileset: Tileset,
+    bitmap: ImageBitmap?,
+    tile: Int,
+    onUpdate: (Tileset) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val existing = tileset.animations.firstOrNull { it.baseTile == tile }
+    var frames by remember { mutableStateOf(existing?.frames ?: listOf(tile)) }
+    var period by remember { mutableIntStateOf(existing?.periodFrames ?: 8) }
+    var picking by remember { mutableStateOf(false) }
+
+    EditDialog("Animación del tile $tile", onDismiss = onDismiss) {
+        if (picking) {
+            Text(
+                "Toca el tile a AÑADIR como siguiente fotograma:",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(tileset.columns),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.heightIn(max = 380.dp),
+            ) {
+                items((0 until tileset.tileCount).toList()) { t ->
+                    TileCell(
+                        bitmap = bitmap, tileset = tileset, tile = t,
+                        borderColor = Color(0xFF616161),
+                        onClick = { frames = frames + t; picking = false },
+                    )
+                }
+            }
+            TextButton(onClick = { picking = false }) { Text("Cancelar") }
+            return@EditDialog
+        }
+
+        // Vista previa EN VIVO: cicla los fotogramas a la velocidad elegida.
+        var previewIdx by remember { mutableIntStateOf(0) }
+        LaunchedEffect(frames, period) {
+            previewIdx = 0
+            while (true) {
+                kotlinx.coroutines.delay((period * 1000L / 60L).coerceAtLeast(16L))
+                if (frames.isNotEmpty()) previewIdx = (previewIdx + 1) % frames.size
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TileCell(
+                bitmap = bitmap, tileset = tileset,
+                tile = frames.getOrElse(previewIdx) { tile },
+                borderColor = Color(0xFFFF9800),
+                onClick = {},
+            )
+            Text(
+                "  Vista previa · cada $period fot. (${"%.2f".format(period / 60f)} s por fotograma)",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        Text(
+            "Fotogramas en orden (toca uno para QUITARLO):",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 10.dp, bottom = 4.dp),
+        )
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            frames.forEachIndexed { i, f ->
+                TileCell(
+                    bitmap = bitmap, tileset = tileset, tile = f,
+                    borderColor = Color(0xFF616161),
+                    onClick = { if (frames.size > 1) frames = frames.filterIndexed { j, _ -> j != i } },
+                )
+            }
+        }
+        TextButton(onClick = { picking = true }) { Text("＋ Añadir fotograma") }
+
+        Text("Velocidad", style = MaterialTheme.typography.bodySmall)
+        Slider(
+            value = period.toFloat(),
+            onValueChange = { period = it.toInt().coerceIn(2, 30) },
+            valueRange = 2f..30f,
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                val newAnim = TileAnimation(baseTile = tile, frames = frames, periodFrames = period)
+                onUpdate(
+                    tileset.copy(
+                        animations = tileset.animations.filterNot { it.baseTile == tile } + newAnim,
+                    ),
+                )
+                onDismiss()
+            }) { Text("Guardar") }
+            if (existing != null) {
+                TextButton(onClick = {
+                    onUpdate(tileset.copy(animations = tileset.animations.filterNot { it.baseTile == tile }))
+                    onDismiss()
+                }) { Text("Quitar animación") }
+            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     }
 }
