@@ -85,6 +85,9 @@ class PlatformerActivity : ComponentActivity() {
                 renderer,
                 onRestart = { recreate() },
                 onExit = { finish() },
+                // Al morir, la música PARA (como SMW) y queda solo el jingle de muerte;
+                // reiniciar (recreate) vuelve a arrancarla.
+                onDeath = { music?.stop() },
                 // Warp consumido (tubería/puerta): en modo ROM el destino es un número
                 // de NIVEL de SMW; en modo proyecto, un id de MAPA del proyecto (con su
                 // casilla de entrada). En ambos casos se relanza la actividad allí.
@@ -316,6 +319,8 @@ private fun PlatformerScreen(
     onRestart: () -> Unit,
     onExit: () -> Unit,
     onWarp: (com.rolebuilder.core.engine.platformer.WarpTarget) -> Unit = {},
+    /** Primera vez que Mario muere: la actividad para la música (suena el jingle). */
+    onDeath: () -> Unit = {},
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var glView by remember { mutableStateOf<GLSurfaceView?>(null) }
@@ -352,11 +357,13 @@ private fun PlatformerScreen(
             // Marcador de monedas (HUD) y warp pendiente: sondea el renderer.
             var coinCount by remember { mutableStateOf(0) }
             var warped by remember { mutableStateOf(false) }
+            var died by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 while (true) {
                     coinCount = renderer.coins
                     val warp = renderer.pendingWarp
                     if (warp != null && !warped) { warped = true; onWarp(warp) }
+                    if (renderer.dead && !died) { died = true; onDeath() }
                     kotlinx.coroutines.delay(120)
                 }
             }

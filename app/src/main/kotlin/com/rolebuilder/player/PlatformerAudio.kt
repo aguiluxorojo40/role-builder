@@ -54,8 +54,16 @@ class PlatformerAudio private constructor(
         if (id in loaded) soundPool.play(id, volume, volume, 1, 0, rate)
     }
 
-    /** Muerte de Mario: "pisotón" grave como sustituto del jingle de muerte. */
-    fun playDeath() = play(SmwSfxCatalog.Event.STOMP, volume = 0.8f, rate = 0.55f)
+    /**
+     * Muerte de Mario: el JINGLE real de SMW (pista de música 9, horneada a
+     * assets/sfx/death_jingle.wav con el motor N-SPC); si no está, cae al "pisotón"
+     * grave de antes.
+     */
+    fun playDeath() {
+        val id = ids[SmwSfxCatalog.Event.DEATH_JINGLE]
+        if (id != null && id in loaded) soundPool.play(id, 0.8f, 0.8f, 1, 0, 1f)
+        else play(SmwSfxCatalog.Event.STOMP, volume = 0.8f, rate = 0.55f)
+    }
 
     fun release() = soundPool.release()
 
@@ -71,7 +79,12 @@ class PlatformerAudio private constructor(
                 SmwSfxCatalog.build(rom, header)
             }.getOrNull() ?: return null
             if (clips.isEmpty()) return null
-            val wavs = clips.mapValues { (_, clip) -> wav(clip.pcm, clip.sampleRate) }
+            val wavs = clips.mapValues { (_, clip) -> wav(clip.pcm, clip.sampleRate) }.toMutableMap()
+            // El jingle de MUERTE no sale del catálogo (es la pista de música 9): se
+            // toma del asset horneado también en la ruta ROM.
+            runCatching {
+                context.assets.open("sfx/death_jingle.wav").use { it.readBytes() }
+            }.onSuccess { wavs[SmwSfxCatalog.Event.DEATH_JINGLE] = it }
             return PlatformerAudio(context, wavs)
         }
 

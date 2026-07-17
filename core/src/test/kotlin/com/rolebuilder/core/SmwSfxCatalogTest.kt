@@ -226,6 +226,36 @@ class SmwSfxCatalogTest {
     }
 
     @Test
+    fun `renderSfx1Jump produce el swip con tono ASCENDENTE`() {
+        val aram = ByteArray(0x10000)
+        // El salto usa el instrumento 8. pitchBase pequeño y realista: el motor
+        // multiplica periodo×base en uint16 y un base grande desbordaría a mitad
+        // de barrido (fiel al hardware, pero no es el caso de los instrumentos reales).
+        putInstrument(aram, 8, srcn = 0, pitchBase = 0x08)
+        // Muestra con bucle: onda cuadrada corta, para poder medir el tono por cruces
+        // por cero en la salida.
+        val pcm = ShortArray(64) { if ((it / 8) % 2 == 0) 4000 else -4000 }
+        val sample = SmwSoundFx.BrrSample(
+            index = 0, aramStart = 0x8100, aramLoop = 0x8100,
+            brrByteLength = 9, pcm = pcm, loopStartSample = 0, hasLoop = true,
+        )
+        val bank = SmwSoundFx.SoundBank(listOf(sample), 0x10000)
+
+        val out = SmwSfxCatalog.renderSfx1Jump(aram, bank, outRate = 22050)
+        assertNotNull(out)
+        // Dura ~46-48 ticks de 2 ms (key-off 2 ticks antes de 0x30): ~92-96 ms.
+        val ms = out.size * 1000 / 22050
+        assertTrue(ms in 80..105, "duración del salto ~92 ms (fue $ms ms)")
+        // El barrido SUBE: el tercio final debe cruzar cero más veces que el inicial.
+        fun crossings(a: IntRange): Int =
+            a.count { it > a.first && (out[it - 1] < 0) != (out[it] < 0) }
+        val third = out.size / 3
+        val first = crossings(0 until third)
+        val last = crossings(out.size - third until out.size)
+        assertTrue(last > first, "tono ascendente (cruces: $first → $last)")
+    }
+
+    @Test
     fun `renderSequencePcm devuelve null si la secuencia no toca ninguna nota`() {
         val aram = ByteArray(0x10000)
         val seq = 0x6400

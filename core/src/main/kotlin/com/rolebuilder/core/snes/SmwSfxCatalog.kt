@@ -67,7 +67,13 @@ package com.rolebuilder.core.snes
 object SmwSfxCatalog {
 
     /** Eventos de juego a los que damos un sonido auténtico de SMW. */
-    enum class Event { JUMP, SPIN_JUMP, COIN, STOMP, KICK, POWERUP }
+    /**
+     * Eventos con SFX. [DEATH_JINGLE] es especial: en SMW la muerte no es un efecto
+     * sino la PISTA DE MÚSICA 9; no se resuelve aquí (no está en [EVENT_SOURCE]) sino
+     * que se hornea con el motor N-SPC (SmwMusicRenderer) a assets/sfx/death_jingle.wav
+     * y PlatformerAudio la carga como un clip más.
+     */
+    enum class Event { JUMP, SPIN_JUMP, COIN, STOMP, KICK, POWERUP, DEATH_JINGLE }
 
     /** Dirección ARAM de la tabla de instrumentos (9 bytes/entrada). */
     const val INSTRUMENT_TABLE = 0x5570
@@ -206,8 +212,16 @@ object SmwSfxCatalog {
      * [pitchBase] del instrumento (afinación fina = 0, transposición global = 0).
      * 0x1000 ≈ tono nativo (32000 Hz). Devuelve el valor recortado a 14 bits.
      */
-    fun dspPitch(note: Int, pitchBase: Int): Int {
-        var pitch = (note and 0x7F) shl 8
+    fun dspPitch(note: Int, pitchBase: Int): Int =
+        dspPitchFixed((note and 0x7F) shl 8, pitchBase)
+
+    /**
+     * Como [dspPitch] pero con el tono en punto fijo 8.8 (`nota<<8 | fracción`), que es
+     * como lo lleva el motor internamente — necesario para los BARRIDOS de tono
+     * (`Sfx_WritePitchSweep`), donde el tono pasa por valores intermedios entre notas.
+     */
+    fun dspPitchFixed(pitch88: Int, pitchBase: Int): Int {
+        var pitch = pitch88 and 0x7FFF
         val hi = pitch shr 8
         if (hi >= 0x34) {
             pitch += hi - 0x34
@@ -277,6 +291,12 @@ object SmwSfxCatalog {
         }
         if (seqStart > 0) {
             renderSequencePcm(aram, bank, seqStart, outRate)?.let {
+                return PcmClip(event, it, outRate)
+            }
+        }
+        // El SALTO (Sfx1 id 1) tiene su render portado tick a tick, con sus barridos.
+        if (source.bank == 1 && source.id == 1) {
+            renderSfx1Jump(aram, bank, outRate)?.let {
                 return PcmClip(event, it, outRate)
             }
         }
@@ -499,6 +519,85 @@ object SmwSfxCatalog {
             pos += step
         }
         return out
+    }
+
+    // ------------------------------------------------------- salto (Sfx1 cableado)
+
+    /**
+     * El SALTO de SMW, portado tick a tick de `Sfx1_Process` (smw_spc_player.c): no es
+     * una nota plana sino un "swip" con DOS barridos de tono encadenados —
+     *  - nota 0xB2 (instrumento 8, volumen 0x38) que sube a 0xB5 en 5 ticks,
+     *  - y a los 6 ticks, un segundo barrido hasta 0xB9 en 0x12 ticks,
+     *  - key-off 2 ticks antes del final (duración total 0x30 ticks ≈ 96 ms).
+     * La interpolación replica `ComputePitchAdd`/`Chan_DoAnyFade` (incremento 8.8 por
+     * tick, y clavar el objetivo en el último). Antes el salto era la primera nota
+     * estirada: el mismo bip plano de siempre.
+     */
+    fun renderSfx1Jump(aram: ByteArray, bank: SmwSoundFx.SoundBank, outRate: Int = DEFAULT_OUTPUT_RATE): ShortArray? {
+        val instr = 8
+        val srcn = instrumentSample(aram, instr)
+        val sample = bank.samples.firstOrNull { it.index == srcn } ?: return null
+        val src = sample.pcm
+        if (src.isEmpty()) return null
+        val pitchBase = instrumentPitchBase(aram, instr)
+
+        var pitch88 = (0xB2 and 0x7F) shl 8
+        var slideLen = 5
+        var target = 0xB5 and 0x7F
+        var addPerTick = ((target shl 8) - pitch88) / slideLen
+
+        val gain = 0x38 / 128f // V7VOL = 0x38
+        val tickSamples = (outRate * ENGINE_TICK_SEC).toInt().coerceAtLeast(1)
+        val totalTicks = 0x30
+        val out = ShortArray(tickSamples * totalTicks)
+        val loopStart = sample.loopStartSample.coerceIn(0, src.size - 1)
+        val loopLen = src.size - loopStart
+        val canLoop = sample.hasLoop && loopLen > 1
+        var pos = 0f
+        var keyedOff = false
+        var o = 0
+
+        var countdown = totalTicks
+        while (countdown > 0) {
+            countdown--
+            if (countdown == 0x2A) { // chan7_countdown_2 == 0x2A: segundo barrido
+                slideLen = 0x12
+                target = 0xB9 and 0x7F
+                addPerTick = ((target shl 8) - pitch88) / slideLen
+            }
+            if (countdown == 2) keyedOff = true // key-off: caída rápida
+            if (slideLen > 0) { // Sfx_WritePitchSweep (Chan_DoAnyFade)
+                slideLen--
+                pitch88 = if (slideLen == 0) target shl 8 else pitch88 + addPerTick
+            }
+            val dsp = dspPitchFixed(pitch88, pitchBase)
+            val srcRate =
+                if (dsp <= 0) sample.sampleRate.toFloat()
+                else sample.sampleRate * (dsp.toFloat() / NATIVE_PITCH)
+            val step = srcRate / outRate
+            for (i in 0 until tickSamples) {
+                var p = pos
+                if (p >= loopStart) {
+                    p = if (canLoop) loopStart + ((p - loopStart) % loopLen)
+                    else if (p < src.size) p else Float.NaN
+                }
+                var s = 0f
+                if (!p.isNaN()) {
+                    val i0 = p.toInt()
+                    val frac = p - i0
+                    val a = src[i0.coerceIn(0, src.size - 1)].toFloat()
+                    val b = src[(i0 + 1).coerceIn(0, src.size - 1)].toFloat()
+                    s = a + (b - a) * frac
+                }
+                var g = gain
+                if (o < tickSamples) g *= o.toFloat() / tickSamples // ataque de 1 tick
+                if (keyedOff) g *= 1f - i.toFloat() / tickSamples   // release del key-off
+                out[o++] = (s * g).toInt().coerceIn(-32768, 32767).toShort()
+                pos += step
+            }
+            if (keyedOff) break
+        }
+        return out.copyOf(o)
     }
 
     /**
