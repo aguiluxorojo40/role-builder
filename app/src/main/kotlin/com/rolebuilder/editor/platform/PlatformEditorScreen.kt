@@ -144,6 +144,10 @@ private enum class RailAction(val label: String) {
     BORRAR("Borrar"),
 }
 
+/** Un favorito de la hotbar: una instantánea del pincel actual (herramienta + tile
+ *  o enemigo seleccionado). Al tocarlo se restaura esa selección. */
+private data class Fav(val tool: PTool, val tile: Int, val enemyId: Int)
+
 /** Qué clase de objeto está seleccionado en el modo Seleccionar. */
 private enum class SelKind { ENEMY, ITEM, START }
 
@@ -327,6 +331,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         mutableStateListOf(RailAction.NUEVO, RailAction.AJUSTES, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR)
     }
     var showRailConfig by remember { mutableStateOf(false) }
+    // Hotbar de favoritos (abajo-centro): instantáneas del pincel actual, editable.
+    val favs = remember { mutableStateListOf<Fav>() }
+    var favEdit by remember { mutableStateOf(false) }
     // Despacha una acción del raíl al mismo manejador que ya usa la app.
     val onRail: (RailAction) -> Unit = { a ->
         when (a) {
@@ -336,7 +343,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             RailAction.BLOQUES -> showMap16 = true
             RailAction.AVANZADO -> showRomImport = true
             RailAction.GUARDAR -> { state.save(); Toast.makeText(context, "Nivel guardado", Toast.LENGTH_SHORT).show() }
-            RailAction.PROBAR -> { state.save(); context.startActivity(PlatformerActivity.intentForProject(context, projectDir, map.id)) }
+            RailAction.PROBAR -> {
+                state.save()
+                state.currentMap?.let { context.startActivity(PlatformerActivity.intentForProject(context, projectDir, it.id)) }
+            }
             RailAction.ZOOM_IN -> scale = (scale * 1.25f).coerceIn(8f, 96f)
             RailAction.ZOOM_OUT -> scale = (scale / 1.25f).coerceIn(8f, 96f)
             RailAction.BORRAR -> tool = PTool.ERASE
@@ -608,6 +618,44 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         onConfig = { showRailConfig = true },
                         modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
                     )
+                }
+                // Hotbar de favoritos (abajo-centro), oculta en modo limpio.
+                if (!cleanMode) {
+                    Row(
+                        Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp)
+                            .clip(RoundedCornerShape(14.dp)).background(Glass)
+                            .border(1.dp, GlassStroke, RoundedCornerShape(14.dp))
+                            .horizontalScroll(rememberScrollState()).padding(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        favs.forEach { f ->
+                            FavSlot(f, tileset, tilesetBitmap, enemyAtlas, favEdit) {
+                                if (favEdit) {
+                                    favs.remove(f)
+                                } else {
+                                    tool = f.tool
+                                    if (f.tool != PTool.SELECT) lastPaint = f.tool
+                                    selectedTile = f.tile
+                                    selectedEnemyId = f.enemyId
+                                }
+                            }
+                        }
+                        // Añadir el pincel actual como favorito.
+                        Box(
+                            Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))
+                                .border(1.dp, LuigiGreen, RoundedCornerShape(10.dp))
+                                .clickable { favs.add(Fav(tool, selectedTile, selectedEnemyId)) },
+                            contentAlignment = Alignment.Center,
+                        ) { Text("+", color = LuigiGreen, style = MaterialTheme.typography.titleMedium) }
+                        // Editar (quitar) favoritos.
+                        Box(
+                            Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))
+                                .border(1.dp, if (favEdit) CoinYellow else GlassStroke, RoundedCornerShape(10.dp))
+                                .clickable { favEdit = !favEdit },
+                            contentAlignment = Alignment.Center,
+                        ) { Text("✎", color = if (favEdit) CoinYellow else Color.White) }
+                    }
                 }
                 // Botón flotante que invoca la rueda.
                 RadialFab(
@@ -1356,4 +1404,77 @@ private fun RailConfigDialog(
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Listo") } },
     )
+}
+
+// ============================================================================
+//  HOTBAR DE FAVORITOS  (abajo-centro)
+//  Cada casilla es una instantánea del pincel (tile o enemigo real) que se
+//  restaura al tocarla. "+" fija el pincel actual; ✎ permite quitarlos.
+// ============================================================================
+
+@Composable
+private fun FavSlot(
+    fav: Fav,
+    tileset: Tileset?,
+    tilesetBitmap: ImageBitmap?,
+    enemyAtlas: ImageBitmap?,
+    editing: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier.size(46.dp).clip(RoundedCornerShape(10.dp)).background(Panel)
+            .border(1.dp, if (editing) MarioRed else GlassStroke, RoundedCornerShape(10.dp))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        when (fav.tool) {
+            PTool.TERRAIN, PTool.DECOR, PTool.COLLISION -> {
+                if (tileset != null && tilesetBitmap != null && fav.tile in 0 until tileset.tileCount) {
+                    Canvas(Modifier.size(38.dp)) {
+                        val col = fav.tile % tileset.columns
+                        val row = fav.tile / tileset.columns
+                        drawImage(
+                            image = tilesetBitmap,
+                            srcOffset = IntOffset(col * tileset.tileSize, row * tileset.tileSize),
+                            srcSize = IntSize(tileset.tileSize, tileset.tileSize),
+                            dstOffset = IntOffset.Zero,
+                            dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                        )
+                    }
+                } else {
+                    FavLabel(fav.tool.short)
+                }
+            }
+            PTool.ENEMY -> {
+                val ids = SmwEnemyGraphics.curatedIds
+                val idx = ids.indexOf(fav.enemyId)
+                if (enemyAtlas != null && idx >= 0) {
+                    val fw = enemyAtlas.width / ids.size.coerceAtLeast(1)
+                    Canvas(Modifier.size(width = 22.dp, height = 44.dp)) {
+                        drawImage(
+                            image = enemyAtlas,
+                            srcOffset = IntOffset(idx * fw, 0),
+                            srcSize = IntSize(fw, enemyAtlas.height),
+                            dstOffset = IntOffset.Zero,
+                            dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                        )
+                    }
+                } else {
+                    FavLabel("Enem.")
+                }
+            }
+            else -> FavLabel(fav.tool.short)
+        }
+        if (editing) {
+            Box(
+                Modifier.align(Alignment.TopEnd).size(16.dp).clip(CircleShape).background(MarioRed),
+                contentAlignment = Alignment.Center,
+            ) { Text("–", color = Color.White, style = MaterialTheme.typography.labelSmall) }
+        }
+    }
+}
+
+@Composable
+private fun FavLabel(text: String) {
+    Text(text, color = Color.White, style = MaterialTheme.typography.labelSmall, maxLines = 1)
 }
