@@ -84,6 +84,7 @@ import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.snes.SmwBlockAction
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.core.snes.SnesDecoder
@@ -150,6 +151,31 @@ private enum class RailAction(val label: String) {
 /** Un favorito de la hotbar: una instantánea del pincel actual (herramienta + tile
  *  o enemigo seleccionado). Al tocarlo se restaura esa selección. */
 private data class Fav(val tool: PTool, val tile: Int, val enemyId: Int)
+
+/**
+ * Categoría de una tesela del tileset, por PROPÓSITO (no por aspecto), para agrupar la
+ * paleta como en Super Mario Maker. Se deriva de los metadatos que ya trae el tileset
+ * importado: [Tileset.platformBlockActions] (moneda / bloque ?) y [Tileset.platformSolidity]
+ * (terreno / pinchos). Lo que no encaja es decoración/fondo.
+ */
+private enum class TileCat(val label: String) {
+    TERRENO("Terreno"),
+    BLOQUES("Bloques"),
+    MONEDAS("Monedas"),
+    PELIGROS("Peligros"),
+    DECORACION("Decoración"),
+}
+
+private fun tileCategory(tileset: Tileset, tile: Int): TileCat {
+    when (tileset.platformBlockActions.getOrNull(tile)) {
+        SmwBlockAction.COIN.ordinal -> return TileCat.MONEDAS
+        SmwBlockAction.QUESTION.ordinal -> return TileCat.BLOQUES
+    }
+    val sol = tileset.platformSolidity.getOrNull(tile)
+    if (sol == SmwSolidity.SPIKE.ordinal) return TileCat.PELIGROS
+    val solid = if (sol != null) sol != SmwSolidity.NONE.ordinal else !tileset.isPassable(tile)
+    return if (solid) TileCat.TERRENO else TileCat.DECORACION
+}
 
 /** Qué clase de objeto está seleccionado en el modo Seleccionar. */
 private enum class SelKind { ENEMY, ITEM, START }
@@ -892,32 +918,62 @@ private fun SelectionPanel(
 
 @Composable
 private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, onSelect: (Int) -> Unit) {
-    LazyHorizontalGrid(
-        rows = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxWidth().height(104.dp).background(Panel),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        items((0 until tileset.tileCount).toList()) { tile ->
-            val col = tile % tileset.columns
-            val row = tile / tileset.columns
-            Canvas(
-                modifier = Modifier.size(44.dp)
-                    .border(
-                        width = if (selected == tile) 3.dp else 1.dp,
-                        color = if (selected == tile) MarioRed else Color(0x33FFFFFF),
-                        shape = RoundedCornerShape(4.dp),
-                    )
-                    .clickable { onSelect(tile) },
-            ) {
-                drawImage(
-                    image = bitmap,
-                    srcOffset = IntOffset(col * tileset.tileSize, row * tileset.tileSize),
-                    srcSize = IntSize(tileset.tileSize, tileset.tileSize),
-                    dstOffset = IntOffset.Zero,
-                    dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+    // Clasifica las teselas por categoría una sola vez por tileset (eficiente).
+    val byCat = remember(tileset) {
+        val m = linkedMapOf<TileCat, MutableList<Int>>()
+        for (t in 0 until tileset.tileCount) m.getOrPut(tileCategory(tileset, t)) { mutableListOf() }.add(t)
+        m
+    }
+    val cats = remember(byCat) { TileCat.entries.filter { !byCat[it].isNullOrEmpty() } }
+    var cat by remember(tileset) { mutableStateOf(cats.firstOrNull() ?: TileCat.TERRENO) }
+
+    Column(Modifier.fillMaxWidth().background(Panel)) {
+        // Pestañas de categoría (estilo Super Mario Maker: terreno con terreno…).
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            cats.forEach { c ->
+                FilterChip(
+                    selected = cat == c,
+                    onClick = { cat = c },
+                    label = { Text("${c.label} ${byCat[c]?.size ?: 0}") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MarioRed,
+                        selectedLabelColor = Color.Black,
+                    ),
                 )
+            }
+        }
+        val tiles = byCat[cat] ?: emptyList()
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxWidth().height(104.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            items(tiles) { tile ->
+                val col = tile % tileset.columns
+                val row = tile / tileset.columns
+                Canvas(
+                    modifier = Modifier.size(44.dp)
+                        .border(
+                            width = if (selected == tile) 3.dp else 1.dp,
+                            color = if (selected == tile) MarioRed else Color(0x33FFFFFF),
+                            shape = RoundedCornerShape(4.dp),
+                        )
+                        .clickable { onSelect(tile) },
+                ) {
+                    drawImage(
+                        image = bitmap,
+                        srcOffset = IntOffset(col * tileset.tileSize, row * tileset.tileSize),
+                        srcSize = IntSize(tileset.tileSize, tileset.tileSize),
+                        dstOffset = IntOffset.Zero,
+                        dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                    )
+                }
             }
         }
     }
