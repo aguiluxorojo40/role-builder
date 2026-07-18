@@ -12,7 +12,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -338,7 +338,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         val init = uiPrefs.getString("rail", null)
             ?.split(",")?.mapNotNull { runCatching { RailAction.valueOf(it) }.getOrNull() }
             ?.takeIf { it.isNotEmpty() }
-            ?: listOf(RailAction.NUEVO, RailAction.AJUSTES, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR)
+            ?: listOf(
+                RailAction.NUEVO, RailAction.AJUSTES, RailAction.ROM, RailAction.BLOQUES,
+                RailAction.AVANZADO, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR,
+            )
         mutableStateListOf(*init.toTypedArray())
     }
     var showRailConfig by remember { mutableStateOf(false) }
@@ -459,7 +462,6 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 var selDrag: Selected? = null
 
                                 fun applyAt(position: Offset) {
-                                    if (wheelOpen) return // la rueda está abierta: no pintar
                                     val tx = floor((position.x - pan.x) / scale).toInt()
                                     val ty = floor((position.y - pan.y) / scale).toInt()
                                     if (lastCell == tx to ty) return
@@ -556,13 +558,6 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     }
                                 }
                             }
-                        }
-                        // Mantener pulsado (sin mover) abre la rueda radial. Va DESPUÉS del
-                        // gesto de pintar para que pintar/arrastrar/pellizcar tengan
-                        // prioridad; solo dispara en pulsación larga y estática, y applyAt
-                        // ignora los toques mientras la rueda está abierta.
-                        .pointerInput(Unit) {
-                            detectTapGestures(onLongPress = { wheelOpen = true })
                         },
                 ) {
                     drawLevel(
@@ -1422,9 +1417,11 @@ private fun EditableRail(
 ) {
     Column(
         modifier
+            .heightIn(max = 340.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(Glass)
             .border(1.dp, GlassStroke, RoundedCornerShape(14.dp))
+            .verticalScroll(rememberScrollState())
             .padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
