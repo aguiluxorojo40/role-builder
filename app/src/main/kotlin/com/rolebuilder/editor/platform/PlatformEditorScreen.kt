@@ -349,12 +349,15 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
     // Hoja de la moneda real de SMW (para el icono del sector Moneda en la rueda).
     val coinAtlas = remember { loadAssetImageBitmap(context, "sprites/coin.png") }
-    // Reloj de animación del editor: teselas animadas (monedas, ? bloques…) cobran vida.
-    // Solo tictea si el nivel tiene teselas animadas (si no, no redibuja de balde).
+    // Reloj de animación del editor: teselas animadas (monedas, ? bloques…) y las
+    // MONEDAS COLOCADAS cobran vida. Solo tictea si hay algo que animar (si no, no
+    // redibuja de balde) — cuidando el rendimiento.
     var animFrame by remember { mutableIntStateOf(0) }
     val animByBase = remember(tileset) { animMap(tileset) }
-    LaunchedEffect(animByBase.isEmpty()) {
-        if (animByBase.isNotEmpty()) while (true) { delay(140); animFrame = (animFrame + 1) and 0x3FFFFFFF }
+    val hasAnim = animByBase.isNotEmpty() ||
+        (map?.platformItems?.any { it.type == PlatformItemType.COIN } == true)
+    LaunchedEffect(hasAnim) {
+        if (hasAnim) while (true) { delay(140); animFrame = (animFrame + 1) and 0x3FFFFFFF }
     }
 
     // Selector de ROM: al elegir un .sfc, auto-importa los niveles con gráficos reales.
@@ -649,6 +652,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         selected = selected.takeIf { tool == PTool.SELECT },
                         animByBase = animByBase,
                         animFrame = animFrame,
+                        coinAtlas = coinAtlas,
                     )
                 }
 
@@ -1261,6 +1265,7 @@ private fun DrawScope.drawLevel(
     selected: Selected? = null,
     animByBase: Map<Int, List<Int>> = emptyMap(),
     animFrame: Int = 0,
+    coinAtlas: ImageBitmap? = null,
 ) {
     val tilePx = scale
     val minX = floor(-pan.x / tilePx).toInt().coerceAtLeast(0)
@@ -1346,18 +1351,32 @@ private fun DrawScope.drawLevel(
         }
     }
 
-    // Ítems: monedas (dorado) y meta (poste + banderín verde).
+    // Ítems: monedas (sprite REAL animado, como al jugar) y meta (poste + banderín).
     for (item in map.platformItems) {
         if (item.x < minX - 1 || item.x > maxX + 1) continue
         val ox = pan.x + item.x * tilePx
         val oy = pan.y + item.y * tilePx
         when (item.type) {
             PlatformItemType.COIN -> {
-                drawRect(
-                    Color(0xFFFFD54F),
-                    topLeft = Offset(ox + tilePx * 0.28f, oy + tilePx * 0.14f),
-                    size = Size(tilePx * 0.44f, tilePx * 0.72f),
-                )
+                val ca = coinAtlas
+                if (ca != null) {
+                    // coin.png = 4 fotogramas de 16×16 en fila: gira a la cadencia del reloj.
+                    val frames = (ca.width / 16).coerceAtLeast(1)
+                    val fr = animFrame % frames
+                    drawImage(
+                        image = ca,
+                        srcOffset = IntOffset(fr * 16, 0),
+                        srcSize = IntSize(16, minOf(16, ca.height)),
+                        dstOffset = IntOffset(ox.toInt(), oy.toInt()),
+                        dstSize = IntSize(tilePx.toInt() + 1, tilePx.toInt() + 1),
+                    )
+                } else {
+                    drawRect(
+                        Color(0xFFFFD54F),
+                        topLeft = Offset(ox + tilePx * 0.28f, oy + tilePx * 0.14f),
+                        size = Size(tilePx * 0.44f, tilePx * 0.72f),
+                    )
+                }
             }
             PlatformItemType.GOAL -> {
                 drawRect(Color(0xFFE0E0E0), topLeft = Offset(ox + tilePx * 0.44f, oy - tilePx), size = Size(tilePx * 0.12f, tilePx * 2f))
