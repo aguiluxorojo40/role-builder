@@ -162,21 +162,21 @@ private data class Fav(val tool: PTool, val tile: Int, val enemyId: Int)
  */
 private enum class TileCat(val label: String) {
     TERRENO("Terreno"),
-    BLOQUES("Bloques"),
-    MONEDAS("Monedas"),
-    PELIGROS("Peligros"),
-    DECORACION("Decoración"),
+    ITEMS("Ítems"),
 }
 
+/**
+ * Tabs de teselas al estilo Super Mario Maker 2: **Terreno** (suelo, cuestas,
+ * decoración, pinchos — todo lo estructural/escénico) e **Ítems** (monedas, bloques
+ * ?/premio — lo interactivo/coleccionable). Enemigos y Gizmos son otras herramientas
+ * (radial), no teselas. La categoría sale del comportamiento REAL del bloque
+ * ([Tileset.platformBlockActions]), igual que lo decide la ROM.
+ */
 private fun tileCategory(tileset: Tileset, tile: Int): TileCat {
-    when (tileset.platformBlockActions.getOrNull(tile)) {
-        SmwBlockAction.COIN.ordinal -> return TileCat.MONEDAS
-        SmwBlockAction.QUESTION.ordinal -> return TileCat.BLOQUES
+    return when (tileset.platformBlockActions.getOrNull(tile)) {
+        SmwBlockAction.COIN.ordinal, SmwBlockAction.QUESTION.ordinal -> TileCat.ITEMS
+        else -> TileCat.TERRENO
     }
-    val sol = tileset.platformSolidity.getOrNull(tile)
-    if (sol == SmwSolidity.SPIKE.ordinal) return TileCat.PELIGROS
-    val solid = if (sol != null) sol != SmwSolidity.NONE.ordinal else !tileset.isPassable(tile)
-    return if (solid) TileCat.TERRENO else TileCat.DECORACION
 }
 
 /** Mapa tesela-base → fotogramas, para animar en el editor las teselas animadas. */
