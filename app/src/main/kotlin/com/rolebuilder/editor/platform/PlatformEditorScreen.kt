@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -29,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -94,7 +96,10 @@ import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import com.rolebuilder.player.PlatformerActivity
 import java.io.File
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 // Paleta visual propia del Platform Builder (verdes/cielo estilo SMW), para que
 // se distinga de un vistazo del editor top-down del Role Builder.
@@ -112,16 +117,16 @@ private val Glass = Color(0x9910131C)
 private val GlassStroke = Color(0x33FFFFFF)
 
 /** Herramientas del editor de plataformas. */
-private enum class PTool(val label: String) {
-    SELECT("Seleccionar"),
-    TERRAIN("Primer plano"),
-    DECOR("Fondo"),
-    ERASE("Borrar"),
-    ENEMY("Enemigo"),
-    COIN("Moneda"),
-    GOAL("Meta"),
-    START("Inicio"),
-    COLLISION("Colisión"),
+private enum class PTool(val label: String, val short: String = label) {
+    SELECT("Seleccionar", "Sel"),
+    TERRAIN("Primer plano", "1er\nplano"),
+    DECOR("Fondo", "Fondo"),
+    ERASE("Borrar", "Borrar"),
+    ENEMY("Enemigo", "Enem."),
+    COIN("Moneda", "Mon."),
+    GOAL("Meta", "Meta"),
+    START("Inicio", "Inicio"),
+    COLLISION("Colisión", "Colis."),
 }
 
 /** Qué clase de objeto está seleccionado en el modo Seleccionar. */
@@ -296,6 +301,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
     var showMap16 by remember { mutableStateOf(false) }
+    // Menú radial (lienzo-primero): la rueda se invoca con el botón flotante; el
+    // "modo limpio" oculta el chrome para ver el nivel entero. lastPaint recuerda la
+    // última herramienta de pintar para alternar con Seleccionar desde el centro.
+    var wheelOpen by remember { mutableStateOf(false) }
+    var cleanMode by remember { mutableStateOf(false) }
+    var lastPaint by remember { mutableStateOf(PTool.TERRAIN) }
 
     DisposableEffect(state) { onDispose { if (state.dirty) state.save() } }
 
@@ -333,68 +344,47 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // ---------- fila 1: nivel y acciones ----------
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 4.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Glass)
-                    .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                DropdownField(
-                    label = "Nivel",
-                    options = state.mapList,
-                    selected = map,
-                    optionLabel = { "${it.id}: ${it.name}" },
-                    onSelect = { state.selectMap(it.id) },
-                )
-                IconButton(onClick = { showNewLevel = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Nuevo nivel", tint = Color.White)
-                }
-                IconButton(onClick = { showLevelSettings = true }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes del nivel", tint = Color.White)
-                }
-                Button(
-                    onClick = { romPicker.launch("*/*") },
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MarioRed, contentColor = Color.Black),
-                ) { Text("⚡ Cargar ROM") }
-                TextButton(onClick = { showMap16 = true }) {
-                    Text("Bloques Map16", color = LuigiGreen)
-                }
-                TextButton(onClick = { showRomImport = true }) {
-                    Text("Avanzado", color = MarioBlue)
-                }
-            }
-            // ---------- fila 2: herramientas de edición ----------
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp, bottom = 4.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Glass)
-                    .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PTool.entries.forEach { t ->
-                    FilterChip(
-                        selected = tool == t,
-                        onClick = { tool = t },
-                        label = { Text(t.label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MarioRed,
-                            selectedLabelColor = Color.Black,
-                        ),
+            // ---------- fila 1: nivel y acciones (se oculta en modo limpio) ----------
+            if (!cleanMode) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 4.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Glass)
+                        .border(1.dp, GlassStroke, RoundedCornerShape(16.dp))
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    DropdownField(
+                        label = "Nivel",
+                        options = state.mapList,
+                        selected = map,
+                        optionLabel = { "${it.id}: ${it.name}" },
+                        onSelect = { state.selectMap(it.id) },
                     )
+                    IconButton(onClick = { showNewLevel = true }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Nuevo nivel", tint = Color.White)
+                    }
+                    IconButton(onClick = { showLevelSettings = true }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Ajustes del nivel", tint = Color.White)
+                    }
+                    Button(
+                        onClick = { romPicker.launch("*/*") },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MarioRed, contentColor = Color.Black),
+                    ) { Text("⚡ Cargar ROM") }
+                    TextButton(onClick = { showMap16 = true }) {
+                        Text("Bloques Map16", color = LuigiGreen)
+                    }
+                    TextButton(onClick = { showRomImport = true }) {
+                        Text("Avanzado", color = MarioBlue)
+                    }
                 }
             }
+            // La fila de herramientas se sustituye por el MENÚ RADIAL (botón flotante
+            // sobre el lienzo): lienzo-primero, sin barra de chips permanente.
 
             // ---------- lienzo con scroll lateral ----------
             Box(Modifier.weight(1f).fillMaxWidth().background(SkyBlue.copy(alpha = 0.25f))) {
@@ -566,10 +556,45 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         ) { Text("⚡ Cargar ROM de SMW") }
                     }
                 }
+
+                // ---------- MENÚ RADIAL (lienzo-primero) ----------
+                if (wheelOpen) {
+                    // scrim: tocar fuera cierra la rueda
+                    Box(Modifier.fillMaxSize().clickable { wheelOpen = false })
+                    RadialWheel(
+                        tool = tool,
+                        onPickTool = { picked ->
+                            if (picked != PTool.SELECT) lastPaint = picked
+                            tool = picked
+                            wheelOpen = false
+                        },
+                        onToggleSelect = {
+                            if (tool == PTool.SELECT) {
+                                tool = lastPaint
+                            } else {
+                                lastPaint = tool
+                                tool = PTool.SELECT
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
+                // Botón flotante que invoca la rueda.
+                RadialFab(
+                    open = wheelOpen,
+                    onClick = { wheelOpen = !wheelOpen },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                )
+                // Modo limpio: oculta el chrome para ver el nivel entero.
+                CleanToggle(
+                    clean = cleanMode,
+                    onClick = { cleanMode = !cleanMode },
+                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                )
             }
 
-            // ---------- paleta inferior ----------
-            when (tool) {
+            // ---------- paleta inferior (se oculta en modo limpio) ----------
+            if (!cleanMode) when (tool) {
                 PTool.SELECT -> SelectionPanel(
                     selected = selected,
                     enemyAtlas = enemyAtlas,
@@ -1095,5 +1120,130 @@ private fun DrawScope.drawLevel(
     selected?.let { sel ->
         val topLeft = Offset(pan.x + sel.x * tilePx, pan.y + sel.y * tilePx)
         drawRect(CoinYellow, topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
+    }
+}
+
+// ============================================================================
+//  MENÚ RADIAL  (lienzo-primero)
+//  La rueda sustituye a la barra de chips de herramientas: se invoca con el
+//  botón flotante y se cierra al elegir, dejando todo el lienzo para el nivel.
+// ============================================================================
+
+/** Herramientas que forman los sectores de la rueda (Seleccionar es el centro). */
+private val WHEEL_TOOLS = listOf(
+    PTool.TERRAIN, PTool.DECOR, PTool.ENEMY, PTool.COIN,
+    PTool.GOAL, PTool.START, PTool.COLLISION, PTool.ERASE,
+)
+
+/** Color de marca por herramienta (para leer la rueda de un vistazo). */
+private fun toolColor(t: PTool): Color = when (t) {
+    PTool.TERRAIN -> LuigiGreen
+    PTool.DECOR -> MarioBlue
+    PTool.ENEMY -> Color(0xFFB5651D)
+    PTool.COIN -> CoinYellow
+    PTool.GOAL -> Color(0xFF35C759)
+    PTool.START -> MarioRed
+    PTool.COLLISION -> Color(0xFF40C4FF)
+    PTool.ERASE -> Color(0xFF9AA6BE)
+    PTool.SELECT -> MarioBlue
+}
+
+/** La rueda radial: disco de fondo, centro = Seleccionar, y los sectores en círculo. */
+@Composable
+private fun RadialWheel(
+    tool: PTool,
+    onPickTool: (PTool) -> Unit,
+    onToggleSelect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val radius = 108f // dp del centro a cada sector
+    Box(modifier.size(300.dp), contentAlignment = Alignment.Center) {
+        // disco de fondo (hace que se lea como RUEDA, no sectores sueltos)
+        Box(
+            Modifier.size(248.dp).clip(CircleShape).background(Panel)
+                .border(1.dp, GlassStroke, CircleShape),
+        )
+        WHEEL_TOOLS.forEachIndexed { i, t ->
+            val ang = (-90.0 + i * (360.0 / WHEEL_TOOLS.size)) * PI / 180.0
+            SectorButton(
+                tool = t,
+                selected = tool == t,
+                modifier = Modifier.offset(x = (cos(ang) * radius).dp, y = (sin(ang) * radius).dp),
+                onClick = { onPickTool(t) },
+            )
+        }
+        // centro: alterna Dibujar (última de pintar) / Seleccionar
+        val selecting = tool == PTool.SELECT
+        Box(
+            Modifier.size(76.dp).clip(CircleShape)
+                .background(if (selecting) MarioBlue else Panel)
+                .border(2.dp, if (selecting) MarioBlue else GlassStroke, CircleShape)
+                .clickable { onToggleSelect() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                if (selecting) "Selec." else "Dibujar",
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+        }
+    }
+}
+
+/** Un sector de la rueda: token circular con el color de la herramienta y su etiqueta. */
+@Composable
+private fun SectorButton(
+    tool: PTool,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val c = toolColor(tool)
+    Box(
+        modifier.size(64.dp).clip(CircleShape)
+            .background(if (selected) c else Panel)
+            .border(2.dp, if (selected) CoinYellow else c.copy(alpha = 0.7f), CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            tool.short,
+            color = if (selected) Color.Black else Color.White,
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+    }
+}
+
+/** Botón flotante que abre/cierra la rueda (dorado, esquina). */
+@Composable
+private fun RadialFab(open: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(60.dp).clip(CircleShape)
+            .background(CoinYellow)
+            .border(2.dp, if (open) MarioRed else Color(0x55000000), CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            if (open) "✕" else "☰",
+            color = Color(0xFF06210D),
+            style = MaterialTheme.typography.titleLarge,
+        )
+    }
+}
+
+/** Interruptor de "modo limpio" (oculta el chrome para ver el nivel entero). */
+@Composable
+private fun CleanToggle(clean: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(44.dp).clip(CircleShape)
+            .background(if (clean) MarioBlue.copy(alpha = 0.9f) else Panel)
+            .border(1.dp, GlassStroke, CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(if (clean) "▣" else "⛶", color = Color.White, style = MaterialTheme.typography.titleMedium)
     }
 }
