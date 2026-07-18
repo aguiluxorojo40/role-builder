@@ -24,6 +24,15 @@ class SmwBlockBehaviorTest {
     }
 
     @Test
+    fun `la dragon coin son los bytes bajos 0x2D-0x2E apilados`() {
+        assertEquals(SmwBlockAction.DRAGON_COIN, SmwBlockBehavior.classify(0x2D)) // mitad abajo
+        assertEquals(SmwBlockAction.DRAGON_COIN, SmwBlockBehavior.classify(0x2E)) // mitad arriba
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x2C))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x2F))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x12D)) // 0x2D pero plano alto 1
+    }
+
+    @Test
     fun `el terreno y los bloques del plano alto no son interactivos`() {
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x25)) // aire
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x100)) // terreno sólido

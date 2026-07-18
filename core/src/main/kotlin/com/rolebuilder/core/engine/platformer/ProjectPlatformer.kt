@@ -149,6 +149,7 @@ object ProjectPlatformer {
                 val sa = tileset.platformBlockActions.getOrNull(tile) ?: continue
                 val ea = when (sa) {
                     SmwBlockAction.COIN.ordinal -> BlockAction.COIN.ordinal
+                    SmwBlockAction.DRAGON_COIN.ordinal -> BlockAction.DRAGON_COIN.ordinal
                     SmwBlockAction.QUESTION.ordinal -> BlockAction.PRIZE.ordinal
                     else -> BlockAction.NONE.ordinal
                 }

@@ -82,8 +82,10 @@ class PlacedItem(val x: Float, val y: Float, val kind: ItemKind) {
  *  - [PRIZE]: bloque `?`: sólido; al golpearlo desde abajo suelta el premio (SETA si
  *    el jugador es pequeño, moneda si ya es grande) y queda "usado" (sigue sólido
  *    pero ya no premia).
+ *  - [DRAGON_COIN]: la moneda grande "Yoshi/Dragon Coin" (objeto de 16×32 = dos celdas
+ *    apiladas); se recoge al tocarla como una moneda enorme y cada 5 dan una vida extra.
  */
-enum class BlockAction { NONE, COIN, PRIZE }
+enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN }
 
 private val BLOCK_ACTIONS = BlockAction.values()
 
@@ -256,6 +258,18 @@ class PlatformerEngine(
 
     /** Contador monótono de "moneda conseguida" para el audio (SFX de moneda). */
     var coinEvents = 0
+        private set
+
+    /** Dragon Coins ("Yoshi Coins") recogidas en el nivel (0..4; a la 5ª da vida y vuelve a 0). */
+    var dragonCoins = 0
+        private set
+
+    /** Contador monótono de "Dragon Coin conseguida" (SFX/animación propios). */
+    var dragonCoinEvents = 0
+        private set
+
+    /** Contador monótono de vidas extra por juntar 5 Dragon Coins (evento 1-up). */
+    var oneUpEvents = 0
         private set
 
     /** Input horizontal (-1 izquierda, +1 derecha) y botón de correr. */
@@ -626,12 +640,32 @@ class PlatformerEngine(
         val r0 = (p.y / tileSize).toInt()
         val r1 = ((p.y + h - 0.01f) / tileSize).toInt()
         for (r in r0..r1) for (c in c0..c1) {
-            if (blockActionAt(c, r) == BlockAction.COIN) {
-                setAction(c, r, BlockAction.NONE)
-                coins++
-                coinEvents++
+            when (blockActionAt(c, r)) {
+                BlockAction.COIN -> {
+                    setAction(c, r, BlockAction.NONE)
+                    coins++
+                    coinEvents++
+                }
+                BlockAction.DRAGON_COIN -> collectDragonCoinAt(c, r)
+                else -> {}
             }
         }
+    }
+
+    /**
+     * Recoge la Dragon Coin que toca la celda (c,r): como es un objeto de 16×32 (dos
+     * celdas apiladas), limpia toda la columna contigua de celdas Dragon Coin y cuenta
+     * UNA sola. Cada 5 → vida extra ([oneUpEvents]) y vuelve a 0, como en SMW.
+     */
+    private fun collectDragonCoinAt(c: Int, r: Int) {
+        setAction(c, r, BlockAction.NONE)
+        var rr = r - 1
+        while (blockActionAt(c, rr) == BlockAction.DRAGON_COIN) { setAction(c, rr, BlockAction.NONE); rr-- }
+        rr = r + 1
+        while (blockActionAt(c, rr) == BlockAction.DRAGON_COIN) { setAction(c, rr, BlockAction.NONE); rr++ }
+        dragonCoins++
+        dragonCoinEvents++
+        if (dragonCoins >= 5) { dragonCoins = 0; oneUpEvents++ }
     }
 
     /**

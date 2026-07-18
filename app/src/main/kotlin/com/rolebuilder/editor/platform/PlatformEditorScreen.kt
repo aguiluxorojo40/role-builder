@@ -174,7 +174,8 @@ private enum class TileCat(val label: String) {
  */
 private fun tileCategory(tileset: Tileset, tile: Int): TileCat {
     return when (tileset.platformBlockActions.getOrNull(tile)) {
-        SmwBlockAction.COIN.ordinal, SmwBlockAction.QUESTION.ordinal -> TileCat.ITEMS
+        SmwBlockAction.COIN.ordinal, SmwBlockAction.DRAGON_COIN.ordinal,
+        SmwBlockAction.QUESTION.ordinal -> TileCat.ITEMS
         else -> TileCat.TERRENO
     }
 }
