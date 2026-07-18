@@ -57,6 +57,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -127,6 +128,20 @@ private enum class PTool(val label: String, val short: String = label) {
     GOAL("Meta", "Meta"),
     START("Inicio", "Inicio"),
     COLLISION("Colisión", "Colis."),
+}
+
+/** Acciones REALES del editor que puede hospedar el raíl configurable (abajo-izq). */
+private enum class RailAction(val label: String) {
+    NUEVO("Nuevo"),
+    AJUSTES("Ajustes"),
+    ROM("ROM"),
+    BLOQUES("Bloques"),
+    AVANZADO("Avanz."),
+    GUARDAR("Guard."),
+    PROBAR("Probar"),
+    ZOOM_IN("Zoom +"),
+    ZOOM_OUT("Zoom −"),
+    BORRAR("Borrar"),
 }
 
 /** Qué clase de objeto está seleccionado en el modo Seleccionar. */
@@ -307,6 +322,26 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var wheelOpen by remember { mutableStateOf(false) }
     var cleanMode by remember { mutableStateOf(false) }
     var lastPaint by remember { mutableStateOf(PTool.TERRAIN) }
+    // Raíl configurable (abajo-izq): controles reales del editor, se añaden/quitan.
+    val railActions = remember {
+        mutableStateListOf(RailAction.NUEVO, RailAction.AJUSTES, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR)
+    }
+    var showRailConfig by remember { mutableStateOf(false) }
+    // Despacha una acción del raíl al mismo manejador que ya usa la app.
+    val onRail: (RailAction) -> Unit = { a ->
+        when (a) {
+            RailAction.NUEVO -> showNewLevel = true
+            RailAction.AJUSTES -> showLevelSettings = true
+            RailAction.ROM -> romPicker.launch("*/*")
+            RailAction.BLOQUES -> showMap16 = true
+            RailAction.AVANZADO -> showRomImport = true
+            RailAction.GUARDAR -> { state.save(); Toast.makeText(context, "Nivel guardado", Toast.LENGTH_SHORT).show() }
+            RailAction.PROBAR -> { state.save(); context.startActivity(PlatformerActivity.intentForProject(context, projectDir, map.id)) }
+            RailAction.ZOOM_IN -> scale = (scale * 1.25f).coerceIn(8f, 96f)
+            RailAction.ZOOM_OUT -> scale = (scale / 1.25f).coerceIn(8f, 96f)
+            RailAction.BORRAR -> tool = PTool.ERASE
+        }
+    }
 
     DisposableEffect(state) { onDispose { if (state.dirty) state.save() } }
 
@@ -365,22 +400,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         optionLabel = { "${it.id}: ${it.name}" },
                         onSelect = { state.selectMap(it.id) },
                     )
-                    IconButton(onClick = { showNewLevel = true }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Nuevo nivel", tint = Color.White)
-                    }
-                    IconButton(onClick = { showLevelSettings = true }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Ajustes del nivel", tint = Color.White)
-                    }
-                    Button(
-                        onClick = { romPicker.launch("*/*") },
-                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MarioRed, contentColor = Color.Black),
-                    ) { Text("⚡ Cargar ROM") }
-                    TextButton(onClick = { showMap16 = true }) {
-                        Text("Bloques Map16", color = LuigiGreen)
-                    }
-                    TextButton(onClick = { showRomImport = true }) {
-                        Text("Avanzado", color = MarioBlue)
-                    }
+                    // Las acciones (Nuevo, Ajustes, ROM, Bloques, Avanzado) viven ahora
+                    // en el RAÍL configurable abajo-izquierda (lienzo-primero).
                 }
             }
             // La fila de herramientas se sustituye por el MENÚ RADIAL (botón flotante
@@ -579,17 +600,26 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }
+                // Raíl configurable (abajo-izquierda), oculto en modo limpio.
+                if (!cleanMode) {
+                    EditableRail(
+                        active = railActions,
+                        onAct = onRail,
+                        onConfig = { showRailConfig = true },
+                        modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+                    )
+                }
                 // Botón flotante que invoca la rueda.
                 RadialFab(
                     open = wheelOpen,
                     onClick = { wheelOpen = !wheelOpen },
                     modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
                 )
-                // Modo limpio: oculta el chrome para ver el nivel entero.
+                // Modo limpio: justo encima del botón flotante.
                 CleanToggle(
                     clean = cleanMode,
                     onClick = { cleanMode = !cleanMode },
-                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 86.dp),
                 )
             }
 
@@ -658,6 +688,14 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
     if (showMap16) {
         Map16EditorDialog(state = state, onDismiss = { showMap16 = false })
+    }
+
+    if (showRailConfig) {
+        RailConfigDialog(
+            active = railActions,
+            onToggle = { a -> if (a in railActions) railActions.remove(a) else railActions.add(a) },
+            onDismiss = { showRailConfig = false },
+        )
     }
 
     if (showNewLevel) {
@@ -1246,4 +1284,76 @@ private fun CleanToggle(clean: Boolean, onClick: () -> Unit, modifier: Modifier 
     ) {
         Text(if (clean) "▣" else "⛶", color = Color.White, style = MaterialTheme.typography.titleMedium)
     }
+}
+
+// ============================================================================
+//  RAÍL CONFIGURABLE  (abajo-izquierda)
+//  Cluster pequeño con las acciones REALES del editor; se configura (añadir/
+//  quitar) desde un diálogo. Sustituye a la fila de acciones de arriba.
+// ============================================================================
+
+@Composable
+private fun EditableRail(
+    active: List<RailAction>,
+    onAct: (RailAction) -> Unit,
+    onConfig: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Glass)
+            .border(1.dp, GlassStroke, RoundedCornerShape(14.dp))
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        active.forEach { a -> RailButton(a.label) { onAct(a) } }
+        Box(
+            Modifier.size(34.dp).clip(CircleShape)
+                .border(1.dp, GlassStroke, CircleShape)
+                .clickable { onConfig() },
+            contentAlignment = Alignment.Center,
+        ) { Text("✎", color = Color.White, style = MaterialTheme.typography.labelLarge) }
+    }
+}
+
+@Composable
+private fun RailButton(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.size(width = 58.dp, height = 34.dp).clip(RoundedCornerShape(9.dp))
+            .background(Panel).border(1.dp, GlassStroke, RoundedCornerShape(9.dp))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = Color.White, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+    }
+}
+
+/** Diálogo para elegir qué controles reales aparecen en el raíl. */
+@Composable
+private fun RailConfigDialog(
+    active: List<RailAction>,
+    onToggle: (RailAction) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Configurar barra de acciones") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                RailAction.entries.forEach { a ->
+                    val on = a in active
+                    Row(
+                        Modifier.fillMaxWidth().clickable { onToggle(a) }.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(if (on) "☑" else "☐", color = if (on) LuigiGreen else Color.White)
+                        Text("  ${a.label}", color = Color.White)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Listo") } },
+    )
 }
