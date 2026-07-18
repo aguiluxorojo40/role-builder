@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
@@ -129,6 +130,7 @@ private enum class PTool(val label: String, val short: String = label) {
     GOAL("Meta", "Meta"),
     START("Inicio", "Inicio"),
     COLLISION("Colisión", "Colis."),
+    WARP("Warp", "Warp"),
 }
 
 /** Acciones REALES del editor que puede hospedar el raíl configurable (abajo-izq). */
@@ -357,6 +359,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         mutableStateListOf(*init.toTypedArray())
     }
     var favEdit by remember { mutableStateOf(false) }
+    // Celda donde se está colocando un warp (abre el diálogo de destino). null = ninguno.
+    var pendingWarp by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     // Guarda ambas listas (se llama tras cada cambio).
     val persistUi = {
         uiPrefs.edit()
@@ -529,6 +533,16 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                             val t1 = cur.tileAt(1, tx, ty)
                                             val picked = if (t0 != EMPTY_TILE) t0 else t1
                                             if (picked != EMPTY_TILE) selectedTile = picked
+                                        }
+                                        PTool.WARP -> {
+                                            // Sobre un warp existente lo quita; si no, abre el
+                                            // diálogo para configurar destino y tipo de entrada.
+                                            val existing = cur.platformWarps.firstOrNull { it.x == tx && it.y == ty }
+                                            if (existing != null) {
+                                                state.updateMap(cur.copy(platformWarps = cur.platformWarps - existing))
+                                            } else {
+                                                pendingWarp = tx to ty
+                                            }
                                         }
                                     }
                                 }
@@ -717,6 +731,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 PTool.COIN -> Hint("Toca para poner o quitar monedas. Se recogen al jugar y suman al contador.")
                 PTool.GOAL -> Hint("Toca para poner la meta (bandera). Al tocarla, el nivel se completa.")
                 PTool.START -> Hint("Toca el nivel para fijar dónde aparece el jugador.")
+                PTool.WARP -> Hint("Toca una celda para poner un warp (tubería/puerta) y elige a qué nivel y celda lleva. Tócalo otra vez para quitarlo.")
                 PTool.COLLISION -> CollisionPanel(
                     tileset = tileset,
                     bitmap = tilesetBitmap,
@@ -776,6 +791,25 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             active = railActions,
             onToggle = { a -> if (a in railActions) railActions.remove(a) else railActions.add(a); persistUi() },
             onDismiss = { showRailConfig = false },
+        )
+    }
+
+    pendingWarp?.let { (wx, wy) ->
+        WarpDialog(
+            maps = state.mapList,
+            currentMapId = map.id,
+            onDismiss = { pendingWarp = null },
+            onConfirm = { input, destMapId, dx, dy ->
+                state.currentMap?.let { cur ->
+                    state.updateMap(
+                        cur.copy(
+                            platformWarps = cur.platformWarps.filterNot { it.x == wx && it.y == wy } +
+                                MapWarp(wx, wy, input, destMapId, dx, dy),
+                        ),
+                    )
+                }
+                pendingWarp = null
+            },
         )
     }
 
@@ -1226,6 +1260,19 @@ private fun DrawScope.drawLevel(
         }
     }
 
+    // Warps (tuberías/puertas): recuadro teal con borde, para verlos y quitarlos.
+    for (w in map.platformWarps) {
+        if (w.x < minX - 1 || w.x > maxX + 1) continue
+        val ox = pan.x + w.x * tilePx
+        val oy = pan.y + w.y * tilePx
+        drawRect(Color(0x5517C0B8), topLeft = Offset(ox, oy), size = Size(tilePx, tilePx))
+        drawRect(Color(0xFF17C0B8), topLeft = Offset(ox, oy), size = Size(tilePx, tilePx), style = Stroke(width = 3f))
+        // flecha hacia dentro según el tipo de entrada (0=abajo,1=arriba,2=lado)
+        val cx = ox + tilePx * 0.5f
+        val cy = oy + tilePx * 0.5f
+        drawRect(Color(0xFF0B3A38), topLeft = Offset(cx - tilePx * 0.08f, cy - tilePx * 0.24f), size = Size(tilePx * 0.16f, tilePx * 0.48f))
+    }
+
     // Inicio del jugador.
     start?.let { (sx, sy) ->
         if (sx in minX - 1..maxX + 1) {
@@ -1251,7 +1298,7 @@ private fun DrawScope.drawLevel(
 /** Herramientas que forman los sectores de la rueda (Seleccionar es el centro). */
 private val WHEEL_TOOLS = listOf(
     PTool.TERRAIN, PTool.DECOR, PTool.ENEMY, PTool.COIN,
-    PTool.GOAL, PTool.START, PTool.COLLISION, PTool.ERASE,
+    PTool.GOAL, PTool.START, PTool.WARP, PTool.COLLISION, PTool.ERASE,
 )
 
 /** Color de marca por herramienta (para leer la rueda de un vistazo). */
@@ -1264,6 +1311,7 @@ private fun toolColor(t: PTool): Color = when (t) {
     PTool.START -> MarioRed
     PTool.COLLISION -> Color(0xFF40C4FF)
     PTool.ERASE -> Color(0xFF9AA6BE)
+    PTool.WARP -> Color(0xFF17C0B8)
     PTool.SELECT -> MarioBlue
 }
 
@@ -1547,4 +1595,53 @@ private fun FavSlot(
 @Composable
 private fun FavLabel(text: String) {
     Text(text, color = Color.White, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+}
+
+// ============================================================================
+//  DIÁLOGO DE WARP  (tubería / puerta)
+//  Configura a qué nivel y celda lleva el warp, y el tipo de entrada.
+// ============================================================================
+
+@Composable
+private fun WarpDialog(
+    maps: List<GameMap>,
+    currentMapId: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (input: Int, destMapId: Int, destX: Int, destY: Int) -> Unit,
+) {
+    val inputs = listOf("Tubería (entrar abajo)", "Puerta (entrar arriba)", "Tubería (entrar de lado)")
+    var input by remember { mutableIntStateOf(0) }
+    var destMap by remember { mutableStateOf(maps.firstOrNull { it.id == currentMapId } ?: maps.firstOrNull()) }
+    var dx by remember { mutableIntStateOf(0) }
+    var dy by remember { mutableIntStateOf(0) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nuevo warp") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DropdownField(
+                    label = "Cómo se entra",
+                    options = inputs,
+                    selected = inputs[input],
+                    optionLabel = { it },
+                    onSelect = { input = inputs.indexOf(it).coerceAtLeast(0) },
+                )
+                DropdownField(
+                    label = "Nivel de destino",
+                    options = maps,
+                    selected = destMap,
+                    optionLabel = { "${it.id}: ${it.name}" },
+                    onSelect = { destMap = it },
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    IntField(label = "Celda X", value = dx, onChange = { dx = it }, modifier = Modifier.weight(1f))
+                    IntField(label = "Celda Y", value = dy, onChange = { dy = it }, modifier = Modifier.weight(1f))
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { destMap?.let { onConfirm(input, it.id, dx, dy) } }) { Text("Poner warp") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }
