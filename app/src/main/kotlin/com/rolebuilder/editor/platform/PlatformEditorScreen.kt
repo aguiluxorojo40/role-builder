@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -432,6 +433,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 var selDrag: Selected? = null
 
                                 fun applyAt(position: Offset) {
+                                    if (wheelOpen) return // la rueda está abierta: no pintar
                                     val tx = floor((position.x - pan.x) / scale).toInt()
                                     val ty = floor((position.y - pan.y) / scale).toInt()
                                     if (lastCell == tx to ty) return
@@ -528,6 +530,13 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     }
                                 }
                             }
+                        }
+                        // Mantener pulsado (sin mover) abre la rueda radial. Va DESPUÉS del
+                        // gesto de pintar para que pintar/arrastrar/pellizcar tengan
+                        // prioridad; solo dispara en pulsación larga y estática, y applyAt
+                        // ignora los toques mientras la rueda está abierta.
+                        .pointerInput(Unit) {
+                            detectTapGestures(onLongPress = { wheelOpen = true })
                         },
                 ) {
                     drawLevel(
