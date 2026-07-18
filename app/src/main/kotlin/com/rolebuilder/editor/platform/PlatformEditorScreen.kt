@@ -289,6 +289,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     }
     // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds).
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
+    // Hoja de la moneda real de SMW (para el icono del sector Moneda en la rueda).
+    val coinAtlas = remember { loadAssetImageBitmap(context, "sprites/coin.png") }
 
     // Selector de ROM: al elegir un .sfc, auto-importa los niveles con gráficos reales.
     val romPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -327,14 +329,38 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var wheelOpen by remember { mutableStateOf(false) }
     var cleanMode by remember { mutableStateOf(false) }
     var lastPaint by remember { mutableStateOf(PTool.TERRAIN) }
+    // Config de UI (raíl + favoritos) PERSISTENTE por proyecto (SharedPreferences).
+    val uiPrefs = remember(projectDir) {
+        context.getSharedPreferences("pb_ui_" + projectDir.name, android.content.Context.MODE_PRIVATE)
+    }
     // Raíl configurable (abajo-izq): controles reales del editor, se añaden/quitan.
     val railActions = remember {
-        mutableStateListOf(RailAction.NUEVO, RailAction.AJUSTES, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR)
+        val init = uiPrefs.getString("rail", null)
+            ?.split(",")?.mapNotNull { runCatching { RailAction.valueOf(it) }.getOrNull() }
+            ?.takeIf { it.isNotEmpty() }
+            ?: listOf(RailAction.NUEVO, RailAction.AJUSTES, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR)
+        mutableStateListOf(*init.toTypedArray())
     }
     var showRailConfig by remember { mutableStateOf(false) }
     // Hotbar de favoritos (abajo-centro): instantáneas del pincel actual, editable.
-    val favs = remember { mutableStateListOf<Fav>() }
+    val favs = remember {
+        val init = uiPrefs.getString("favs", null)?.split(";")?.mapNotNull { s ->
+            val p = s.split(":")
+            val t = p.getOrNull(0)?.let { n -> runCatching { PTool.valueOf(n) }.getOrNull() }
+            val tile = p.getOrNull(1)?.toIntOrNull()
+            val eid = p.getOrNull(2)?.toIntOrNull()
+            if (t != null && tile != null && eid != null) Fav(t, tile, eid) else null
+        } ?: emptyList()
+        mutableStateListOf(*init.toTypedArray())
+    }
     var favEdit by remember { mutableStateOf(false) }
+    // Guarda ambas listas (se llama tras cada cambio).
+    val persistUi = {
+        uiPrefs.edit()
+            .putString("rail", railActions.joinToString(",") { it.name })
+            .putString("favs", favs.joinToString(";") { it.tool.name + ":" + it.tile + ":" + it.enemyId })
+            .apply()
+    }
     // Despacha una acción del raíl al mismo manejador que ya usa la app.
     val onRail: (RailAction) -> Unit = { a ->
         when (a) {
@@ -603,6 +629,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     Box(Modifier.fillMaxSize().clickable { wheelOpen = false })
                     RadialWheel(
                         tool = tool,
+                        enemyAtlas = enemyAtlas,
+                        coinAtlas = coinAtlas,
                         onPickTool = { picked ->
                             if (picked != PTool.SELECT) lastPaint = picked
                             tool = picked
@@ -642,6 +670,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             FavSlot(f, tileset, tilesetBitmap, enemyAtlas, favEdit) {
                                 if (favEdit) {
                                     favs.remove(f)
+                                    persistUi()
                                 } else {
                                     tool = f.tool
                                     if (f.tool != PTool.SELECT) lastPaint = f.tool
@@ -654,7 +683,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         Box(
                             Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))
                                 .border(1.dp, LuigiGreen, RoundedCornerShape(10.dp))
-                                .clickable { favs.add(Fav(tool, selectedTile, selectedEnemyId)) },
+                                .clickable { favs.add(Fav(tool, selectedTile, selectedEnemyId)); persistUi() },
                             contentAlignment = Alignment.Center,
                         ) { Text("+", color = LuigiGreen, style = MaterialTheme.typography.titleMedium) }
                         // Editar (quitar) favoritos.
@@ -750,7 +779,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     if (showRailConfig) {
         RailConfigDialog(
             active = railActions,
-            onToggle = { a -> if (a in railActions) railActions.remove(a) else railActions.add(a) },
+            onToggle = { a -> if (a in railActions) railActions.remove(a) else railActions.add(a); persistUi() },
             onDismiss = { showRailConfig = false },
         )
     }
@@ -1247,6 +1276,8 @@ private fun toolColor(t: PTool): Color = when (t) {
 @Composable
 private fun RadialWheel(
     tool: PTool,
+    enemyAtlas: ImageBitmap?,
+    coinAtlas: ImageBitmap?,
     onPickTool: (PTool) -> Unit,
     onToggleSelect: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1263,6 +1294,8 @@ private fun RadialWheel(
             SectorButton(
                 tool = t,
                 selected = tool == t,
+                enemyAtlas = enemyAtlas,
+                coinAtlas = coinAtlas,
                 modifier = Modifier.offset(x = (cos(ang) * radius).dp, y = (sin(ang) * radius).dp),
                 onClick = { onPickTool(t) },
             )
@@ -1286,11 +1319,14 @@ private fun RadialWheel(
     }
 }
 
-/** Un sector de la rueda: token circular con el color de la herramienta y su etiqueta. */
+/** Un sector de la rueda: token circular con el color de la herramienta. Para Enemigo
+ *  y Moneda dibuja el SPRITE real (Goomba del atlas, moneda de SMW); el resto, etiqueta. */
 @Composable
 private fun SectorButton(
     tool: PTool,
     selected: Boolean,
+    enemyAtlas: ImageBitmap?,
+    coinAtlas: ImageBitmap?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -1302,12 +1338,40 @@ private fun SectorButton(
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            tool.short,
-            color = if (selected) Color.Black else Color.White,
-            style = MaterialTheme.typography.labelSmall,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
+        when {
+            tool == PTool.ENEMY && enemyAtlas != null -> {
+                val ids = SmwEnemyGraphics.curatedIds
+                val idx = ids.indexOf(0x0F).coerceAtLeast(0) // Goomba
+                val fw = enemyAtlas.width / ids.size.coerceAtLeast(1)
+                Canvas(Modifier.size(width = 21.dp, height = 42.dp)) {
+                    drawImage(
+                        image = enemyAtlas,
+                        srcOffset = IntOffset(idx * fw, 0),
+                        srcSize = IntSize(fw, enemyAtlas.height),
+                        dstOffset = IntOffset.Zero,
+                        dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                    )
+                }
+            }
+            tool == PTool.COIN && coinAtlas != null -> {
+                Canvas(Modifier.size(30.dp)) {
+                    val s = minOf(coinAtlas.width, coinAtlas.height)
+                    drawImage(
+                        image = coinAtlas,
+                        srcOffset = IntOffset(0, 0), // primer fotograma de la moneda
+                        srcSize = IntSize(s, s),
+                        dstOffset = IntOffset.Zero,
+                        dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                    )
+                }
+            }
+            else -> Text(
+                tool.short,
+                color = if (selected) Color.Black else Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+        }
     }
 }
 
