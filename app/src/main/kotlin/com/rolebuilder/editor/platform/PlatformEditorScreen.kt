@@ -55,6 +55,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -99,6 +100,7 @@ import com.rolebuilder.editor.snes.importSmwLevelMap
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import com.rolebuilder.player.PlatformerActivity
+import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.math.PI
 import kotlin.math.cos
@@ -175,6 +177,34 @@ private fun tileCategory(tileset: Tileset, tile: Int): TileCat {
     if (sol == SmwSolidity.SPIKE.ordinal) return TileCat.PELIGROS
     val solid = if (sol != null) sol != SmwSolidity.NONE.ordinal else !tileset.isPassable(tile)
     return if (solid) TileCat.TERRENO else TileCat.DECORACION
+}
+
+/** Mapa tesela-base → fotogramas, para animar en el editor las teselas animadas. */
+private fun animMap(tileset: Tileset?): Map<Int, List<Int>> =
+    tileset?.animations?.associate { it.baseTile to it.frames } ?: emptyMap()
+
+/** La tesela a dibujar AHORA para [base]: si está animada, el fotograma actual. */
+private fun animatedTile(base: Int, anim: Map<Int, List<Int>>, frame: Int): Int {
+    val f = anim[base] ?: return base
+    return if (f.isEmpty()) base else f[frame % f.size]
+}
+
+/** Tablero de transparencia (dos grises), para VER el alpha de sprites/tiles. */
+private fun DrawScope.drawChecker(cell: Float = 6f) {
+    val a = Color(0xFF3A3F4C)
+    val b = Color(0xFF2A2E38)
+    drawRect(b)
+    var y = 0f
+    var row = 0
+    while (y < size.height) {
+        var x = if (row % 2 == 0) 0f else cell
+        while (x < size.width) {
+            drawRect(a, topLeft = Offset(x, y), size = Size(cell, cell))
+            x += cell * 2
+        }
+        y += cell
+        row++
+    }
 }
 
 /** Qué clase de objeto está seleccionado en el modo Seleccionar. */
@@ -319,6 +349,13 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
     // Hoja de la moneda real de SMW (para el icono del sector Moneda en la rueda).
     val coinAtlas = remember { loadAssetImageBitmap(context, "sprites/coin.png") }
+    // Reloj de animación del editor: teselas animadas (monedas, ? bloques…) cobran vida.
+    // Solo tictea si el nivel tiene teselas animadas (si no, no redibuja de balde).
+    var animFrame by remember { mutableIntStateOf(0) }
+    val animByBase = remember(tileset) { animMap(tileset) }
+    LaunchedEffect(animByBase.isEmpty()) {
+        if (animByBase.isNotEmpty()) while (true) { delay(140); animFrame = (animFrame + 1) and 0x3FFFFFFF }
+    }
 
     // Selector de ROM: al elegir un .sfc, auto-importa los niveles con gráficos reales.
     val romPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -610,6 +647,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         showSolidity = tool == PTool.COLLISION,
                         start = if (state.project.startMapId == map.id) state.project.startX to state.project.startY else null,
                         selected = selected.takeIf { tool == PTool.SELECT },
+                        animByBase = animByBase,
+                        animFrame = animFrame,
                     )
                 }
 
@@ -926,6 +965,12 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
     }
     val cats = remember(byCat) { TileCat.entries.filter { !byCat[it].isNullOrEmpty() } }
     var cat by remember(tileset) { mutableStateOf(cats.firstOrNull() ?: TileCat.TERRENO) }
+    // Reloj + mapa de animación para que las teselas animadas se muevan en la paleta.
+    val anim = remember(tileset) { animMap(tileset) }
+    var frame by remember { mutableIntStateOf(0) }
+    LaunchedEffect(anim.isEmpty()) {
+        if (anim.isNotEmpty()) while (true) { delay(140); frame = (frame + 1) and 0x3FFFFFFF }
+    }
 
     Column(Modifier.fillMaxWidth().background(Panel)) {
         // Pestañas de categoría (estilo Super Mario Maker: terreno con terreno…).
@@ -955,8 +1000,6 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             items(tiles) { tile ->
-                val col = tile % tileset.columns
-                val row = tile / tileset.columns
                 Canvas(
                     modifier = Modifier.size(44.dp)
                         .border(
@@ -966,6 +1009,10 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
                         )
                         .clickable { onSelect(tile) },
                 ) {
+                    drawChecker() // fondo de tablero: la transparencia se VE
+                    val shown = animatedTile(tile, anim, frame)
+                    val col = shown % tileset.columns
+                    val row = shown / tileset.columns
                     drawImage(
                         image = bitmap,
                         srcOffset = IntOffset(col * tileset.tileSize, row * tileset.tileSize),
@@ -1212,6 +1259,8 @@ private fun DrawScope.drawLevel(
     showSolidity: Boolean,
     start: Pair<Int, Int>?,
     selected: Selected? = null,
+    animByBase: Map<Int, List<Int>> = emptyMap(),
+    animFrame: Int = 0,
 ) {
     val tilePx = scale
     val minX = floor(-pan.x / tilePx).toInt().coerceAtLeast(0)
@@ -1225,8 +1274,9 @@ private fun DrawScope.drawLevel(
     if (tileset != null && tilesetBitmap != null) {
         for (layer in map.layers.indices) {
             for (ty in minY..maxY) for (tx in minX..maxX) {
-                val tile = map.tileAt(layer, tx, ty)
-                if (tile < 0) continue
+                val base = map.tileAt(layer, tx, ty)
+                if (base < 0) continue
+                val tile = animatedTile(base, animByBase, animFrame) // teselas animadas vivas
                 val col = tile % tileset.columns
                 val row = tile / tileset.columns
                 drawImage(
@@ -1605,6 +1655,7 @@ private fun FavSlot(
             PTool.TERRAIN, PTool.DECOR, PTool.COLLISION -> {
                 if (tileset != null && tilesetBitmap != null && fav.tile in 0 until tileset.tileCount) {
                     Canvas(Modifier.size(38.dp)) {
+                        drawChecker()
                         val col = fav.tile % tileset.columns
                         val row = fav.tile / tileset.columns
                         drawImage(
