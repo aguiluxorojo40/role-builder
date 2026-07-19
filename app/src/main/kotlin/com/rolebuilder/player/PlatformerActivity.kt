@@ -194,8 +194,12 @@ class PlatformerActivity : ComponentActivity() {
             .map { (id, _, _) -> id }.distinct()
             .mapNotNull { id ->
                 runCatching {
-                    com.rolebuilder.core.snes.SmwEnemyGraphics.spriteFrames(rom, header, level, id)
-                        ?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
+                    val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+                    // Las Koopas aladas llevan su cuerpo+ala (celda ancha); el resto, sus
+                    // fotogramas de andar. Ambos se animan igual en el renderer.
+                    val frames = if (gfx.isWinged(id)) gfx.wingedKoopaFrames(rom, header, level, id)
+                    else gfx.spriteFrames(rom, header, level, id)
+                    frames?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
                 }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
             }.toMap()
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)

@@ -238,52 +238,14 @@ fun main(args: Array<String>) {
     if (opts.containsKey("enemies")) {
         val enemyGfx = com.rolebuilder.core.snes.SmwEnemyGraphics
         val ids = enemyGfx.curatedIds
-        // Niveles de referencia por id: TODOS los que de verdad contienen ese enemigo
-        // (su VRAM de sprites tiene los gráficos correctos cargados). Entre ellos se
-        // VOTA: se renderiza en cada uno y gana el aspecto MAYORITARIO — algún
-        // sub-nivel puede cargar otro sprite-set y daría un gráfico equivocado
-        // (fuentes, tiles ajenos); en la mayoría quedan en minoría y se descartan.
-        val levelsWithId = HashMap<Int, MutableList<Int>>()
-        for (level in 0 until 0x200) {
-            for ((id, _, _) in SnesGameRecipes.smwLevelEnemies(rom, header, level)) {
-                levelsWithId.getOrPut(id) { ArrayList() }.add(level)
-            }
-        }
-        val fallbackLevels = listOf(0x106, 0x024, 0x0C7, 0x022, 0x0C5, 0x101, 0x105, 0x001, 0x002)
-        // Celda UNIFORME de 16×32 anclada por los pies: los apilados (Koopa con
-        // caparazón) usan sus dos bloques; los bajos van en la mitad inferior. Así el
-        // atlas conserva el sprite ENTERO —nunca una "cabeza suelta"— y el editor y el
-        // jugador lo dibujan a su tamaño real sin partirlo por la rejilla de 16. El
-        // primer fotograma del ciclo de andar es el aspecto en reposo.
-        val atlas = ArgbImage(ids.size * 16, 32)
-        var missing = 0
-        println("Atlas de enemigos (${ids.size} fotogramas de 16×32, aspecto por mayoría):")
-        ids.forEachIndexed { frame, id ->
-            val candidates = (levelsWithId[id] ?: fallbackLevels).take(16)
-            // hash de píxeles → (imagen, niveles que la producen)
-            val variants = LinkedHashMap<Int, Pair<ArgbImage, MutableList<Int>>>()
-            for (l in candidates) {
-                val img = enemyGfx.spriteFrames(rom, header, l, id)?.firstOrNull() ?: continue
-                val key = img.pixels.contentHashCode()
-                variants.getOrPut(key) { img to ArrayList() }.second.add(l)
-            }
-            val winner = variants.values.maxByOrNull { it.second.size }
-            if (winner != null) {
-                val img = winner.first
-                for (y in 0 until 32) for (x in 0 until 16) {
-                    atlas.set(frame * 16 + x, y, img.pixels[y * 16 + x])
-                }
-            } else {
-                missing++
-            }
-            println("  fotograma %2d · id %02X · %-24s %s".format(
-                frame, id, enemyGfx.nameOf(id) ?: "?",
-                if (winner != null) {
-                    "niveles ${winner.second.size}/${candidates.size} " +
-                        "(0x${winner.second.first().toString(16).uppercase()}…)" +
-                        if (variants.size > 1) " · ${variants.size} variantes" else ""
-                } else "SIN GRÁFICO"))
-        }
+        // Horneado CENTRALIZADO en el core ([SmwEnemyGraphics.bakeAtlas]): celda cuadrada
+        // de ATLAS_CELL px por fotograma (ATLAS_FRAMES apilados en vertical), sprite REAL
+        // anclado por los pies y centrado, aspecto por VOTO entre los niveles que de
+        // verdad contienen el enemigo. Las Koopas aladas llevan su cuerpo+ala; los
+        // andadores, sus 2 fotogramas de andar. Así atlas, editor y jugador van a la par.
+        val (atlas, missing) = enemyGfx.bakeAtlas(rom, header)
+        println("Atlas de enemigos: ${ids.size} ids × ${com.rolebuilder.core.snes.SmwEnemyGraphics.ATLAS_FRAMES} " +
+            "fotogramas de ${com.rolebuilder.core.snes.SmwEnemyGraphics.ATLAS_CELL}²")
         val imagesDir = File(outDir, "images").also { it.mkdirs() }
         val png = File(imagesDir, "enemies.png")
         ImageIO.write(toBufferedImage(atlas), "png", png)

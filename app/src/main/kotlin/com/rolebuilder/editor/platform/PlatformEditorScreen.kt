@@ -374,7 +374,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val animByBase = remember(tileset) { animMap(tileset) }
     val hasAnim = animByBase.isNotEmpty() ||
         (map?.platformItems?.any { it.type == PlatformItemType.COIN } == true) ||
-        (tileset?.platformBlockActions?.any { it == SmwBlockAction.DRAGON_COIN.ordinal } == true)
+        (tileset?.platformBlockActions?.any { it == SmwBlockAction.DRAGON_COIN.ordinal } == true) ||
+        (map?.platformEnemies?.any { SmwEnemyGraphics.animFrameCount(it.spriteId) > 1 } == true)
     LaunchedEffect(hasAnim) {
         if (hasAnim) while (true) { delay(140); animFrame = (animFrame + 1) and 0x3FFFFFFF }
     }
@@ -1071,14 +1072,15 @@ private fun EnemyPalette(atlas: ImageBitmap?, selected: Int, onSelect: (Int) -> 
                         .clickable { onSelect(id) },
                 ) {
                     if (atlas != null && frameW > 0) {
-                        // Sprite 16×32: se dibuja respetando su proporción (alto = 2×ancho),
-                        // anclado abajo y centrado, para que no salga estirado ni partido.
+                        // Celda cuadrada (ATLAS_CELL): el sprite va anclado abajo y centrado;
+                        // se muestra el fotograma 0 (reposo). Respeta la proporción 1:1.
+                        val cell = SmwEnemyGraphics.ATLAS_CELL
                         val dstH = size.height
-                        val dstW = dstH * frameW / atlas.height.coerceAtLeast(1)
+                        val dstW = dstH * frameW / cell
                         drawImage(
                             image = atlas,
                             srcOffset = IntOffset(index * frameW, 0),
-                            srcSize = IntSize(frameW, atlas.height),
+                            srcSize = IntSize(frameW, cell),
                             dstOffset = IntOffset(((size.width - dstW) / 2f).toInt(), 0),
                             dstSize = IntSize(dstW.toInt(), dstH.toInt()),
                         )
@@ -1356,26 +1358,30 @@ private fun DrawScope.drawLevel(
         }
     }
 
-    // Enemigos: el atlas guarda cada uno ENTERO en una celda 16×32 anclada por los
-    // pies (los apilados —Koopa con caparazón— ocupan 2 casillas; los bajos van en la
-    // mitad inferior). Se dibuja a ese tamaño real, nunca aplastado a 16×16: la casilla
-    // colocada es donde APOYA los pies, y el sprite crece hacia arriba.
+    // Enemigos: el atlas guarda cada uno ENTERO en una celda cuadrada (ATLAS_CELL)
+    // anclada por los pies y centrada, con ATLAS_FRAMES fotogramas apilados en vertical
+    // (andar / aleteo). Se dibuja a 2×2 casillas (crece hacia arriba y a los lados, así
+    // caben las ALAS de las Koopas), y el fotograma vivo lo da el reloj de animación.
     val ids = SmwEnemyGraphics.curatedIds
+    val cell = SmwEnemyGraphics.ATLAS_CELL
     val frameW = enemyAtlas?.let { it.width / ids.size.coerceAtLeast(1) } ?: 0
+    val frameCount = enemyAtlas?.let { (it.height / cell).coerceAtLeast(1) } ?: 1
     for (e in map.platformEnemies) {
-        if (e.x < minX - 1 || e.x > maxX + 1) continue
+        if (e.x < minX - 2 || e.x > maxX + 2) continue
         val idx = ids.indexOf(e.spriteId)
         if (enemyAtlas != null && frameW > 0 && idx >= 0) {
-            // 1 casilla de ancho × 2 de alto, con los pies al fondo de la casilla e.y.
+            // La celda cuadrada = 2×2 casillas, centrada en la del enemigo (los pies al
+            // fondo de e.y). El fotograma vivo alterna con el reloj (estáticos = repetido).
+            val fr = if (SmwEnemyGraphics.animFrameCount(e.spriteId) > 1) animFrame % frameCount else 0
             drawImage(
                 image = enemyAtlas,
-                srcOffset = IntOffset(idx * frameW, 0),
-                srcSize = IntSize(frameW, enemyAtlas.height),
+                srcOffset = IntOffset(idx * frameW, fr * cell),
+                srcSize = IntSize(frameW, cell),
                 dstOffset = IntOffset(
-                    (pan.x + e.x * tilePx).toInt(),
+                    (pan.x + (e.x - 0.5f) * tilePx).toInt(),
                     (pan.y + (e.y - 1) * tilePx).toInt(),
                 ),
-                dstSize = IntSize(tilePx.toInt(), (tilePx * 2f).toInt()),
+                dstSize = IntSize((tilePx * 2f).toInt(), (tilePx * 2f).toInt()),
             )
         } else {
             drawRect(
@@ -1546,11 +1552,13 @@ private fun SectorButton(
                 val ids = SmwEnemyGraphics.curatedIds
                 val idx = ids.indexOf(0x0F).coerceAtLeast(0) // Goomba
                 val fw = enemyAtlas.width / ids.size.coerceAtLeast(1)
-                Canvas(Modifier.size(width = 21.dp, height = 42.dp)) {
+                Canvas(Modifier.size(42.dp)) {
+                    // Celda cuadrada (ATLAS_CELL), fotograma 0: el sprite va centrado y
+                    // anclado abajo, así el icono sale con su proporción real.
                     drawImage(
                         image = enemyAtlas,
                         srcOffset = IntOffset(idx * fw, 0),
-                        srcSize = IntSize(fw, enemyAtlas.height),
+                        srcSize = IntSize(fw, SmwEnemyGraphics.ATLAS_CELL),
                         dstOffset = IntOffset.Zero,
                         dstSize = IntSize(size.width.toInt(), size.height.toInt()),
                     )
@@ -1729,11 +1737,12 @@ private fun FavSlot(
                 val idx = ids.indexOf(fav.enemyId)
                 if (enemyAtlas != null && idx >= 0) {
                     val fw = enemyAtlas.width / ids.size.coerceAtLeast(1)
-                    Canvas(Modifier.size(width = 22.dp, height = 44.dp)) {
+                    Canvas(Modifier.size(44.dp)) {
+                        // Celda cuadrada (ATLAS_CELL), fotograma 0.
                         drawImage(
                             image = enemyAtlas,
                             srcOffset = IntOffset(idx * fw, 0),
-                            srcSize = IntSize(fw, enemyAtlas.height),
+                            srcSize = IntSize(fw, SmwEnemyGraphics.ATLAS_CELL),
                             dstOffset = IntOffset.Zero,
                             dstSize = IntSize(size.width.toInt(), size.height.toInt()),
                         )

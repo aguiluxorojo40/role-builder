@@ -106,12 +106,13 @@ object SmwEnemyGraphics {
         0x3D to "Rip Van Fish", 0x15 to "Cheep-Cheep", 0x16 to "Cheep-Cheep",
         0x2E to "Spike Top", 0x38 to "Eerie", 0x39 to "Eerie",
         0x31 to "Bony Beetle",
-        // Las Koopas ALADAS (0x08..0x0B), pese a ser los enemigos mas colocados de la
-        // ROM, NO estan: se intento componer cuerpo generico + ala (DrawWingTiles,
-        // tesela 0x5D plegada) y el resultado no es fiel — su entrada de la tabla
-        // generica da el cuerpo SIN caparazon y el ala tapa la cabeza. Su aspecto
-        // real requiere portar su rutina de dibujo propia (caparazon + alas con sus
-        // offsets), no la via generica.
+        // Tanda 3: las Koopas ALADAS (Parakoopa, 0x08..0x0B) — los enemigos MÁS
+        // colocados de la ROM. Ahora sí, portando su dibujo real (`Spr0to13Gfx` +
+        // `KoopaWingGfxRt`, banco $01): cuerpo CON caparazón (misma entrada apilada que
+        // las Koopas con caparazón) + ala con sus dos fotogramas de aleteo. Se hornean
+        // con [wingedKoopaFrames] en celda ancha, no por la vía genérica.
+        0x08 to "Koopa verde volador", 0x09 to "Koopa verde saltarin",
+        0x0A to "Koopa rojo vertical", 0x0B to "Koopa rojo horizontal",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -176,6 +177,136 @@ object SmwEnemyGraphics {
         return out.ifEmpty { null }
     }
 
+    /** Ids de las Koopas ALADAS (Parakoopa): cuerpo CON caparazón + ala (2 fotogramas). */
+    private val WINGED_KOOPAS = 0x08..0x0B
+
+    /** ¿Es una Koopa alada (Parakoopa)? */
+    fun isWinged(spriteId: Int): Boolean = spriteId in WINGED_KOOPAS
+
+    /**
+     * Geometría de la CELDA del atlas de enemigos horneado: cuadrada de [ATLAS_CELL]px
+     * (ancha para que quepan las ALAS que sobresalen, alta para el sprite apilado 16×32),
+     * con [ATLAS_FRAMES] fotogramas de animación apilados en vertical. El sprite se ancla
+     * por los pies (abajo) y CENTRADO en horizontal (margen (ATLAS_CELL-16)/2 a cada lado).
+     * El atlas resultante mide `curatedIds.size·ATLAS_CELL × ATLAS_FRAMES·ATLAS_CELL`.
+     */
+    const val ATLAS_CELL = 32
+    const val ATLAS_FRAMES = 2
+
+    /** Nº de fotogramas de animación del id: 2 si anima (aladas y andadores), 1 si no. */
+    fun animFrameCount(spriteId: Int): Int =
+        if (isWinged(spriteId) || spriteId <= LAST_GENERIC_WALKER) ATLAS_FRAMES else 1
+
+    // Tablas REALES del ala (banco $01, `KoopaWing*`), indexadas por dir*2 + fotograma.
+    // Usamos SIEMPRE la dirección 1 (ala a la DERECHA, sin espejo) para hornear el atlas.
+    private val WING_DISP_X = intArrayOf(-1, -9, 9, 9)   // KoopaWingDispXLo (con signo)
+    private val WING_DISP_Y = intArrayOf(-4, -12, -4, -12) // KoopaWingDispY (con signo)
+    private val WING_TILE = intArrayOf(0x5D, 0xC6, 0x5D, 0xC6)
+    private val WING_SIZE16 = booleanArrayOf(false, true, false, true) // 0=8×8, 2=16×16
+    private val WING_XFLIP = booleanArrayOf(true, true, false, false)   // prop 0x40
+
+    /**
+     * FOTOGRAMAS de la Koopa ALADA (Parakoopa, [WINGED_KOOPAS]) como los dibuja el juego:
+     * el cuerpo CON caparazón (misma entrada apilada 16×32 que las Koopas con caparazón)
+     * MÁS el ala de `KoopaWingGfxRt`, con sus dos fotogramas de aleteo (0x5D plegada 8×8,
+     * 0xC6 abierta 16×16) en sus desplazamientos reales. Se pinta en una celda de
+     * [cellW]×32 con el cuerpo anclado a la izquierda (x=0) y los pies abajo; el ala
+     * sobresale a la derecha (cabe con cellW≈26). Dirección fija = 1 (ala a la derecha).
+     * null si el id no es una Koopa alada o faltan datos.
+     */
+    fun wingedKoopaFrames(
+        rom: ByteArray,
+        header: SnesHeader,
+        level: Int,
+        spriteId: Int,
+        cellW: Int = ATLAS_CELL,
+        bodyX: Int = (ATLAS_CELL - 16) / 2,
+    ): List<ArgbImage>? {
+        if (!isWinged(spriteId)) return null
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        // Cuerpo con caparazón = misma entrada OAM que las Koopas con caparazón (offset 0).
+        val bodyOff = OAM_OFFSET[spriteId]
+        val out = ArrayList<ArgbImage>(2)
+        for (f in 0..1) {
+            val img = ArgbImage(cellW, ATLAS_CELL)
+            val bi = bodyOff + 2 * f
+            if (bi + 1 >= TILE_BYTES.size) break
+            val top = TILE_BYTES[bi] + art.page * 0x100
+            val bottom = TILE_BYTES[bi + 1] + art.page * 0x100
+            val body = art.paintBlock(top, img, bodyX, 0) or art.paintBlock(bottom, img, bodyX, 16)
+            if (!body) break
+            // Ala: dirección 1 (índice 2 + fotograma). Ancla: SpriteX = borde izq. del
+            // cuerpo (x=bodyX); SpriteY ≈ techo del bloque inferior (y=16, los pies abajo).
+            val wi = 2 + f
+            val wx = bodyX + WING_DISP_X[wi]
+            val wy = 16 + WING_DISP_Y[wi]
+            art.paintTile(WING_TILE[wi], img, wx, wy, WING_SIZE16[wi], WING_XFLIP[wi])
+            out.add(img)
+        }
+        return out.ifEmpty { null }
+    }
+
+    /**
+     * Hornea el ATLAS de enemigos completo: para cada id de [curatedIds], en el orden
+     * estable, una celda [ATLAS_CELL]×[ATLAS_CELL] por fotograma ([ATLAS_FRAMES] apilados
+     * en vertical), con el sprite REAL y su color, anclado por los pies y centrado. El
+     * aspecto se decide por VOTO entre los niveles que de verdad contienen ese enemigo
+     * (algún sub-nivel carga otro sprite-set y daría basura; queda en minoría). Las Koopas
+     * aladas usan [wingedKoopaFrames]; el resto [spriteFrames]. Los ids de un solo
+     * fotograma repiten su imagen en el segundo (se ven estáticos). El atlas mide
+     * `curatedIds.size·ATLAS_CELL × ATLAS_FRAMES·ATLAS_CELL`; devuelve también cuántos
+     * ids quedaron sin gráfico.
+     */
+    fun bakeAtlas(rom: ByteArray, header: SnesHeader): Pair<ArgbImage, Int> {
+        val ids = curatedIds
+        val levelsWithId = HashMap<Int, MutableList<Int>>()
+        for (level in 0 until 0x200) {
+            for ((id, _, _) in SnesGameRecipes.smwLevelEnemies(rom, header, level)) {
+                levelsWithId.getOrPut(id) { ArrayList() }.add(level)
+            }
+        }
+        val fallbackLevels = listOf(0x106, 0x024, 0x0C7, 0x022, 0x0C5, 0x101, 0x105, 0x001, 0x002)
+        val bodyX = (ATLAS_CELL - 16) / 2
+        val atlas = ArgbImage(ids.size * ATLAS_CELL, ATLAS_FRAMES * ATLAS_CELL)
+        var missing = 0
+        ids.forEachIndexed { idx, id ->
+            val candidates = (levelsWithId[id] ?: fallbackLevels).take(16)
+            // Vota el nivel por el aspecto del fotograma 0; ambos fotogramas salen del mismo.
+            val variants = LinkedHashMap<Int, Pair<List<ArgbImage>, MutableList<Int>>>()
+            for (l in candidates) {
+                val frames = if (isWinged(id)) wingedKoopaFrames(rom, header, l, id)
+                else spriteFrames(rom, header, l, id)?.map { padded(it, bodyX) }
+                val f0 = frames?.firstOrNull() ?: continue
+                variants.getOrPut(f0.pixels.contentHashCode()) { frames to ArrayList() }.second.add(l)
+            }
+            val winner = variants.values.maxByOrNull { it.second.size }
+            if (winner == null) { missing++; return@forEachIndexed }
+            val frames = winner.first
+            for (f in 0 until ATLAS_FRAMES) {
+                val src = frames[f % frames.size] // 1 fotograma → se repite (estático)
+                val cx = idx * ATLAS_CELL
+                val cy = f * ATLAS_CELL
+                for (y in 0 until ATLAS_CELL) for (x in 0 until ATLAS_CELL) {
+                    if (x < src.width && y < src.height) atlas.set(cx + x, cy + y, src.pixels[y * src.width + x])
+                }
+            }
+        }
+        return atlas to missing
+    }
+
+    /** Coloca una imagen 16×[ATLAS_CELL] en una celda cuadrada, centrada en [bodyX]. */
+    private fun padded(src: ArgbImage, bodyX: Int): ArgbImage {
+        if (src.width == ATLAS_CELL && src.height == ATLAS_CELL) return src
+        val out = ArgbImage(ATLAS_CELL, ATLAS_CELL)
+        // Ancla por los pies: si la fuente es más baja que la celda, va a la parte de abajo.
+        val oy = ATLAS_CELL - src.height
+        for (y in 0 until src.height) for (x in 0 until src.width) {
+            val dx = bodyX + x; val dy = oy + y
+            if (dx in 0 until ATLAS_CELL && dy in 0 until ATLAS_CELL) out.set(dx, dy, src.pixels[y * src.width + x])
+        }
+        return out
+    }
+
     /**
      * "Pintor" de bloques 16×16 de un nivel: los 4 ficheros GFX de sprites del nivel,
      * su CGRAM ensamblada y la sub-paleta/página del sprite (nibble bajo de $166E).
@@ -211,6 +342,35 @@ object SmwEnemyGraphics {
                     val dy = oy + so[2] + y
                     if (dx >= img.width || dy >= img.height) continue
                     img.set(dx, dy, cgram[cgRow + (ci and 0x0F)])
+                    painted = true
+                }
+            }
+            return painted
+        }
+
+        /**
+         * Pinta una tesela OAM en (ox,oy) con la paleta [rowOverride] (o la del sprite si
+         * null), con espejo horizontal opcional [xflip]. [size16] elige 16×16 (2×2 teselas,
+         * como [paintBlock]) o 8×8 (una tesela). Recorta a los límites de [img] y omite el
+         * índice de color 0 (transparente). Sirve para las ALAS de las Koopas.
+         */
+        fun paintTile(base: Int, img: ArgbImage, ox: Int, oy: Int, size16: Boolean, xflip: Boolean, rowOverride: Int? = null): Boolean {
+            val row = rowOverride ?: cgRow
+            val sub = if (size16)
+                arrayOf(intArrayOf(0, 0, 0), intArrayOf(1, 8, 0), intArrayOf(0x10, 0, 8), intArrayOf(0x11, 8, 8))
+            else arrayOf(intArrayOf(0, 0, 0))
+            val w = if (size16) 16 else 8
+            var painted = false
+            for (so in sub) {
+                val px = tileIndices(base + so[0]) ?: continue
+                for (y in 0..7) for (x in 0..7) {
+                    val ci = px[y * 8 + x]
+                    if (ci == 0) continue
+                    val lx = so[1] + x
+                    val dx = ox + if (xflip) (w - 1 - lx) else lx
+                    val dy = oy + so[2] + y
+                    if (dx < 0 || dy < 0 || dx >= img.width || dy >= img.height) continue
+                    img.set(dx, dy, cgram[row + (ci and 0x0F)])
                     painted = true
                 }
             }

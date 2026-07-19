@@ -42,7 +42,7 @@ class PlatformerRenderer(
     private val world: PlatformerWorld? = null,
     /** Hoja de Mario PEQUEÑO (GFX32 compuesto, 16×32 por pose) de la ROM; null = rectángulo. */
     private val marioBitmap: Bitmap? = null,
-    /** Atlas de enemigos (16×16 por id curado, en el orden de curatedIds); null = rectángulo. */
+    /** Atlas de enemigos (celda ATLAS_CELL² por id, ATLAS_FRAMES apilados; orden de curatedIds); null = rectángulo. */
     private val enemyBitmap: Bitmap? = null,
     /** Audio de SMW (SFX reales resueltos por SmwSfxCatalog); null = silencio. */
     private val audio: PlatformerAudio? = null,
@@ -340,22 +340,29 @@ class PlatformerRenderer(
                 val feet = (e.y + e.height) / 16f - hCells
                 batch.draw(tex, cx, feet, wCells, hCells, flipX = e.vx > 0f)
             } else if (e.alive && live != null && live.isNotEmpty()) {
-                // Celda 16×32 anclada por los pies (los apilados ocupan 2 casillas; los
-                // bajos llevan su 16×16 en la mitad inferior de la celda).
+                // Fotogramas VIVOS anclados por los pies y centrados. El ancho sale del
+                // bitmap: 16 px (1 casilla, andadores) o 32 px (2 casillas, Koopas aladas
+                // con su ala). El andar/aleteo alterna a la cadencia real de SMW.
                 val walkFrame = live[((now / ENEMY_STEP_NS) % live.size).toInt()]
-                val cx = (e.x + e.width / 2f) / 16f - 0.5f
+                val wCells = walkFrame.width / 16f
+                val hCells = walkFrame.height / 16f
+                val cx = (e.x + e.width / 2f) / 16f - wCells / 2f
                 val feet = (e.y + e.height) / 16f
-                batch.draw(walkFrame, cx, feet - 2f, 1f, 2f, flipX = e.vx > 0f)
+                batch.draw(walkFrame, cx, feet - hCells, wCells, hCells, flipX = e.vx > 0f)
             } else if (e.alive && etex != null && frame != null) {
-                // Celda 16×32 anclada por los pies (igual que la vía ROM): el atlas guarda
-                // el sprite ENTERO, así los apilados (Koopa con caparazón) no salen como
-                // una cabeza suelta ni aplastados a 16×16.
-                val cx = (e.x + e.width / 2f) / 16f - 0.5f
+                // Atlas horneado: celda cuadrada (ATLAS_CELL = 2×2 casillas) anclada por los
+                // pies y centrada, con ATLAS_FRAMES fotogramas apilados; el sprite entero
+                // (aladas incluidas) sin partir. Fotograma vivo a la cadencia de SMW.
+                val frames = ENEMY_FRAMES
+                val fr = if (com.rolebuilder.core.snes.SmwEnemyGraphics.animFrameCount(e.id) > 1)
+                    ((now / ENEMY_STEP_NS) % frames).toInt() else 0
+                val cx = (e.x + e.width / 2f) / 16f - 1f
                 val feet = (e.y + e.height) / 16f
                 val u0 = frame * ENEMY_UV
+                val v0 = fr * ENEMY_VH
                 batch.draw(
-                    etex, cx, feet - 2f, 1f, 2f,
-                    u0 = u0, v0 = 0f, u1 = u0 + ENEMY_UV, v1 = 1f,
+                    etex, cx, feet - 2f, 2f, 2f,
+                    u0 = u0, v0 = v0, u1 = u0 + ENEMY_UV, v1 = v0 + ENEMY_VH,
                     flipX = e.vx > 0f,
                 )
             } else if (e.alive) {
@@ -541,8 +548,11 @@ class PlatformerRenderer(
         private val ENEMY_FRAME: Map<Int, Int> =
             com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.withIndex()
                 .associate { (frame, id) -> id to frame }
-        /** Ancho UV de un fotograma en el atlas de enemigos. */
+        /** Ancho UV de una CELDA (un id) en el atlas de enemigos. */
         private val ENEMY_UV = 1f / com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.size.toFloat()
+        /** Nº de fotogramas apilados en vertical en el atlas, y su alto UV. */
+        private val ENEMY_FRAMES = com.rolebuilder.core.snes.SmwEnemyGraphics.ATLAS_FRAMES
+        private val ENEMY_VH = 1f / ENEMY_FRAMES.toFloat()
 
         /**
          * Cadencia del andar de los enemigos: SMW cambia de fotograma cada 8 ticks de

@@ -44,6 +44,21 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `la tanda 3 anade las Koopas aladas y las marca como aladas y animadas`() {
+        for (id in 0x08..0x0B) {
+            assertTrue(SmwEnemyGraphics.handles(id), "debería cubrir la Parakoopa 0x${id.toString(16)}")
+            assertTrue(SmwEnemyGraphics.isWinged(id), "0x${id.toString(16)} es alada")
+            assertEquals(SmwEnemyGraphics.ATLAS_FRAMES, SmwEnemyGraphics.animFrameCount(id))
+        }
+        // Una Koopa CON caparazón normal no es alada, pero sí anima el andar.
+        assertFalse(SmwEnemyGraphics.isWinged(0x05))
+        assertEquals(SmwEnemyGraphics.ATLAS_FRAMES, SmwEnemyGraphics.animFrameCount(0x05))
+        // Un id fuera de la familia andadora no anima (1 fotograma).
+        assertFalse(SmwEnemyGraphics.isWinged(0x2C))
+        assertEquals(1, SmwEnemyGraphics.animFrameCount(0x2C))
+    }
+
+    @Test
     fun `la tanda 1 esta cubierta y los descartados no`() {
         for (id in intArrayOf(0x4F, 0x37, 0x3D, 0x15, 0x16, 0x2E, 0x38, 0x39, 0x31)) {
             assertTrue(SmwEnemyGraphics.handles(id), "debería cubrir 0x${id.toString(16)}")
