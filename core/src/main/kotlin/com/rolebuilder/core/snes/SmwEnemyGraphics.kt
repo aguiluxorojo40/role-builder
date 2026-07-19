@@ -150,11 +150,17 @@ object SmwEnemyGraphics {
      * null si el id no está curado o faltan datos. [spriteImage] queda intacta (es la
      * que consume el atlas horneado de 16×16).
      */
-    fun spriteFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): List<ArgbImage>? {
+    fun spriteFrames(
+        rom: ByteArray,
+        header: SnesHeader,
+        level: Int,
+        spriteId: Int,
+        frames: Int = genericAnimFrames(spriteId),
+    ): List<ArgbImage>? {
         val art = artFor(rom, header, level, spriteId) ?: return null
         val off = OAM_OFFSET[spriteId]
         val tall = isTall(spriteId)
-        val animFrames = if (spriteId <= LAST_GENERIC_WALKER) 2 else 1
+        val animFrames = frames.coerceAtLeast(1)
         val out = ArrayList<ArgbImage>(animFrames)
         for (f in 0 until animFrames) {
             val img = ArgbImage(16, 32)
@@ -193,9 +199,32 @@ object SmwEnemyGraphics {
     const val ATLAS_CELL = 32
     const val ATLAS_FRAMES = 2
 
-    /** Nº de fotogramas de animación del id: 2 si anima (aladas y andadores), 1 si no. */
+    /**
+     * Ids del catálogo que ANIMAN 2 fotogramas por la vía GENÉRICA: usan `SetAnimationFrame`
+     * (alterna `spr_table1602` 0↔1 cada 8 ticks) y un dibujo genérico que suma ese frame al
+     * nº de tesela, así el fotograma 1 = el byte SIGUIENTE de su entrada OAM (`off+f`, o
+     * `off+2·f` si es apilado). Verificado renderizando ambos fotogramas desde la ROM: solo
+     * están los que dan un 2º fotograma REAL (los demás pintarían basura y van a 1). Las
+     * Koopas aladas ([WINGED_KOOPAS]) animan aparte con su ala.
+     */
+    private val ANIMATED_2FRAME = setOf(
+        // Andadores genéricos (≤0x13): Koopas con/sin caparazón, Goombas, Buzzy.
+        0x00, 0x01, 0x02, 0x03, 0x05, 0x0F, 0x10, 0x11,
+        // Verificados renderizando ambos fotogramas desde la ROM (2º fotograma REAL):
+        // Cheep-Cheep (aleteo de aleta), Spike Top (giro), Bony Beetle (mandíbula), Boo
+        // (se tapa/destapa la cara), Eerie (ondeo), Rip Van Fish (aletas), Topo (andar).
+        0x15, 0x16, 0x2E, 0x31, 0x37, 0x38, 0x39, 0x3D, 0x4D, 0x4E,
+        // NO se animan por esta vía (su 2º byte OAM daría basura; su animación real es de
+        // rutina propia, no genérica): Bullet Bill 0x1C, Koopa Kid 0x29, Planta Piraña
+        // 0x2A/0x4F, Huevo de Yoshi 0x2C, Lakitu de tubería 0x4B → quedan a 1 fotograma.
+    )
+
+    /** Nº de fotogramas que la vía genérica ([spriteFrames]) saca para el id. */
+    private fun genericAnimFrames(spriteId: Int): Int = if (spriteId in ANIMATED_2FRAME) 2 else 1
+
+    /** Nº de fotogramas de animación del id en el atlas: 2 si anima (aladas o genéricos), 1 si no. */
     fun animFrameCount(spriteId: Int): Int =
-        if (isWinged(spriteId) || spriteId <= LAST_GENERIC_WALKER) ATLAS_FRAMES else 1
+        if (isWinged(spriteId) || genericAnimFrames(spriteId) > 1) ATLAS_FRAMES else 1
 
     // Tablas REALES del ala (banco $01, `KoopaWing*`), indexadas por dir*2 + fotograma.
     // Usamos SIEMPRE la dirección 1 (ala a la DERECHA, sin espejo) para hornear el atlas.

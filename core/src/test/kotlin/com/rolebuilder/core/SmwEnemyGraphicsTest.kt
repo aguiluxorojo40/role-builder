@@ -59,6 +59,19 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `los enemigos con 2o fotograma real animan y los de rutina propia no`() {
+        // Verificados renderizando ambos fotogramas desde la ROM (2º fotograma REAL).
+        for (id in intArrayOf(0x15, 0x16, 0x2E, 0x31, 0x37, 0x38, 0x39, 0x3D, 0x4D, 0x4E)) {
+            assertEquals(SmwEnemyGraphics.ATLAS_FRAMES, SmwEnemyGraphics.animFrameCount(id),
+                "0x${id.toString(16)} debería animar")
+        }
+        // Su 2º byte OAM daría basura (animación de rutina propia): quedan estáticos.
+        for (id in intArrayOf(0x1C, 0x29, 0x2A, 0x2C, 0x4B, 0x4F)) {
+            assertEquals(1, SmwEnemyGraphics.animFrameCount(id), "0x${id.toString(16)} es estático")
+        }
+    }
+
+    @Test
     fun `la tanda 1 esta cubierta y los descartados no`() {
         for (id in intArrayOf(0x4F, 0x37, 0x3D, 0x15, 0x16, 0x2E, 0x38, 0x39, 0x31)) {
             assertTrue(SmwEnemyGraphics.handles(id), "debería cubrir 0x${id.toString(16)}")
