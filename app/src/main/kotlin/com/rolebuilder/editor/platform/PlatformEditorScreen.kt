@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
@@ -205,6 +206,22 @@ private fun DrawScope.drawChecker(cell: Float = 6f) {
         }
         y += cell
         row++
+    }
+}
+
+/**
+ * Destello (glint) para la Dragon Coin: un brillo diagonal que BARRE la celda con la
+ * cadencia del reloj de animación. OJO: en el ROM la tesela de la Dragon Coin es
+ * ESTÁTICA (a diferencia de la moneda giratoria $2B, que sí usa teselas animadas de
+ * GFX33), así que esto es una ayuda VISUAL solo del editor —"por estética", para que la
+ * moneda grande se lea como coleccionable— y NO se hornea en la extracción de la ROM.
+ */
+private fun DrawScope.drawCoinShine(ox: Float, oy: Float, w: Float, h: Float, phase: Float) {
+    clipRect(ox, oy, ox + w, oy + h) {
+        val cx = ox - h + phase * (w + 2f * h) // de fuera-izquierda a fuera-derecha
+        val thick = maxOf(1f, w * 0.12f)
+        drawLine(Color(0x73FFFFFF), Offset(cx, oy - h * 0.3f), Offset(cx - h, oy + h * 1.3f), thick)
+        drawLine(Color(0x40FFFFFF), Offset(cx + w * 0.24f, oy - h * 0.3f), Offset(cx + w * 0.24f - h, oy + h * 1.3f), thick * 0.7f)
     }
 }
 
@@ -356,7 +373,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var animFrame by remember { mutableIntStateOf(0) }
     val animByBase = remember(tileset) { animMap(tileset) }
     val hasAnim = animByBase.isNotEmpty() ||
-        (map?.platformItems?.any { it.type == PlatformItemType.COIN } == true)
+        (map?.platformItems?.any { it.type == PlatformItemType.COIN } == true) ||
+        (tileset?.platformBlockActions?.any { it == SmwBlockAction.DRAGON_COIN.ordinal } == true)
     LaunchedEffect(hasAnim) {
         if (hasAnim) while (true) { delay(140); animFrame = (animFrame + 1) and 0x3FFFFFFF }
     }
@@ -1293,6 +1311,22 @@ private fun DrawScope.drawLevel(
                     dstSize = IntSize(tilePx.toInt() + 1, tilePx.toInt() + 1),
                 )
             }
+        }
+    }
+
+    // Destello de las Dragon Coins: brillo del editor "por estética" (su tesela es
+    // estática en el ROM). Se pinta encima del terreno y ambas mitades (16×32) brillan
+    // en fase, así la moneda grande se lee como un coleccionable vivo.
+    val dc = SmwBlockAction.DRAGON_COIN.ordinal
+    if (tileset != null && tileset.platformBlockActions.any { it == dc }) {
+        val phase = (animFrame % 16) / 16f
+        for (ty in minY..maxY) for (tx in minX..maxX) {
+            var isDragon = false
+            for (layer in map.layers.indices) {
+                val b = map.tileAt(layer, tx, ty)
+                if (b >= 0 && tileset.platformBlockActions.getOrNull(b) == dc) { isDragon = true; break }
+            }
+            if (isDragon) drawCoinShine(pan.x + tx * tilePx, pan.y + ty * tilePx, tilePx, tilePx, phase)
         }
     }
 
