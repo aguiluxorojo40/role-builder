@@ -202,7 +202,10 @@ object SmwEnemyGraphics {
             if (!painted) break
             out.add(img)
         }
-        return out.ifEmpty { null }
+        // La Piraña de techo (0x2A) cuelga boca ABAJO: se voltea en vertical, para que se
+        // dibuje bien igual en el editor (atlas) que en el juego (fotogramas en vivo).
+        val res = if (spriteId == 0x2A) out.map { vflip(it) } else out
+        return res.ifEmpty { null }
     }
 
     /**
@@ -378,14 +381,12 @@ object SmwEnemyGraphics {
             // Vota el nivel por el aspecto del fotograma 0; ambos fotogramas salen del mismo.
             val variants = LinkedHashMap<Int, Pair<List<ArgbImage>, MutableList<Int>>>()
             for (l in candidates) {
-                var frames = when {
+                val frames = when {
                     isWinged(id) -> wingedKoopaFrames(rom, header, l, id)
                     isJumpingPiranha(id) -> jumpingPiranhaFrames(rom, header, l, id)
+                    // spriteFrames ya voltea la Piraña de techo (0x2A) boca abajo.
                     else -> spriteFrames(rom, header, l, id)?.map { padded(it, bodyX) }
                 }
-                // La Piraña de techo (0x2A) cuelga boca ABAJO: se voltea en vertical para
-                // que en el editor se distinga de la recta (0x1A) —además de por nombre—.
-                if (id == 0x2A) frames = frames?.map { vflip(it) }
                 val f0 = frames?.firstOrNull() ?: continue
                 variants.getOrPut(f0.pixels.contentHashCode()) { frames to ArrayList() }.second.add(l)
             }
