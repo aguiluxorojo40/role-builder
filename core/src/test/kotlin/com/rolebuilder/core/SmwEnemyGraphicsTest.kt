@@ -66,8 +66,17 @@ class SmwEnemyGraphicsTest {
                 "0x${id.toString(16)} debería animar")
         }
         // Su 2º byte OAM daría basura (animación de rutina propia): quedan estáticos.
-        for (id in intArrayOf(0x1C, 0x29, 0x2A, 0x2C, 0x4B, 0x4F)) {
+        for (id in intArrayOf(0x1C, 0x29, 0x2C, 0x4B)) {
             assertEquals(1, SmwEnemyGraphics.animFrameCount(id), "0x${id.toString(16)} es estático")
+        }
+    }
+
+    @Test
+    fun `las Plantas Pirana abren la boca y estan catalogadas`() {
+        for (id in intArrayOf(0x1A, 0x2A, 0x4F)) {
+            assertTrue(SmwEnemyGraphics.handles(id), "0x${id.toString(16)} está catalogada")
+            assertEquals(SmwEnemyGraphics.ATLAS_FRAMES, SmwEnemyGraphics.animFrameCount(id),
+                "0x${id.toString(16)} anima la boca")
         }
     }
 

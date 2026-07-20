@@ -77,6 +77,17 @@ object SmwEnemyGraphics {
     /** Último id de la familia "genérica andadora" (0x00-0x13): la que ANIMA el andar. */
     private const val LAST_GENERIC_WALKER = 0x13
 
+    /**
+     * Plantas Piraña (Classic recta 0x1A, cabeza-abajo 0x2A, saltarina 0x4F y su variante
+     * de fuego 0x50). Su entrada OAM está en formato APILADO (top,bottom,top,bottom, `off +
+     * 2·frame`), pero SOLO la tesela de ARRIBA es la BOCA que anima (0xAC cerrada ↔ 0xAE
+     * abierta); la de abajo (0xCE) es un tile ajeno (un pez), no el tallo. Por eso la
+     * dibujamos como una BOCA 16×16 que abre/cierra, con paso 2 (la tesela de arriba de
+     * cada par), sin el tile de abajo. Confirmado en `ClassicPiranhas`/`JumpingPiranha`
+     * (banco $01) y renderizando desde la ROM.
+     */
+    private val PIRANHAS = setOf(0x1A, 0x2A, 0x4F, 0x50)
+
     /** ¿El id se dibuja APILADO (16×32, p. ej. Koopa con caparazón)? */
     fun isTall(spriteId: Int): Boolean =
         spriteId in SPR0TO13_PROP.indices && (SPR0TO13_PROP[spriteId] and 0x40) != 0
@@ -113,6 +124,10 @@ object SmwEnemyGraphics {
         // con [wingedKoopaFrames] en celda ancha, no por la vía genérica.
         0x08 to "Koopa verde volador", 0x09 to "Koopa verde saltarin",
         0x0A to "Koopa rojo vertical", 0x0B to "Koopa rojo horizontal",
+        // Tanda 4: la Planta Piraña RECTA (0x1A), la más común del juego y que faltaba.
+        // Se dibuja apilada (16×32) con `SubSprGfx1` y ABRE/CIERRA la boca (2 fotogramas),
+        // igual que la de cabeza-abajo (0x2A) y la saltarina (0x4F), ahora también apiladas.
+        0x1A to "Planta Pirana",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -173,7 +188,10 @@ object SmwEnemyGraphics {
                 // los pies del bloque de abajo.
                 art.paintBlock(top, img, 0, 0) or art.paintBlock(bottom, img, 0, 16)
             } else {
-                val i = off + f
+                // Paso normal 1 (byte siguiente = fotograma siguiente); las Plantas Piraña
+                // van de 2 en 2 (su entrada es apilada, pero solo pintamos la BOCA de arriba).
+                val stride = if (spriteId in PIRANHAS) 2 else 1
+                val i = off + stride * f
                 if (i >= TILE_BYTES.size) break
                 art.paintBlock(TILE_BYTES[i] + art.page * 0x100, img, 0, 16)
             }
@@ -214,9 +232,12 @@ object SmwEnemyGraphics {
         // Cheep-Cheep (aleteo de aleta), Spike Top (giro), Bony Beetle (mandíbula), Boo
         // (se tapa/destapa la cara), Eerie (ondeo), Rip Van Fish (aletas), Topo (andar).
         0x15, 0x16, 0x2E, 0x31, 0x37, 0x38, 0x39, 0x3D, 0x4D, 0x4E,
+        // Plantas Piraña: dibujadas APILADAS ([STACKED_EXTRA]) abren/cierran la boca con
+        // sus dos fotogramas apilados (`off + 2·frame`), como en el juego.
+        0x1A, 0x2A, 0x4F,
         // NO se animan por esta vía (su 2º byte OAM daría basura; su animación real es de
-        // rutina propia, no genérica): Bullet Bill 0x1C, Koopa Kid 0x29, Planta Piraña
-        // 0x2A/0x4F, Huevo de Yoshi 0x2C, Lakitu de tubería 0x4B → quedan a 1 fotograma.
+        // rutina propia, no genérica): Bullet Bill 0x1C, Koopa Kid 0x29, Huevo de Yoshi
+        // 0x2C, Lakitu de tubería 0x4B → quedan a 1 fotograma.
     )
 
     /** Nº de fotogramas que la vía genérica ([spriteFrames]) saca para el id. */
