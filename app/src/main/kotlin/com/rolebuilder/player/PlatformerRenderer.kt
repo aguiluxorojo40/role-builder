@@ -330,7 +330,7 @@ class PlatformerRenderer(
             if (e.alive && e.shell) {
                 val sx = e.x / 16f; val sw = e.width / 16f
                 val sy = (e.y + e.height * 0.35f) / 16f; val sh = e.height * 0.65f / 16f
-                val (r, g, b) = shellColor(e.id)
+                val (r, g, b) = shellColor(e.koopaColorId)
                 batch.draw(white, sx, sy, sw, sh, r = r, g = g, b = b, a = 1f)                       // domo
                 batch.draw(white, sx + sw * 0.15f, sy + sh * 0.2f, sw * 0.7f, sh * 0.3f, r = r * 0.6f + 0.4f, g = g * 0.6f + 0.4f, b = b * 0.6f + 0.4f, a = 1f) // brillo
                 batch.draw(white, sx, sy + sh * 0.7f, sw, sh * 0.3f, r = 0.98f, g = 0.9f, b = 0.6f, a = 1f) // reborde claro
@@ -338,9 +338,11 @@ class PlatformerRenderer(
             }
             val ex = e.x / 16f
             val ew = e.width / 16f
-            val frame = ENEMY_FRAME[e.id]
-            val live = romEnemyTex[e.id]
-            val big = bigTex[e.id]
+            // Una Koopa alada PISADA (sin alas) se dibuja como el Koopa de suelo (sin alas).
+            val drawId = if (e.winged) e.id else e.koopaColorId
+            val frame = ENEMY_FRAME[drawId]
+            val live = romEnemyTex[drawId]
+            val big = bigTex[drawId]
             if (e.alive && big != null) {
                 // Sprite GRANDE (Thwomp, fuego grande…): a su tamaño real (celdas = px/16),
                 // centrado en horizontal y anclado por los pies.

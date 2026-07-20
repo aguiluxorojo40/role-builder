@@ -215,6 +215,44 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `la Koopa alada vuela y no se cae al suelo`() {
+        val e = engineEnemies(20, 14, startCol = 0, startRow = 12, seeds = listOf(EnemySeed(10 * 16, 5 * 16, 0x08))) { g ->
+            for (c in 0 until 20) g[13][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        assertTrue(k.winged, "empieza con alas")
+        val y0 = k.y
+        e.run(60)
+        assertTrue(k.alive)
+        assertTrue(k.y in (y0 - 20f)..(y0 + 20f), "vuela a su altura, no cae al suelo (y=${k.y})")
+        assertTrue(k.x < 10 * 16f, "la 0x08 vuela hacia la izquierda (x=${k.x})")
+    }
+
+    @Test
+    fun `la Koopa alada roja vertical patrulla arriba y abajo`() {
+        val e = engineEnemies(14, 20, startCol = 0, startRow = 18, seeds = listOf(EnemySeed(7 * 16, 10 * 16, 0x0A))) { g ->
+            for (c in 0 until 14) g[19][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        var maxY = k.y; var minY = k.y
+        for (i in 0 until 200) { e.tick(); maxY = maxOf(maxY, k.y); minY = minOf(minY, k.y) }
+        assertTrue(maxY - minY > 40f, "patrulla un rango vertical (${maxY - minY})")
+        assertTrue(k.alive)
+    }
+
+    @Test
+    fun `pisar una Koopa alada le quita las alas`() {
+        val e = engineEnemies(12, 14, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 7 * 16, 0x0A))) { g ->
+            for (c in 0 until 12) g[13][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        assertTrue(k.winged)
+        e.run(60) // Mario cae encima
+        assertFalse(k.winged, "pisarla le quita las alas")
+        assertTrue(k.alive, "no muere: queda de andador")
+    }
+
+    @Test
     fun `pisar un caparazon que se desliza lo para`() {
         val e = engineEnemies(12, 10, startCol = 5, startRow = 3, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID

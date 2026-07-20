@@ -173,14 +173,27 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     /** Ya escupió fuego en el salto actual (una sola vez por salto). */
     var spat = false
 
-    /** ¿Este Koopa deja CAPARAZÓN al pisarlo? (Koopas con caparazón: 0x00-0x03 y 0x05). */
-    val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x05)
+    /**
+     * ¿Este Koopa deja CAPARAZÓN al pisarlo? Los de caparazón (0x00-0x03, 0x05) y también
+     * las Koopas ALADAS (0x08-0x0B), que al pisarlas pierden las alas y quedan de andador
+     * con caparazón.
+     */
+    val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x05, 0x08, 0x09, 0x0A, 0x0B)
     /** El Koopa está en su CAPARAZÓN (estado 9 quieto / A pateado de SMW). */
     var shell = false
     /** El caparazón se DESLIZA (pateado). Si false y [shell], está quieto en el suelo. */
     var shellMoving = false
     /** Gracia tras patear: fotogramas en que el caparazón que sale disparado no hiere a Mario. */
     var shellKickGrace = 0
+
+    /** Koopa ALADA (Parakoopa 0x08-0x0B): vuela hasta que la pisan y pierde las alas. */
+    var winged = id in 0x08..0x0B
+    /** Id del Koopa de suelo equivalente (para color de caparazón / dibujo sin alas). */
+    val koopaColorId = when (id) { 0x08, 0x09 -> 0x00; 0x0A, 0x0B -> 0x01; else -> id }
+    /** Sentido del vuelo (±1) para el patrullaje, y bob/fase del aleteo. */
+    var flyDir = if (id == 0x0A) 1f else -1f   // 0x0A empieza bajando; el resto a la izquierda
+    var flyVy = -0.25f
+    var flyPhase = 0
 
     init {
         if (behavior != EnemyBehavior.WALKER) vx = 0f
@@ -907,7 +920,8 @@ class PlatformerEngine(
                 EnemyBehavior.PIPE_PIRANHA -> updatePipePiranha(e)
                 EnemyBehavior.JUMPING_PIRANHA -> updateJumpingPiranha(e)
                 EnemyBehavior.WALKER -> {
-                    if (e.shell) updateShell(e)
+                    if (e.winged) updateWingedKoopa(e)
+                    else if (e.shell) updateShell(e)
                     else {
                         e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
                         moveEnemyVertical(e)
@@ -945,6 +959,43 @@ class PlatformerEngine(
             }
         }
         if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+    }
+
+    /**
+     * Koopa ALADA (Parakoopa 0x08-0x0B): cada una vuela distinto, port en espíritu de
+     * `GreenParaKoopa`/`RedVertParaKoopa`/`RedHorzParaKoopa` ($01):
+     *  - 0x08 verde: vuela horizontal aleteando (bob arriba/abajo), rebota en paredes.
+     *  - 0x09 verde saltarina: rebota en el suelo (salta al aterrizar) mientras patrulla.
+     *  - 0x0A rojo vertical: sube y baja patrullando un rango desde su origen.
+     *  - 0x0B rojo horizontal: vuela izquierda/derecha, gira en paredes.
+     * Al pisarlas pierden las alas (lo hace [handlePlayerEnemyContact]) y pasan a andador.
+     */
+    private fun updateWingedKoopa(e: PlatformerEnemy) {
+        when (e.id) {
+            0x09 -> { // verde saltarina: rebota en el suelo mientras camina
+                e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+                moveEnemyVertical(e)
+                if (e.onGround) e.vy = -WINGED_BOUNCE_V
+                if (e.vx == 0f) e.vx = WINGED_FLY_SPEED * e.flyDir
+                moveEnemyHorizontal(e)
+            }
+            0x0A -> { // rojo vertical: patrulla arriba/abajo
+                val ny = e.y + e.flyDir * WINGED_VFLY_SPEED
+                if (ny < e.spawnY - WINGED_VFLY_RANGE || ny > e.spawnY + WINGED_VFLY_RANGE) e.flyDir = -e.flyDir
+                else e.y = ny
+            }
+            else -> { // 0x08 y 0x0B: vuelo horizontal, giro en paredes, con bob de aleteo
+                val nx = e.x + e.flyDir * WINGED_FLY_SPEED
+                val minRow = (e.y / tileSize).toInt()
+                val maxRow = ((e.y + e.height - 0.01f) / tileSize).toInt()
+                val frontCol = if (e.flyDir > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+                if ((minRow..maxRow).any { wallsAt(frontCol, it) }) e.flyDir = -e.flyDir else e.x = nx
+                // Bob del aleteo (el FC/04 de SMW): sube/baja invirtiendo cada [WINGED_BOB_PERIOD].
+                e.flyPhase++
+                if (e.flyPhase >= WINGED_BOB_PERIOD) { e.flyPhase = 0; e.flyVy = -e.flyVy }
+                e.y += (if (e.flyVy < 0) -WINGED_BOB_VY else WINGED_BOB_VY)
+            }
+        }
     }
 
     /** ¿Mario está horizontalmente pegado al tubo de la Piraña (dentro de [PIRANHA_NEAR_PX])? */
@@ -1171,6 +1222,13 @@ class PlatformerEngine(
                         stompEvents++ // reutiliza el SFX de "patada/pisotón"
                     }
                 }
+                // Koopa ALADA: pisarla le quita las ALAS y queda de andador (aún NO caparazón).
+                e.canShell && e.winged -> {
+                    if (stompFromAbove) {
+                        e.winged = false; e.vy = 0f; e.vx = 0f
+                        bounceMario(); stompEvents++
+                    } else { hurtPlayer(); return }
+                }
                 // Koopa con caparazón: pisarlo lo mete en el CAPARAZÓN (no muere).
                 e.canShell -> {
                     if (stompFromAbove) {
@@ -1363,5 +1421,17 @@ class PlatformerEngine(
         const val SHELL_SPEED = 3.5f
         /** Gracia tras patear (frames): el caparazón recién lanzado no hiere a Mario. */
         const val SHELL_KICK_GRACE = 12
+
+        // ---- Koopas ALADAS (Parakoopa 0x08-0x0B, GreenParaKoopa/RedVertParaKoopa/RedHorzParaKoopa $01) ----
+        /** Velocidad horizontal del vuelo (px/f): la de andar del Koopa (Spr0to13SpeedX 0x0C). */
+        const val WINGED_FLY_SPEED = 0.75f
+        /** Velocidad del vuelo VERTICAL (px/f) y su alcance de patrullaje desde el origen (px). */
+        const val WINGED_VFLY_SPEED = 1.0f
+        const val WINGED_VFLY_RANGE = 48f
+        /** Bob del aleteo: velocidad Y y periodo (frames) en que invierte (el FC/04 de SMW). */
+        const val WINGED_BOB_VY = 0.25f
+        const val WINGED_BOB_PERIOD = 24
+        /** Impulso del salto de la Koopa verde saltarina (0x09), px/f (rebota con la gravedad). */
+        const val WINGED_BOUNCE_V = 3.2f
     }
 }

@@ -132,6 +132,13 @@ Los Koopas con caparazón (0x00-0x03, 0x05) portan la mecánica de SMW (estados
   el suyo es un refinamiento pendiente). Render: domo del color del Koopa. Tests en
   `PlatformerEngineTest`.
 
+**Koopas ALADAS (Parakoopa 0x08-0x0B):** vuelan (port en espíritu de `GreenParaKoopa`/
+`RedVertParaKoopa`/`RedHorzParaKoopa`): 0x08 verde vuela horizontal aleteando (bob),
+0x09 verde saltarina rebota en el suelo, 0x0A roja vertical patrulla arriba/abajo, 0x0B
+roja horizontal va y viene girando en paredes. **Al pisarlas pierden las alas** y quedan
+de andador con caparazón (`winged=false`) → siguiente pisotón = caparazón → patada. Se
+dibujan como el Koopa de suelo (`koopaColorId`) al perder las alas.
+
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 
 - **Cobertura del parser de objetos de Layer 1 por nivel** (ROM US): **0x105
