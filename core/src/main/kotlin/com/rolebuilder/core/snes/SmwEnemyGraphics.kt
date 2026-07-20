@@ -78,15 +78,15 @@ object SmwEnemyGraphics {
     private const val LAST_GENERIC_WALKER = 0x13
 
     /**
-     * Plantas Piraña (Classic recta 0x1A, cabeza-abajo 0x2A, saltarina 0x4F y su variante
-     * de fuego 0x50). Su entrada OAM está en formato APILADO (top,bottom,top,bottom, `off +
-     * 2·frame`), pero SOLO la tesela de ARRIBA es la BOCA que anima (0xAC cerrada ↔ 0xAE
-     * abierta); la de abajo (0xCE) es un tile ajeno (un pez), no el tallo. Por eso la
-     * dibujamos como una BOCA 16×16 que abre/cierra, con paso 2 (la tesela de arriba de
-     * cada par), sin el tile de abajo. Confirmado en `ClassicPiranhas`/`JumpingPiranha`
-     * (banco $01) y renderizando desde la ROM.
+     * Plantas Piraña de TUBO (Classic recta 0x1A, cabeza-abajo 0x2A). Su entrada OAM está
+     * en formato APILADO (top,bottom,top,bottom, `off + 2·frame`), pero SOLO la tesela de
+     * ARRIBA es la BOCA que anima (0xAC cerrada ↔ 0xAE abierta); la de abajo (0xCE) es un
+     * tile ajeno (un pez) que en el juego queda OCULTO dentro del tubo (OBJ_Priority1). Por
+     * eso la dibujamos como una BOCA 16×16 que abre/cierra, con paso 2 (la tesela de arriba
+     * de cada par). Las SALTARINAS (0x4F/0x50) NO van aquí: llevan tallo/hojas y su propio
+     * dibujo de 2 partes ([jumpingPiranhaFrames]).
      */
-    private val PIRANHAS = setOf(0x1A, 0x2A, 0x4F, 0x50)
+    private val PIRANHAS = setOf(0x1A, 0x2A)
 
     /** ¿El id se dibuja APILADO (16×32, p. ej. Koopa con caparazón)? */
     fun isTall(spriteId: Int): Boolean =
@@ -128,6 +128,10 @@ object SmwEnemyGraphics {
         // Se dibuja apilada (16×32) con `SubSprGfx1` y ABRE/CIERRA la boca (2 fotogramas),
         // igual que la de cabeza-abajo (0x2A) y la saltarina (0x4F), ahora también apiladas.
         0x1A to "Planta Pirana",
+        // Tanda 5: las Plantas Piraña SALTARINAS, con tallo/hojas-hélice ([jumpingPiranhaFrames]).
+        // 0x4F ya estaba (se recataloga como saltarina); 0x50 es la que escupe fuego (mismo
+        // sprite, el disparo es un extended sprite aparte que el motor no simula).
+        0x50 to "Planta Pirana de fuego",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -201,6 +205,55 @@ object SmwEnemyGraphics {
         return out.ifEmpty { null }
     }
 
+    /**
+     * Plantas Piraña SALTARINAS (0x4F normal, 0x50 escupefuego). A diferencia de la de
+     * tubo (solo boca), la saltarina sale con TALLO/HOJAS y su dibujo es de DOS partes
+     * (`JumpingPiranhaMain`, banco $02): la BOCA arriba (tesela 16×16, `SubSprGfx2`) y las
+     * HOJAS-hélice 8px más abajo (cuatro teselas 8×8, `SubSprGfx0`), con las columnas
+     * derechas en espejo. Las aspas giran alternando 0xC4↔0xC5 abajo; la boca alterna
+     * 0xAC↔0xAE. Su entrada OAM está en el offset 0x3A (igual que la de tubo).
+     */
+    private val JUMPING_PIRANHAS = setOf(0x4F, 0x50)
+
+    /** ¿Es una Planta Piraña saltarina (con tallo/hojas)? */
+    fun isJumpingPiranha(spriteId: Int): Boolean = spriteId in JUMPING_PIRANHAS
+
+    /**
+     * FOTOGRAMAS de la Planta Piraña saltarina: boca (16×16) + hojas-hélice (16×16 de
+     * cuatro 8×8, columnas derechas en espejo) 8px por debajo, ancladas por los pies y
+     * centradas en la celda [cellW]. Dos fotogramas: boca cerrada/aspas 0xC4 y boca
+     * abierta/aspas 0xC5 (el giro de la hélice). null si el id no es saltarina o faltan datos.
+     */
+    fun jumpingPiranhaFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int, cellW: Int = ATLAS_CELL): List<ArgbImage>? {
+        if (!isJumpingPiranha(spriteId)) return null
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        val off = OAM_OFFSET[spriteId] // 0x3A
+        val page = art.page * 0x100
+        val bodyX = (cellW - 16) / 2
+        val mouthY = 8
+        val leafY = mouthY + 8
+        val mouthTile = intArrayOf(TILE_BYTES[off + 0], TILE_BYTES[off + 2]) // 0xAC, 0xAE
+        val leafTop = TILE_BYTES[off + 4]                                    // 0x83 (hoja superior)
+        val leafBot = intArrayOf(TILE_BYTES[off + 6], TILE_BYTES[off + 10])  // 0xC4, 0xC5 (aspas)
+        // Las hojas usan la sub-paleta 5 (la parte 2 dibuja con SpriteOBJAttribute=$0A →
+        // bits de paleta = 5); las filas de sprite son 8..15 de la CGRAM.
+        val leafRow = (8 + 5) * 16
+        val out = ArrayList<ArgbImage>(2)
+        for (f in 0..1) {
+            val img = ArgbImage(cellW, ATLAS_CELL)
+            // Boca (16×16) arriba.
+            val mouth = art.paintBlock(mouthTile[f] + page, img, bodyX, mouthY)
+            // Hojas: fila de arriba 8×8 (izq normal, der en espejo) y aspas debajo igual.
+            art.paintTile(leafTop + page, img, bodyX + 0, leafY, false, false, leafRow)
+            art.paintTile(leafTop + page, img, bodyX + 8, leafY, false, true, leafRow)
+            art.paintTile(leafBot[f] + page, img, bodyX + 0, leafY + 8, false, false, leafRow)
+            art.paintTile(leafBot[f] + page, img, bodyX + 8, leafY + 8, false, true, leafRow)
+            if (!mouth) break
+            out.add(img)
+        }
+        return out.ifEmpty { null }
+    }
+
     /** Ids de las Koopas ALADAS (Parakoopa): cuerpo CON caparazón + ala (2 fotogramas). */
     private val WINGED_KOOPAS = 0x08..0x0B
 
@@ -232,9 +285,10 @@ object SmwEnemyGraphics {
         // Cheep-Cheep (aleteo de aleta), Spike Top (giro), Bony Beetle (mandíbula), Boo
         // (se tapa/destapa la cara), Eerie (ondeo), Rip Van Fish (aletas), Topo (andar).
         0x15, 0x16, 0x2E, 0x31, 0x37, 0x38, 0x39, 0x3D, 0x4D, 0x4E,
-        // Plantas Piraña: dibujadas APILADAS ([STACKED_EXTRA]) abren/cierran la boca con
-        // sus dos fotogramas apilados (`off + 2·frame`), como en el juego.
-        0x1A, 0x2A, 0x4F,
+        // Plantas Piraña de TUBO ([PIRANHAS]): abren/cierran la boca con paso 2 (solo la
+        // tesela de boca de cada par apilado). Las SALTARINAS animan aparte
+        // ([isJumpingPiranha]), no por esta vía.
+        0x1A, 0x2A,
         // NO se animan por esta vía (su 2º byte OAM daría basura; su animación real es de
         // rutina propia, no genérica): Bullet Bill 0x1C, Koopa Kid 0x29, Huevo de Yoshi
         // 0x2C, Lakitu de tubería 0x4B → quedan a 1 fotograma.
@@ -243,9 +297,9 @@ object SmwEnemyGraphics {
     /** Nº de fotogramas que la vía genérica ([spriteFrames]) saca para el id. */
     private fun genericAnimFrames(spriteId: Int): Int = if (spriteId in ANIMATED_2FRAME) 2 else 1
 
-    /** Nº de fotogramas de animación del id en el atlas: 2 si anima (aladas o genéricos), 1 si no. */
+    /** Nº de fotogramas de animación del id en el atlas: 2 si anima (aladas, saltarinas o genéricos), 1 si no. */
     fun animFrameCount(spriteId: Int): Int =
-        if (isWinged(spriteId) || genericAnimFrames(spriteId) > 1) ATLAS_FRAMES else 1
+        if (isWinged(spriteId) || isJumpingPiranha(spriteId) || genericAnimFrames(spriteId) > 1) ATLAS_FRAMES else 1
 
     // Tablas REALES del ala (banco $01, `KoopaWing*`), indexadas por dir*2 + fotograma.
     // Usamos SIEMPRE la dirección 1 (ala a la DERECHA, sin espejo) para hornear el atlas.
@@ -324,8 +378,11 @@ object SmwEnemyGraphics {
             // Vota el nivel por el aspecto del fotograma 0; ambos fotogramas salen del mismo.
             val variants = LinkedHashMap<Int, Pair<List<ArgbImage>, MutableList<Int>>>()
             for (l in candidates) {
-                val frames = if (isWinged(id)) wingedKoopaFrames(rom, header, l, id)
-                else spriteFrames(rom, header, l, id)?.map { padded(it, bodyX) }
+                val frames = when {
+                    isWinged(id) -> wingedKoopaFrames(rom, header, l, id)
+                    isJumpingPiranha(id) -> jumpingPiranhaFrames(rom, header, l, id)
+                    else -> spriteFrames(rom, header, l, id)?.map { padded(it, bodyX) }
+                }
                 val f0 = frames?.firstOrNull() ?: continue
                 variants.getOrPut(f0.pixels.contentHashCode()) { frames to ArrayList() }.second.add(l)
             }

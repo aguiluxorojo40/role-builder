@@ -72,12 +72,18 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
-    fun `las Plantas Pirana abren la boca y estan catalogadas`() {
-        for (id in intArrayOf(0x1A, 0x2A, 0x4F)) {
+    fun `las tres Plantas Pirana estan catalogadas y animan`() {
+        // Los tres tipos: de tubo (0x1A/0x2A), saltarina (0x4F) y saltarina de fuego (0x50).
+        for (id in intArrayOf(0x1A, 0x2A, 0x4F, 0x50)) {
             assertTrue(SmwEnemyGraphics.handles(id), "0x${id.toString(16)} está catalogada")
             assertEquals(SmwEnemyGraphics.ATLAS_FRAMES, SmwEnemyGraphics.animFrameCount(id),
-                "0x${id.toString(16)} anima la boca")
+                "0x${id.toString(16)} anima")
         }
+        // Solo las saltarinas llevan tallo/hojas (dibujo de 2 partes).
+        assertTrue(SmwEnemyGraphics.isJumpingPiranha(0x4F))
+        assertTrue(SmwEnemyGraphics.isJumpingPiranha(0x50))
+        assertFalse(SmwEnemyGraphics.isJumpingPiranha(0x1A))
+        assertFalse(SmwEnemyGraphics.isJumpingPiranha(0x2A))
     }
 
     @Test

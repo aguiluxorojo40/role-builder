@@ -195,10 +195,14 @@ class PlatformerActivity : ComponentActivity() {
             .mapNotNull { id ->
                 runCatching {
                     val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
-                    // Las Koopas aladas llevan su cuerpo+ala (celda ancha); el resto, sus
-                    // fotogramas de andar. Ambos se animan igual en el renderer.
-                    val frames = if (gfx.isWinged(id)) gfx.wingedKoopaFrames(rom, header, level, id)
-                    else gfx.spriteFrames(rom, header, level, id)
+                    // Las Koopas aladas llevan su cuerpo+ala y las Plantas Piraña saltarinas
+                    // su boca+hojas (celda ancha); el resto, sus fotogramas de andar. Todos
+                    // se animan igual en el renderer.
+                    val frames = when {
+                        gfx.isWinged(id) -> gfx.wingedKoopaFrames(rom, header, level, id)
+                        gfx.isJumpingPiranha(id) -> gfx.jumpingPiranhaFrames(rom, header, level, id)
+                        else -> gfx.spriteFrames(rom, header, level, id)
+                    }
                     frames?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
                 }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
             }.toMap()
