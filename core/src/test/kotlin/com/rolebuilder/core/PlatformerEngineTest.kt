@@ -165,14 +165,66 @@ class PlatformerEngineTest {
 
     @Test
     fun `pisar al enemigo lo mata y el jugador rebota`() {
-        // Jugador justo encima del enemigo, ambos sobre el suelo.
-        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0))) { g ->
+        // Goomba (0x0F): se pisa y muere (los Koopas dejan caparazón, ver otros tests).
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x0F))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
         }
         val enemy = e.enemies.single()
         e.run(60)
         assertFalse(enemy.alive, "el jugador cae encima y lo pisa")
         assertFalse(e.player.dead, "pisar no mata al jugador")
+    }
+
+    @Test
+    fun `pisar un Koopa lo mete en su caparazon sin matarlo`() {
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        e.run(60)
+        assertTrue(k.alive, "el Koopa no muere al pisarlo")
+        assertTrue(k.shell, "se mete en su caparazón")
+        assertFalse(k.shellMoving, "el caparazón queda quieto")
+        assertFalse(e.player.dead)
+    }
+
+    @Test
+    fun `tocar de lado un caparazon quieto lo patea`() {
+        val e = engineEnemies(20, 10, startCol = 2, startRow = 7, seeds = listOf(EnemySeed(6 * 16, 8 * 16 - 14, 0x00))) { g ->
+            for (c in 0 until 20) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        e.run(15)
+        k.shell = true; k.shellMoving = false // caparazón quieto en el suelo
+        e.moveX = 1f // Mario camina hacia él
+        e.run(120)
+        assertTrue(k.shellMoving, "tocar el caparazón de lado lo lanza")
+    }
+
+    @Test
+    fun `el caparazon deslizandose arrolla a otro enemigo`() {
+        val e = engineEnemies(20, 10, startCol = 0, startRow = 0,
+            seeds = listOf(EnemySeed(3 * 16, 8 * 16 - 14, 0x00), EnemySeed(9 * 16, 8 * 16 - 14, 0x0F))) { g ->
+            for (c in 0 until 20) g[9][c] = SmwSolidity.SOLID
+        }
+        val shell = e.enemies[0]; val victim = e.enemies[1]
+        e.run(15)
+        shell.shell = true; shell.shellMoving = true; shell.vx = PlatformerEngine.SHELL_SPEED
+        e.run(160)
+        assertFalse(victim.alive, "el caparazón deslizándose arrolla al enemigo")
+    }
+
+    @Test
+    fun `pisar un caparazon que se desliza lo para`() {
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 3, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        e.run(10)
+        k.shell = true; k.shellMoving = true; k.vx = 0f
+        e.run(40) // Mario cae encima
+        assertFalse(k.shellMoving, "pisar el caparazón que se desliza lo detiene")
+        assertTrue(k.shell)
     }
 
     @Test

@@ -117,6 +117,21 @@ Las Plantas Piraña **no se pisan** (muerden por cualquier lado, salvo el tobog�
 en `PlatformerEngineTest` (asoma 48 px con Mario lejos, no sale con Mario encima, salta en
 arco, escupe fuego).
 
+## Mecánica de caparazón de Koopa (motor)
+
+Los Koopas con caparazón (0x00-0x03, 0x05) portan la mecánica de SMW (estados
+`SpriteStatus` 8 normal / 9 quieto / A pateado) en `PlatformerEngine`:
+- **Pisar** un Koopa lo mete en su CAPARAZÓN (`shell`, no muere) en vez de matarlo.
+- **Tocar de lado** un caparazón quieto lo **PATEA** (`shellMoving`, `SHELL_SPEED` ≈
+  3.5 px/f de la tabla `ShellSpeedX`), lejos de Mario; hay gracia (`SHELL_KICK_GRACE`)
+  para no morir al lanzarlo.
+- El caparazón deslizándose **arrolla** a los demás enemigos (cadena), rebota en paredes
+  y se cae por los bordes.
+- **Pisar** un caparazón en marcha lo **para**; de lado, muere Mario.
+- v1: el caparazón es persistente (no revive solo; el Koopa-sin-caparazón que corre a por
+  el suyo es un refinamiento pendiente). Render: domo del color del Koopa. Tests en
+  `PlatformerEngineTest`.
+
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 
 - **Cobertura del parser de objetos de Layer 1 por nivel** (ROM US): **0x105

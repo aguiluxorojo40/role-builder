@@ -326,6 +326,16 @@ class PlatformerRenderer(
         for (e in engine.enemies) {
             if (!e.alive && e.squashTimer <= 0) continue
             if (e.hidden) continue // Planta Piraña metida en el tubo: no se dibuja
+            // Koopa en su CAPARAZÓN (quieto o deslizándose): domo del color del Koopa.
+            if (e.alive && e.shell) {
+                val sx = e.x / 16f; val sw = e.width / 16f
+                val sy = (e.y + e.height * 0.35f) / 16f; val sh = e.height * 0.65f / 16f
+                val (r, g, b) = shellColor(e.id)
+                batch.draw(white, sx, sy, sw, sh, r = r, g = g, b = b, a = 1f)                       // domo
+                batch.draw(white, sx + sw * 0.15f, sy + sh * 0.2f, sw * 0.7f, sh * 0.3f, r = r * 0.6f + 0.4f, g = g * 0.6f + 0.4f, b = b * 0.6f + 0.4f, a = 1f) // brillo
+                batch.draw(white, sx, sy + sh * 0.7f, sw, sh * 0.3f, r = 0.98f, g = 0.9f, b = 0.6f, a = 1f) // reborde claro
+                continue
+            }
             val ex = e.x / 16f
             val ew = e.width / 16f
             val frame = ENEMY_FRAME[e.id]
@@ -544,6 +554,14 @@ class PlatformerRenderer(
 
     /** Libera los recursos de audio (SoundPool). Llamar al salir del nivel. */
     fun releaseAudio() = audio?.release()
+
+    /** Color del caparazón según el Koopa (verde/rojo/azul/amarillo). */
+    private fun shellColor(id: Int): Triple<Float, Float, Float> = when (id) {
+        0x01 -> Triple(0.86f, 0.18f, 0.16f) // rojo
+        0x02 -> Triple(0.20f, 0.42f, 0.90f) // azul
+        0x03 -> Triple(0.95f, 0.82f, 0.12f) // amarillo
+        else -> Triple(0.22f, 0.72f, 0.24f) // verde (0x00 / 0x05)
+    }
 
     private fun colorOf(s: SmwSolidity): FloatArray = when (s) {
         SmwSolidity.LEDGE_TOP -> floatArrayOf(0.50f, 0.82f, 0.50f)   // verde: un sentido

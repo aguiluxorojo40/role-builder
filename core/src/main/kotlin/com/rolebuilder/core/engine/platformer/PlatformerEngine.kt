@@ -173,6 +173,15 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     /** Ya escupió fuego en el salto actual (una sola vez por salto). */
     var spat = false
 
+    /** ¿Este Koopa deja CAPARAZÓN al pisarlo? (Koopas con caparazón: 0x00-0x03 y 0x05). */
+    val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x05)
+    /** El Koopa está en su CAPARAZÓN (estado 9 quieto / A pateado de SMW). */
+    var shell = false
+    /** El caparazón se DESLIZA (pateado). Si false y [shell], está quieto en el suelo. */
+    var shellMoving = false
+    /** Gracia tras patear: fotogramas en que el caparazón que sale disparado no hiere a Mario. */
+    var shellKickGrace = 0
+
     init {
         if (behavior != EnemyBehavior.WALKER) vx = 0f
         // La Piraña descansa en [spawnY] (metida) y asoma/salta desde ahí.
@@ -898,13 +907,44 @@ class PlatformerEngine(
                 EnemyBehavior.PIPE_PIRANHA -> updatePipePiranha(e)
                 EnemyBehavior.JUMPING_PIRANHA -> updateJumpingPiranha(e)
                 EnemyBehavior.WALKER -> {
-                    e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
-                    moveEnemyVertical(e)
-                    moveEnemyHorizontal(e)
-                    if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+                    if (e.shell) updateShell(e)
+                    else {
+                        e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+                        moveEnemyVertical(e)
+                        moveEnemyHorizontal(e)
+                        if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Caparazón de Koopa: cae con gravedad; si está PATEADO ([shellMoving]) se desliza
+     * rápido, REBOTA en las paredes y se cae por los bordes (no gira como el andador), y
+     * ARROLLA a los demás enemigos que toca (la cadena de caparazón de SMW). Si está
+     * quieto, solo se posa. Se apaga al caer al vacío.
+     */
+    private fun updateShell(e: PlatformerEnemy) {
+        e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+        moveEnemyVertical(e)
+        if (e.shellKickGrace > 0) e.shellKickGrace--
+        if (e.shellMoving) {
+            val nx = e.x + e.vx
+            val minRow = (e.y / tileSize).toInt()
+            val maxRow = ((e.y + e.height - 0.01f) / tileSize).toInt()
+            val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+            if ((minRow..maxRow).any { wallsAt(frontCol, it) }) e.vx = -e.vx  // rebota, no gira
+            else e.x = nx
+            // Arrolla a los demás enemigos que solape (no a otro caparazón parado ni a sí mismo).
+            for (o in enemies) {
+                if (o === e || !o.alive || o.hidden) continue
+                if (e.x < o.x + o.width && e.x + e.width > o.x && e.y < o.y + o.height && e.y + e.height > o.y) {
+                    o.alive = false; o.squashTimer = 12; stompEvents++
+                }
+            }
+        }
+        if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
     }
 
     /** ¿Mario está horizontalmente pegado al tubo de la Piraña (dentro de [PIRANHA_NEAR_PX])? */
@@ -1105,8 +1145,6 @@ class PlatformerEngine(
             val overlap = p.x < e.x + e.width && p.x + pw > e.x &&
                 p.y < e.y + e.height && p.y + ph > e.y
             if (!overlap) continue
-            // Las Plantas Piraña NO se pisan: muerden por cualquier lado (salvo tobogán).
-            val piranha = e.behavior != EnemyBehavior.WALKER
             // Deslizándose por la cuesta ARROLLA al enemigo (el tobogán de SMW).
             if (p.sliding) {
                 e.alive = false
@@ -1115,19 +1153,48 @@ class PlatformerEngine(
                 continue
             }
             // Viene cayendo y sus pies están cerca de la cabeza del enemigo → pisotón.
-            val stomp = !piranha && p.vy > 0f && (p.y + ph) - e.y < e.height * 0.6f
-            if (stomp) {
-                e.alive = false
-                e.squashTimer = 12
-                p.vy = tuning.jumpSpeed * 0.6f // rebote
-                p.onGround = false
-                p.jumping = false
-                stompEvents++
-            } else {
-                hurtPlayer() // grande: encoge con invulnerabilidad; pequeño: muere
-                return
+            val stompFromAbove = p.vy > 0f && (p.y + ph) - e.y < e.height * 0.6f
+            when {
+                // Caparazón que SE DESLIZA: se para al pisarlo; de lado muerde (salvo gracia).
+                e.canShell && e.shell && e.shellMoving -> {
+                    if (stompFromAbove) { e.shellMoving = false; e.vx = 0f; bounceMario() }
+                    else if (e.shellKickGrace <= 0) { hurtPlayer(); return }
+                }
+                // Caparazón QUIETO: pisarlo rebota (sigue quieto); tocarlo de lado lo PATEA.
+                e.canShell && e.shell -> {
+                    if (stompFromAbove) bounceMario()
+                    else {
+                        val marioCx = p.x + pw / 2f
+                        e.shellMoving = true
+                        e.vx = if (e.x + e.width / 2f >= marioCx) SHELL_SPEED else -SHELL_SPEED
+                        e.shellKickGrace = SHELL_KICK_GRACE
+                        stompEvents++ // reutiliza el SFX de "patada/pisotón"
+                    }
+                }
+                // Koopa con caparazón: pisarlo lo mete en el CAPARAZÓN (no muere).
+                e.canShell -> {
+                    if (stompFromAbove) {
+                        e.shell = true; e.shellMoving = false; e.vx = 0f
+                        bounceMario(); stompEvents++
+                    } else { hurtPlayer(); return }
+                }
+                // Resto: andadores se pisan; Plantas Piraña muerden por cualquier lado.
+                else -> {
+                    val stomp = e.behavior == EnemyBehavior.WALKER && stompFromAbove
+                    if (stomp) {
+                        e.alive = false; e.squashTimer = 12; bounceMario(); stompEvents++
+                    } else { hurtPlayer(); return }
+                }
             }
         }
+    }
+
+    /** Rebote de Mario tras pisar (enemigo o caparazón): pequeño impulso hacia arriba. */
+    private fun bounceMario() {
+        val p = player
+        p.vy = tuning.jumpSpeed * 0.6f
+        p.onGround = false
+        p.jumping = false
     }
 
     private fun moveHorizontal(dx: Float) {
@@ -1290,5 +1357,11 @@ class PlatformerEngine(
         const val PIRANHA_FIRE_VX = 1f
         const val PIRANHA_FIRE_VY = -3f
         const val PIRANHA_FIRE_G = 0.125f
+
+        // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----
+        /** Velocidad del caparazón PATEADO (px/f): la tabla ShellSpeedX ronda ±0x34..0x3E ≈ 3.5. */
+        const val SHELL_SPEED = 3.5f
+        /** Gracia tras patear (frames): el caparazón recién lanzado no hiere a Mario. */
+        const val SHELL_KICK_GRACE = 12
     }
 }
