@@ -106,7 +106,7 @@ object SmwEnemyGraphics {
         // Tanda 0 (el orden fija los fotogramas 0..14 del atlas horneado).
         0x00 to "Koopa verde", 0x01 to "Koopa rojo", 0x02 to "Koopa azul", 0x03 to "Koopa amarillo",
         0x05 to "Koopa", 0x0F to "Goomba", 0x10 to "Goomba volador", 0x11 to "Buzzy Beetle",
-        0x1C to "Bullet Bill", 0x29 to "Koopa Kid", 0x2A to "Planta Pirana",
+        0x1C to "Bullet Bill", 0x29 to "Koopa Kid", 0x2A to "Planta Pirana techo",
         0x2C to "Huevo de Yoshi", 0x4B to "Lakitu de tuberia", 0x4D to "Topo", 0x4E to "Topo",
         // Tanda 1: los ids mas frecuentes de la ROM US aun sin cubrir, verificados
         // visualmente con `--enemies` (voto por mayoria entre los niveles que los
@@ -378,11 +378,14 @@ object SmwEnemyGraphics {
             // Vota el nivel por el aspecto del fotograma 0; ambos fotogramas salen del mismo.
             val variants = LinkedHashMap<Int, Pair<List<ArgbImage>, MutableList<Int>>>()
             for (l in candidates) {
-                val frames = when {
+                var frames = when {
                     isWinged(id) -> wingedKoopaFrames(rom, header, l, id)
                     isJumpingPiranha(id) -> jumpingPiranhaFrames(rom, header, l, id)
                     else -> spriteFrames(rom, header, l, id)?.map { padded(it, bodyX) }
                 }
+                // La Piraña de techo (0x2A) cuelga boca ABAJO: se voltea en vertical para
+                // que en el editor se distinga de la recta (0x1A) —además de por nombre—.
+                if (id == 0x2A) frames = frames?.map { vflip(it) }
                 val f0 = frames?.firstOrNull() ?: continue
                 variants.getOrPut(f0.pixels.contentHashCode()) { frames to ArrayList() }.second.add(l)
             }
@@ -399,6 +402,15 @@ object SmwEnemyGraphics {
             }
         }
         return atlas to missing
+    }
+
+    /** Voltea una imagen en VERTICAL (para la Piraña de techo, que cuelga boca abajo). */
+    private fun vflip(src: ArgbImage): ArgbImage {
+        val out = ArgbImage(src.width, src.height)
+        for (y in 0 until src.height) for (x in 0 until src.width) {
+            out.set(x, src.height - 1 - y, src.pixels[y * src.width + x])
+        }
+        return out
     }
 
     /** Coloca una imagen 16×[ATLAS_CELL] en una celda cuadrada, centrada en [bodyX]. */
