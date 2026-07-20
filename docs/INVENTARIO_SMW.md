@@ -92,23 +92,30 @@ portada del ROM en `PlatformerEngine` (`EnemyBehavior`, `updatePipePiranha` /
 `updateJumpingPiranha`). Fuente: `ClassicPiranhas` (banco $01) y `JumpingPiranhaMain`
 (banco $02) del disassembly IsoFrieze/SMWDisX.
 
+El movimiento vertical se porta con las UNIDADES EXACTAS de SMW (`smwStepY` replica
+`SubSprYPosNoGrvty`/`UpdateYPosNoGrvty`: byte `IIIISSSS`, ÷16 = px/f con acumulador de
+subpíxeles), así que las velocidades y distancias salen 1:1 con el ROM.
+
 - **De tubo — `0x1A` recta / `0x2A` cabeza-abajo** (`ClassicPiranhas`): máquina de 4
-  estados con temporizador (`PIRANHA_TIME = {0x20,0x30,0x20,0x30}`): metida → saliendo
-  (sube) → fuera → entrando (baja) → repite (~160 f/2.7 s). La `0x2A` cuelga del techo
-  (sentido invertido). **No sale del tubo mientras Mario está horizontalmente pegado**
-  (radio `PIRANHA_NEAR_PX`, del chequeo real `_F+0x1B < 0x37`): metida no hiere ni se
-  dibuja. Asoma `PIRANHA_EMERGE_PX` (~1.5 casillas). La boca anima 0xAC↔0xAE.
-- **Saltarina — `0x4F`** (`JumpingPiranhaMain`): espera en el tubo, salta en ARCO
-  (`PIRANHA_JUMP_V` con gravedad `PIRANHA_JUMP_G`, ~3 casillas) y vuelve a meterse;
-  repite. No salta si Mario está pegado. Dibujo de 2 partes (boca + hojas-hélice verdes).
-- **Saltarina de fuego — `0x50`**: igual que la `0x4F` y, al pasar el ápice del salto,
-  **escupe DOS bolas en "V"** (arriba-izquierda y arriba-derecha), no hacia Mario —
-  extended sprite `0x0B` en el juego, aquí `EnemyProjectile` en línea recta que hiere a
-  Mario. Evento `piranhaFireEvents`.
+  estados con velocidad Y por estado (`PIRANHA_SPEED = {0, 0xF0, 0, 0x10}` = 0, −1, 0,
+  +1 px/f) durante `PIRANHA_TIME = {0x20,0x30,0x20,0x30}`: metida → saliendo (−1 px/f ·
+  48 f = **asoma exactamente 48 px / 3 casillas**) → fuera → entrando (+1 px/f · 48 f =
+  vuelve) → repite (~160 f/2.7 s). La `0x2A` cuelga del techo (velocidad negada, como el
+  `EOR #$FF : INC A` del juego). **No sale mientras Mario está pegado** (`PIRANHA_NEAR_PX`
+  ≈27 px, del chequeo `_F+0x1B < 0x37`): metida no hiere ni se dibuja.
+- **Saltarina — `0x4F`** (`JumpingPiranhaMain`): salta con `0xC0` = −4 px/f y frena a
+  +0.125 px/f² (`+2` unidades/frame) hasta −1 px/f (estado 1, ~24 f); luego una gravedad
+  MUY lenta (`+1` unidad cada 4 frames, tope +0.5 px/f) — el "cae poco a poco" — hasta
+  volver al tubo. Medido: **arco de ~95 px / 6 casillas, ~290 f airborne**. Dibujo de 2
+  partes (boca + hojas-hélice verdes).
+- **Saltarina de fuego — `0x50`**: igual que la `0x4F` y, al valer el temporizador 0x40
+  en el descenso, **escupe DOS bolas en "V"** (X ±0x10 = ±1 px/f, Y 0xD0 = −3 px/f), no
+  hacia Mario — extended sprite `0x0B`/`Hammer` que ARQUEA (gravedad +0.125 px/f²); aquí
+  `EnemyProjectile`. Evento `piranhaFireEvents`.
 
 Las Plantas Piraña **no se pisan** (muerden por cualquier lado, salvo el tobogán). Tests
-en `PlatformerEngineTest` (asoma con Mario lejos, no sale con Mario encima, salta en arco,
-escupe fuego).
+en `PlatformerEngineTest` (asoma 48 px con Mario lejos, no sale con Mario encima, salta en
+arco, escupe fuego).
 
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 

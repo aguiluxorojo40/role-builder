@@ -194,9 +194,10 @@ class PlatformerEngineTest {
         }
         val pir = e.enemies.single()
         val spawnY = 6f * 16
-        assertTrue(pir.hidden && pir.y > spawnY, "empieza metida en el tubo (y=${pir.y})")
-        e.run(96) // metida (32) + saliendo (48) + margen
-        assertTrue(pir.y <= spawnY + 1f, "asomó hasta su posición (y=${pir.y})")
+        assertTrue(pir.hidden, "empieza metida en el tubo")
+        assertEquals(spawnY, pir.y, 0.1f, "en reposo está en su posición de tubo")
+        e.run(84) // metida (32) + saliendo (48) + margen
+        assertTrue(pir.y <= spawnY - 40f, "asomó ~48 px hacia arriba (y=${pir.y})")
         assertFalse(pir.hidden, "fuera del tubo ya no está 'metida'")
     }
 

@@ -78,9 +78,9 @@ fun enemyBehaviorOf(id: Int): EnemyBehavior = when (id) {
 }
 
 /**
- * Proyectil de enemigo (bola de fuego de la Planta Piraña de fuego): vuela en línea
- * RECTA (sin gravedad, como en SMW: sale con velocidad fija arriba-diagonal), hiere al
- * jugador al tocarlo y se apaga al salir del nivel o agotar su vida.
+ * Proyectil de enemigo (bola de fuego de la Planta Piraña de fuego): sale en diagonal
+ * hacia arriba y ARQUEA con gravedad (como la rutina `Hammer` de SMW), hiere al jugador
+ * al tocarlo y se apaga al salir del nivel o agotar su vida.
  */
 class EnemyProjectile(var x: Float, var y: Float, var vx: Float, var vy: Float) {
     val width = 8f
@@ -157,6 +157,17 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     /** Estado y temporizador de la máquina de la Planta Piraña. */
     var pState = 0
     var pTimer = 0
+    /**
+     * Velocidad Y en UNIDADES de SMW (byte con signo `IIIISSSS`: nibble alto = px enteros,
+     * bajo = 1/16 px) y su acumulador de SUBPÍXELES, para mover exactamente como el juego
+     * (`SubSprYPosNoGrvty`). Solo la saltarina varía su velocidad; la de tubo usa fijas.
+     */
+    var pSpeed = 0
+    var pSubY = 0
+    /** Temporizador del estado 2 de la saltarina (dispara el fuego al valer 0x40). */
+    var p2Timer = 0
+    /** Contador de frames para la gravedad lenta del descenso (cada 4 frames). */
+    var pFrame = 0
     /** true mientras la Piraña de tubo está METIDA (no hiere ni se dibuja como amenaza). */
     var hidden = behavior == EnemyBehavior.PIPE_PIRANHA || behavior == EnemyBehavior.JUMPING_PIRANHA
     /** Ya escupió fuego en el salto actual (una sola vez por salto). */
@@ -164,12 +175,9 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
 
     init {
         if (behavior != EnemyBehavior.WALKER) vx = 0f
+        // La Piraña descansa en [spawnY] (metida) y asoma/salta desde ahí.
         when (behavior) {
-            EnemyBehavior.PIPE_PIRANHA -> {
-                // Empieza METIDA en el tubo (asoma desde el fondo hacia [spawnY]).
-                y = spawnY + (if (upsideDown) -1f else 1f) * PlatformerEngine.PIRANHA_EMERGE_PX
-                pTimer = PlatformerEngine.PIRANHA_TIME[0]
-            }
+            EnemyBehavior.PIPE_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_TIME[0]
             EnemyBehavior.JUMPING_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_JUMP_WAIT
             EnemyBehavior.WALKER -> {}
         }
@@ -907,81 +915,104 @@ class PlatformerEngine(
     }
 
     /**
-     * Planta Piraña de TUBO (0x1A/0x2A), port de `ClassicPiranhas` ($01): ciclo de 4
-     * estados —metida, saliendo, fuera, retrayéndose— con sus temporizadores. NO sale del
-     * tubo (se queda metida e inerte) mientras Mario esté justo encima/al lado, como en el
-     * juego. La 0x2A cuelga del techo: asoma hacia abajo (sentido invertido).
+     * Mueve al enemigo en Y por una velocidad en UNIDADES de SMW (`speed`, byte con signo
+     * `IIIISSSS`), replicando `SubSprYPosNoGrvty` ($01): el nibble bajo (1/16 px) va a un
+     * acumulador de subpíxeles y el alto (con signo) son los px enteros. Así el movimiento
+     * es exacto al del juego (p. ej. 0xF0 = −1 px/f, 0xC2 = −3.875 px/f).
+     */
+    private fun smwStepY(e: PlatformerEnemy, speed: Int) {
+        val s = speed and 0xFF
+        val spx = e.pSubY + ((s shl 4) and 0xFF)
+        e.pSubY = spx and 0xFF
+        val carry = spx shr 8
+        var intPart = (s shr 4) and 0x0F
+        if (intPart >= 8) intPart -= 16                      // extensión de signo del nibble alto
+        e.y += (intPart + carry).toFloat()
+    }
+
+    /** signed(byte): interpreta el byte SMW como velocidad con signo. */
+    private fun signed(b: Int): Int = if ((b and 0xFF) >= 0x80) (b and 0xFF) - 256 else (b and 0xFF)
+
+    /**
+     * Planta Piraña de TUBO (0x1A/0x2A), port EXACTO de `ClassicPiranhas` ($01): ciclo de
+     * 4 estados con velocidad Y por estado ([PIRANHA_SPEED] en unidades de SMW: 0, −1, 0,
+     * +1 px/f) durante sus tiempos ([PIRANHA_TIME]): metida → saliendo (−1 px/f · 48 f =
+     * asoma 48 px) → fuera → entrando (+1 px/f · 48 f = vuelve). NO sale del tubo (metida e
+     * inerte) mientras Mario esté horizontalmente pegado. La 0x2A cuelga del techo (sentido
+     * invertido, dos-complemento como el juego).
      */
     private fun updatePipePiranha(e: PlatformerEnemy) {
-        val outY = e.spawnY
-        val emergeSign = if (e.upsideDown) -1f else 1f       // metida = hacia el tubo
-        val hidY = outY + emergeSign * PIRANHA_EMERGE_PX
-        val lo = min(outY, hidY); val hi = max(outY, hidY)
-        val v = PIRANHA_EMERGE_PX / PIRANHA_TIME[1]           // px/frame para asomar en su tiempo
         if (e.pTimer > 0) {
             e.pTimer--
-            val vel = when (e.pState) {
-                1 -> -emergeSign * v                         // saliendo: hacia fuera
-                3 -> emergeSign * v                          // retrayéndose: hacia el tubo
-                else -> 0f
-            }
-            e.y = (e.y + vel).coerceIn(lo, hi)
+            var sp = PIRANHA_SPEED[e.pState]
+            if (e.upsideDown) sp = (-sp) and 0xFF            // 0x2A: EOR #$FF : INC A
+            smwStepY(e, sp)
         } else {
             // En el estado 0 (metida) solo sale si Mario NO está pegado al tubo.
             if (e.pState == 0 && marioNearPipe(e)) { e.pTimer = PIRANHA_TIME[0]; e.hidden = true; return }
             e.pState = (e.pState + 1) and 0x03
             e.pTimer = PIRANHA_TIME[e.pState]
+            e.pSubY = 0
         }
-        // Metida solo cuando está en el fondo del tubo (estado 0 en su Y de reposo).
-        e.hidden = e.pState == 0 && abs(e.y - hidY) < 0.5f
+        e.hidden = e.pState == 0                              // metida solo en reposo (dentro del tubo)
     }
 
     /**
-     * Planta Piraña SALTARINA (0x4F/0x50), port de `JumpingPiranhaMain` ($02): espera en
-     * el tubo, salta en ARCO (sube y cae con gravedad) y vuelve a meterse; repite. No
-     * salta si Mario está pegado al tubo. La de fuego (0x50) ESCUPE dos bolas en "V" una
-     * vez por salto, al pasar el punto más alto.
+     * Planta Piraña SALTARINA (0x4F/0x50), port EXACTO de `JumpingPiranhaMain` ($02).
+     * Espera en el tubo; salta con velocidad inicial −4 px/f (0xC0) y sube frenando a
+     * +0.125 px/f² (`+2` unidades/frame) hasta −1 px/f → pasa a la fase de descenso, que
+     * usa una gravedad MUY lenta (`+1` unidad cada 4 frames) — el "cae poco a poco" — hasta
+     * volver al tubo. No salta si Mario está pegado. La de fuego (0x50) escupe al valer el
+     * temporizador 0x40.
      */
     private fun updateJumpingPiranha(e: PlatformerEnemy) {
         when (e.pState) {
             0 -> { // esperando en el tubo
-                e.y = e.spawnY
-                e.hidden = true
+                e.y = e.spawnY; e.hidden = true
                 if (e.pTimer > 0) { e.pTimer--; return }
                 if (marioNearPipe(e)) { e.pTimer = PIRANHA_JUMP_WAIT; return }
-                e.vy = -PIRANHA_JUMP_V                        // ¡salto!
-                e.hidden = false
-                e.spat = false
-                e.pState = 1
+                e.pSpeed = PIRANHA_JUMP_SPEED                 // 0xC0 = −4 px/f
+                e.pSubY = 0; e.spat = false; e.pFrame = 0
+                e.hidden = false; e.pState = 1
             }
-            1 -> { // en el aire (arco)
-                val wasRising = e.vy < 0f
-                e.vy = min(e.vy + PIRANHA_JUMP_G, PIRANHA_JUMP_V)
-                e.y += e.vy
-                // Escupe al pasar el ápice (pasa de subir a caer), una vez por salto.
-                if (e.firePiranha && !e.spat && wasRising && e.vy >= 0f) { spitFireballs(e); e.spat = true }
-                if (e.vy > 0f && e.y >= e.spawnY) {           // volvió a meterse en el tubo
-                    e.y = e.spawnY
-                    e.vy = 0f
-                    e.pState = 0
-                    e.pTimer = PIRANHA_JUMP_WAIT
-                    e.hidden = true
+            1 -> { // subida frenando (gravedad normal)
+                smwStepY(e, e.pSpeed)
+                if (signed(e.pSpeed) < 0 || e.pSpeed < 0x40) e.pSpeed = (e.pSpeed + 2) and 0xFF
+                if (signed(e.pSpeed) >= -16) { e.pState = 2; e.p2Timer = 0x50 }
+            }
+            2 -> { // descenso lento hasta volver al tubo
+                if (e.firePiranha && e.p2Timer == 0x40 && !e.spat) { spitFireballs(e); e.spat = true }
+                if (e.p2Timer > 0) e.p2Timer--
+                e.pFrame++
+                if ((e.pFrame and 0x03) == 0 && signed(e.pSpeed) < 8) e.pSpeed = (e.pSpeed + 1) and 0xFF
+                smwStepY(e, e.pSpeed)
+                if (e.y >= e.spawnY) {                        // volvió al tubo
+                    e.y = e.spawnY; e.pState = 0; e.pTimer = PIRANHA_JUMP_WAIT
+                    e.pSpeed = 0; e.hidden = true
                 }
             }
         }
     }
 
-    /** La Piraña de fuego escupe DOS bolas en abanico (arriba-izquierda y arriba-derecha). */
+    /**
+     * La Piraña de fuego escupe DOS bolas en abanico, con las velocidades EXACTAS del juego
+     * (X ±0x10 = ±1 px/f, Y 0xD0 = −3 px/f arriba); luego arquean con la gravedad de
+     * `Hammer` ([EnemyProjectile]). No apunta a Mario: salen simétricas a los dos lados.
+     */
     private fun spitFireballs(e: PlatformerEnemy) {
         if (enemyProjectiles.count { it.alive } >= 6) return
         val cx = e.x + e.width / 2f
         val cy = e.y + e.height / 2f
-        enemyProjectiles.add(EnemyProjectile(cx, cy, PIRANHA_FIRE_VX, -PIRANHA_FIRE_VY))
-        enemyProjectiles.add(EnemyProjectile(cx, cy, -PIRANHA_FIRE_VX, -PIRANHA_FIRE_VY))
+        enemyProjectiles.add(EnemyProjectile(cx, cy, PIRANHA_FIRE_VX, PIRANHA_FIRE_VY))
+        enemyProjectiles.add(EnemyProjectile(cx, cy, -PIRANHA_FIRE_VX, PIRANHA_FIRE_VY))
         piranhaFireEvents++
     }
 
-    /** Avanza las bolas de fuego de enemigos (línea recta), las apaga y hieren al tocar a Mario. */
+    /**
+     * Avanza las bolas de fuego de enemigos: como en `Hammer` ($02), arquean (gravedad
+     * `+2` unidades/frame = +0.125 px/f², tope +4 px/f) y hieren a Mario al tocarlo; se
+     * apagan al salir del nivel o agotar su vida.
+     */
     private fun updateEnemyProjectiles() {
         if (enemyProjectiles.isEmpty()) return
         val p = player
@@ -991,6 +1022,7 @@ class PlatformerEngine(
         while (it.hasNext()) {
             val f = it.next()
             if (!f.alive) { it.remove(); continue }
+            f.vy = min(f.vy + PIRANHA_FIRE_G, 4f)            // gravedad de Hammer
             f.x += f.vx
             f.y += f.vy
             if (--f.life <= 0 || f.x < -16f || f.x > (cols + 1) * tileSize || f.y < -16f || f.y > (rows + 1) * tileSize) {
@@ -1241,21 +1273,22 @@ class PlatformerEngine(
         /** Tope de velocidad deslizándose (px/f): el 0x40 dieciseisavos de SMW = 4.0. */
         const val SLIDE_MAX_SPEED = 4f
 
-        // ---- Plantas Piraña (port de ClassicPiranhas $01 y JumpingPiranhaMain $02) ----
-        /** Duración de cada estado de la Piraña de tubo (metida, saliendo, fuera, entrando), en frames. */
+        // ---- Plantas Piraña: valores EXACTOS del ROM (ClassicPiranhas $01 y
+        // JumpingPiranhaMain $02). Las velocidades Y de la de tubo van en unidades de SMW
+        // (byte con signo, /16 = px/f) porque las mueve [smwStepY]; el resto son px/f. ----
+        /** `PiranhaSpeed`: velocidad Y por estado (0, −1, 0, +1 px/f en unidades de SMW). */
+        val PIRANHA_SPEED = intArrayOf(0x00, 0xF0, 0x00, 0x10)
+        /** `PiranTimeInState`: duración de cada estado (metida, saliendo, fuera, entrando), frames. */
         val PIRANHA_TIME = intArrayOf(0x20, 0x30, 0x20, 0x30)
-        /** Cuánto asoma la Piraña de tubo (px): ~1.5 casillas, sobre su tiempo de "saliendo". */
-        const val PIRANHA_EMERGE_PX = 26f
-        /** Radio horizontal (px) dentro del cual Mario impide que la Piraña salga (`_F+0x1B<0x37`). */
-        const val PIRANHA_NEAR_PX = 28f
-        /** Impulso de salto de la saltarina (px/f): arco de ~3 casillas con [PIRANHA_JUMP_G]. */
-        const val PIRANHA_JUMP_V = 4.2f
-        /** Gravedad del salto de la saltarina (px/f²). */
-        const val PIRANHA_JUMP_G = 0.18f
-        /** Espera en el tubo entre saltos (frames). */
+        /** Radio horizontal (px) dentro del cual Mario impide que la Piraña salga (`_F+0x1B<0x37` ≈ ±27). */
+        const val PIRANHA_NEAR_PX = 27f
+        /** Impulso de salto de la saltarina en unidades de SMW: 0xC0 = −4 px/f. */
+        const val PIRANHA_JUMP_SPEED = 0xC0
+        /** Espera en el tubo entre saltos (frames; `1540 = 0x40` al aterrizar). */
         const val PIRANHA_JUMP_WAIT = 0x40
-        /** Velocidad de la bola de fuego de la Piraña (px/f): sale en "V" arriba-diagonal. */
-        const val PIRANHA_FIRE_VX = 1.6f
-        const val PIRANHA_FIRE_VY = 3.0f
+        /** Bola de fuego de la Piraña: X ±0x10 = ±1 px/f, Y 0xD0 = −3 px/f (arriba), gravedad +0.125 px/f². */
+        const val PIRANHA_FIRE_VX = 1f
+        const val PIRANHA_FIRE_VY = -3f
+        const val PIRANHA_FIRE_G = 0.125f
     }
 }
