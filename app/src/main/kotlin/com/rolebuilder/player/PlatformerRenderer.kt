@@ -325,6 +325,7 @@ class PlatformerRenderer(
         val etex = enemyTex
         for (e in engine.enemies) {
             if (!e.alive && e.squashTimer <= 0) continue
+            if (e.hidden) continue // Planta Piraña metida en el tubo: no se dibuja
             val ex = e.x / 16f
             val ew = e.width / 16f
             val frame = ENEMY_FRAME[e.id]
@@ -407,6 +408,15 @@ class PlatformerRenderer(
             val bh = fb.height / 16f
             batch.draw(white, bx, by, bw, bh, r = 1f, g = 0.45f, b = 0.10f, a = 1f)
             batch.draw(white, bx + bw * 0.25f, by + bh * 0.25f, bw * 0.5f, bh * 0.5f, r = 1f, g = 0.95f, b = 0.6f, a = 1f)
+        }
+
+        // Bolas de fuego de la Planta Piraña de fuego: rojo-naranja con núcleo claro.
+        for (fb in engine.enemyProjectiles) {
+            if (!fb.alive) continue
+            val bx = fb.x / 16f; val by = fb.y / 16f
+            val bw = fb.width / 16f; val bh = fb.height / 16f
+            batch.draw(white, bx, by, bw, bh, r = 0.95f, g = 0.25f, b = 0.10f, a = 1f)
+            batch.draw(white, bx + bw * 0.25f, by + bh * 0.25f, bw * 0.5f, bh * 0.5f, r = 1f, g = 0.9f, b = 0.5f, a = 1f)
         }
 
         drawMario(dt)

@@ -85,6 +85,31 @@ visual suspendió: la entrada de la tabla genérica da el cuerpo SIN caparazón 
 el ala tapa la cabeza. Su aspecto real exige portar su rutina de dibujo
 completa (caparazón + alas con sus offsets), no la vía genérica.
 
+## Comportamiento de las Plantas Piraña (portado al motor)
+
+Los 3 tipos de Planta Piraña tienen sprite fiel (`SmwEnemyGraphics`) **y** conducta
+portada del ROM en `PlatformerEngine` (`EnemyBehavior`, `updatePipePiranha` /
+`updateJumpingPiranha`). Fuente: `ClassicPiranhas` (banco $01) y `JumpingPiranhaMain`
+(banco $02) del disassembly IsoFrieze/SMWDisX.
+
+- **De tubo — `0x1A` recta / `0x2A` cabeza-abajo** (`ClassicPiranhas`): máquina de 4
+  estados con temporizador (`PIRANHA_TIME = {0x20,0x30,0x20,0x30}`): metida → saliendo
+  (sube) → fuera → entrando (baja) → repite (~160 f/2.7 s). La `0x2A` cuelga del techo
+  (sentido invertido). **No sale del tubo mientras Mario está horizontalmente pegado**
+  (radio `PIRANHA_NEAR_PX`, del chequeo real `_F+0x1B < 0x37`): metida no hiere ni se
+  dibuja. Asoma `PIRANHA_EMERGE_PX` (~1.5 casillas). La boca anima 0xAC↔0xAE.
+- **Saltarina — `0x4F`** (`JumpingPiranhaMain`): espera en el tubo, salta en ARCO
+  (`PIRANHA_JUMP_V` con gravedad `PIRANHA_JUMP_G`, ~3 casillas) y vuelve a meterse;
+  repite. No salta si Mario está pegado. Dibujo de 2 partes (boca + hojas-hélice verdes).
+- **Saltarina de fuego — `0x50`**: igual que la `0x4F` y, al pasar el ápice del salto,
+  **escupe DOS bolas en "V"** (arriba-izquierda y arriba-derecha), no hacia Mario —
+  extended sprite `0x0B` en el juego, aquí `EnemyProjectile` en línea recta que hiere a
+  Mario. Evento `piranhaFireEvents`.
+
+Las Plantas Piraña **no se pisan** (muerden por cualquier lado, salvo el tobogán). Tests
+en `PlatformerEngineTest` (asoma con Mario lejos, no sale con Mario encima, salta en arco,
+escupe fuego).
+
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 
 - **Cobertura del parser de objetos de Layer 1 por nivel** (ROM US): **0x105

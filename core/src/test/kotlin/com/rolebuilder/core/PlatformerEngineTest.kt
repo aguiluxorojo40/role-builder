@@ -186,6 +186,58 @@ class PlatformerEngineTest {
         assertTrue(e.player.dead, "el contacto lateral mata al jugador")
     }
 
+    @Test
+    fun `la Planta Piraña de tubo empieza metida y asoma con Mario lejos`() {
+        // Mario lejos (col 0); la piraña en el tubo de la col 10.
+        val e = engineEnemies(20, 12, startCol = 0, startRow = 10, seeds = listOf(EnemySeed(10 * 16, 6 * 16, 0x1A))) { g ->
+            for (c in 0 until 20) g[11][c] = SmwSolidity.SOLID
+        }
+        val pir = e.enemies.single()
+        val spawnY = 6f * 16
+        assertTrue(pir.hidden && pir.y > spawnY, "empieza metida en el tubo (y=${pir.y})")
+        e.run(96) // metida (32) + saliendo (48) + margen
+        assertTrue(pir.y <= spawnY + 1f, "asomó hasta su posición (y=${pir.y})")
+        assertFalse(pir.hidden, "fuera del tubo ya no está 'metida'")
+    }
+
+    @Test
+    fun `la Planta Piraña de tubo no sale si Mario está encima`() {
+        // Mario justo sobre el tubo (misma columna): la piraña no debe emerger.
+        val e = engineEnemies(20, 12, startCol = 10, startRow = 6, seeds = listOf(EnemySeed(10 * 16, 6 * 16, 0x1A))) { g ->
+            for (c in 0 until 20) g[7][c] = SmwSolidity.SOLID
+        }
+        val pir = e.enemies.single()
+        val hidY = pir.y
+        e.run(200)
+        assertTrue(pir.hidden, "sigue metida mientras Mario está encima")
+        assertEquals(hidY, pir.y, 1f, "no asomó (y=${pir.y})")
+        assertFalse(e.player.dead, "metida no hiere a Mario")
+    }
+
+    @Test
+    fun `la Planta Piraña saltarina salta en arco por encima del tubo`() {
+        val e = engineEnemies(20, 14, startCol = 0, startRow = 12, seeds = listOf(EnemySeed(10 * 16, 8 * 16, 0x4F))) { g ->
+            for (c in 0 until 20) g[13][c] = SmwSolidity.SOLID
+        }
+        val pir = e.enemies.single()
+        val spawnY = 8f * 16
+        assertEquals(spawnY, pir.y, 0.1f, "espera en el tubo a su altura")
+        var highest = spawnY
+        for (i in 0 until 200) { e.tick(); highest = minOf(highest, pir.y) }
+        assertTrue(highest < spawnY - 16f, "saltó al menos una casilla por encima (subió a $highest)")
+    }
+
+    @Test
+    fun `la Planta Piraña de fuego escupe bolas al saltar`() {
+        val e = engineEnemies(20, 14, startCol = 0, startRow = 12, seeds = listOf(EnemySeed(10 * 16, 8 * 16, 0x50))) { g ->
+            for (c in 0 until 20) g[13][c] = SmwSolidity.SOLID
+        }
+        var sawFire = false
+        for (i in 0 until 200) { e.tick(); if (e.enemyProjectiles.isNotEmpty()) sawFire = true }
+        assertTrue(sawFire, "la piraña de fuego escupió al menos una bola")
+        assertTrue(e.piranhaFireEvents > 0, "hubo evento de fuego")
+    }
+
     // ----------------------------------------------- contadores de eventos (audio)
 
     @Test
