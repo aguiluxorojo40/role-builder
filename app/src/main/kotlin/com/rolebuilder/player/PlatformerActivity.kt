@@ -154,6 +154,7 @@ class PlatformerActivity : ComponentActivity() {
                 marioBigBitmap = loadMarioBig(), marioFireBitmap = loadMarioFire(),
                 marioCapeBitmap = loadMarioCape(),
                 bigSpriteBitmaps = loadBigSprites(), coinBitmap = loadCoin(),
+                powerupBitmap = loadPowerups(),
             )
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
@@ -221,6 +222,7 @@ class PlatformerActivity : ComponentActivity() {
             romEnemyFrames = enemyFrames.ifEmpty { null },
             bigSpriteBitmaps = loadBigSprites(),
             coinBitmap = loadCoin(),
+            powerupBitmap = loadPowerups(),
         )
     }
 
@@ -282,6 +284,9 @@ class PlatformerActivity : ComponentActivity() {
 
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
     private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
+
+    /** Hoja de POWERUPS real horneada (assets/sprites/powerups.png: seta|flor|pluma), o null. */
+    private fun loadPowerups(): android.graphics.Bitmap? = loadSprite("sprites/powerups.png")
 
     /** Carga la hoja de la moneda animada real (assets/sprites/coin.png), o null si falta. */
     private fun loadCoin(): android.graphics.Bitmap? = loadSprite("sprites/coin.png")

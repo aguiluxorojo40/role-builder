@@ -156,6 +156,27 @@ object SmwEnemyGraphics {
         return if (art.paintBlock(base, img, 0, 0)) img else null
     }
 
+    /** Ids de sprite de los POWERUPS y su tesela (`kPowerUpAndItemGFXRt_PowerUpTiles`, $01). */
+    private val POWERUP_SPRITES = intArrayOf(0x74, 0x75, 0x77) // seta, flor de fuego, pluma
+    private val POWERUP_TILES = intArrayOf(0x24, 0x26, 0x0E)
+
+    /**
+     * Hoja 48×16 de los POWERUPS REALES de SMW —SETA | FLOR | PLUMA, en ese orden— cada uno
+     * con su tesela de sprite (`0x24/0x26/0x0E`) y su paleta real (`$166E`). El juego los
+     * dibuja fuera de la tabla OAM genérica de enemigos (`PowerUpAndItemDraw`, `$01:C61A`),
+     * por eso no salen de [spriteImage]. Índice 0 transparente. null si faltan datos.
+     */
+    fun powerupSheet(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? {
+        val img = ArgbImage(16 * POWERUP_SPRITES.size, 16)
+        var any = false
+        for (i in POWERUP_SPRITES.indices) {
+            val art = buildSpriteArt(rom, header, level, POWERUP_SPRITES[i]) ?: continue
+            val base = POWERUP_TILES[i] + art.page * 0x100
+            if (art.paintTile(base, img, i * 16, 0, size16 = true, xflip = false)) any = true
+        }
+        return if (any) img else null
+    }
+
     /**
      * FOTOGRAMAS de ANDAR del enemigo [spriteId] como los dibuja el juego, cada uno en
      * una celda UNIFORME de 16×32 anclada por los pies:
@@ -502,9 +523,19 @@ object SmwEnemyGraphics {
     private fun artFor(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): LevelSpriteArt? {
         if (!NAMES.containsKey(spriteId)) return null
         if (spriteId !in OAM_OFFSET.indices) return null
+        return buildSpriteArt(rom, header, level, spriteId)
+    }
+
+    /**
+     * Como [artFor] pero SIN la guarda del catálogo de enemigos: prepara la paleta/página
+     * ($166E) y el GFX de sprites del nivel para CUALQUIER id de sprite. Lo usan los
+     * powerups ([powerupSheet]), que se dibujan fuera de la tabla OAM genérica de enemigos.
+     */
+    private fun buildSpriteArt(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): LevelSpriteArt? {
         val delta = header.headerOffset - 0x7FC0
 
         val behaviors = SmwSpriteBehaviorReader.read(rom, header) ?: return null
+        if (spriteId !in behaviors.indices) return null
         val prop = behaviors[spriteId].b166e and 0x0F
         val page = prop and 0x01                        // bit 9 del nº de tesela
         val objPalette = (prop shr 1) and 0x07

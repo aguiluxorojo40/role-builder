@@ -72,6 +72,11 @@ class PlatformerRenderer(
      * cae al cuadrado dorado que parpadea.
      */
     private val coinBitmap: Bitmap? = null,
+    /**
+     * Hoja de POWERUPS real de SMW (assets/sprites/powerups.png, 48×16 = seta|flor|pluma,
+     * 16×16 cada uno) horneada de la ROM. Si falta, los powerups caen a los rectángulos.
+     */
+    private val powerupBitmap: Bitmap? = null,
 ) : GLSurfaceView.Renderer {
 
     @Volatile var inMoveX = 0f
@@ -133,6 +138,8 @@ class PlatformerRenderer(
     private var romEnemyTex: Map<Int, List<Texture>> = emptyMap()
     private var bigTex: Map<Int, Pair<Texture, Bitmap>> = emptyMap()
     private var coinFrames: List<Texture> = emptyList()
+    /** Texturas de powerup por tipo (0=seta, 1=flor, 2=pluma), de [powerupBitmap]. */
+    private var powerupFrames: List<Texture> = emptyList()
     private var tilesetTex: Texture? = null
     private var animByTile: Map<Int, com.rolebuilder.core.model.TileAnimation> = emptyMap()
     private val camera = Camera2D()
@@ -150,6 +157,12 @@ class PlatformerRenderer(
         romEnemyTex = romEnemyFrames?.mapValues { (_, frames) -> frames.map { Texture(it) } } ?: emptyMap()
         bigTex = bigSpriteBitmaps.mapValues { (_, bmp) -> Texture(bmp) to bmp }
         coinFrames = coinBitmap?.let { bmp ->
+            val n = (bmp.width / 16).coerceAtLeast(1)
+            (0 until n).map { fi ->
+                Texture(Bitmap.createBitmap(bmp, fi * 16, 0, 16, minOf(16, bmp.height)))
+            }
+        } ?: emptyList()
+        powerupFrames = powerupBitmap?.let { bmp ->
             val n = (bmp.width / 16).coerceAtLeast(1)
             (0 until n).map { fi ->
                 Texture(Bitmap.createBitmap(bmp, fi * 16, 0, 16, minOf(16, bmp.height)))
@@ -386,9 +399,9 @@ class PlatformerRenderer(
             }
         }
 
-        // Setas de powerup en marcha: seta clásica (sombrero rojo, base clara). Es un
-        // dibujo de motor (dos rectángulos), no un sprite de la ROM: el gráfico de la
-        // seta vive fuera de la tabla OAM genérica que ya portamos.
+        // Powerups en marcha: si está la hoja REAL de la ROM (assets/sprites/powerups.png,
+        // seta|flor|pluma), se dibuja el sprite correcto por tipo; si no, cae a los
+        // rectángulos de motor.
         for (m in engine.items) {
             if (!m.alive) continue
             val mx = m.x / 16f
@@ -396,7 +409,10 @@ class PlatformerRenderer(
             val mw = m.width / 16f
             val mh = m.height / 16f
             val kind = m.kind
-            if (kind == com.rolebuilder.core.engine.platformer.PowerupKind.FIRE_FLOWER) {
+            val frameIdx = kind.ordinal // 0=seta, 1=flor, 2=pluma (orden de powerups.png)
+            if (frameIdx < powerupFrames.size) {
+                batch.draw(powerupFrames[frameIdx], mx, my, mw, mh)
+            } else if (kind == com.rolebuilder.core.engine.platformer.PowerupKind.FIRE_FLOWER) {
                 // Flor de fuego: pétalos naranjas y centro claro (dibujo de motor).
                 batch.draw(white, mx, my, mw, mh * 0.6f, r = 1f, g = 0.45f, b = 0.10f, a = 1f)
                 batch.draw(white, mx + mw * 0.3f, my + mh * 0.2f, mw * 0.4f, mh * 0.35f, r = 1f, g = 0.95f, b = 0.7f, a = 1f)

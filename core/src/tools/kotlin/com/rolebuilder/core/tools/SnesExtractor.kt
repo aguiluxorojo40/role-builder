@@ -240,6 +240,18 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --powerup-sheet: hornea la hoja de POWERUPS reales (seta|flor|pluma) de la ROM.
+    if (opts.containsKey("powerup-sheet")) {
+        val lv = opts["level"]?.let { parseInt(it) } ?: 0x105
+        val img = com.rolebuilder.core.snes.SmwEnemyGraphics.powerupSheet(rom, header, lv)
+        if (img == null) { println("No se pudo leer la hoja de powerups (¿ROM no SMW / nivel sin su GFX?)."); return }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "powerups.png")
+        ImageIO.write(toBufferedImage(img), "png", png)
+        println("Hoja de powerups (nivel ${lv.toString(16)}): ${img.width}x${img.height}px -> images/${png.name}")
+        return
+    }
+
     // Modo --enemies: hornea el ATLAS de enemigos del catálogo curado
     // (SmwEnemyGraphics.curatedIds, un fotograma 16×16 por id, en su orden) con el
     // sprite y color REALES de la ROM. Es el horneado oficial de

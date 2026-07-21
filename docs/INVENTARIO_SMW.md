@@ -64,8 +64,11 @@ se explican por cuál de las dos usa cada pieza:
   de tesela 0x46/0x83 + tablas cabeza/cuerpo). La ruta ROM directa ya los usaba; ahora la
   ruta de PROYECTO también, con las hojas horneadas `assets/sprites/mario_big|cape|fire.png`
   (regenerables con `extractSnesTileset --mario --powerup big|cape|fire`).
-- **La seta se dibuja con rectángulos** (sombrero+base): su gráfico real vive
-  fuera de la tabla OAM genérica portada.
+- ~~**La seta se dibuja con rectángulos**~~ → Resuelto: `SmwEnemyGraphics.powerupSheet`
+  renderiza SETA/FLOR/PLUMA con sus teselas de sprite REALES (`0x24/0x26/0x0E` de
+  `kPowerUpAndItemGFXRt_PowerUpTiles`, `$01:C61A`) y su paleta `$166E`, aunque estén fuera
+  de la tabla OAM genérica de enemigos. Horneado en `assets/sprites/powerups.png` (48×16),
+  regenerable con `extractSnesTileset --powerup-sheet`; el renderer lo usa por tipo.
 - **Cuestas**: colisionan como bloque completo (la altura sub-píxel de la
   pendiente es un refinamiento pendiente).
 - **Enemigos con rutina de dibujo propia** (Thwomp, Super Koopa, Blurp, Rex
