@@ -156,6 +156,70 @@ object SmwEnemyGraphics {
         return if (art.paintBlock(base, img, 0, 0)) img else null
     }
 
+    /**
+     * Una tesela OAM de un enemigo con DIBUJO PROPIO: [tile] es el nº de tesela de sprite
+     * (0..0x1FF, con el bit de página ya incluido), ([dx],[dy]) su desplazamiento en px
+     * respecto al ancla, [size16] si es 16×16 (o 8×8) y [xflip] espejo horizontal.
+     */
+    class OamTile(val tile: Int, val dx: Int, val dy: Int, val size16: Boolean = true, val xflip: Boolean = false)
+
+    /**
+     * Compone un sprite de enemigo con DIBUJO PROPIO (fuera de la tabla OAM genérica) a
+     * partir de sus teselas OAM REALES (nº de tesela CRUDO 0..0xFF de su rutina
+     * `Spr..._Draw`, banco $01/$03), añadiéndoles la PÁGINA del sprite ($166E). La paleta es
+     * [palRow] (8+paleta de objeto) o, si null, la del sprite ($166E). Recorta al
+     * bounding-box. Reutiliza el GFX de sprites y la CGRAM del nivel. null si faltan datos.
+     */
+    fun customSprite(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int,
+                     tiles: List<OamTile>, palRow: Int? = null): ArgbImage? {
+        if (tiles.isEmpty()) return null
+        val art = buildSpriteArt(rom, header, level, spriteId) ?: return null
+        val row = palRow ?: art.cgRow
+        val minX = tiles.minOf { it.dx }
+        val minY = tiles.minOf { it.dy }
+        val maxX = tiles.maxOf { it.dx + if (it.size16) 16 else 8 }
+        val maxY = tiles.maxOf { it.dy + if (it.size16) 16 else 8 }
+        val img = ArgbImage(maxX - minX, maxY - minY)
+        var any = false
+        for (t in tiles) {
+            val base = (t.tile and 0xFF) + art.page * 0x100
+            if (art.paintTile(base, img, t.dx - minX, t.dy - minY, t.size16, t.xflip, row)) any = true
+        }
+        return if (any) img else null
+    }
+
+    /**
+     * Imagen del enemigo con DIBUJO PROPIO [spriteId] (Rex, Blurp, Super Koopa…), a su
+     * tamaño real, o null si no está en el catálogo de dibujos propios [CUSTOM_ENEMIES].
+     * Es la vía para los enemigos que la tabla OAM genérica no sabe dibujar (ids ≥ 0x54 o
+     * multi-tesela): cada uno lleva su layout de teselas real de su rutina del banco $01/$03.
+     */
+    fun customEnemyImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
+        val c = CUSTOM_ENEMIES[spriteId] ?: return null
+        return customSprite(rom, header, level, spriteId, c.tiles, c.palRow)
+    }
+
+    /** Ids con dibujo propio soportados (para el bake de `big_<id>.png`). */
+    val customEnemyIds: List<Int> get() = CUSTOM_ENEMIES.keys.toList()
+
+    private class CustomEnemy(val tiles: List<OamTile>, val palRow: Int? = null)
+
+    /**
+     * Layouts de teselas REALES de enemigos con dibujo propio, transcritos de sus rutinas
+     * `Spr..._Draw` del disassembly (snesrev/smw). Un fotograma representativo por enemigo.
+     * Teselas en CRUDO (0..0xFF); la página y —salvo override— la paleta salen de $166E.
+     */
+    private val CUSTOM_ENEMIES: Map<Int, CustomEnemy> = mapOf(
+        // Rex (0xAB): 2 teselas 16×16 apiladas (kSpr0AB_Rex_Tiles/XDisp/YDisp, $03), frame 0.
+        // Cabeza 0x8a en (−4,−15) + cuerpo 0xaa en (0,0). Paleta 1 (ppp de Prop=0x07).
+        0xAB to CustomEnemy(
+            listOf(OamTile(0x8a, -4, -15), OamTile(0xaa, 0, 0)),
+            palRow = (8 + 1) * 16,
+        ),
+        // Blurp (0xC2): 1 tesela 16×16 (Spr0C2_Blurp, $03: charnum 0xA2; paleta de $166E).
+        0xC2 to CustomEnemy(listOf(OamTile(0xA2, 0, 0))),
+    )
+
     /** Ids de sprite de los POWERUPS y su tesela (`kPowerUpAndItemGFXRt_PowerUpTiles`, $01). */
     private val POWERUP_SPRITES = intArrayOf(0x74, 0x75, 0x77) // seta, flor de fuego, pluma
     private val POWERUP_TILES = intArrayOf(0x24, 0x26, 0x0E)
@@ -456,7 +520,7 @@ object SmwEnemyGraphics {
     private class LevelSpriteArt(
         private val spData: Array<ByteArray?>,
         private val cgram: IntArray,
-        private val cgRow: Int,
+        val cgRow: Int,
         val page: Int,
     ) {
         private fun tileIndices(tile9: Int): IntArray? {

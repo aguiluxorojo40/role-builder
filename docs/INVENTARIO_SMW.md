@@ -71,9 +71,14 @@ se explican por cuál de las dos usa cada pieza:
   regenerable con `extractSnesTileset --powerup-sheet`; el renderer lo usa por tipo.
 - **Cuestas**: colisionan como bloque completo (la altura sub-píxel de la
   pendiente es un refinamiento pendiente).
-- **Enemigos con rutina de dibujo propia** (Thwomp, Super Koopa, Blurp, Rex
-  real 0xAB, Pokey, Wiggler…): fuera del alcance de la tabla OAM genérica
-  (ids ≥ 0x54 o multi-tesela); necesitan portar su rutina específica.
+- **Enemigos con rutina de dibujo propia**: fuera del alcance de la tabla OAM genérica
+  (ids ≥ 0x54 o multi-tesela). Infraestructura: `SmwEnemyGraphics.customSprite`/
+  `customEnemyImage` compone su sprite real a partir del layout de teselas de su rutina
+  `Spr..._Draw`, horneado a `assets/sprites/big/big_<id>.png` (auto-cargado por id) con
+  `extractSnesTileset --custom-enemy --id 0xNN`.
+  - ✅ Hechos: Thwomp (0x26), Pokey (0x70), **Rex (0xAB)**, **Blurp (0xC2)**.
+  - 🟡 Pendientes: Super Koopa (0x71/0x73, draw compartido) y Wiggler (0x86, segmentos con
+    posición dinámica) — necesitan más porte; y el resto (Blargg, Reznor…) según valor.
 
 ## Motor 1:1 (progreso y huecos)
 

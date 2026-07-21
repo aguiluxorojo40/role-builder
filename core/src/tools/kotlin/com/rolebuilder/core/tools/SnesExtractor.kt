@@ -252,6 +252,20 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --custom-enemy --id 0xAB: vuelca el sprite REAL de un enemigo con dibujo propio
+    // (Rex, Blurp, Super Koopa…) a su tamaño real, para hornear assets/sprites/big/big_<id>.png.
+    if (opts.containsKey("custom-enemy")) {
+        val id = opts["id"]?.let { parseInt(it) } ?: run { println("Falta --id 0xNN"); return }
+        val lv = opts["level"]?.let { parseInt(it) } ?: 0x105
+        val img = com.rolebuilder.core.snes.SmwEnemyGraphics.customEnemyImage(rom, header, lv, id)
+        if (img == null) { println("El id 0x${id.toString(16)} no tiene dibujo propio soportado o falta su GFX en el nivel."); return }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "big_${id.toString(16)}.png")
+        ImageIO.write(toBufferedImage(img), "png", png)
+        println("Enemigo 0x${id.toString(16)} (nivel ${lv.toString(16)}): ${img.width}x${img.height}px -> images/${png.name}")
+        return
+    }
+
     // Modo --enemies: hornea el ATLAS de enemigos del catálogo curado
     // (SmwEnemyGraphics.curatedIds, un fotograma 16×16 por id, en su orden) con el
     // sprite y color REALES de la ROM. Es el horneado oficial de
