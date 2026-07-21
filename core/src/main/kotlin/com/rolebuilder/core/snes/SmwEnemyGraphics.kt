@@ -211,10 +211,11 @@ object SmwEnemyGraphics {
      */
     private val CUSTOM_ENEMIES: Map<Int, CustomEnemy> = mapOf(
         // Rex (0xAB): 2 teselas 16×16 apiladas (kSpr0AB_Rex_Tiles/XDisp/YDisp, $03), frame 0.
-        // Cabeza 0x8a en (−4,−15) + cuerpo 0xaa en (0,0). Paleta 1 (ppp de Prop=0x07).
+        // Cabeza 0x8a en (−4,−15) + cuerpo 0xaa en (0,0). Paleta 3 (ppp de Prop=0x07:
+        // (0x07 >> 1) & 7 = 3) → fila 8+3 de la CGRAM; es la AZUL de Rex, no la rosa.
         0xAB to CustomEnemy(
             listOf(OamTile(0x8a, -4, -15), OamTile(0xaa, 0, 0)),
-            palRow = (8 + 1) * 16,
+            palRow = (8 + 3) * 16,
         ),
         // Blurp (0xC2): 1 tesela 16×16 (Spr0C2_Blurp, $03: charnum 0xA2; paleta de $166E).
         0xC2 to CustomEnemy(listOf(OamTile(0xA2, 0, 0))),
