@@ -146,7 +146,15 @@ class PlatformerActivity : ComponentActivity() {
             // los niveles ya importados y los tilesets propios funcionan sin más.
             val autoProfiles = autoSlopeProfiles(projectDir, tileset)
             val engine = ProjectPlatformer.engine(map, tileset, startX, startY, autoSlopeProfiles = autoProfiles)
-            PlatformerRenderer(engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(), PlatformerAudio.fromAssets(this), bigSpriteBitmaps = loadBigSprites(), coinBitmap = loadCoin())
+            PlatformerRenderer(
+                engine, PlatformerWorld(projectDir, map, tileset), loadMario(), loadEnemies(),
+                PlatformerAudio.fromAssets(this),
+                // Mario grande/fuego/capa con sus gráficos REALES horneados (no el pequeño
+                // estirado): assets/sprites/mario_big|fire|cape.png.
+                marioBigBitmap = loadMarioBig(), marioFireBitmap = loadMarioFire(),
+                marioCapeBitmap = loadMarioCape(),
+                bigSpriteBitmaps = loadBigSprites(), coinBitmap = loadCoin(),
+            )
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
             null
@@ -266,6 +274,11 @@ class PlatformerActivity : ComponentActivity() {
     }
 
     private fun loadMario(): android.graphics.Bitmap? = loadSprite("sprites/mario.png")
+
+    /** Hojas de Mario GRANDE/FUEGO/CAPA horneadas de la ROM (gráficos propios, 16×32 por pose). */
+    private fun loadMarioBig(): android.graphics.Bitmap? = loadSprite("sprites/mario_big.png")
+    private fun loadMarioFire(): android.graphics.Bitmap? = loadSprite("sprites/mario_fire.png")
+    private fun loadMarioCape(): android.graphics.Bitmap? = loadSprite("sprites/mario_cape.png")
 
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
     private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")

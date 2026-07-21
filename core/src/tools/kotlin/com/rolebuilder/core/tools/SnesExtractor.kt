@@ -220,13 +220,23 @@ fun main(args: Array<String>) {
     }
 
     // Modo --mario: vuelca la hoja de sprites de Mario (GFX32) coloreada de la ROM.
+    // --powerup small|big|fire|cape elige el juego de gráficos (por defecto small).
     if (opts.containsKey("mario")) {
-        val img = com.rolebuilder.core.snes.SnesGameRecipes.smwMarioSheet(rom, header)
+        val pw = when (opts["powerup"]?.lowercase()) {
+            "big", "grande", "1" -> 1
+            "cape", "capa", "2" -> 2
+            "fire", "fuego", "3" -> 3
+            else -> 0
+        }
+        val img = com.rolebuilder.core.snes.SnesGameRecipes.smwMarioSheet(rom, header, pw)
         if (img == null) { println("No se pudo leer la hoja de Mario (¿ROM no SMW?)."); return }
         val imagesDir = File(outDir, "images").also { it.mkdirs() }
-        val png = File(imagesDir, "mario.png")
+        // Mismos nombres que los assets: pequeño=mario.png, grande/capa/fuego=mario_big|cape|fire.png,
+        // así regenerar un asset es directo (--mario --powerup big → mario_big.png).
+        val name = when (pw) { 1 -> "mario_big.png"; 2 -> "mario_cape.png"; 3 -> "mario_fire.png"; else -> "mario.png" }
+        val png = File(imagesDir, name)
         ImageIO.write(toBufferedImage(img), "png", png)
-        println("Hoja de Mario: ${img.width}x${img.height}px (${img.width / 8}x${img.height / 8} teselas) -> images/${png.name}")
+        println("Hoja de Mario (poder $pw): ${img.width}x${img.height}px (${img.width / 8}x${img.height / 8} teselas) -> images/${png.name}")
         return
     }
 

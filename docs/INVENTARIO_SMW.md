@@ -59,8 +59,11 @@ se explican por cuál de las dos usa cada pieza:
 - **Etiquetas de enemigos**: los nombres del catálogo se re-verificaron contra
   el despacho real del juego al ampliar la tanda 1 (antes 0x1C/0x29/0x2A/0x4B
   tenían nombres equivocados).
-- **Mario grande se dibuja estirado** (fotograma pequeño a 1.5 casillas): las
-  teselas reales de Mario grande de GFX32 están pendientes de mapear.
+- ~~**Mario grande se dibuja estirado**~~ → Resuelto: `smwMarioSheet(powerup=1/2/3)`
+  compone Mario GRANDE/FUEGO/CAPA con sus teselas reales de GFX32 (16×32 por pose, offset
+  de tesela 0x46/0x83 + tablas cabeza/cuerpo). La ruta ROM directa ya los usaba; ahora la
+  ruta de PROYECTO también, con las hojas horneadas `assets/sprites/mario_big|cape|fire.png`
+  (regenerables con `extractSnesTileset --mario --powerup big|cape|fire`).
 - **La seta se dibuja con rectángulos** (sombrero+base): su gráfico real vive
   fuera de la tabla OAM genérica portada.
 - **Cuestas**: colisionan como bloque completo (la altura sub-píxel de la
