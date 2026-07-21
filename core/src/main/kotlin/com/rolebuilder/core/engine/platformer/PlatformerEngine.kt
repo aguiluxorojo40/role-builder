@@ -108,6 +108,22 @@ class PlacedItem(val x: Float, val y: Float, val kind: ItemKind) {
 }
 
 /**
+ * Bloque de AGARRAR estilo SMW (píxeles). Empieza quieto en su celda; Mario lo coge con
+ * el botón de correr estando al lado ([carried] = true, sigue a Mario), y al volver a
+ * pulsar lo LANZA en la dirección a la que mira ([thrown] = true): vuela recto arrollando
+ * enemigos y se rompe al chocar con una pared o salir del nivel. Con abajo pulsado, en vez
+ * de lanzar lo deja en el suelo.
+ */
+class GrabBlock(var x: Float, var y: Float) {
+    val width = 16f
+    val height = 16f
+    var carried = false
+    var thrown = false
+    var vx = 0f
+    var alive = true
+}
+
+/**
  * Acción interactiva de una celda del mapa, a nivel de motor (independiente de la
  * clasificación de bloques Map16 de SMW, que se mapea a esto al montar el nivel):
  *  - [NONE]: sin interacción.
@@ -117,8 +133,10 @@ class PlacedItem(val x: Float, val y: Float, val kind: ItemKind) {
  *    pero ya no premia).
  *  - [DRAGON_COIN]: la moneda grande "Yoshi/Dragon Coin" (objeto de 16×32 = dos celdas
  *    apiladas); se recoge al tocarla como una moneda enorme y cada 5 dan una vida extra.
+ *  - [GRAB]: bloque de AGARRAR (estilo SMW): al montar el nivel se convierte en una
+ *    entidad [GrabBlock] que Mario puede coger (botón de correr), llevar y lanzar.
  */
-enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN }
+enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN, GRAB }
 
 private val BLOCK_ACTIONS = BlockAction.values()
 
@@ -322,6 +340,16 @@ class PlatformerEngine(
     /** Bolas de fuego en vuelo lanzadas por Mario de fuego. */
     val fireballs = ArrayList<Fireball>()
 
+    /**
+     * Bloques de AGARRAR del nivel (estilo SMW), sembrados de las celdas [BlockAction.GRAB].
+     * Uno puede estar cogido ([carriedBlock]); el resto quietos o lanzados.
+     */
+    val grabBlocks = ArrayList<GrabBlock>()
+
+    /** Bloque que Mario lleva ahora mismo, o null. */
+    var carriedBlock: GrabBlock? = null
+        private set
+
     /** Bolas de fuego de ENEMIGOS en vuelo (Planta Piraña de fuego). */
     val enemyProjectiles = ArrayList<EnemyProjectile>()
 
@@ -373,6 +401,7 @@ class PlatformerEngine(
         if (col in 0 until cols && row in 0 until rows) a[row * cols + col] = value.ordinal
     }
 
+
     /** Monedas recogidas (monedas sueltas + premios de bloques `?`). */
     var coins = 0
         private set
@@ -422,6 +451,12 @@ class PlatformerEngine(
         private set
     /** Evento "Planta Piraña escupe fuego" (para SFX). */
     var piranhaFireEvents = 0
+        private set
+    /** Evento "Mario coge un bloque" (para SFX). */
+    var grabEvents = 0
+        private set
+    /** Evento "Mario lanza un bloque" (para SFX). */
+    var grabThrowEvents = 0
         private set
 
     /** Rising-edge del botón de correr (para lanzar bolas con la misma tecla, como SMW). */
@@ -484,6 +519,78 @@ class PlatformerEngine(
     }
 
     /**
+     * Agarrar/llevar/lanzar bloques (estilo SMW), en el flanco del botón de correr:
+     *  - Llevando uno: lo LANZA en la dirección de Mario (o lo deja si se pulsa abajo).
+     *  - Al lado de un bloque quieto: lo COGE.
+     * Devuelve true si consumió la pulsación (para no lanzar bola de fuego a la vez).
+     */
+    private fun handleGrabThrow(): Boolean {
+        if (player.dead) return false
+        val carried = carriedBlock
+        if (carried != null) {
+            carried.carried = false
+            if (inputDown) {
+                // Dejar en el suelo delante de Mario.
+                carried.vx = 0f
+            } else {
+                carried.thrown = true
+                carried.vx = if (player.facingRight) GRAB_THROW_SPEED else -GRAB_THROW_SPEED
+                grabThrowEvents++
+            }
+            carriedBlock = null
+            return true
+        }
+        // Coger un bloque quieto al alcance (solapando el frente de Mario).
+        val reach = if (player.facingRight) player.x + tuning.playerWidth + GRAB_REACH
+        else player.x - GRAB_REACH
+        for (b in grabBlocks) {
+            if (!b.alive || b.carried || b.thrown) continue
+            val overlapY = player.y < b.y + b.height && player.y + playerHeight > b.y
+            val nearX = reach >= b.x && reach <= b.x + b.width
+            if (overlapY && nearX) {
+                b.carried = true
+                carriedBlock = b
+                grabEvents++
+                return true
+            }
+        }
+        return false
+    }
+
+    /** Sigue al bloque llevado sobre la cabeza de Mario y avanza/colisiona los lanzados. */
+    private fun updateGrabBlocks() {
+        carriedBlock?.let { b ->
+            // Se lleva DELANTE, con la base a la altura de los pies (menos 1px para no morder
+            // la fila del suelo): así al lanzarlo alcanza a los enemigos de suelo sin que el
+            // chequeo de pared lo confunda con el propio suelo.
+            b.x = if (player.facingRight) player.x + tuning.playerWidth - 2f else player.x - b.width + 2f
+            b.y = player.y + playerHeight - b.height - 1f
+        }
+        val it = grabBlocks.iterator()
+        while (it.hasNext()) {
+            val b = it.next()
+            if (!b.alive) { it.remove(); continue }
+            if (!b.thrown) continue
+            // Vuela recto; se rompe contra pared o al salir del nivel.
+            val nx = b.x + b.vx
+            val minRow = (b.y / tileSize).toInt()
+            val maxRow = ((b.y + b.height - 0.01f) / tileSize).toInt()
+            val frontCol = if (b.vx > 0) ((nx + b.width) / tileSize).toInt() else (nx / tileSize).toInt()
+            if ((minRow..maxRow).any { r -> wallsAt(frontCol, r) }) { b.alive = false; it.remove(); continue }
+            b.x = nx
+            if (b.x < -16f || b.x > (cols + 1) * tileSize) { b.alive = false; it.remove(); continue }
+            // Arrolla a cualquier enemigo vivo que toque.
+            for (e in enemies) {
+                if (!e.alive) continue
+                if (b.x < e.x + e.width && b.x + b.width > e.x && b.y < e.y + e.height && b.y + b.height > e.y) {
+                    e.alive = false; e.squashTimer = 12; stompEvents++
+                    b.alive = false; it.remove(); break
+                }
+            }
+        }
+    }
+
+    /**
      * Marca al jugador como muerto una sola vez y cuenta el evento. [pop] = el saltito
      * de muerte de SMW (DEATH_POP_SPEED); caer al vacío no lo da (ya está fuera).
      */
@@ -505,6 +612,18 @@ class PlatformerEngine(
     }
 
     private val tileSize = 16
+
+    init {
+        // Siembra las celdas de AGARRAR como entidades [GrabBlock] y libera su acción (ya
+        // no es una celda-acción, es un objeto que Mario puede coger/lanzar).
+        val a = actions
+        if (a != null) for (r in 0 until rows) for (c in 0 until cols) {
+            if (a[r * cols + c] == BlockAction.GRAB.ordinal) {
+                grabBlocks.add(GrabBlock((c * tileSize).toFloat(), (r * tileSize).toFloat()))
+                a[r * cols + c] = BlockAction.NONE.ordinal
+            }
+        }
+    }
 
     /** Solidez de la celda (col,row), con los bordes del nivel como pared y el fondo abierto. */
     fun solidity(col: Int, row: Int): SmwSolidity {
@@ -700,7 +819,7 @@ class PlatformerEngine(
         }
 
         // --- lanzar bola de fuego: al PULSAR correr (misma tecla que en SMW) ---
-        if (running && !prevRunning) throwFireball()
+        if (running && !prevRunning) { if (!handleGrabThrow()) throwFireball() }
         prevRunning = running
 
         // --- salto (con buffer de una pulsación) ---
@@ -741,6 +860,7 @@ class PlatformerEngine(
         updateEnemies()
         updateItems()
         updateFireballs()
+        updateGrabBlocks()
         updateEnemyProjectiles()
         handlePlayerEnemyContact()
         collectCoins()
@@ -1578,6 +1698,11 @@ class PlatformerEngine(
         const val BLOCKED_LEFT = 0x2
         const val BLOCKED_UP = 0x4
         const val BLOCKED_DOWN = 0x8
+
+        /** Velocidad del bloque de agarrar al LANZARLO (px/f), estilo SMW. */
+        const val GRAB_THROW_SPEED = 4f
+        /** Alcance (px) desde el frente de Mario para coger un bloque quieto. */
+        const val GRAB_REACH = 4f
 
         /** Altura de la caja de Mario grande (dos casillas, como fromSmw con BIG). */
         const val BIG_HEIGHT = 26f

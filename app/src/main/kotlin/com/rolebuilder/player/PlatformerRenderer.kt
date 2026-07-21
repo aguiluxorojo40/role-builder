@@ -431,6 +431,15 @@ class PlatformerRenderer(
             batch.draw(white, bx + bw * 0.25f, by + bh * 0.25f, bw * 0.5f, bh * 0.5f, r = 1f, g = 0.9f, b = 0.5f, a = 1f)
         }
 
+        // Bloques de AGARRAR (quietos, llevados o lanzados): cubo gris con borde claro.
+        for (b in engine.grabBlocks) {
+            if (!b.alive) continue
+            val bx = b.x / 16f; val by = b.y / 16f
+            val bw = b.width / 16f; val bh = b.height / 16f
+            batch.draw(white, bx, by, bw, bh, r = 0.55f, g = 0.5f, b = 0.42f, a = 1f)
+            batch.draw(white, bx + bw * 0.15f, by + bh * 0.15f, bw * 0.7f, bh * 0.7f, r = 0.72f, g = 0.66f, b = 0.55f, a = 1f)
+        }
+
         drawMario(dt)
 
         // Overlay de COLISIÓN por encima de todo (activado desde el panel ⚙).

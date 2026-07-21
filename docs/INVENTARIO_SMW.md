@@ -93,9 +93,16 @@ Objetivo: que el substrato del motor sea bit-exacto a SMW, no solo los comportam
   dispara el block-code (`?`/ladrillo) en el punto de contacto. Reutiliza la clasificación
   1:1 (`SmwBlockCollision`, `$00:EB77`) y el perfil de cuesta sub-píxel (`slopeSurfaceY`).
   Solo en modo ROM; los proyectos sin ROM conservan el AABB por span.
-  **Fuera del port** (subsistemas ausentes en el motor): tuberías, throw-blocks,
-  wall-running, cuestas de agua, note-blocks, Yoshi y los puntos del overflow de la tabla
-  `E89C`. El aplastamiento no se modela (no hay plataformas móviles que lo provoquen).
+  **Fuera del port** (subsistemas ausentes en el motor): wall-running, cuestas de agua,
+  note-blocks, Yoshi y los puntos del overflow de la tabla `E89C`. El aplastamiento no se
+  modela (no hay plataformas móviles que lo provoquen).
+- 🟢 **Bloques de AGARRAR/LANZAR (estilo SMW, no 1:1)**: las celdas `BlockAction.GRAB` se
+  siembran como entidades `GrabBlock`; Mario las coge con el botón de correr estando al
+  lado, las lleva y las lanza (arrollan enemigos, se rompen contra pared), o las deja con
+  abajo. Es una mecánica *estilo* SMW a nivel de motor —no el port byte-a-byte de
+  `RunPlayerBlockCode`—; falta el cableado de extracción para poblarlas desde tiles reales
+  del ROM (el tile de throw-block `0x2E` choca con la Dragon Coin y no es desambiguable sin
+  verificación en juego). Render en `PlatformerRenderer`.
 
 ## Tandas de enemigos (medidas sobre 316 niveles de la ROM US)
 

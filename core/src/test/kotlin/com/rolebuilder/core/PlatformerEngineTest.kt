@@ -140,6 +140,61 @@ class PlatformerEngineTest {
         assertTrue(e.items.size > itemsBefore, "el cabezazo soltó un premio")
     }
 
+    /** Motor con un bloque de AGARRAR en (grabCol,grabRow) y suelo en la fila [floorRow]. */
+    private fun engineGrab(
+        cols: Int, rows: Int, startCol: Int, startRow: Int, grabCol: Int, grabRow: Int,
+        floorRow: Int, seeds: List<EnemySeed> = emptyList(),
+    ): PlatformerEngine {
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[floorRow][c] = SmwSolidity.SOLID
+        val actions = IntArray(cols * rows)
+        actions[grabRow * cols + grabCol] = BlockAction.GRAB.ordinal
+        return PlatformerEngine(
+            cols, rows,
+            solidityAt = { c, r -> grid[r][c] },
+            startPixelX = startCol * 16, startPixelY = startRow * 16,
+            tuning = tuning, enemySeeds = seeds, blockActions = actions,
+        )
+    }
+
+    @Test
+    fun `throw-block - Mario coge un bloque al lado pulsando correr`() {
+        val e = engineGrab(10, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7)
+        assertEquals(1, e.grabBlocks.size, "el nivel sembró un bloque de agarrar")
+        e.run(20) // que se pose
+        e.running = true
+        e.tick()   // flanco de correr -> coge
+        assertTrue(e.carriedBlock != null, "Mario coge el bloque")
+        assertTrue(e.grabBlocks.first().carried, "el bloque queda cargado")
+    }
+
+    @Test
+    fun `throw-block - lanzar el bloque arrolla a un enemigo`() {
+        val e = engineGrab(16, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7,
+            seeds = listOf(EnemySeed(9 * 16, 6 * 16, 0x00)))
+        e.run(20)
+        e.running = true; e.tick()          // coge
+        assertTrue(e.carriedBlock != null)
+        e.running = false; e.tick()          // suelta el botón
+        e.running = true; e.tick()           // vuelve a pulsar -> lanza
+        assertTrue(e.grabBlocks.first().thrown, "el bloque sale lanzado")
+        val enemy = e.enemies.first()
+        e.run(60)                            // el bloque vuela hasta el enemigo
+        assertFalse(enemy.alive, "el bloque lanzado arrolla al enemigo")
+    }
+
+    @Test
+    fun `throw-block - con abajo pulsado lo deja en vez de lanzarlo`() {
+        val e = engineGrab(10, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7)
+        e.run(20)
+        e.running = true; e.tick()           // coge
+        e.running = false; e.tick()
+        e.inputDown = true
+        e.running = true; e.tick()           // con abajo: deja, no lanza
+        assertTrue(e.carriedBlock == null, "suelta el bloque")
+        assertFalse(e.grabBlocks.first().thrown, "no lo lanza (lo deja)")
+    }
+
     @Test
     fun `cae por gravedad y se posa sobre el suelo`() {
         val e = engine(10, 10, startCol = 2, startRow = 1) { g ->
