@@ -161,7 +161,11 @@ object SmwEnemyGraphics {
      * (0..0x1FF, con el bit de página ya incluido), ([dx],[dy]) su desplazamiento en px
      * respecto al ancla, [size16] si es 16×16 (o 8×8) y [xflip] espejo horizontal.
      */
-    class OamTile(val tile: Int, val dx: Int, val dy: Int, val size16: Boolean = true, val xflip: Boolean = false)
+    class OamTile(val tile: Int, val dx: Int, val dy: Int, val size16: Boolean = true, val xflip: Boolean = false,
+                  /** Volteo VERTICAL de la tesela (bit 0x80 de la propiedad OAM). */
+                  val vflip: Boolean = false,
+                  /** Fila de paleta propia de ESTA tesela (o null = la del sprite/override global). */
+                  val palRow: Int? = null)
 
     /**
      * Compone un sprite de enemigo con DIBUJO PROPIO (fuera de la tabla OAM genérica) a
@@ -183,7 +187,7 @@ object SmwEnemyGraphics {
         var any = false
         for (t in tiles) {
             val base = (t.tile and 0xFF) + art.page * 0x100
-            if (art.paintTile(base, img, t.dx - minX, t.dy - minY, t.size16, t.xflip, row)) any = true
+            if (art.paintTile(base, img, t.dx - minX, t.dy - minY, t.size16, t.xflip, t.palRow ?: row, t.vflip)) any = true
         }
         return if (any) img else null
     }
@@ -219,6 +223,20 @@ object SmwEnemyGraphics {
         ),
         // Blurp (0xC2): 1 tesela 16×16 (Spr0C2_Blurp, $03: charnum 0xA2; paleta de $166E).
         0xC2 to CustomEnemy(listOf(OamTile(0xA2, 0, 0))),
+        // Super Koopa suelo (0x73) / capa roja (0x71): frame 0 de ANDAR (SprXXX_SuperKoopas,
+        // $02; SprXXX_SuperKoopas_02EBB5 usa frame 0/1 al andar, sin vflip). 4 teselas:
+        // cuerpo 0xe0 (16×16, paleta del sprite) + CAPA 0xc8/0xd8/0xd0 (8×8). La capa usa la
+        // paleta especial de la fórmula (Prop|v4)&~2: 0x73 (≥0x72, v4=4)→2, 0x71 (v4=8)→4.
+        0x73 to CustomEnemy(superKoopaFrame0(capePal = (8 + 2) * 16)),
+        0x71 to CustomEnemy(superKoopaFrame0(capePal = (8 + 4) * 16)),
+    )
+
+    /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */
+    private fun superKoopaFrame0(capePal: Int): List<OamTile> = listOf(
+        OamTile(0xe0, 0, 0, size16 = true),                       // cuerpo (paleta $166E)
+        OamTile(0xc8, 8, 0, size16 = false, palRow = capePal),    // capa
+        OamTile(0xd8, 8, 8, size16 = false, palRow = capePal),    // capa
+        OamTile(0xd0, 16, 8, size16 = false, palRow = capePal),   // capa
     )
 
     /** Ids de sprite de los POWERUPS y su tesela (`kPowerUpAndItemGFXRt_PowerUpTiles`, $01). */
@@ -556,16 +574,18 @@ object SmwEnemyGraphics {
 
         /**
          * Pinta una tesela OAM en (ox,oy) con la paleta [rowOverride] (o la del sprite si
-         * null), con espejo horizontal opcional [xflip]. [size16] elige 16×16 (2×2 teselas,
-         * como [paintBlock]) o 8×8 (una tesela). Recorta a los límites de [img] y omite el
-         * índice de color 0 (transparente). Sirve para las ALAS de las Koopas.
+         * null), con espejo horizontal [xflip] y vertical [vflip] opcionales. [size16] elige
+         * 16×16 (2×2 teselas, como [paintBlock]) o 8×8 (una tesela). Recorta a los límites de
+         * [img] y omite el índice de color 0 (transparente).
          */
-        fun paintTile(base: Int, img: ArgbImage, ox: Int, oy: Int, size16: Boolean, xflip: Boolean, rowOverride: Int? = null): Boolean {
+        fun paintTile(base: Int, img: ArgbImage, ox: Int, oy: Int, size16: Boolean, xflip: Boolean,
+                      rowOverride: Int? = null, vflip: Boolean = false): Boolean {
             val row = rowOverride ?: cgRow
             val sub = if (size16)
                 arrayOf(intArrayOf(0, 0, 0), intArrayOf(1, 8, 0), intArrayOf(0x10, 0, 8), intArrayOf(0x11, 8, 8))
             else arrayOf(intArrayOf(0, 0, 0))
             val w = if (size16) 16 else 8
+            val h = w
             var painted = false
             for (so in sub) {
                 val px = tileIndices(base + so[0]) ?: continue
@@ -573,8 +593,9 @@ object SmwEnemyGraphics {
                     val ci = px[y * 8 + x]
                     if (ci == 0) continue
                     val lx = so[1] + x
+                    val ly = so[2] + y
                     val dx = ox + if (xflip) (w - 1 - lx) else lx
-                    val dy = oy + so[2] + y
+                    val dy = oy + if (vflip) (h - 1 - ly) else ly
                     if (dx < 0 || dy < 0 || dx >= img.width || dy >= img.height) continue
                     img.set(dx, dy, cgram[row + (ci and 0x0F)])
                     painted = true

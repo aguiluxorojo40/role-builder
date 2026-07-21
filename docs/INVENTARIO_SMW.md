@@ -76,9 +76,12 @@ se explican por cuál de las dos usa cada pieza:
   `customEnemyImage` compone su sprite real a partir del layout de teselas de su rutina
   `Spr..._Draw`, horneado a `assets/sprites/big/big_<id>.png` (auto-cargado por id) con
   `extractSnesTileset --custom-enemy --id 0xNN`.
-  - ✅ Hechos: Thwomp (0x26), Pokey (0x70), **Rex (0xAB)**, **Blurp (0xC2)**.
-  - 🟡 Pendientes: Super Koopa (0x71/0x73, draw compartido) y Wiggler (0x86, segmentos con
-    posición dinámica) — necesitan más porte; y el resto (Blargg, Reznor…) según valor.
+  - ✅ Hechos: Thwomp (0x26), Pokey (0x70), **Rex (0xAB)**, **Blurp (0xC2)**,
+    **Super Koopa suelo (0x73) y capa roja (0x71)** (frame 0 de andar, cuerpo + 3 teselas de
+    capa 8×8; paleta de capa por la fórmula real `(Prop|v4)&~2`: 2 en 0x73, 4 en 0x71). El
+    compositor soporta paleta por-tesela y volteo H/V (`OamTile`).
+  - 🟡 Pendientes: Wiggler (0x86, segmentos con posición dinámica; su GFX no queda en el
+    slot que carga el extractor) y el resto (Blargg, Reznor…) según valor.
 
 ## Motor 1:1 (progreso y huecos)
 
