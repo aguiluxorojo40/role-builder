@@ -43,6 +43,65 @@ class PlatformerEngineTest {
 
     private fun PlatformerEngine.run(frames: Int) { repeat(frames) { tick() } }
 
+    /** Físicas US mínimas (andar/correr a la derecha) para el modo 1:1 en el motor. */
+    private fun physUS() = SmwPhysics(
+        jumpYSpeed = intArrayOf(-80),
+        marioXAccel = shortsAsInts(0xFE80, 0xFE80, 0x0180, 0x0180, 0xFE80, 0xFE80, 0x0180, 0x0180),
+        iceXAccel = shortsAsInts(0xFF80, 0xFE80, 0x0080, 0x0180),
+        maxXSpeed = bytesAsInts(0xEC, 0x14, 0xDC, 0x24, 0xDC, 0x24, 0xD0, 0x30),
+        maxXSpeedExtra = IntArray(0),
+        friction1 = shortsAsInts(0xFF00, 0x0100, 0xFF00, 0x0100),
+        friction2 = shortsAsInts(0xFFE0, 0x0020, 0xFFE0, 0x0020),
+        gravity = intArrayOf(6, 3), maxFallSpeed = intArrayOf(0x40),
+    )
+    private fun shortsAsInts(vararg v: Int) = IntArray(v.size) { v[it].toShort().toInt() }
+    private fun bytesAsInts(vararg v: Int) = IntArray(v.size) { v[it].toByte().toInt() }
+
+    /** Motor en modo ROM (con [SmwPhysics]) sobre una rejilla; [fill] pinta celdas sólidas. */
+    private fun engineRom(
+        cols: Int, rows: Int, startCol: Int, startRow: Int,
+        fill: (grid: Array<Array<SmwSolidity>>) -> Unit,
+    ): PlatformerEngine {
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        fill(grid)
+        return PlatformerEngine(
+            cols, rows,
+            solidityAt = { c, r -> grid[r][c] },
+            startPixelX = startCol * 16, startPixelY = startRow * 16,
+            tuning = PlatformerTuning.fromSmw(physUS()),
+            smwPhysics = physUS(),
+        )
+    }
+
+    @Test
+    fun `modo 1_1 - Mario avanza a la derecha y mira a la derecha`() {
+        val e = engineRom(30, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 30) g[8][c] = SmwSolidity.SOLID
+        }
+        e.run(20) // que se pose
+        val x0 = e.player.x
+        e.moveX = 1f
+        e.run(60)
+        assertTrue(e.player.x > x0 + 16f, "avanza claramente a la derecha")
+        assertTrue(e.player.facingRight, "mira a la derecha")
+    }
+
+    @Test
+    fun `modo 1_1 - un muro frena a Mario sin atravesarlo`() {
+        val wallCol = 8
+        val e = engineRom(20, 10, startCol = 2, startRow = 7) { g ->
+            for (c in 0 until 20) g[8][c] = SmwSolidity.SOLID
+            for (r in 0..7) g[r][wallCol] = SmwSolidity.SOLID // muro vertical
+        }
+        e.run(20)
+        e.moveX = 1f
+        e.running = true
+        e.run(200)
+        // No atraviesa el muro: el borde derecho queda a la izquierda de la columna del muro.
+        assertTrue(e.player.x + tuning.playerWidth <= wallCol * 16f + 0.5f,
+            "se queda pegado al muro (x=${e.player.x})")
+    }
+
     @Test
     fun `cae por gravedad y se posa sobre el suelo`() {
         val e = engine(10, 10, startCol = 2, startRow = 1) { g ->

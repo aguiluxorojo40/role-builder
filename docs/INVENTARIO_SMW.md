@@ -77,9 +77,17 @@ Objetivo: que el substrato del motor sea bit-exacto a SMW, no solo los comportam
   usan todos los enemigos que caen (andadores, caparazón, saltarina 0x09). Como son
   fracciones n/16 exactas, en float el acumulado es bit-exacto (equivale al subpíxel).
 - ✅ Salto/gravedad/caída-terminal/topes de Mario y velocidades de enemigos porteadas.
-- 🟡 **Aceleración/rozamiento de Mario**: aproximados (`0x180/4096`); SMW usa tablas por
-  estado (`$00:D3xx`: andar/correr/derrape/hielo) — pendiente para el "tacto" 1:1.
-- 🟡 **Colisión**: AABB propia, no las rutinas de interacción con teselas de SMW.
+- ✅ **Aceleración/rozamiento de Mario EXACTOS**: port 1:1 de `HandlePlayerPhysics`
+  (`$00:D5F2`) en `SmwPlayerXMovement`, con las tablas REALES de la ROM US: aceleración
+  `MarioAccel_` (`$D345`), rozamiento de suelo `$D2CD` / de agua `$D309`, tope por estado
+  `$D535`, hielo `$D43D`. Modela andar/correr/despegue (`|v| ≥ 0x23`), **derrape** al
+  girar a velocidad (índice `+0x90`), rozamiento hacia 0 (nulo en el aire), hielo y el
+  **medidor-P** (`$D5EB` = {−1,−1,+2}, tope `0x70`). Los índices `X`/`Y` son offsets en
+  BYTES sobre las tablas de words. La velocidad avanza con acumulador de subpíxeles
+  (`bodyStepX`, gemelo de `smwStepX`), así las distancias salen 1:1. Solo en modo ROM
+  (`PlatformerEngine(smwPhysics = …)`); los proyectos genéricos conservan el modelo simple.
+- 🟡 **Colisión**: AABB propia, no las rutinas de interacción con teselas de SMW
+  (siguiente hueco del substrato 1:1).
 
 ## Tandas de enemigos (medidas sobre 316 niveles de la ROM US)
 

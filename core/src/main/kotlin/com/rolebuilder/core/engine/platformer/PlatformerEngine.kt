@@ -1,5 +1,7 @@
 package com.rolebuilder.core.engine.platformer
 
+import com.rolebuilder.core.snes.SmwPhysics
+import com.rolebuilder.core.snes.SmwPlayerXMovement
 import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.math.abs
@@ -23,6 +25,10 @@ class PlatformerBody(var x: Float, var y: Float) {
     var cape = false
     /** ¿Deslizándose por una cuesta (agachado)? Mata a los enemigos que arrolla. */
     var sliding = false
+    /** Acumulador de subpíxeles en X del movimiento 1:1 de SMW (paralelo al `pSubX` del enemigo). */
+    var xSub = 0
+    /** ¿Derrapando (cambio de sentido a velocidad)? Lo marca el manejo horizontal 1:1. */
+    var skidding = false
     /** Fotogramas de invulnerabilidad restantes tras encoger por un golpe. */
     var invulnFrames = 0
 }
@@ -249,6 +255,15 @@ class PlatformerEngine(
      * dibujo del tile ([SmwSlopes.profileFromTilePixels]).
      */
     private val slopeOffsetsAt: (col: Int, row: Int) -> IntArray? = { _, _ -> null },
+    /**
+     * Físicas REALES de SMW leídas de la ROM ([SmwPhysics]). Si viene (modo ROM), el
+     * movimiento HORIZONTAL de Mario usa el port 1:1 de `HandlePlayerPhysics`
+     * ([SmwPlayerXMovement]) en vez del modelo simple de [tuning]; los proyectos
+     * genéricos (sin ROM) la dejan a null y conservan el tacto de siempre.
+     */
+    private val smwPhysics: SmwPhysics? = null,
+    /** Entorno del nivel: en el modo 1:1 elige rozamiento de agua y aceleración de hielo. */
+    private val environment: PlatformerEnvironment = PlatformerEnvironment.LAND,
 ) {
     /**
      * Físicas ACTUALES del motor. Son MUTABLES en caliente: el panel de físicas del
@@ -262,6 +277,13 @@ class PlatformerEngine(
         // Si el tuning ya viene de Mario grande (26 px), el estado arranca grande.
         it.big = tuning.playerHeight >= BIG_HEIGHT
     }
+
+    /** Manejo horizontal 1:1 de Mario, solo en modo ROM (si hay [smwPhysics]). */
+    private val smwMotion: SmwPlayerXMovement? = smwPhysics?.let { SmwPlayerXMovement(it) }
+    private val onIce = environment == PlatformerEnvironment.ICE
+    private val inWater = environment == PlatformerEnvironment.WATER
+    /** Lo pone [moveHorizontal] cuando un muro frena a Mario (para cortar la velocidad SMW). */
+    private var hBlocked = false
 
     /**
      * Altura ACTUAL de la caja del jugador: la del tuning de pequeño, o la de Mario
@@ -646,17 +668,28 @@ class PlatformerEngine(
             }
         }
 
-        // --- horizontal: aceleración hacia el tope, o rozamiento ---
-        val maxSpeed = if (running) t.maxRunSpeed else t.maxWalkSpeed
+        // --- horizontal ---
         if (p.sliding) {
-            // deslizándose no se acelera ni frena a mano
-        } else if (abs(moveX) > 0.1f) {
-            p.facingRight = moveX > 0
-            p.vx += (if (moveX > 0) t.runAccel else -t.runAccel)
-            p.vx = p.vx.coerceIn(-maxSpeed, maxSpeed)
+            // deslizándose no se acelera ni frena a mano (manda el tobogán, ya calculado)
+        } else if (smwMotion != null) {
+            // MODO 1:1: manejo horizontal EXACTO de SMW (HandlePlayerPhysics $00:D5F2).
+            val dir = if (abs(moveX) < 0.1f) 0 else if (moveX > 0) 1 else -1
+            smwMotion.step(dir, running, p.onGround, onIce, inWater)
+            if (dir != 0) p.facingRight = smwMotion.direction == 1
+            p.skidding = smwMotion.skidding
+            // La posición avanza con el byte alto (1/16 px) y el acumulador de subpíxeles.
+            p.vx = bodyStepX(smwMotion.speedHi)
         } else {
-            // rozamiento hacia 0
-            p.vx = if (p.vx > 0) max(0f, p.vx - t.friction) else min(0f, p.vx + t.friction)
+            // MODO GENÉRICO (proyectos sin ROM): modelo simple de tuning.
+            val maxSpeed = if (running) t.maxRunSpeed else t.maxWalkSpeed
+            if (abs(moveX) > 0.1f) {
+                p.facingRight = moveX > 0
+                p.vx += (if (moveX > 0) t.runAccel else -t.runAccel)
+                p.vx = p.vx.coerceIn(-maxSpeed, maxSpeed)
+            } else {
+                // rozamiento hacia 0
+                p.vx = if (p.vx > 0) max(0f, p.vx - t.friction) else min(0f, p.vx + t.friction)
+            }
         }
 
         // --- lanzar bola de fuego: al PULSAR correr (misma tecla que en SMW) ---
@@ -682,7 +715,10 @@ class PlatformerEngine(
         if (p.cape && !p.onGround && jumpHeld && p.vy > CAPE_GLIDE_SPEED) p.vy = CAPE_GLIDE_SPEED
 
         // --- integración con colisión, eje a eje ---
+        hBlocked = false
         moveHorizontal(p.vx)
+        // En el modo 1:1, un muro corta la velocidad SMW (el ROM pone PlayerXSpeed = 0).
+        if (hBlocked) smwMotion?.stop()
         moveVertical(p.vy)
         snapToSlope()
 
@@ -962,6 +998,21 @@ class PlatformerEngine(
             }
         }
         if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+    }
+
+    /**
+     * Desplazamiento en X de MARIO por una velocidad SMW (byte alto de la palabra `$7A/$7B`,
+     * en 1/16 px con signo), con el mismo acumulador de subpíxeles que [smwStepX]. Devuelve
+     * los píxeles a mover este fotograma; el motor los pasa por [moveHorizontal] (colisión).
+     */
+    private fun bodyStepX(speed: Int): Float {
+        val s = speed and 0xFF
+        val spx = player.xSub + ((s shl 4) and 0xFF)
+        player.xSub = spx and 0xFF
+        val carry = spx shr 8
+        var intPart = (s shr 4) and 0x0F
+        if (intPart >= 8) intPart -= 16
+        return (intPart + carry).toFloat()
     }
 
     /** Mueve al enemigo en X por una velocidad en unidades de SMW (como [smwStepY] en Y). */
@@ -1308,6 +1359,7 @@ class PlatformerEngine(
             } else {
                 nx = clampX
                 p.vx = 0f
+                hBlocked = true
             }
         }
         if (dx > 0) {

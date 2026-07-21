@@ -7,6 +7,7 @@ import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
+import com.rolebuilder.core.snes.SmwPhysics
 import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 
@@ -76,6 +77,14 @@ object ProjectPlatformer {
          * tileset. Vacío = solo formas explícitas.
          */
         autoSlopeProfiles: Map<Int, IntArray> = emptyMap(),
+        /**
+         * Físicas REALES de SMW ([SmwPhysics]) leídas de la ROM. Si vienen, el movimiento
+         * horizontal de Mario usa el port 1:1; si es null (proyecto genérico), el tacto
+         * simple de [tuning].
+         */
+        smwPhysics: SmwPhysics? = null,
+        /** Entorno del nivel (agua/hielo) para el modo 1:1. */
+        environment: PlatformerEnvironment = PlatformerEnvironment.LAND,
     ): PlatformerEngine = PlatformerEngine(
         cols = map.width,
         rows = map.height,
@@ -90,6 +99,8 @@ object ProjectPlatformer {
         },
         itemSeeds = map.platformItems.map { itemSeed(it) },
         slopeOffsetsAt = { c, r -> slopeOffsetsAt(map, tileset, autoSlopeProfiles, c, r) },
+        smwPhysics = smwPhysics,
+        environment = environment,
     )
 
     /**

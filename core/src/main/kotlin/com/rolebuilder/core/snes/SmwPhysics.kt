@@ -33,9 +33,10 @@ class SmwPhysics(
     val maxXSpeed: IntArray,
     /** $00:D5C9 (17 words): límites/ajustes finos de velocidad que acompañan a [maxXSpeed]. */
     val maxXSpeedExtra: IntArray,
-    /** $00:D2CD (30 words): tabla de deceleración/rozamiento (rama de aire/agua). */
+    /** $00:D2CD (30 words): rozamiento del SUELO SECO (rama por defecto de HandlePlayerPhysics;
+     *  también aire/fin de nivel). Índice por byte, con signo por el sentido de la velocidad. */
     val friction1: IntArray,
-    /** $00:D309 (30 words): tabla de deceleración/rozamiento (rama de suelo, más suave). */
+    /** $00:D309 (30 words): rozamiento del AGUA (rama tomada cuando LevelIsWater). */
     val friction2: IntArray,
     /** $00:D7A5 (10): GRAVEDAD por estado de aire; se suma a la velocidad Y cada
      *  fotograma. Con el botón de salto MANTENIDO es menor (salto variable). */

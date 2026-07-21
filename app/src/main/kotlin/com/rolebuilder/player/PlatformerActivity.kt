@@ -333,6 +333,8 @@ class PlatformerActivity : ComponentActivity() {
             },
             startPixelX = start.startPixelX, startPixelY = start.startPixelY,
             tuning = PlatformerTuning.fromSmw(phys),
+            // Modo 1:1: el manejo horizontal de Mario usa las tablas REALES de la ROM.
+            smwPhysics = phys,
             enemySeeds = enemySeeds,
             blockActions = if (anyAction) actions else null,
             warps = warps,
