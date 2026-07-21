@@ -122,9 +122,9 @@ arco, escupe fuego).
 Los Koopas con caparazón (0x00-0x03, 0x05) portan la mecánica de SMW (estados
 `SpriteStatus` 8 normal / 9 quieto / A pateado) en `PlatformerEngine`:
 - **Pisar** un Koopa lo mete en su CAPARAZÓN (`shell`, no muere) en vez de matarlo.
-- **Tocar de lado** un caparazón quieto lo **PATEA** (`shellMoving`, `SHELL_SPEED` ≈
-  3.5 px/f de la tabla `ShellSpeedX`), lejos de Mario; hay gracia (`SHELL_KICK_GRACE`)
-  para no morir al lanzarlo.
+- **Tocar de lado** un caparazón quieto lo **PATEA** (`shellMoving`, `SHELL_SPEED` =
+  `ShellSpeedX 0x37` = 55/16 = **3.4375 px/f** EXACTO), lejos de Mario; gracia
+  `SHELL_KICK_GRACE` = `KickingTimer 0x0C` = **12 frames** (valor exacto de SMW).
 - El caparazón deslizándose **arrolla** a los demás enemigos (cadena), rebota en paredes
   y se cae por los bordes.
 - **Pisar** un caparazón en marcha lo **para**; de lado, muere Mario.
@@ -132,12 +132,14 @@ Los Koopas con caparazón (0x00-0x03, 0x05) portan la mecánica de SMW (estados
   el suyo es un refinamiento pendiente). Render: domo del color del Koopa. Tests en
   `PlatformerEngineTest`.
 
-**Koopas ALADAS (Parakoopa 0x08-0x0B):** vuelan (port en espíritu de `GreenParaKoopa`/
-`RedVertParaKoopa`/`RedHorzParaKoopa`): 0x08 verde vuela horizontal aleteando (bob),
-0x09 verde saltarina rebota en el suelo, 0x0A roja vertical patrulla arriba/abajo, 0x0B
-roja horizontal va y viene girando en paredes. **Al pisarlas pierden las alas** y quedan
-de andador con caparazón (`winged=false`) → siguiente pisotón = caparazón → patada. Se
-dibujan como el Koopa de suelo (`koopaColorId`) al perder las alas.
+**Koopas ALADAS (Parakoopa 0x08-0x0B):** vuelan con los valores EXACTOS de las rutinas
+`GreenParaKoopa`/`RedVertParaKoopa`/`RedHorzParaKoopa` (movidas por `smwStepX`/`smwStepY`
+en unidades SMW): **0x08** verde a −0.5 px/f (`F8`) a la izquierda con bob ∓0.25 (`FC`/`04`
+según `1570&0x20`); **0x09** saltarina rebota `D0` = −3 px/f al tocar suelo; **0x0A**
+vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD`: rampa
+±1 hacia ±0x10 con `1540`/`C2`/`151C`). **Al pisarlas pierden las alas** (`winged=false`)
+→ siguiente pisotón = caparazón → patada. Se dibujan como el Koopa de suelo
+(`koopaColorId`) al perder las alas.
 
 ## Hallazgos de investigación (para retomar sin re-descubrir)
 

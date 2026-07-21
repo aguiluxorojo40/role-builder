@@ -190,10 +190,13 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var winged = id in 0x08..0x0B
     /** Id del Koopa de suelo equivalente (para color de caparazón / dibujo sin alas). */
     val koopaColorId = when (id) { 0x08, 0x09 -> 0x00; 0x0A, 0x0B -> 0x01; else -> id }
-    /** Sentido del vuelo (±1) para el patrullaje, y bob/fase del aleteo. */
-    var flyDir = if (id == 0x0A) 1f else -1f   // 0x0A empieza bajando; el resto a la izquierda
-    var flyVy = -0.25f
-    var flyPhase = 0
+    /** Estado del vuelo (port EXACTO de las rutinas ParaKoopa $01), con sus nombres de RAM. */
+    var flyPhase = 0    // SpriteMisc1570: temporizador del bob del aleteo (bit 0x20)
+    var pSubX = 0       // acumulador de subpíxeles en X (como pSubY en Y)
+    var oscSpeed = 0    // velocidad oscilante en unidades SMW (0x0A vertical / 0x0B horizontal)
+    var oscTimer = 0    // SpriteMisc1540: pausa entre rampas
+    var oscC2 = 0       // SpriteTableC2: cuenta para rampar cada 4 frames
+    var oscPhase = 0    // SpriteMisc151C: sentido de la rampa (sube/baja)
 
     init {
         if (behavior != EnemyBehavior.WALKER) vx = 0f
@@ -961,40 +964,64 @@ class PlatformerEngine(
         if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
     }
 
+    /** Mueve al enemigo en X por una velocidad en unidades de SMW (como [smwStepY] en Y). */
+    private fun smwStepX(e: PlatformerEnemy, speed: Int) {
+        val s = speed and 0xFF
+        val spx = e.pSubX + ((s shl 4) and 0xFF)
+        e.pSubX = spx and 0xFF
+        val carry = spx shr 8
+        var intPart = (s shr 4) and 0x0F
+        if (intPart >= 8) intPart -= 16
+        e.x += (intPart + carry).toFloat()
+    }
+
     /**
-     * Koopa ALADA (Parakoopa 0x08-0x0B): cada una vuela distinto, port en espíritu de
-     * `GreenParaKoopa`/`RedVertParaKoopa`/`RedHorzParaKoopa` ($01):
-     *  - 0x08 verde: vuela horizontal aleteando (bob arriba/abajo), rebota en paredes.
-     *  - 0x09 verde saltarina: rebota en el suelo (salta al aterrizar) mientras patrulla.
-     *  - 0x0A rojo vertical: sube y baja patrullando un rango desde su origen.
-     *  - 0x0B rojo horizontal: vuela izquierda/derecha, gira en paredes.
-     * Al pisarlas pierden las alas (lo hace [handlePlayerEnemyContact]) y pasan a andador.
+     * Oscilación de velocidad de las Koopas aladas roja vertical/horizontal (`CODE_018CFD`):
+     * mientras `1540` (=[oscTimer]) corre, la velocidad es constante; al agotarse, cada 4
+     * cuentas de [oscC2] rampa ±1 (DATA_018CBA) hacia el tope ±0x10 (DATA_018CBC); al tocar
+     * el tope invierte el sentido ([oscPhase]) y pausa 0x30. Devuelve la velocidad SMW.
+     */
+    private fun oscillate(e: PlatformerEnemy): Int {
+        if (e.oscTimer > 0) { e.oscTimer--; return e.oscSpeed }
+        e.oscC2 = (e.oscC2 + 1) and 0xFF
+        if (e.oscC2 and 0x03 == 0) {
+            val down = e.oscPhase and 0x01 == 1
+            e.oscSpeed = (e.oscSpeed + (if (down) 1 else -1)) and 0xFF
+            if (e.oscSpeed == (if (down) WINGED_OSC_LIMIT_DOWN else WINGED_OSC_LIMIT_UP)) {
+                e.oscPhase++; e.oscTimer = WINGED_OSC_PAUSE
+            }
+        }
+        return e.oscSpeed
+    }
+
+    /**
+     * Koopa ALADA (Parakoopa 0x08-0x0B), port EXACTO de las rutinas ParaKoopa ($01) con las
+     * unidades reales de SMW ([smwStepX]/[smwStepY]):
+     *  - 0x08 verde: vuela a la izquierda a −0.5 px/f (F8; 0 si choca) con bob ∓0.25 (FC/04).
+     *  - 0x09 verde saltarina: gravedad + salto −3 px/f (D0) al tocar el suelo, patrullando.
+     *  - 0x0A rojo vertical: sube/baja con la velocidad OSCILANTE ([oscillate]).
+     *  - 0x0B rojo horizontal: velocidad OSCILANTE en X + bob (FC/04) en Y.
      */
     private fun updateWingedKoopa(e: PlatformerEnemy) {
+        e.flyPhase = (e.flyPhase + 1) and 0xFF                 // SpriteMisc1570
+        val bob = if (e.flyPhase and 0x20 != 0) WINGED_BOB_DOWN else WINGED_BOB_UP
         when (e.id) {
-            0x09 -> { // verde saltarina: rebota en el suelo mientras camina
-                e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
-                moveEnemyVertical(e)
-                if (e.onGround) e.vy = -WINGED_BOUNCE_V
-                if (e.vx == 0f) e.vx = WINGED_FLY_SPEED * e.flyDir
-                moveEnemyHorizontal(e)
-            }
-            0x0A -> { // rojo vertical: patrulla arriba/abajo
-                val ny = e.y + e.flyDir * WINGED_VFLY_SPEED
-                if (ny < e.spawnY - WINGED_VFLY_RANGE || ny > e.spawnY + WINGED_VFLY_RANGE) e.flyDir = -e.flyDir
-                else e.y = ny
-            }
-            else -> { // 0x08 y 0x0B: vuelo horizontal, giro en paredes, con bob de aleteo
-                val nx = e.x + e.flyDir * WINGED_FLY_SPEED
+            0x08 -> { // vuela a la izquierda; para en X si hay pared, sigue con el bob
                 val minRow = (e.y / tileSize).toInt()
                 val maxRow = ((e.y + e.height - 0.01f) / tileSize).toInt()
-                val frontCol = if (e.flyDir > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
-                if ((minRow..maxRow).any { wallsAt(frontCol, it) }) e.flyDir = -e.flyDir else e.x = nx
-                // Bob del aleteo (el FC/04 de SMW): sube/baja invirtiendo cada [WINGED_BOB_PERIOD].
-                e.flyPhase++
-                if (e.flyPhase >= WINGED_BOB_PERIOD) { e.flyPhase = 0; e.flyVy = -e.flyVy }
-                e.y += (if (e.flyVy < 0) -WINGED_BOB_VY else WINGED_BOB_VY)
+                val frontCol = (e.x / tileSize).toInt()
+                if ((minRow..maxRow).none { wallsAt(frontCol, it) }) smwStepX(e, WINGED_FLY_X)
+                smwStepY(e, bob)
             }
+            0x09 -> { // saltarina: gravedad + salto al tocar suelo, patrullando en X
+                e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+                moveEnemyVertical(e)
+                if (e.onGround) e.vy = signed(WINGED_BOUNCE).toFloat() / 16f   // 0xD0 = −3 px/f
+                if (e.vx == 0f) e.vx = -0.5f
+                moveEnemyHorizontal(e)
+            }
+            0x0A -> smwStepY(e, oscillate(e))                  // vertical: velocidad oscilante
+            else -> { smwStepY(e, bob); smwStepX(e, oscillate(e)) } // 0x0B: bob en Y + oscila en X
         }
     }
 
@@ -1417,21 +1444,23 @@ class PlatformerEngine(
         const val PIRANHA_FIRE_G = 0.125f
 
         // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----
-        /** Velocidad del caparazón PATEADO (px/f): la tabla ShellSpeedX ronda ±0x34..0x3E ≈ 3.5. */
-        const val SHELL_SPEED = 3.5f
-        /** Gracia tras patear (frames): el caparazón recién lanzado no hiere a Mario. */
+        /** Velocidad del caparazón PATEADO (px/f): ShellSpeedX = 0x37 = 55 unidades = 3.4375 px/f. */
+        const val SHELL_SPEED = 55f / 16f
+        /** Gracia tras patear: el `KickingTimer = 0x0C` de SMW = 12 frames (valor exacto). */
         const val SHELL_KICK_GRACE = 12
 
-        // ---- Koopas ALADAS (Parakoopa 0x08-0x0B, GreenParaKoopa/RedVertParaKoopa/RedHorzParaKoopa $01) ----
-        /** Velocidad horizontal del vuelo (px/f): la de andar del Koopa (Spr0to13SpeedX 0x0C). */
-        const val WINGED_FLY_SPEED = 0.75f
-        /** Velocidad del vuelo VERTICAL (px/f) y su alcance de patrullaje desde el origen (px). */
-        const val WINGED_VFLY_SPEED = 1.0f
-        const val WINGED_VFLY_RANGE = 48f
-        /** Bob del aleteo: velocidad Y y periodo (frames) en que invierte (el FC/04 de SMW). */
-        const val WINGED_BOB_VY = 0.25f
-        const val WINGED_BOB_PERIOD = 24
-        /** Impulso del salto de la Koopa verde saltarina (0x09), px/f (rebota con la gravedad). */
-        const val WINGED_BOUNCE_V = 3.2f
+        // ---- Koopas ALADAS (Parakoopa 0x08-0x0B): valores EXACTOS de las rutinas
+        // GreenParaKoopa/RedVertParaKoopa/RedHorzParaKoopa ($01), en unidades de SMW.
+        /** Velocidad de vuelo horizontal (0x08): Spr0to13SpeedX = 0xF8 = −0.5 px/f. */
+        const val WINGED_FLY_X = 0xF8
+        /** Bob del aleteo (Y): FC = −0.25 px/f o 04 = +0.25 px/f, según `1570 & 0x20`. */
+        const val WINGED_BOB_UP = 0xFC
+        const val WINGED_BOB_DOWN = 0x04
+        /** Salto de la verde saltarina (0x09): 0xD0 = −3 px/f al tocar suelo. */
+        const val WINGED_BOUNCE = 0xD0
+        /** Oscilación de velocidad (0x0A/0x0B): rampa ±1 hacia ±0x10, pausa 0x30 (DATA_018CBA/CBC). */
+        const val WINGED_OSC_LIMIT_DOWN = 0x10   // +1 px/f
+        const val WINGED_OSC_LIMIT_UP = 0xF0     // −1 px/f
+        const val WINGED_OSC_PAUSE = 0x30
     }
 }
