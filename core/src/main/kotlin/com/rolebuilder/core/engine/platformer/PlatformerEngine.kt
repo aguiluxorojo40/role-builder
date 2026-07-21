@@ -926,7 +926,7 @@ class PlatformerEngine(
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
                     else {
-                        e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+                        e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
                         moveEnemyVertical(e)
                         moveEnemyHorizontal(e)
                         if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
@@ -943,7 +943,7 @@ class PlatformerEngine(
      * quieto, solo se posa. Se apaga al caer al vacío.
      */
     private fun updateShell(e: PlatformerEnemy) {
-        e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+        e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
         moveEnemyVertical(e)
         if (e.shellKickGrace > 0) e.shellKickGrace--
         if (e.shellMoving) {
@@ -1014,7 +1014,7 @@ class PlatformerEngine(
                 smwStepY(e, bob)
             }
             0x09 -> { // saltarina: gravedad + salto al tocar suelo, patrullando en X
-                e.vy = min(e.vy + tuning.gravityFall, tuning.maxFallSpeed)
+                e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
                 moveEnemyVertical(e)
                 if (e.onGround) e.vy = signed(WINGED_BOUNCE).toFloat() / 16f   // 0xD0 = −3 px/f
                 if (e.vx == 0f) e.vx = -0.5f
@@ -1462,5 +1462,11 @@ class PlatformerEngine(
         const val WINGED_OSC_LIMIT_DOWN = 0x10   // +1 px/f
         const val WINGED_OSC_LIMIT_UP = 0xF0     // −1 px/f
         const val WINGED_OSC_PAUSE = 0x30
+
+        // ---- Gravedad de SPRITES (SubUpdateSprPos $01): valores EXACTOS de SMW ----
+        /** `DATA_019030` = 0x03/frame = 3/16 = **0.1875 px/f²** (los sprites caen más suave que Mario). */
+        const val SPRITE_GRAVITY = 3f / 16f
+        /** `DATA_01902E` = 0x40 = 64/16 = **4 px/f** de caída terminal de un sprite. */
+        const val SPRITE_MAX_FALL = 0x40 / 16f
     }
 }

@@ -69,6 +69,18 @@ se explican por cuál de las dos usa cada pieza:
   real 0xAB, Pokey, Wiggler…): fuera del alcance de la tabla OAM genérica
   (ids ≥ 0x54 o multi-tesela); necesitan portar su rutina específica.
 
+## Motor 1:1 (progreso y huecos)
+
+Objetivo: que el substrato del motor sea bit-exacto a SMW, no solo los comportamientos.
+- ✅ **Gravedad de sprites EXACTA**: `SPRITE_GRAVITY = DATA_019030 = 3/16 = 0.1875 px/f²`
+  y terminal `SPRITE_MAX_FALL = DATA_01902E = 0x40 = 4 px/f` (`SubUpdateSprPos` $01). La
+  usan todos los enemigos que caen (andadores, caparazón, saltarina 0x09). Como son
+  fracciones n/16 exactas, en float el acumulado es bit-exacto (equivale al subpíxel).
+- ✅ Salto/gravedad/caída-terminal/topes de Mario y velocidades de enemigos porteadas.
+- 🟡 **Aceleración/rozamiento de Mario**: aproximados (`0x180/4096`); SMW usa tablas por
+  estado (`$00:D3xx`: andar/correr/derrape/hielo) — pendiente para el "tacto" 1:1.
+- 🟡 **Colisión**: AABB propia, no las rutinas de interacción con teselas de SMW.
+
 ## Tandas de enemigos (medidas sobre 316 niveles de la ROM US)
 
 **Tanda 1 — ENTREGADA:** 0x4F Planta Piraña saltarina (24 niveles), 0x37 Boo,
