@@ -86,8 +86,16 @@ Objetivo: que el substrato del motor sea bit-exacto a SMW, no solo los comportam
   BYTES sobre las tablas de words. La velocidad avanza con acumulador de subpíxeles
   (`bodyStepX`, gemelo de `smwStepX`), así las distancias salen 1:1. Solo en modo ROM
   (`PlatformerEngine(smwPhysics = …)`); los proyectos genéricos conservan el modelo simple.
-- 🟡 **Colisión**: AABB propia, no las rutinas de interacción con teselas de SMW
-  (siguiente hueco del substrato 1:1).
+- ✅ **Colisión por PUNTOS-SONDA de SMW** (modo ROM): port del modelo de
+  `RunPlayerBlockCode` (`$00:EADB`) — el jugador muestrea el mapa en puntos de offset fijo
+  (sondas laterales para paredes, dos de pies para el suelo, cabeza para el techo) en vez
+  de barrer el borde de la caja, fija `blockedFlags` (`player_blocked_flags` `$77`) y
+  dispara el block-code (`?`/ladrillo) en el punto de contacto. Reutiliza la clasificación
+  1:1 (`SmwBlockCollision`, `$00:EB77`) y el perfil de cuesta sub-píxel (`slopeSurfaceY`).
+  Solo en modo ROM; los proyectos sin ROM conservan el AABB por span.
+  **Fuera del port** (subsistemas ausentes en el motor): tuberías, throw-blocks,
+  wall-running, cuestas de agua, note-blocks, Yoshi y los puntos del overflow de la tabla
+  `E89C`. El aplastamiento no se modela (no hay plataformas móviles que lo provoquen).
 
 ## Tandas de enemigos (medidas sobre 316 niveles de la ROM US)
 

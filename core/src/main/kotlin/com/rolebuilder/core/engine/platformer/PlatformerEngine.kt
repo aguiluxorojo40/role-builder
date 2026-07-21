@@ -286,6 +286,13 @@ class PlatformerEngine(
     private var hBlocked = false
 
     /**
+     * Lados en que Mario está bloqueado este fotograma (equivalente a `player_blocked_flags`
+     * `$77` de SMW), recalculado cada `tick` por la colisión 1:1. Bits en [BLOCKED_LEFT] etc.
+     */
+    var blockedFlags = 0
+        private set
+
+    /**
      * Altura ACTUAL de la caja del jugador: la del tuning de pequeño, o la de Mario
      * grande tras coger una seta. Todo el motor (y el dibujado) debe usar esta, no
      * `tuning.playerHeight`, para que crecer/encoger sea real.
@@ -716,10 +723,17 @@ class PlatformerEngine(
 
         // --- integración con colisión, eje a eje ---
         hBlocked = false
-        moveHorizontal(p.vx)
-        // En el modo 1:1, un muro corta la velocidad SMW (el ROM pone PlayerXSpeed = 0).
-        if (hBlocked) smwMotion?.stop()
-        moveVertical(p.vy)
+        blockedFlags = 0
+        if (smwMotion != null) {
+            // MODO 1:1: colisión por PUNTOS-SONDA de SMW (fija blockedFlags y aplastamiento).
+            smwResolveHorizontal(p.vx)
+            if (hBlocked) smwMotion.stop()
+            smwResolveVertical(p.vy)
+        } else {
+            // MODO GENÉRICO (sin ROM): AABB por span de caja de siempre.
+            moveHorizontal(p.vx)
+            moveVertical(p.vy)
+        }
         snapToSlope()
 
         if (p.invulnFrames > 0) p.invulnFrames--
@@ -1333,6 +1347,120 @@ class PlatformerEngine(
         p.jumping = false
     }
 
+    /**
+     * Golpe de bloque `?` desde abajo (celda col,row): si es PRIZE, suelta el premio y lo
+     * deja "usado". Devuelve true si era un premio. Premio progresivo (diseño, no dato ROM):
+     * SETA si pequeño; FLOR si grande; PLUMA si ya tiene fuego; MONEDA si ya tiene capa.
+     */
+    private fun tryBonk(col: Int, row: Int): Boolean {
+        if (blockActionAt(col, row) != BlockAction.PRIZE) return false
+        setAction(col, row, BlockAction.NONE)
+        val px = col * tileSize + 1f
+        val py = row * tileSize - 15f
+        val p = player
+        when {
+            !p.big -> items.add(PowerupItem(px, py, PowerupKind.MUSHROOM))
+            !p.fire && !p.cape -> items.add(PowerupItem(px, py, PowerupKind.FIRE_FLOWER))
+            !p.cape -> items.add(PowerupItem(px, py, PowerupKind.CAPE_FEATHER))
+            else -> { coins++; coinEvents++ }
+        }
+        return true
+    }
+
+    // --- Colisión 1:1 por PUNTOS-SONDA de SMW (RunPlayerBlockCode, $00:EADB) ---------------
+    // El juego no barre el borde entero de la caja: muestrea el mapa en puntos de offset fijo
+    // (izq./der. del cuerpo para paredes, dos puntos de pies para el suelo, uno de cabeza
+    // para el techo), fija player_blocked_flags ($77) y mata por aplastamiento (& 0x1C). Aquí
+    // se porta ese modelo para las clases de bloque que el motor tiene (sólido/un-sentido/
+    // cuesta/pincho + block-code); pipes, throw-blocks, wall-run, agua y Yoshi quedan fuera
+    // (subsistemas ausentes en el motor), igual que otras rutinas específicas del proyecto.
+
+    /** Fracción del alto del cuerpo donde van las dos sondas de pared (como los puntos de SMW). */
+    private fun wallProbeRows(top: Float, h: Float): IntArray {
+        val upper = ((top + h * 0.25f) / tileSize).toInt()
+        val lower = ((top + h * 0.80f) / tileSize).toInt()
+        return if (upper == lower) intArrayOf(upper) else intArrayOf(upper, lower)
+    }
+
+    /** Resolvedor horizontal por sondas laterales; fija BLOCKED_LEFT/RIGHT y corta la velocidad. */
+    private fun smwResolveHorizontal(dx: Float) {
+        if (dx == 0f) return
+        val p = player
+        val w = tuning.playerWidth
+        val h = playerHeight
+        var nx = p.x + dx
+        val onSlope = supportSlopeOffsets() != null
+        val rows = wallProbeRows(p.y, h)
+        fun tryMove(col: Int, clampX: Float, flag: Int) {
+            val blockers = rows.filter { wallsAt(col, it) }
+            if (blockers.isEmpty()) return
+            val stepTop = blockers.min() * tileSize.toFloat()
+            if (onSlope && (p.y + h) - stepTop <= 8f) {
+                p.y = stepTop - h - 0.01f // corona el escalón de la cuesta (sensor central)
+            } else {
+                nx = clampX
+                p.vx = 0f
+                hBlocked = true
+                blockedFlags = blockedFlags or flag
+            }
+        }
+        if (dx > 0) {
+            val col = ((nx + w) / tileSize).toInt()
+            tryMove(col, col * tileSize - w - 0.01f, BLOCKED_RIGHT)
+        } else {
+            val col = (nx / tileSize).toInt()
+            tryMove(col, (col + 1) * tileSize + 0.01f, BLOCKED_LEFT)
+        }
+        p.x = nx
+    }
+
+    /** Resolvedor vertical por sondas de pies (dos, izq./der. del centro) y cabeza (centro). */
+    private fun smwResolveVertical(dy: Float) {
+        val p = player
+        val w = tuning.playerWidth
+        val h = playerHeight
+        var ny = p.y + dy
+        p.onGround = false
+        // Sondas de pies: izquierda y derecha del centro (como los dos puntos de suelo de SMW).
+        val footL = p.x + w * 0.25f
+        val footR = p.x + w * 0.75f
+        val centerX = p.x + w / 2f
+        if (dy > 0) {
+            val prevBottom = p.y + h
+            // Cuesta bajo el centro (perfil sub-píxel, ya 1:1).
+            var landed = false
+            run {
+                val ccol = (centerX / tileSize).toInt()
+                val rowTo = ((ny + h) / tileSize).toInt()
+                for (r in (prevBottom / tileSize).toInt()..rowTo) {
+                    val surf = slopeSurfaceY(ccol, r, centerX) ?: continue
+                    if (ny + h >= surf) { ny = surf - h - 0.01f; p.vy = 0f; p.onGround = true; landed = true; break }
+                }
+            }
+            if (!landed) {
+                val row = ((ny + h) / tileSize).toInt()
+                val tileTop = row * tileSize
+                val hit = intArrayOf((footL / tileSize).toInt(), (footR / tileSize).toInt()).any { c ->
+                    val s = solidity(c, row)
+                    floorsAt(c, row) && (s != SmwSolidity.LEDGE_TOP || prevBottom <= tileTop + 0.01f)
+                }
+                if (hit) { ny = tileTop - h - 0.01f; p.vy = 0f; p.onGround = true; blockedFlags = blockedFlags or BLOCKED_DOWN }
+            }
+        } else if (dy < 0) {
+            // Techo: sonda de cabeza (dos puntos, esquinas superiores), solo sólidos.
+            val row = (ny / tileSize).toInt()
+            val hitCols = intArrayOf((footL / tileSize).toInt(), (footR / tileSize).toInt())
+                .filter { solidity(it, row) == SmwSolidity.SOLID }
+            if (hitCols.isNotEmpty()) {
+                ny = (row + 1) * tileSize + 0.01f
+                p.vy = 0f
+                blockedFlags = blockedFlags or BLOCKED_UP
+                for (c in hitCols) if (tryBonk(c, row)) break
+            }
+        }
+        p.y = ny
+    }
+
     private fun moveHorizontal(dx: Float) {
         if (dx == 0f) return
         val p = player
@@ -1424,25 +1552,8 @@ class PlatformerEngine(
             if (hitCols.isNotEmpty()) {
                 ny = (row + 1) * tileSize + 0.01f
                 p.vy = 0f
-                // Bloque '?': el golpe desde abajo suelta el premio y lo deja "usado"
-                // (sigue sólido; su solidez no cambia). Un cabezazo = un bloque.
-                // Premio progresivo (simplificación de diseño, no dato de la ROM):
-                // SETA si es pequeño; FLOR (fuego) si es grande normal; PLUMA (capa) si
-                // ya tiene fuego; MONEDA si ya tiene capa.
-                for (c in hitCols) {
-                    if (blockActionAt(c, row) == BlockAction.PRIZE) {
-                        setAction(c, row, BlockAction.NONE)
-                        val px = c * tileSize + 1f
-                        val py = row * tileSize - 15f
-                        when {
-                            !p.big -> items.add(PowerupItem(px, py, PowerupKind.MUSHROOM))
-                            !p.fire && !p.cape -> items.add(PowerupItem(px, py, PowerupKind.FIRE_FLOWER))
-                            !p.cape -> items.add(PowerupItem(px, py, PowerupKind.CAPE_FEATHER))
-                            else -> { coins++; coinEvents++ }
-                        }
-                        break
-                    }
-                }
+                // Bloque '?': el golpe desde abajo suelta el premio. Un cabezazo = un bloque.
+                for (c in hitCols) if (tryBonk(c, row)) break
             }
         }
         p.y = ny
@@ -1462,6 +1573,12 @@ class PlatformerEngine(
     }
 
     companion object {
+        /** Bits de [blockedFlags] (modelo de `player_blocked_flags` $77 de SMW). */
+        const val BLOCKED_RIGHT = 0x1
+        const val BLOCKED_LEFT = 0x2
+        const val BLOCKED_UP = 0x4
+        const val BLOCKED_DOWN = 0x8
+
         /** Altura de la caja de Mario grande (dos casillas, como fromSmw con BIG). */
         const val BIG_HEIGHT = 26f
         /** Altura canónica de pequeño si el tuning ya venía de grande. */

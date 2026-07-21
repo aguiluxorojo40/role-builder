@@ -100,6 +100,44 @@ class PlatformerEngineTest {
         // No atraviesa el muro: el borde derecho queda a la izquierda de la columna del muro.
         assertTrue(e.player.x + tuning.playerWidth <= wallCol * 16f + 0.5f,
             "se queda pegado al muro (x=${e.player.x})")
+        // Colisión por sondas: empujando contra el muro marca el lado derecho (player_blocked_flags)
+        // en algún fotograma (al re-acelerar tras pararse contra la pared).
+        var seen = 0
+        repeat(30) { e.tick(); seen = seen or e.blockedFlags }
+        assertTrue(seen and PlatformerEngine.BLOCKED_RIGHT != 0, "marca pared derecha al empujar")
+    }
+
+    @Test
+    fun `modo 1_1 - posado en el suelo marca BLOCKED_DOWN`() {
+        val e = engineRom(10, 10, startCol = 2, startRow = 3) { g ->
+            for (c in 0 until 10) g[8][c] = SmwSolidity.SOLID
+        }
+        e.run(60)
+        assertTrue(e.player.onGround, "acaba en el suelo")
+        assertTrue(e.blockedFlags and PlatformerEngine.BLOCKED_DOWN != 0, "suelo = BLOCKED_DOWN")
+    }
+
+    @Test
+    fun `modo 1_1 - cabezazo a un bloque ? suelta premio y marca BLOCKED_UP`() {
+        val cols = 10; val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID   // suelo
+        grid[5][2] = SmwSolidity.SOLID                            // bloque ? encima de Mario
+        val actions = IntArray(cols * rows)
+        actions[5 * cols + 2] = BlockAction.PRIZE.ordinal
+        val e = PlatformerEngine(
+            cols, rows,
+            solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 2 * 16, startPixelY = 6 * 16,
+            tuning = PlatformerTuning.fromSmw(physUS()),
+            smwPhysics = physUS(),
+            blockActions = actions,
+        )
+        e.run(20) // que se pose bajo el bloque
+        val itemsBefore = e.items.size
+        e.pressJump(); e.setJumpHeld(true)
+        e.run(40)   // salta y golpea el bloque desde abajo
+        assertTrue(e.items.size > itemsBefore, "el cabezazo soltó un premio")
     }
 
     @Test
