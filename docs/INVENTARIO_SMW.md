@@ -121,8 +121,11 @@ se explican por cuál de las dos usa cada pieza:
     (0xA0), Koopaling (0x29), Reznor (0xA9) y Big Boo (0xC5): enemigo GRANDE con varios puntos
     de vida (`BOSS_HP`), caja de colisión mayor y patrulla lenta; el pisotón/caparazón/bloque/
     fuego le restan HP (con invulnerabilidad entre golpes vía `damageEnemy`), muere al llegar a
-    0. Se dibuja con su `big_<id>.png` auto-cargado. Conducta **SIMPLIFICADA** (no la IA de
-    Modo 7). Con tests de HP en `PlatformerEngineTest.kt`.
+    0. Se dibuja con su `big_<id>.png` auto-cargado. **Ataque propio** ([updateBoss]/[bossShoot]):
+    Bowser LANZA en arco, Reznor y el Koopaling escupen FUEGO recto (reusan [EnemyProjectile]
+    con flag `arc`), y Big Boo FLOTA persiguiendo a Mario como fantasma (sin gravedad/terreno).
+    Conducta **SIMPLIFICADA** (no la IA de Modo 7). Con tests de HP y de ataque en
+    `PlatformerEngineTest.kt`.
   - 🟡 Pendientes: pulir el recorte de los 2 Koopalings lanzafuegos (0x98/0xd9, el fuego
     naranja se funde con el cuerpo); Dino-Torch 0x6F (draw con animación de llamas).
 

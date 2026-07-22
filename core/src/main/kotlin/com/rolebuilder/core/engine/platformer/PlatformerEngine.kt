@@ -5,6 +5,7 @@ import com.rolebuilder.core.snes.SmwPlayerXMovement
 import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.math.abs
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 
@@ -97,7 +98,10 @@ fun enemyBehaviorOf(id: Int): EnemyBehavior = when {
  * hacia arriba y ARQUEA con gravedad (como la rutina `Hammer` de SMW), hiere al jugador
  * al tocarlo y se apaga al salir del nivel o agotar su vida.
  */
-class EnemyProjectile(var x: Float, var y: Float, var vx: Float, var vy: Float) {
+class EnemyProjectile(var x: Float, var y: Float, var vx: Float, var vy: Float,
+                      /** true = arquea con gravedad (bola de Hammer / lanzamiento de Bowser);
+                       *  false = vuela recto (aliento de fuego de Reznor/Koopaling). */
+                      val arc: Boolean = true) {
     val width = 8f
     val height = 8f
     var alive = true
@@ -187,6 +191,8 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var hp = if (isBoss) PlatformerEngine.BOSS_HP else 1
     /** Fotogramas de invulnerabilidad tras recibir un golpe (para no gastar todo el HP de una). */
     var hurtCooldown = 0
+    /** Cuenta atrás hasta el próximo ATAQUE del jefe (bola de fuego / lanzamiento). */
+    var attackTimer = PlatformerEngine.BOSS_ATTACK_INTERVAL
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
     val upsideDown = id == 0x2A
@@ -1114,15 +1120,8 @@ class PlatformerEngine(
             when (e.behavior) {
                 EnemyBehavior.PIPE_PIRANHA -> updatePipePiranha(e)
                 EnemyBehavior.JUMPING_PIRANHA -> updateJumpingPiranha(e)
-                // Jefe: patrulla lenta con gravedad (como un andador robusto). Cuenta atrás de
-                // los fotogramas de invulnerabilidad tras un golpe.
-                EnemyBehavior.BOSS -> {
-                    if (e.hurtCooldown > 0) e.hurtCooldown--
-                    e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
-                    moveEnemyVertical(e)
-                    moveEnemyHorizontal(e)
-                    if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
-                }
+                // Jefe: patrulla + ataque propio de cada uno (ver [updateBoss]).
+                EnemyBehavior.BOSS -> updateBoss(e)
                 EnemyBehavior.WALKER -> {
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
@@ -1135,6 +1134,53 @@ class PlatformerEngine(
                 }
             }
         }
+    }
+
+    /**
+     * Conducta de un JEFE (SIMPLIFICADA, no la IA de Modo 7): Big Boo flota persiguiendo a
+     * Mario como un fantasma (sin gravedad ni terreno); los demás patrullan por el suelo y
+     * lanzan su ATAQUE propio cuando Mario está cerca ([bossShoot]). Cuenta la invulnerabilidad.
+     */
+    private fun updateBoss(e: PlatformerEnemy) {
+        if (e.hurtCooldown > 0) e.hurtCooldown--
+        // Big Boo (0xC5): fantasma que persigue flotando, atraviesa el terreno, no dispara.
+        if (e.id == 0xC5) {
+            val cx = e.x + e.width / 2f; val cy = e.y + e.height / 2f
+            val dx = (player.x + tuning.playerWidth / 2f) - cx
+            val dy = (player.y + playerHeight / 2f) - cy
+            val d = max(1f, hypot(dx, dy))
+            e.x += dx / d * BIG_BOO_SPEED
+            e.y += dy / d * BIG_BOO_SPEED
+            return
+        }
+        // Resto: patrulla con gravedad + ataque propio si Mario está en rango.
+        e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
+        moveEnemyVertical(e)
+        moveEnemyHorizontal(e)
+        if (e.y > (rows + 3) * tileSize) { e.alive = false; return }
+        if (e.attackTimer > 0) { e.attackTimer--; return }
+        val dx = (player.x + tuning.playerWidth / 2f) - (e.x + e.width / 2f)
+        if (abs(dx) <= BOSS_ATTACK_RANGE) {
+            bossShoot(e, if (dx >= 0f) 1f else -1f)
+            e.attackTimer = BOSS_ATTACK_INTERVAL
+        }
+    }
+
+    /**
+     * Ataque de proyectil del jefe hacia Mario ([dir] = ±1). Bowser (0xA0) LANZA en arco (con
+     * gravedad); Reznor (0xA9) y el Koopaling (0x29) escupen FUEGO recto. Reutiliza el sistema
+     * de [EnemyProjectile] y su tope de 6 vivos.
+     */
+    private fun bossShoot(e: PlatformerEnemy, dir: Float) {
+        if (enemyProjectiles.count { it.alive } >= 6) return
+        val cx = e.x + e.width / 2f
+        val cy = e.y + e.height / 2f
+        if (e.id == 0xA0) {
+            enemyProjectiles.add(EnemyProjectile(cx, cy, dir * BOSS_LOB_VX, BOSS_LOB_VY, arc = true))
+        } else {
+            enemyProjectiles.add(EnemyProjectile(cx, cy, dir * BOSS_FIRE_VX, 0f, arc = false))
+        }
+        piranhaFireEvents++   // reutiliza el evento de sonido de "escupir fuego"
     }
 
     /**
@@ -1356,7 +1402,7 @@ class PlatformerEngine(
         while (it.hasNext()) {
             val f = it.next()
             if (!f.alive) { it.remove(); continue }
-            f.vy = min(f.vy + PIRANHA_FIRE_G, 4f)            // gravedad de Hammer
+            if (f.arc) f.vy = min(f.vy + PIRANHA_FIRE_G, 4f)  // gravedad de Hammer (los rectos no)
             f.x += f.vx
             f.y += f.vy
             if (--f.life <= 0 || f.x < -16f || f.x > (cols + 1) * tileSize || f.y < -16f || f.y > (rows + 1) * tileSize) {
@@ -1801,6 +1847,17 @@ class PlatformerEngine(
         const val BOSS_HEIGHT = 30f
         /** Velocidad de patrulla del jefe (px/f): lenta y pesada. */
         const val BOSS_SPEED = 0.35f
+        /** Fotogramas entre ataques del jefe (bola de fuego / lanzamiento). */
+        const val BOSS_ATTACK_INTERVAL = 100
+        /** Solo ataca si Mario está a menos de este alcance horizontal (px). */
+        const val BOSS_ATTACK_RANGE = 220f
+        /** Aliento de fuego RECTO (Reznor/Koopaling): ±3 px/f, sin gravedad. */
+        const val BOSS_FIRE_VX = 3f
+        /** Lanzamiento en ARCO de Bowser: ±2 px/f horizontal, −3.5 px/f hacia arriba (arquea). */
+        const val BOSS_LOB_VX = 2f
+        const val BOSS_LOB_VY = -3.5f
+        /** Velocidad de flotación de Big Boo persiguiendo a Mario (px/f). */
+        const val BIG_BOO_SPEED = 0.8f
         const val PIRANHA_FIRE_G = 0.125f
 
         // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----

@@ -209,6 +209,26 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `jefe - Bowser lanza un proyectil cuando Mario está cerca`() {
+        val e = engineGrab(18, 10, startCol = 2, startRow = 6, grabCol = 16, grabRow = 6, floorRow = 7,
+            seeds = listOf(EnemySeed(6 * 16, 6 * 16, 0xA0)))  // Bowser a 4 casillas de Mario
+        assertTrue(e.enemyProjectiles.isEmpty(), "arranca sin proyectiles")
+        e.run(PlatformerEngine.BOSS_ATTACK_INTERVAL + 5)
+        assertTrue(e.enemyProjectiles.isNotEmpty(), "Bowser lanza su proyectil hacia Mario")
+    }
+
+    @Test
+    fun `jefe - Big Boo flota hacia Mario`() {
+        val e = engineGrab(20, 12, startCol = 2, startRow = 8, grabCol = 18, grabRow = 8, floorRow = 9,
+            seeds = listOf(EnemySeed(14 * 16, 3 * 16, 0xC5)))  // Big Boo arriba a la derecha
+        val boo = e.enemies.first()
+        val x0 = boo.x; val y0 = boo.y
+        e.run(30)
+        assertTrue(boo.x < x0, "Big Boo se acerca a Mario en X")
+        assertTrue(boo.y > y0, "Big Boo baja hacia Mario en Y")
+    }
+
+    @Test
     fun `throw-block - con abajo pulsado lo deja en vez de lanzarlo`() {
         val e = engineGrab(10, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7)
         e.run(20)
