@@ -87,8 +87,10 @@ se explican por cuál de las dos usa cada pieza:
     teselas 16×16, frame 0, paleta 7). El compositor soporta paleta por-tesela y volteo
     H/V (`OamTile`).
     **Reznor (0xA9)** (dino-jefe de castillo 32×32, teselas 0x40/0x42/0x60/0x62 de
-    `Spr0A9_Reznor_Draw`, paleta 7). El compositor soporta paleta por-tesela y volteo
-    H/V (`OamTile`).
+    `Spr0A9_Reznor_Draw`, paleta 7) y **Big Boo Boss (0xC5)** (boo gigante ~64×64 = 4×4
+    teselas 16×16 + boca/colmillos, frame 0 de `NormalSpriteBooDraw`, v-flip en la mitad
+    inferior, paleta 7; su GFX sí está en las ranuras normales de su sala 0xE4). El
+    compositor soporta paleta por-tesela y volteo H/V (`OamTile`).
   - 🧩 **Jefes de Modo 7** (GFX que NO está en el ajuste estático del nivel): las salas de
     jefe (modos de nivel 9/11/16) IGNORAN el ajuste de GFX de sprites de la cabecera y lo
     FUERZAN en `GameMode12_PrepareLevel_PrepareMode7Level` ($00:97BC) según el jefe activo
@@ -98,8 +100,14 @@ se explican por cuál de las dos usa cada pieza:
     estático). Herramientas de apoyo: `extractSnesTileset --gfx-dump` (vuelca todos los
     ficheros GFX) y `--sprite-sheet [--gfx-setting N]` (vuelca la VRAM de sprites de un
     nivel) para localizar a ojo el GFX real de un jefe.
-  - 🟡 Pendientes: los demás jefes de Modo 7 (Koopalings ajuste 18/24, Big Boo, Bowser) con
-    el mismo método `gfxSetting`, y el resto de enemigos con GFX estático (Blargg, etc.).
+  - ⛔ **Sprites de Modo 7 puro** (NO extraíbles con la tubería OAM 4bpp): **Bowser** (coche
+    payaso) y los **Koopalings Morton/Roy/Ludwig (0x29)** se dibujan con
+    `UpdateMode7SpriteAnimations` (teselas 8bpp de Modo 7 + tilemap EXTBG), no con OAM.
+    Requerirían un decodificador de GFX/tilemap de Modo 7 aparte. **Iggy/Larry (0x29)** sí
+    son OAM pero con tablas sobrecargadas (tamaño+paleta mezclados, paleta según nº de jefe)
+    y teselas relativas al contexto GFX de la plataforma de Modo 7: poco rentable.
+  - 🟡 Pendientes: el resto de enemigos con GFX estático (Blargg, etc.); y, si compensa, un
+    decodificador de Modo 7 para Bowser/Koopalings.
 
 ## Motor 1:1 (progreso y huecos)
 
