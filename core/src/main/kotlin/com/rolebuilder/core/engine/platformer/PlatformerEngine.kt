@@ -76,7 +76,7 @@ class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
  * [PIPE_PIRANHA] (asoma del tubo por ciclos, no sale si Mario está encima) y
  * [JUMPING_PIRANHA] (salta en arco; la de fuego escupe bolas).
  */
-enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA }
+enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA, BOWLING_BALL }
 
 /**
  * Ids de los JEFES soportados como enemigos jugables (dibujados con su `big_<id>.png`):
@@ -90,6 +90,7 @@ val BOSS_IDS = intArrayOf(0xA0, 0x29, 0xA9, 0xC5)
 fun enemyBehaviorOf(id: Int): EnemyBehavior = when {
     id in BOSS_IDS -> EnemyBehavior.BOSS
     id == 0xA2 -> EnemyBehavior.MECHAKOOPA                        // Mechakoopa de Bowser
+    id == 0xA1 -> EnemyBehavior.BOWLING_BALL                      // bola de bolos de Bowser
     id == 0x1A || id == 0x2A -> EnemyBehavior.PIPE_PIRANHA        // recta / cabeza-abajo
     id == 0x4F || id == 0x50 -> EnemyBehavior.JUMPING_PIRANHA     // saltarina / saltarina de fuego
     else -> EnemyBehavior.WALKER
@@ -197,6 +198,8 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var attackTimer = PlatformerEngine.BOSS_ATTACK_INTERVAL
     /** Contador de fotogramas del Mechakoopa: cada 0x40 re-encara a Mario (`spr_table00c2`). */
     var faceTimer = 0
+    /** Nº de ataques lanzados por el jefe (Bowser alterna Mechakoopa / bola de bolos). */
+    var attackCount = 0
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
     val upsideDown = id == 0x2A
@@ -262,6 +265,7 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
             EnemyBehavior.JUMPING_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_JUMP_WAIT
             EnemyBehavior.BOSS -> {}
             EnemyBehavior.MECHAKOOPA -> {}
+            EnemyBehavior.BOWLING_BALL -> {}
             EnemyBehavior.WALKER -> {}
         }
     }
@@ -1133,6 +1137,8 @@ class PlatformerEngine(
                 EnemyBehavior.BOSS -> updateBoss(e)
                 // Mechakoopa (0xA2): anda hacia Mario, re-encarándolo cada 0x40 frames.
                 EnemyBehavior.MECHAKOOPA -> updateMechakoopa(e)
+                // Bola de bolos de Bowser (0xA1): cae, rebota y rueda hacia Mario.
+                EnemyBehavior.BOWLING_BALL -> updateBowlingBall(e)
                 EnemyBehavior.WALKER -> {
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
@@ -1175,6 +1181,32 @@ class PlatformerEngine(
     }
 
     /**
+     * Bola de bolos de Bowser (0xA1), puerto de `Spr0A1_BowserBowlingBall` ($03): cae con
+     * gravedad (+3 unidades/f, tope 0x40=4 px/f), REBOTA en el suelo con altura según la
+     * velocidad de caída (`kSpr0A1_BowserBowlingBall_BounceYSpeed[(caída>>2)+19]`) y RUEDA hacia
+     * Mario a ±0x10 (1 px/f). Hiere por cualquier lado (no se puede pisar); se apaga al caer.
+     */
+    private fun updateBowlingBall(e: PlatformerEnemy) {
+        e.vy = min(e.vy + BALL_GRAVITY, BALL_MAX_FALL)
+        val landUnits = (e.vy * 16f).toInt()                 // velocidad de caída en unidades SMW
+        moveEnemyVertical(e)                                 // pone onGround y vy=0 al aterrizar
+        if (e.onGround) {
+            val idx = ((landUnits shr 2) + 19).coerceIn(0, BALL_BOUNCE_YSPEED.size - 1)
+            e.vy = BALL_BOUNCE_YSPEED[idx].toByte().toInt() / 16f   // rebote (negativo = arriba)
+            if (e.vx == 0f) {
+                e.vx = if (player.x + tuning.playerWidth / 2f < e.x + e.width / 2f) -BALL_ROLL else BALL_ROLL
+            }
+        }
+        // Rueda; rebota en paredes.
+        val nx = e.x + e.vx
+        val minRow = (e.y / tileSize).toInt()
+        val maxRow = ((e.y + e.height - 0.01f) / tileSize).toInt()
+        val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+        if (e.vx != 0f && (minRow..maxRow).any { wallsAt(frontCol, it) }) e.vx = -e.vx else e.x = nx
+        if (e.y > (rows + 3) * tileSize) e.alive = false
+    }
+
+    /**
      * Conducta de un JEFE (SIMPLIFICADA, no la IA de Modo 7): Big Boo flota persiguiendo a
      * Mario como un fantasma (sin gravedad ni terreno); los demás patrullan por el suelo y
      * lanzan su ATAQUE propio cuando Mario está cerca ([bossShoot]). Cuenta la invulnerabilidad.
@@ -1209,19 +1241,26 @@ class PlatformerEngine(
      *  - Reznor (0xA9) y el Koopaling (0x29): bola de fuego APUNTADA al jugador y RECTA, con la
      *    misma matemática y velocidad que el juego (`Spr0A9_Reznor_ReznorFireRt` →
      *    `AimTowardsPlayer` con 0x10). El vector [SmwSpriteAim] va en unidades SMW (÷16 = px/f).
-     *  - Bowser (0xA0): SUELTA un Mechakoopa (0xA2) hacia Mario — cae en arco y luego anda
-     *    (`updateMechakoopa`). Máx. [BOSS_MAX_MECHAKOOPAS] vivos a la vez.
-     * Reutiliza [EnemyProjectile] (fuego) o [enemies] (Mechakoopa).
+     *  - Bowser (0xA0): ALTERNA entre soltar un Mechakoopa (0xA2, cae en arco y anda) y dejar
+     *    caer una bola de bolos (0xA1, rebota y rueda). Máx. [BOSS_MAX_MECHAKOOPAS] Mechakoopas.
+     * Reutiliza [EnemyProjectile] (fuego) o [enemies] (sub-sprites de Bowser).
      */
     private fun bossShoot(e: PlatformerEnemy, dir: Float) {
         val cx = e.x + e.width / 2f
         val cy = e.y + e.height / 2f
         if (e.id == 0xA0) {
-            if (enemies.count { it.alive && it.behavior == EnemyBehavior.MECHAKOOPA } >= BOSS_MAX_MECHAKOOPAS) return
-            val m = PlatformerEnemy(cx - 7f, e.y - 8f, 0xA2)   // sale de Bowser
-            m.vx = dir * MECHA_TOSS_VX
-            m.vy = MECHA_TOSS_VY
-            pendingSpawns.add(m)
+            e.attackCount++
+            if (e.attackCount % 2 == 0) {   // bola de bolos: cae desde Bowser y rueda al rebotar
+                val b = PlatformerEnemy(cx - 8f, e.y, 0xA1)
+                b.vy = BALL_DROP_VY
+                pendingSpawns.add(b)
+            } else {                        // Mechakoopa: sale en arco y luego anda
+                if (enemies.count { it.alive && it.behavior == EnemyBehavior.MECHAKOOPA } >= BOSS_MAX_MECHAKOOPAS) return
+                val m = PlatformerEnemy(cx - 7f, e.y - 8f, 0xA2)
+                m.vx = dir * MECHA_TOSS_VX
+                m.vy = MECHA_TOSS_VY
+                pendingSpawns.add(m)
+            }
             piranhaFireEvents++
         } else {
             if (enemyProjectiles.count { it.alive } >= 6) return
@@ -1592,6 +1631,8 @@ class PlatformerEngine(
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
+                // Bola de bolos de Bowser: no se puede pisar, hiere por cualquier lado.
+                e.behavior == EnemyBehavior.BOWLING_BALL -> { hurtPlayer(); return }
                 // Jefe: pisarlo le quita un punto de vida (rebota a Mario, con invulnerabilidad
                 // entre golpes); tocarlo de lado hiere a Mario. Muere al agotar el HP.
                 e.isBoss -> {
@@ -1917,6 +1958,19 @@ class PlatformerEngine(
         const val MECHA_TOSS_VY = -3f
         /** Máximo de Mechakoopas vivos que Bowser mantiene a la vez. */
         const val BOSS_MAX_MECHAKOOPAS = 3
+        /** Bola de bolos: gravedad +3 unidades/f y tope 0x40 (=4 px/f); rueda a 0x10 (=1 px/f). */
+        const val BALL_GRAVITY = 3f / 16f
+        const val BALL_MAX_FALL = 4f
+        const val BALL_ROLL = 1f
+        /** Impulso vertical con que Bowser deja caer la bola (px/f, hacia arriba antes de caer). */
+        const val BALL_DROP_VY = -1.5f
+        /** `kSpr0A1_BowserBowlingBall_BounceYSpeed` ($03): rebote (unidades SMW) por vel. de caída;
+         *  la bola usa índice `(caída>>2)+19`. A más caída, más alto rebota; 0 = deja de botar. */
+        val BALL_BOUNCE_YSPEED = intArrayOf(
+            0x0, 0x0, 0x0, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2,
+            0xe8, 0xe8, 0xe8, 0xe8, 0x0, 0x0, 0x0, 0x0, 0xfe, 0xfc, 0xf8, 0xec, 0xec, 0xec, 0xe8,
+            0xe4, 0xe0, 0xdc, 0xd8, 0xd4, 0xd0, 0xcc, 0xc8,
+        )
         const val PIRANHA_FIRE_G = 0.125f
 
         // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----

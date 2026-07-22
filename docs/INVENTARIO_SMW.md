@@ -127,12 +127,15 @@ se explican por cuál de las dos usa cada pieza:
       `AimTowardsPlayer` $02:D2FB, velocidad 0x10, como `Spr0A9_Reznor_ReznorFireRt`). Test del
       aim contra valores del disassembly en `SmwSpriteAimTest.kt`.
     - **Big Boo (0xC5)**: FLOTA persiguiendo a Mario como fantasma (sin gravedad/terreno).
-    - **Bowser (0xA0)**: SUELTA un **Mechakoopa (0xA2)** hacia Mario — sub-sprite real
-      (`EnemyBehavior.MECHAKOOPA`, puerto de `Spr0A2_MechaKoopa`): cae en arco y luego ANDA a
-      0.5 px/f re-encarando a Mario cada 0x40 frames, rebota en paredes, se cae por los bordes,
-      y se puede pisar. Los jefes generan sub-sprites vía `pendingSpawns`/`enemies` mutable.
-    - 🟡 Pendientes (sub-sprites): bola de bolos de Bowser (0xA1) y bola de Ludwig del Koopaling
-      (0x34, rueda por el terreno).
+    - **Bowser (0xA0)**: ALTERNA dos ataques con sub-sprites reales (los jefes generan
+      sub-sprites vía `pendingSpawns`/`enemies` mutable):
+      · **Mechakoopa (0xA2)** — `EnemyBehavior.MECHAKOOPA` (puerto de `Spr0A2_MechaKoopa`): cae
+        en arco y luego ANDA a 0.5 px/f re-encarando a Mario cada 0x40 frames, rebota en
+        paredes, se cae por los bordes y se puede pisar.
+      · **Bola de bolos (0xA1)** — `EnemyBehavior.BOWLING_BALL` (puerto de
+        `Spr0A1_BowserBowlingBall`): cae (gravedad +3, tope 0x40), REBOTA con la altura real
+        (`BounceYSpeed[(caída>>2)+19]`) y RUEDA hacia Mario a 1 px/f; hiere por cualquier lado.
+    - 🟡 Pendiente (sub-sprite): bola de Ludwig del Koopaling (0x34, rueda por suelo y paredes).
     Con tests de HP y de ataque en `PlatformerEngineTest.kt`.
   - 🟡 Pendientes: pulir el recorte de los 2 Koopalings lanzafuegos (0x98/0xd9, el fuego
     naranja se funde con el cuerpo); Dino-Torch 0x6F (draw con animación de llamas).

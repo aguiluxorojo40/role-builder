@@ -220,6 +220,27 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `jefe - Bowser tambien deja caer una bola de bolos (alterna)`() {
+        // Bowser en rango (160px < 220) pero lejos, para que no alcance a Mario y siga atacando.
+        val e = engineGrab(22, 12, startCol = 2, startRow = 8, grabCol = 20, grabRow = 8, floorRow = 9,
+            seeds = listOf(EnemySeed(12 * 16, 8 * 16, 0xA0)))
+        e.run(2 * PlatformerEngine.BOSS_ATTACK_INTERVAL + 10)   // dos ataques: Mechakoopa + bola
+        val balls = e.enemies.count { it.behavior == EnemyBehavior.BOWLING_BALL }
+        assertTrue(balls >= 1, "Bowser alterna y deja caer una bola de bolos (0xA1)")
+    }
+
+    @Test
+    fun `bola de bolos rueda hacia Mario tras rebotar`() {
+        val e = engineGrab(20, 12, startCol = 2, startRow = 8, grabCol = 18, grabRow = 8, floorRow = 9,
+            seeds = listOf(EnemySeed(12 * 16, 4 * 16, 0xA1)))   // bola arriba a la derecha de Mario
+        val ball = e.enemies.first()
+        assertEquals(EnemyBehavior.BOWLING_BALL, ball.behavior, "0xA1 es bola de bolos")
+        val x0 = ball.x
+        e.run(120)               // cae, rebota y empieza a rodar
+        assertTrue(ball.x < x0, "la bola rueda hacia Mario (a la izquierda)")
+    }
+
+    @Test
     fun `Mechakoopa anda hacia Mario`() {
         val e = engineGrab(20, 10, startCol = 2, startRow = 6, grabCol = 18, grabRow = 6, floorRow = 7,
             seeds = listOf(EnemySeed(12 * 16, 6 * 16, 0xA2)))  // Mechakoopa a la derecha de Mario
