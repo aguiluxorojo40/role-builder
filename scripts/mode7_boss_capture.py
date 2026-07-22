@@ -41,6 +41,15 @@ BOSSES = {
     0x29: dict(level=0x9A, frame=160,  mode="color", name="Koopaling (Morton)"),
 }
 
+# Los 7 Koopalings son el MISMO sprite 0x29 (uno por castillo). El asset `big_29.png` usa uno
+# (Morton, sala 0x9a); estas son las 7 salas de Modo 7 (modo de nivel 9/11/16) para el montaje
+# de referencia. Trepamuros de fondo negro (recorte 'color' limpio): 0x96/0x97/0x99/0x9a/0xcc.
+# Lanzafuegos (0x98/0xd9): la bola de fuego se pega al recorte; requieren un frame entre ataques.
+KOOPALING_ROOMS = {
+    0x96: "Iggy", 0x97: "Larry", 0x99: "Roy", 0x9A: "Morton",
+    0xCC: "Ludwig", 0x98: "(lanzafuegos)", 0xD9: "(lanzafuegos)",
+}
+
 
 def make_env():
     import stable_retro as retro

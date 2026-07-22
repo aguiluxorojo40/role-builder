@@ -109,6 +109,10 @@ se explican por cuál de las dos usa cada pieza:
     `big_<id>.png`: Bowser (fondo negro → key por luminancia) y Morton (sala 0x9a, key
     naranja|verde|blanco para descartar el ladrillo). Se auto-cargan como los demás.
     Salas Modo 7 (modo 9/11/16): Bowser 0x9B, Koopalings 0x96-0x9a/0xcc/0xd9, Reznor 0x95/0xd5.
+    Los **7 Koopalings** (mismo sprite 0x29, uno por castillo) están capturados y localizados
+    (ver `docs/koopalings_mode7.png`): Iggy 0x96, Larry 0x97, Roy 0x99, Morton 0x9a, Ludwig 0xcc
+    (recorte limpio) y dos lanzafuegos 0x98/0xd9 (la bola de fuego se pega al recorte). Como el
+    motor usa un id = un PNG, `big_29.png` es Morton.
   - 🧪 Referencia/validación: `SmwMode7Boss.kt` decodifica las teselas de carácter 3bpp de
     Modo 7 (port de `_BufferTilemap`, 24 B/tesela) y el extractor tiene `--mode7-boss`
     (`--sheet`/`--all-frames`) para volcarlas; sirve de contraste del GFX del jefe.
