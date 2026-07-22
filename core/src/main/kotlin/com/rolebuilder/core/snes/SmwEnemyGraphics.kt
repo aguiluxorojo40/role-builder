@@ -247,6 +247,35 @@ object SmwEnemyGraphics {
                 OamTile(0xa3, -8, 8, size16 = false),
             ),
         ),
+        // Wiggler (0x86): oruga de 5 segmentos 16×16 + flor 8×8 (Spr086_Wiggler, $02:02F035).
+        // Cabeza = tesela 0x8c (v7==0 → charnum −116); cuerpo = kSpr086_Wiggler_WigglerTiles
+        // [r6] con r6=v7&3 → 0xc6/0xc8/0xc6/0xc4 (segs 1..4). Arco de la oruga por
+        // WigglerYDisp={0,1,2,1} (y = 8 − disp). Flor 8×8 (tesela 0x98 = −104) sobre la
+        // cabeza (ypos−8), paleta 5 (flags &0xF1|0x0A). Cuerpo/cabeza usan la paleta de $166E.
+        0x86 to CustomEnemy(
+            listOf(
+                OamTile(0x8c, 0, 8, size16 = true),   // cabeza
+                OamTile(0xc6, 16, 7, size16 = true),  // seg 1
+                OamTile(0xc8, 32, 6, size16 = true),  // seg 2 (joroba)
+                OamTile(0xc6, 48, 7, size16 = true),  // seg 3
+                OamTile(0xc4, 64, 8, size16 = true),  // seg 4 (cola)
+                OamTile(0x98, 4, 0, size16 = false, palRow = (8 + 5) * 16), // flor
+            ),
+        ),
+        // Swooper (0xBE): murciélago, 1 tesela 16×16 (Spr0BE_Swooper, $03: GenericGFXRtDraw1-
+        // Tile16x16 + charnum kSpr0BE_Swooper_Tiles[1602]; frame 0 = 0xae; paleta de $166E).
+        0xBE to CustomEnemy(listOf(OamTile(0xae, 0, 0))),
+        // Dino-Rhino (0x6E): dino 32×32 = 4 teselas 16×16 (Spr06F_DinoTorch_Draw rama "no
+        // fuego", $03: kSpr06F_DinoTorch_DinoRhinoTiles/XDisp/YDisp/Prop). Frame 0, dir sin
+        // flip (r2=1): teselas 0xc0/0xc2/0xe4/0xe6 en (−8,−16)/(8,−16)/(−8,0)/(8,0). Prop
+        // 0x2f → paleta 7, página 1.
+        0x6E to CustomEnemy(
+            listOf(
+                OamTile(0xc0, 0, 0), OamTile(0xc2, 16, 0),
+                OamTile(0xe4, 0, 16), OamTile(0xe6, 16, 16),
+            ),
+            palRow = (8 + 7) * 16,
+        ),
     )
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */

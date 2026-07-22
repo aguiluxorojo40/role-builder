@@ -79,11 +79,19 @@ se explican por cuál de las dos usa cada pieza:
   - ✅ Hechos: Thwomp (0x26), Pokey (0x70), **Rex (0xAB)**, **Blurp (0xC2)**,
     **Super Koopa suelo (0x73) y capa roja (0x71)** (frame 0 de andar, cuerpo + 3 teselas de
     capa 8×8; paleta de capa por la fórmula real `(Prop|v4)&~2`: 2 en 0x73, 4 en 0x71),
-    **PorcuPuffer (0xC3)** (pez globo 32×32 = 4 teselas 16×16, paleta 6) y **Fishbone (0xAA)**
-    (cabeza 16×16 + 2 teselas de cola 8×8). El compositor soporta paleta por-tesela y volteo
+    **PorcuPuffer (0xC3)** (pez globo 32×32 = 4 teselas 16×16, paleta 6), **Fishbone (0xAA)**
+    (cabeza 16×16 + 2 teselas de cola 8×8), **Wiggler (0x86)** (oruga de 5 segmentos 16×16
+    con arco `WigglerYDisp` + flor 8×8 paleta 5; teselas 0x8c/0xc6/0xc8/0xc4/0x98 de su
+    rutina `Spr086_Wiggler`, verificada contra los niveles 0x11e/0x126 que la generan),
+    **Swooper (0xBE)** (murciélago, 1 tesela 0xae) y **Dino-Rhino (0x6E)** (dino 32×32 = 4
+    teselas 16×16, frame 0, paleta 7). El compositor soporta paleta por-tesela y volteo
     H/V (`OamTile`).
-  - 🟡 Pendientes: Wiggler (0x86, segmentos con posición dinámica; su GFX no queda en el
-    slot que carga el extractor) y el resto (Blargg, Reznor…) según valor.
+  - 🔴 No extraíbles por este método (GFX **dinámico**, no en las ranuras SP1–SP4 estáticas
+    que lee el extractor; se cargan por DMA en ejecución): jefes como **Reznor (0xA9)** y
+    similares. Requerirían volcar el GFX dinámico que sube su rutina de init, fuera del
+    alcance actual del extractor de VRAM estática.
+  - 🟡 Pendientes: el resto de enemigos con dibujo propio y GFX estático (Blargg, etc.)
+    según valor.
 
 ## Motor 1:1 (progreso y huecos)
 
