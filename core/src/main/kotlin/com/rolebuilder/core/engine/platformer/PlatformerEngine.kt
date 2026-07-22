@@ -76,7 +76,7 @@ class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
  * [PIPE_PIRANHA] (asoma del tubo por ciclos, no sale si Mario está encima) y
  * [JUMPING_PIRANHA] (salta en arco; la de fuego escupe bolas).
  */
-enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS }
+enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA }
 
 /**
  * Ids de los JEFES soportados como enemigos jugables (dibujados con su `big_<id>.png`):
@@ -89,6 +89,7 @@ val BOSS_IDS = intArrayOf(0xA0, 0x29, 0xA9, 0xC5)
 /** Conducta del enemigo [id] (jefes y Plantas Piraña aparte; el resto andan). */
 fun enemyBehaviorOf(id: Int): EnemyBehavior = when {
     id in BOSS_IDS -> EnemyBehavior.BOSS
+    id == 0xA2 -> EnemyBehavior.MECHAKOOPA                        // Mechakoopa de Bowser
     id == 0x1A || id == 0x2A -> EnemyBehavior.PIPE_PIRANHA        // recta / cabeza-abajo
     id == 0x4F || id == 0x50 -> EnemyBehavior.JUMPING_PIRANHA     // saltarina / saltarina de fuego
     else -> EnemyBehavior.WALKER
@@ -194,6 +195,8 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var hurtCooldown = 0
     /** Cuenta atrás hasta el próximo ATAQUE del jefe (bola de fuego / lanzamiento). */
     var attackTimer = PlatformerEngine.BOSS_ATTACK_INTERVAL
+    /** Contador de fotogramas del Mechakoopa: cada 0x40 re-encara a Mario (`spr_table00c2`). */
+    var faceTimer = 0
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
     val upsideDown = id == 0x2A
@@ -258,6 +261,7 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
             EnemyBehavior.PIPE_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_TIME[0]
             EnemyBehavior.JUMPING_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_JUMP_WAIT
             EnemyBehavior.BOSS -> {}
+            EnemyBehavior.MECHAKOOPA -> {}
             EnemyBehavior.WALKER -> {}
         }
     }
@@ -400,9 +404,13 @@ class PlatformerEngine(
     /** La app llama a esto tras cambiar de sala para limpiar el warp pendiente. */
     fun consumeWarp() { pendingWarp = null }
 
-    /** Enemigos vivos del nivel, instanciados de las semillas. */
-    val enemies: List<PlatformerEnemy> =
-        enemySeeds.map { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
+    /** Enemigos vivos del nivel, instanciados de las semillas (+ los que generan los jefes). */
+    val enemies: MutableList<PlatformerEnemy> =
+        enemySeeds.mapTo(ArrayList()) { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
+
+    /** Sub-sprites que un jefe genera este frame (Mechakoopas de Bowser…): se añaden a
+     *  [enemies] al FINAL del bucle de enemigos, para no modificar la lista mientras se itera. */
+    private val pendingSpawns = ArrayList<PlatformerEnemy>()
 
     /** Ítems COLOCADOS en el editor (monedas/meta), instanciados de las semillas. */
     val placedItems: List<PlacedItem> =
@@ -1123,6 +1131,8 @@ class PlatformerEngine(
                 EnemyBehavior.JUMPING_PIRANHA -> updateJumpingPiranha(e)
                 // Jefe: patrulla + ataque propio de cada uno (ver [updateBoss]).
                 EnemyBehavior.BOSS -> updateBoss(e)
+                // Mechakoopa (0xA2): anda hacia Mario, re-encarándolo cada 0x40 frames.
+                EnemyBehavior.MECHAKOOPA -> updateMechakoopa(e)
                 EnemyBehavior.WALKER -> {
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
@@ -1135,6 +1145,33 @@ class PlatformerEngine(
                 }
             }
         }
+        // Sub-sprites generados por jefes este frame (fuera del bucle, para no modificar al iterar).
+        if (pendingSpawns.isNotEmpty()) { enemies.addAll(pendingSpawns); pendingSpawns.clear() }
+    }
+
+    /**
+     * Mechakoopa (0xA2), puerto de `Spr0A2_MechaKoopa` ($03): cae con gravedad y, en el suelo,
+     * ANDA a ±0x8 (0.5 px/f) hacia Mario, RE-ENCARÁNDOLO cada 0x40 fotogramas; REBOTA en las
+     * PAREDES pero se tira por los bordes (no gira en los precipicios, a diferencia del andador).
+     * Se puede pisar (muere). Lo genera el ataque de Bowser ([bossShoot]).
+     */
+    private fun updateMechakoopa(e: PlatformerEnemy) {
+        e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
+        moveEnemyVertical(e)
+        if (e.onGround) {
+            if (e.faceTimer % 0x40 == 0) {  // re-encara a Mario (spr_table157c = pos. relativa X)
+                val toLeft = (player.x + tuning.playerWidth / 2f) < (e.x + e.width / 2f)
+                e.vx = if (toLeft) -MECHA_WALK else MECHA_WALK
+            }
+            e.faceTimer++
+        }
+        // Movimiento horizontal: rebota SOLO en paredes (se cae por los bordes).
+        val nx = e.x + e.vx
+        val minRow = (e.y / tileSize).toInt()
+        val maxRow = ((e.y + e.height - 0.01f) / tileSize).toInt()
+        val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+        if ((minRow..maxRow).any { wallsAt(frontCol, it) }) e.vx = -e.vx else e.x = nx
+        if (e.y > (rows + 3) * tileSize) e.alive = false
     }
 
     /**
@@ -1172,23 +1209,28 @@ class PlatformerEngine(
      *  - Reznor (0xA9) y el Koopaling (0x29): bola de fuego APUNTADA al jugador y RECTA, con la
      *    misma matemática y velocidad que el juego (`Spr0A9_Reznor_ReznorFireRt` →
      *    `AimTowardsPlayer` con 0x10). El vector [SmwSpriteAim] va en unidades SMW (÷16 = px/f).
-     *  - Bowser (0xA0): lanzamiento en ARCO (marcador de posición: el Bowser real suelta
-     *    Mechakoopas 0xA2 y bolas de bolos 0xA1, sub-sprites aún no portados).
-     * Reutiliza [EnemyProjectile] y su tope de 6 vivos.
+     *  - Bowser (0xA0): SUELTA un Mechakoopa (0xA2) hacia Mario — cae en arco y luego anda
+     *    (`updateMechakoopa`). Máx. [BOSS_MAX_MECHAKOOPAS] vivos a la vez.
+     * Reutiliza [EnemyProjectile] (fuego) o [enemies] (Mechakoopa).
      */
     private fun bossShoot(e: PlatformerEnemy, dir: Float) {
-        if (enemyProjectiles.count { it.alive } >= 6) return
         val cx = e.x + e.width / 2f
         val cy = e.y + e.height / 2f
         if (e.id == 0xA0) {
-            enemyProjectiles.add(EnemyProjectile(cx, cy, dir * BOSS_LOB_VX, BOSS_LOB_VY, arc = true))
+            if (enemies.count { it.alive && it.behavior == EnemyBehavior.MECHAKOOPA } >= BOSS_MAX_MECHAKOOPAS) return
+            val m = PlatformerEnemy(cx - 7f, e.y - 8f, 0xA2)   // sale de Bowser
+            m.vx = dir * MECHA_TOSS_VX
+            m.vy = MECHA_TOSS_VY
+            pendingSpawns.add(m)
+            piranhaFireEvents++
         } else {
+            if (enemyProjectiles.count { it.alive } >= 6) return
             val dx = (player.x + tuning.playerWidth / 2f - cx).toInt()
             val dy = (player.y + playerHeight / 2f - cy).toInt()
             val (xs, ys) = SmwSpriteAim.aimTowardsPlayer(dx, dy, REZNOR_FIRE_SPEED)
             enemyProjectiles.add(EnemyProjectile(cx, cy, xs / 16f, ys / 16f, arc = false))
+            piranhaFireEvents++   // reutiliza el evento de sonido de "escupir fuego"
         }
-        piranhaFireEvents++   // reutiliza el evento de sonido de "escupir fuego"
     }
 
     /**
@@ -1557,9 +1599,10 @@ class PlatformerEngine(
                         damageEnemy(e); bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Resto: andadores se pisan; Plantas Piraña muerden por cualquier lado.
+                // Resto: andadores y Mechakoopas se pisan; Plantas Piraña muerden por cualquier lado.
                 else -> {
-                    val stomp = e.behavior == EnemyBehavior.WALKER && stompFromAbove
+                    val stompable = e.behavior == EnemyBehavior.WALKER || e.behavior == EnemyBehavior.MECHAKOOPA
+                    val stomp = stompable && stompFromAbove
                     if (stomp) {
                         e.alive = false; e.squashTimer = 12; bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
@@ -1867,6 +1910,13 @@ class PlatformerEngine(
         const val BOSS_LOB_VY = -3.5f
         /** Velocidad de flotación de Big Boo persiguiendo a Mario (px/f). */
         const val BIG_BOO_SPEED = 0.8f
+        /** Mechakoopa: anda a 0x8 = 0.5 px/f (`kSpr0A2_MechaKoopa_XSpeed` = ±8 unidades SMW). */
+        const val MECHA_WALK = 0.5f
+        /** Impulso con que Bowser SUELTA el Mechakoopa hacia Mario (px/f): sale en arco. */
+        const val MECHA_TOSS_VX = 1.2f
+        const val MECHA_TOSS_VY = -3f
+        /** Máximo de Mechakoopas vivos que Bowser mantiene a la vez. */
+        const val BOSS_MAX_MECHAKOOPAS = 3
         const val PIRANHA_FIRE_G = 0.125f
 
         // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----

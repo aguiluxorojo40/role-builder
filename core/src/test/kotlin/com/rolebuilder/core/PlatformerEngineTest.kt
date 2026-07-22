@@ -1,6 +1,7 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.engine.platformer.BlockAction
+import com.rolebuilder.core.engine.platformer.EnemyBehavior
 import com.rolebuilder.core.engine.platformer.EnemySeed
 import com.rolebuilder.core.engine.platformer.EngineWarp
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
@@ -209,12 +210,25 @@ class PlatformerEngineTest {
     }
 
     @Test
-    fun `jefe - Bowser lanza un proyectil cuando Mario está cerca`() {
+    fun `jefe - Bowser suelta un Mechakoopa cuando Mario está cerca`() {
         val e = engineGrab(18, 10, startCol = 2, startRow = 6, grabCol = 16, grabRow = 6, floorRow = 7,
             seeds = listOf(EnemySeed(6 * 16, 6 * 16, 0xA0)))  // Bowser a 4 casillas de Mario
-        assertTrue(e.enemyProjectiles.isEmpty(), "arranca sin proyectiles")
+        assertEquals(1, e.enemies.size, "solo Bowser al arrancar")
         e.run(PlatformerEngine.BOSS_ATTACK_INTERVAL + 5)
-        assertTrue(e.enemyProjectiles.isNotEmpty(), "Bowser lanza su proyectil hacia Mario")
+        val mechas = e.enemies.count { it.behavior == EnemyBehavior.MECHAKOOPA }
+        assertTrue(mechas >= 1, "Bowser genera un Mechakoopa (0xA2)")
+    }
+
+    @Test
+    fun `Mechakoopa anda hacia Mario`() {
+        val e = engineGrab(20, 10, startCol = 2, startRow = 6, grabCol = 18, grabRow = 6, floorRow = 7,
+            seeds = listOf(EnemySeed(12 * 16, 6 * 16, 0xA2)))  // Mechakoopa a la derecha de Mario
+        val m = e.enemies.first()
+        assertEquals(EnemyBehavior.MECHAKOOPA, m.behavior, "0xA2 es Mechakoopa")
+        e.run(20)               // cae al suelo
+        val x0 = m.x
+        e.run(60)
+        assertTrue(m.x < x0, "el Mechakoopa camina hacia Mario (a la izquierda)")
     }
 
     @Test
