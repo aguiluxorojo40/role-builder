@@ -266,6 +266,54 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --gfx-dump: DEPURACIÓN. Decodifica CADA fichero GFX de SMW (0x00..0x32) a 4bpp y
+    // lo vuelca en escala de grises (16 teselas 8×8 por fila) para localizar a ojo qué fichero
+    // contiene un gráfico (p.ej. el dino de Reznor). Una sola pasada de JVM.
+    if (opts.containsKey("gfx-dump")) {
+        val first = opts["file"]?.let { parseInt(it) } ?: 0x00
+        val last = opts["last"]?.let { parseInt(it) } ?: 0x32
+        val fmt = SnesGraphicFormat.SNES_4BPP
+        val bpt = fmt.bytesPerTile
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        for (file in first..last) {
+            val data = SnesGameRecipes.smwGfxFileDataPublic(rom, file) ?: continue
+            val tiles = data.size / bpt
+            if (tiles <= 0) continue
+            val cols = 16
+            val rows = (tiles + cols - 1) / cols
+            val img = ArgbImage(cols * 8, rows * 8)
+            for (t in 0 until tiles) {
+                val px = SnesDecoder.decodeTile(data, t * bpt, fmt, t).pixelIndices
+                val cx = (t % cols) * 8; val cy = (t / cols) * 8
+                for (y in 0..7) for (x in 0..7) {
+                    val ci = px[y * 8 + x]
+                    val g = ci * 17
+                    img.set(cx + x, cy + y, (0xFF shl 24) or (g shl 16) or (g shl 8) or g)
+                }
+            }
+            val png = File(imagesDir, "gfx_${file.toString(16).padStart(2, '0')}.png")
+            ImageIO.write(toBufferedImage(img), "png", png)
+            println("GFX ${file.toString(16)}: $tiles teselas -> images/${png.name}")
+        }
+        return
+    }
+
+    // Modo --sprite-sheet: DEPURACIÓN. Vuelca las 512 teselas de VRAM de sprites de un nivel
+    // (SP1..SP4) en una rejilla para ver qué gráficos carga de verdad.
+    if (opts.containsKey("sprite-sheet")) {
+        val lv = opts["level"]?.let { parseInt(it) } ?: 0x105
+        val id = opts["id"]?.let { parseInt(it) } ?: 0xA9
+        val pal = opts["pal"]?.let { parseInt(it) } ?: 7
+        val setting = opts["gfx-setting"]?.let { parseInt(it) }
+        val img = com.rolebuilder.core.snes.SmwEnemyGraphics.spriteVramSheet(rom, header, lv, id, (8 + pal) * 16, setting)
+        if (img == null) { println("Sin datos de sprite GFX para el nivel 0x${lv.toString(16)}"); return }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "vram_${lv.toString(16)}.png")
+        ImageIO.write(toBufferedImage(img), "png", png)
+        println("VRAM sprites nivel ${lv.toString(16)} (pal $pal): ${img.width}x${img.height}px -> images/${png.name}")
+        return
+    }
+
     // Modo --enemies: hornea el ATLAS de enemigos del catálogo curado
     // (SmwEnemyGraphics.curatedIds, un fotograma 16×16 por id, en su orden) con el
     // sprite y color REALES de la ROM. Es el horneado oficial de

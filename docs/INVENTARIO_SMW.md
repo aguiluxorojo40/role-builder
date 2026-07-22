@@ -86,12 +86,20 @@ se explican por cuál de las dos usa cada pieza:
     **Swooper (0xBE)** (murciélago, 1 tesela 0xae) y **Dino-Rhino (0x6E)** (dino 32×32 = 4
     teselas 16×16, frame 0, paleta 7). El compositor soporta paleta por-tesela y volteo
     H/V (`OamTile`).
-  - 🔴 No extraíbles por este método (GFX **dinámico**, no en las ranuras SP1–SP4 estáticas
-    que lee el extractor; se cargan por DMA en ejecución): jefes como **Reznor (0xA9)** y
-    similares. Requerirían volcar el GFX dinámico que sube su rutina de init, fuera del
-    alcance actual del extractor de VRAM estática.
-  - 🟡 Pendientes: el resto de enemigos con dibujo propio y GFX estático (Blargg, etc.)
-    según valor.
+    **Reznor (0xA9)** (dino-jefe de castillo 32×32, teselas 0x40/0x42/0x60/0x62 de
+    `Spr0A9_Reznor_Draw`, paleta 7). El compositor soporta paleta por-tesela y volteo
+    H/V (`OamTile`).
+  - 🧩 **Jefes de Modo 7** (GFX que NO está en el ajuste estático del nivel): las salas de
+    jefe (modos de nivel 9/11/16) IGNORAN el ajuste de GFX de sprites de la cabecera y lo
+    FUERZAN en `GameMode12_PrepareLevel_PrepareMode7Level` ($00:97BC) según el jefe activo
+    (`misc_currently_active_boss`): jefe<3 → ajuste 18, jefe==3 → 24, jefe==4 (Reznor) → 19.
+    Por eso `CustomEnemy` acepta un `gfxSetting` que fuerza el mismo ajuste que el juego
+    (Reznor: 19 → ficheros {0,1,0x25,0x22}; el dino real está en el 0x25, no en el 0x13
+    estático). Herramientas de apoyo: `extractSnesTileset --gfx-dump` (vuelca todos los
+    ficheros GFX) y `--sprite-sheet [--gfx-setting N]` (vuelca la VRAM de sprites de un
+    nivel) para localizar a ojo el GFX real de un jefe.
+  - 🟡 Pendientes: los demás jefes de Modo 7 (Koopalings ajuste 18/24, Big Boo, Bowser) con
+    el mismo método `gfxSetting`, y el resto de enemigos con GFX estático (Blargg, etc.).
 
 ## Motor 1:1 (progreso y huecos)
 

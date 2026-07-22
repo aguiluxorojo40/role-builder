@@ -175,9 +175,9 @@ object SmwEnemyGraphics {
      * bounding-box. Reutiliza el GFX de sprites y la CGRAM del nivel. null si faltan datos.
      */
     fun customSprite(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int,
-                     tiles: List<OamTile>, palRow: Int? = null): ArgbImage? {
+                     tiles: List<OamTile>, palRow: Int? = null, settingOverride: Int? = null): ArgbImage? {
         if (tiles.isEmpty()) return null
-        val art = buildSpriteArt(rom, header, level, spriteId) ?: return null
+        val art = buildSpriteArt(rom, header, level, spriteId, settingOverride) ?: return null
         val row = palRow ?: art.cgRow
         val minX = tiles.minOf { it.dx }
         val minY = tiles.minOf { it.dy }
@@ -193,6 +193,24 @@ object SmwEnemyGraphics {
     }
 
     /**
+     * DEPURACIÓN: vuelca las 512 teselas de la VRAM de sprites (SP1..SP4, ids 0x000..0x1FF)
+     * de un nivel en una rejilla de 16 teselas 8×8 por fila (128×256 px), con la paleta
+     * [palRow]. Filas 0–15 = SP1, 16–31 = SP2, 32–47 = SP3, 48–63 = SP4. Sirve para localizar
+     * a ojo qué gráficos carga de verdad un nivel (p.ej. si un jefe está o no en las ranuras
+     * estáticas). null si faltan datos.
+     */
+    fun spriteVramSheet(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int, palRow: Int,
+                        settingOverride: Int? = null): ArgbImage? {
+        val art = buildSpriteArt(rom, header, level, spriteId, settingOverride) ?: return null
+        val cols = 16
+        val img = ArgbImage(cols * 8, (512 / cols) * 8)
+        for (t in 0 until 512) {
+            art.paintTile(t, img, (t % cols) * 8, (t / cols) * 8, size16 = false, xflip = false, rowOverride = palRow)
+        }
+        return img
+    }
+
+    /**
      * Imagen del enemigo con DIBUJO PROPIO [spriteId] (Rex, Blurp, Super Koopa…), a su
      * tamaño real, o null si no está en el catálogo de dibujos propios [CUSTOM_ENEMIES].
      * Es la vía para los enemigos que la tabla OAM genérica no sabe dibujar (ids ≥ 0x54 o
@@ -200,13 +218,15 @@ object SmwEnemyGraphics {
      */
     fun customEnemyImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
         val c = CUSTOM_ENEMIES[spriteId] ?: return null
-        return customSprite(rom, header, level, spriteId, c.tiles, c.palRow)
+        return customSprite(rom, header, level, spriteId, c.tiles, c.palRow, c.gfxSetting)
     }
 
     /** Ids con dibujo propio soportados (para el bake de `big_<id>.png`). */
     val customEnemyIds: List<Int> get() = CUSTOM_ENEMIES.keys.toList()
 
-    private class CustomEnemy(val tiles: List<OamTile>, val palRow: Int? = null)
+    private class CustomEnemy(val tiles: List<OamTile>, val palRow: Int? = null,
+                              /** Ajuste de GFX de sprites FORZADO (salas de jefe Modo 7); null = el del nivel. */
+                              val gfxSetting: Int? = null)
 
     /**
      * Layouts de teselas REALES de enemigos con dibujo propio, transcritos de sus rutinas
@@ -265,6 +285,19 @@ object SmwEnemyGraphics {
         // Swooper (0xBE): murciélago, 1 tesela 16×16 (Spr0BE_Swooper, $03: GenericGFXRtDraw1-
         // Tile16x16 + charnum kSpr0BE_Swooper_Tiles[1602]; frame 0 = 0xae; paleta de $166E).
         0xBE to CustomEnemy(listOf(OamTile(0xae, 0, 0))),
+        // Reznor (0xA9): dino-jefe de castillo 32×32 = 4 teselas 16×16 (Spr0A9_Reznor_Draw,
+        // $03). Frame 0 (r3=r2=0): teselas 0x40/0x42/0x60/0x62; con r2=0 cada tesela lleva
+        // h-flip (Prop ^= 0x40). Prop 0x3f → paleta 7. CLAVE: la sala de jefe en Modo 7 IGNORA
+        // el GFX del nivel y FUERZA el ajuste 19 ({0,1,0x25,0x22}) en PrepareMode7Level; el GFX
+        // real del dino está en el fichero 0x25 (SP3), no en el 0x13 estático del nivel.
+        0xA9 to CustomEnemy(
+            listOf(
+                OamTile(0x42, 0, 0, xflip = true), OamTile(0x40, 16, 0, xflip = true),
+                OamTile(0x62, 0, 16, xflip = true), OamTile(0x60, 16, 16, xflip = true),
+            ),
+            palRow = (8 + 7) * 16,
+            gfxSetting = 19,
+        ),
         // Dino-Rhino (0x6E): dino 32×32 = 4 teselas 16×16 (Spr06F_DinoTorch_Draw rama "no
         // fuego", $03: kSpr06F_DinoTorch_DinoRhinoTiles/XDisp/YDisp/Prop). Frame 0, dir sin
         // flip (r2=1): teselas 0xc0/0xc2/0xe4/0xe6 en (−8,−16)/(8,−16)/(−8,0)/(8,0). Prop
@@ -664,7 +697,8 @@ object SmwEnemyGraphics {
      * ($166E) y el GFX de sprites del nivel para CUALQUIER id de sprite. Lo usan los
      * powerups ([powerupSheet]), que se dibujan fuera de la tabla OAM genérica de enemigos.
      */
-    private fun buildSpriteArt(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): LevelSpriteArt? {
+    private fun buildSpriteArt(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int,
+                               settingOverride: Int? = null): LevelSpriteArt? {
         val delta = header.headerOffset - 0x7FC0
 
         val behaviors = SmwSpriteBehaviorReader.read(rom, header) ?: return null
@@ -675,7 +709,11 @@ object SmwEnemyGraphics {
         val cgRow = (8 + objPalette) * 16               // filas 8-15 = sprites
 
         val info = SnesGameRecipes.smwLevelInfo(rom, header, level) ?: return null
-        val setting = info.spriteGfx and 0x0F
+        // Las salas de jefe en Modo 7 (Reznor, etc.) IGNORAN el ajuste de GFX de la cabecera
+        // y lo FUERZAN en GameMode12_PrepareLevel_PrepareMode7Level ($00:97BC). Por eso los
+        // jefes aceptan un [settingOverride] con el ajuste real (p.ej. 19 = ficheros
+        // {0,1,0x25,0x22} para Reznor), en vez del ajuste estático del nivel.
+        val setting = settingOverride ?: (info.spriteGfx and 0x0F)
         val slotBase = SnesGameRecipes.SMW_SPRITE_GFX_TABLE_PC + delta + 4 * setting
         if (slotBase < 0 || slotBase + 4 > rom.size) return null
         val spData = arrayOfNulls<ByteArray>(4)
