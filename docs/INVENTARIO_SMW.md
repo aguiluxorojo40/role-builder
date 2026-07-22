@@ -122,10 +122,16 @@ se explican por cuál de las dos usa cada pieza:
     de vida (`BOSS_HP`), caja de colisión mayor y patrulla lenta; el pisotón/caparazón/bloque/
     fuego le restan HP (con invulnerabilidad entre golpes vía `damageEnemy`), muere al llegar a
     0. Se dibuja con su `big_<id>.png` auto-cargado. **Ataque propio** ([updateBoss]/[bossShoot]):
-    Bowser LANZA en arco, Reznor y el Koopaling escupen FUEGO recto (reusan [EnemyProjectile]
-    con flag `arc`), y Big Boo FLOTA persiguiendo a Mario como fantasma (sin gravedad/terreno).
-    Conducta **SIMPLIFICADA** (no la IA de Modo 7). Con tests de HP y de ataque en
-    `PlatformerEngineTest.kt`.
+    - **Reznor (0xA9)**: bola de fuego **1:1** — APUNTADA al jugador y RECTA (sin gravedad), con
+      la matemática y velocidad reales (`SmwSpriteAim.aimTowardsPlayer`, puerto de
+      `AimTowardsPlayer` $02:D2FB, velocidad 0x10, como `Spr0A9_Reznor_ReznorFireRt`). Test del
+      aim contra valores del disassembly en `SmwSpriteAimTest.kt`.
+    - **Big Boo (0xC5)**: FLOTA persiguiendo a Mario como fantasma (sin gravedad/terreno).
+    - 🟡 **Bowser (0xA0)** y **Koopaling (0x29)**: ataque marcador de posición (arco / fuego
+      apuntado). Su ataque REAL son sub-sprites completos aún por portar: Bowser suelta
+      Mechakoopas (0xA2) y bolas de bolos (0xA1); el Koopaling escupe la bola de Ludwig (0x34,
+      que rueda por el terreno).
+    Con tests de HP y de ataque en `PlatformerEngineTest.kt`.
   - 🟡 Pendientes: pulir el recorte de los 2 Koopalings lanzafuegos (0x98/0xd9, el fuego
     naranja se funde con el cuerpo); Dino-Torch 0x6F (draw con animación de llamas).
 

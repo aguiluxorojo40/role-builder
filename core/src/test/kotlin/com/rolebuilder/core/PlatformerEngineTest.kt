@@ -218,6 +218,18 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `jefe - Reznor escupe fuego RECTO apuntando a Mario`() {
+        // Reznor (0xA9) a la derecha de Mario -> la bola de fuego sale hacia la IZQUIERDA y recta.
+        val e = engineGrab(18, 10, startCol = 2, startRow = 6, grabCol = 16, grabRow = 6, floorRow = 7,
+            seeds = listOf(EnemySeed(6 * 16, 6 * 16, 0xA9)))
+        e.run(PlatformerEngine.BOSS_ATTACK_INTERVAL + 5)
+        val fire = e.enemyProjectiles.firstOrNull { it.alive }
+        assertTrue(fire != null, "Reznor escupe una bola de fuego")
+        assertFalse(fire!!.arc, "vuela RECTA (sin gravedad), como el sprite extendido real")
+        assertTrue(fire.vx < 0f, "apunta hacia Mario (a la izquierda)")
+    }
+
+    @Test
     fun `jefe - Big Boo flota hacia Mario`() {
         val e = engineGrab(20, 12, startCol = 2, startRow = 8, grabCol = 18, grabRow = 8, floorRow = 9,
             seeds = listOf(EnemySeed(14 * 16, 3 * 16, 0xC5)))  // Big Boo arriba a la derecha

@@ -2,6 +2,7 @@ package com.rolebuilder.core.engine.platformer
 
 import com.rolebuilder.core.snes.SmwPhysics
 import com.rolebuilder.core.snes.SmwPlayerXMovement
+import com.rolebuilder.core.snes.SmwSpriteAim
 import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.math.abs
@@ -1167,9 +1168,13 @@ class PlatformerEngine(
     }
 
     /**
-     * Ataque de proyectil del jefe hacia Mario ([dir] = ±1). Bowser (0xA0) LANZA en arco (con
-     * gravedad); Reznor (0xA9) y el Koopaling (0x29) escupen FUEGO recto. Reutiliza el sistema
-     * de [EnemyProjectile] y su tope de 6 vivos.
+     * Ataque de proyectil del jefe hacia Mario ([dir] = ±1, sentido a Mario).
+     *  - Reznor (0xA9) y el Koopaling (0x29): bola de fuego APUNTADA al jugador y RECTA, con la
+     *    misma matemática y velocidad que el juego (`Spr0A9_Reznor_ReznorFireRt` →
+     *    `AimTowardsPlayer` con 0x10). El vector [SmwSpriteAim] va en unidades SMW (÷16 = px/f).
+     *  - Bowser (0xA0): lanzamiento en ARCO (marcador de posición: el Bowser real suelta
+     *    Mechakoopas 0xA2 y bolas de bolos 0xA1, sub-sprites aún no portados).
+     * Reutiliza [EnemyProjectile] y su tope de 6 vivos.
      */
     private fun bossShoot(e: PlatformerEnemy, dir: Float) {
         if (enemyProjectiles.count { it.alive } >= 6) return
@@ -1178,7 +1183,10 @@ class PlatformerEngine(
         if (e.id == 0xA0) {
             enemyProjectiles.add(EnemyProjectile(cx, cy, dir * BOSS_LOB_VX, BOSS_LOB_VY, arc = true))
         } else {
-            enemyProjectiles.add(EnemyProjectile(cx, cy, dir * BOSS_FIRE_VX, 0f, arc = false))
+            val dx = (player.x + tuning.playerWidth / 2f - cx).toInt()
+            val dy = (player.y + playerHeight / 2f - cy).toInt()
+            val (xs, ys) = SmwSpriteAim.aimTowardsPlayer(dx, dy, REZNOR_FIRE_SPEED)
+            enemyProjectiles.add(EnemyProjectile(cx, cy, xs / 16f, ys / 16f, arc = false))
         }
         piranhaFireEvents++   // reutiliza el evento de sonido de "escupir fuego"
     }
@@ -1851,8 +1859,9 @@ class PlatformerEngine(
         const val BOSS_ATTACK_INTERVAL = 100
         /** Solo ataca si Mario está a menos de este alcance horizontal (px). */
         const val BOSS_ATTACK_RANGE = 220f
-        /** Aliento de fuego RECTO (Reznor/Koopaling): ±3 px/f, sin gravedad. */
-        const val BOSS_FIRE_VX = 3f
+        /** Velocidad de la bola de fuego de Reznor en unidades SMW (0x10 = 1 px/f en el eje
+         *  dominante), como `Spr0A9_Reznor_ReznorFireRt` → `AimTowardsPlayer(k, 0x10)`. */
+        const val REZNOR_FIRE_SPEED = 0x10
         /** Lanzamiento en ARCO de Bowser: ±2 px/f horizontal, −3.5 px/f hacia arriba (arquea). */
         const val BOSS_LOB_VX = 2f
         const val BOSS_LOB_VY = -3.5f
