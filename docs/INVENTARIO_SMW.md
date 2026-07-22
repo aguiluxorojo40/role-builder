@@ -100,14 +100,20 @@ se explican por cuál de las dos usa cada pieza:
     estático). Herramientas de apoyo: `extractSnesTileset --gfx-dump` (vuelca todos los
     ficheros GFX) y `--sprite-sheet [--gfx-setting N]` (vuelca la VRAM de sprites de un
     nivel) para localizar a ojo el GFX real de un jefe.
-  - ⛔ **Sprites de Modo 7 puro** (NO extraíbles con la tubería OAM 4bpp): **Bowser** (coche
-    payaso) y los **Koopalings Morton/Roy/Ludwig (0x29)** se dibujan con
-    `UpdateMode7SpriteAnimations` (teselas 8bpp de Modo 7 + tilemap EXTBG), no con OAM.
-    Requerirían un decodificador de GFX/tilemap de Modo 7 aparte. **Iggy/Larry (0x29)** sí
-    son OAM pero con tablas sobrecargadas (tamaño+paleta mezclados, paleta según nº de jefe)
-    y teselas relativas al contexto GFX de la plataforma de Modo 7: poco rentable.
-  - 🟡 Pendientes: el resto de enemigos con GFX estático (Blargg, etc.); y, si compensa, un
-    decodificador de Modo 7 para Bowser/Koopalings.
+  - ✅ **Jefes de Modo 7 por EMULADOR** (`scripts/mode7_boss_capture.py`): **Bowser (0xA0)**
+    y los **Koopalings Morton/Roy/Ludwig (0x29)** se dibujan como bloque del tilemap de Modo 7
+    (`UpdateMode7SpriteAnimations`), no por OAM, así que se capturan de un emulador real
+    (stable-retro / núcleo snes9x, headless). El script warpea a cada sala de jefe por RAM
+    (game mode $0100=0x11 = `GameMode11_LoadSublevel`, nivel en $0109 = L+0x24 con
+    `counter_sublevels_entered`=0), captura el framebuffer y recorta el jefe a
+    `big_<id>.png`: Bowser (fondo negro → key por luminancia) y Morton (sala 0x9a, key
+    naranja|verde|blanco para descartar el ladrillo). Se auto-cargan como los demás.
+    Salas Modo 7 (modo 9/11/16): Bowser 0x9B, Koopalings 0x96-0x9a/0xcc/0xd9, Reznor 0x95/0xd5.
+  - 🧪 Referencia/validación: `SmwMode7Boss.kt` decodifica las teselas de carácter 3bpp de
+    Modo 7 (port de `_BufferTilemap`, 24 B/tesela) y el extractor tiene `--mode7-boss`
+    (`--sheet`/`--all-frames`) para volcarlas; sirve de contraste del GFX del jefe.
+  - 🟡 Pendientes: el resto de enemigos con GFX estático (Blargg, etc.); pulir el recorte de
+    los Koopalings restantes (Roy/Ludwig/Iggy/Larry/Lemmy/Wendy) con el mismo script.
 
 ## Motor 1:1 (progreso y huecos)
 

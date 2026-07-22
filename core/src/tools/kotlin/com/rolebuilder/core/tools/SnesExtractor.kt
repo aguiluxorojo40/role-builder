@@ -298,6 +298,34 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Modo --mode7-boss: DEPURACIÓN/extracción de los JEFES de MODO 7 (Bowser, Koopalings).
+    // --boss N (0-4), --frame F, o --sheet para la hoja de teselas de carácter.
+    if (opts.containsKey("mode7-boss")) {
+        val boss = opts["boss"]?.let { parseInt(it) } ?: 3
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        if (opts.containsKey("sheet")) {
+            val img = com.rolebuilder.core.snes.SmwMode7Boss.characterSheet(rom, boss)
+            if (img == null) { println("Jefe $boss sin GFX de Modo 7"); return }
+            val png = File(imagesDir, "m7boss_${boss}_sheet.png")
+            ImageIO.write(toBufferedImage(img), "png", png)
+            println("Modo7 jefe $boss (hoja): ${img.width}x${img.height}px -> images/${png.name}")
+        } else if (opts.containsKey("all-frames")) {
+            for (f in 0 until com.rolebuilder.core.snes.SmwMode7Boss.FRAMES) {
+                val img = com.rolebuilder.core.snes.SmwMode7Boss.bossFrame(rom, header, boss, f) ?: continue
+                ImageIO.write(toBufferedImage(img), "png", File(imagesDir, "m7boss_${boss}_f${f}.png"))
+            }
+            println("Modo7 jefe $boss: ${com.rolebuilder.core.snes.SmwMode7Boss.FRAMES} fotogramas -> images/m7boss_${boss}_f*.png")
+        } else {
+            val frame = opts["frame"]?.let { parseInt(it) } ?: 0
+            val img = com.rolebuilder.core.snes.SmwMode7Boss.bossFrame(rom, header, boss, frame)
+            if (img == null) { println("Jefe $boss / fotograma $frame sin datos"); return }
+            val png = File(imagesDir, "m7boss_${boss}_f${frame}.png")
+            ImageIO.write(toBufferedImage(img), "png", png)
+            println("Modo7 jefe $boss fotograma $frame: ${img.width}x${img.height}px -> images/${png.name}")
+        }
+        return
+    }
+
     // Modo --sprite-sheet: DEPURACIÓN. Vuelca las 512 teselas de VRAM de sprites de un nivel
     // (SP1..SP4) en una rejilla para ver qué gráficos carga de verdad.
     if (opts.containsKey("sprite-sheet")) {
