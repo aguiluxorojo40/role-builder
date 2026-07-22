@@ -298,6 +298,22 @@ object SmwEnemyGraphics {
             palRow = (8 + 7) * 16,
             gfxSetting = 19,
         ),
+        // Big Boo Boss (0xC5): boo gigante ~64×64 = 4×4 teselas 16×16 + boca/colmillos
+        // (NormalSpriteBooDraw, $03; kNormalSpriteBooGFXRt_BigBooTiles/XDisp/YDisp/Prop,
+        // frame 0). El cuerpo usa v-flip en la mitad inferior (Prop 0x80). Boca (0xc0/0xe0) y
+        // colmillos (0xe8) al final para que queden POR ENCIMA. Paleta 7 ($166E).
+        0xC5 to CustomEnemy(
+            listOf(
+                // cuerpo: 4 columnas × 4 filas de 16×16
+                OamTile(0x80, 0, 0), OamTile(0xa0, 0, 16), OamTile(0xa0, 0, 32, vflip = true), OamTile(0x80, 0, 48, vflip = true),
+                OamTile(0x82, 16, 0), OamTile(0xa2, 16, 16), OamTile(0xa2, 16, 32, vflip = true), OamTile(0x82, 16, 48, vflip = true),
+                OamTile(0x84, 32, 0), OamTile(0xa4, 32, 16), OamTile(0xc4, 32, 32), OamTile(0xe4, 32, 48),
+                OamTile(0x86, 48, 0), OamTile(0xa6, 48, 16), OamTile(0xc6, 48, 32), OamTile(0xe6, 48, 48),
+                // boca y colmillos (encima)
+                OamTile(0xc0, 8, 18), OamTile(0xe0, 8, 34),
+                OamTile(0xe8, 32, 24, xflip = true), OamTile(0xe8, -3, 24),
+            ),
+        ),
         // Dino-Rhino (0x6E): dino 32×32 = 4 teselas 16×16 (Spr06F_DinoTorch_Draw rama "no
         // fuego", $03: kSpr06F_DinoTorch_DinoRhinoTiles/XDisp/YDisp/Prop). Frame 0, dir sin
         // flip (r2=1): teselas 0xc0/0xc2/0xe4/0xe6 en (−8,−16)/(8,−16)/(−8,0)/(8,0). Prop
