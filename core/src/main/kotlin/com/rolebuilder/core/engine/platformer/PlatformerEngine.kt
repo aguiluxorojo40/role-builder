@@ -74,12 +74,21 @@ class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
  * [PIPE_PIRANHA] (asoma del tubo por ciclos, no sale si Mario está encima) y
  * [JUMPING_PIRANHA] (salta en arco; la de fuego escupe bolas).
  */
-enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA }
+enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS }
 
-/** Conducta del enemigo [id] (Plantas Piraña aparte; el resto andan). */
-fun enemyBehaviorOf(id: Int): EnemyBehavior = when (id) {
-    0x1A, 0x2A -> EnemyBehavior.PIPE_PIRANHA        // recta / cabeza-abajo
-    0x4F, 0x50 -> EnemyBehavior.JUMPING_PIRANHA     // saltarina / saltarina de fuego
+/**
+ * Ids de los JEFES soportados como enemigos jugables (dibujados con su `big_<id>.png`):
+ * Bowser (0xA0), Koopaling (0x29), Reznor (0xA9) y Big Boo Boss (0xC5). Su conducta aquí es
+ * SIMPLIFICADA (enemigo grande con varios puntos de vida, patrulla lenta), no la IA de Modo 7
+ * del juego original.
+ */
+val BOSS_IDS = intArrayOf(0xA0, 0x29, 0xA9, 0xC5)
+
+/** Conducta del enemigo [id] (jefes y Plantas Piraña aparte; el resto andan). */
+fun enemyBehaviorOf(id: Int): EnemyBehavior = when {
+    id in BOSS_IDS -> EnemyBehavior.BOSS
+    id == 0x1A || id == 0x2A -> EnemyBehavior.PIPE_PIRANHA        // recta / cabeza-abajo
+    id == 0x4F || id == 0x50 -> EnemyBehavior.JUMPING_PIRANHA     // saltarina / saltarina de fuego
     else -> EnemyBehavior.WALKER
 }
 
@@ -170,8 +179,14 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     /** Fotogramas que sigue visible "aplastado" tras el pisotón antes de desaparecer. */
     var squashTimer = 0
 
-    /** Conducta (andador / Planta Piraña de tubo / saltarina). */
+    /** Conducta (andador / Planta Piraña de tubo / saltarina / jefe). */
     val behavior = enemyBehaviorOf(id)
+    /** ¿Es un JEFE? (Bowser/Koopaling/Reznor/Big Boo): grande, con varios puntos de vida. */
+    val isBoss = behavior == EnemyBehavior.BOSS
+    /** Puntos de vida: 1 para el enemigo normal, [PlatformerEngine.BOSS_HP] para los jefes. */
+    var hp = if (isBoss) PlatformerEngine.BOSS_HP else 1
+    /** Fotogramas de invulnerabilidad tras recibir un golpe (para no gastar todo el HP de una). */
+    var hurtCooldown = 0
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
     val upsideDown = id == 0x2A
@@ -223,11 +238,19 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var oscPhase = 0    // SpriteMisc151C: sentido de la rampa (sube/baja)
 
     init {
-        if (behavior != EnemyBehavior.WALKER) vx = 0f
+        if (behavior != EnemyBehavior.WALKER && behavior != EnemyBehavior.BOSS) vx = 0f
+        // Los jefes son grandes: caja de colisión mayor (editable en caliente). Patrullan
+        // despacio como un andador robusto.
+        if (isBoss) {
+            width = PlatformerEngine.BOSS_WIDTH
+            height = PlatformerEngine.BOSS_HEIGHT
+            vx = -PlatformerEngine.BOSS_SPEED
+        }
         // La Piraña descansa en [spawnY] (metida) y asoma/salta desde ahí.
         when (behavior) {
             EnemyBehavior.PIPE_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_TIME[0]
             EnemyBehavior.JUMPING_PIRANHA -> pTimer = PlatformerEngine.PIRANHA_JUMP_WAIT
+            EnemyBehavior.BOSS -> {}
             EnemyBehavior.WALKER -> {}
         }
     }
@@ -583,7 +606,7 @@ class PlatformerEngine(
             for (e in enemies) {
                 if (!e.alive) continue
                 if (b.x < e.x + e.width && b.x + b.width > e.x && b.y < e.y + e.height && b.y + b.height > e.y) {
-                    e.alive = false; e.squashTimer = 12; stompEvents++
+                    damageEnemy(e); stompEvents++
                     b.alive = false; it.remove(); break
                 }
             }
@@ -1071,8 +1094,7 @@ class PlatformerEngine(
                 if (fb.x < e.x + e.width && fb.x + fb.width > e.x &&
                     fb.y < e.y + e.height && fb.y + fb.height > e.y
                 ) {
-                    e.alive = false
-                    e.squashTimer = 12
+                    damageEnemy(e)
                     stompEvents++
                     fb.alive = false
                     it.remove()
@@ -1092,6 +1114,15 @@ class PlatformerEngine(
             when (e.behavior) {
                 EnemyBehavior.PIPE_PIRANHA -> updatePipePiranha(e)
                 EnemyBehavior.JUMPING_PIRANHA -> updateJumpingPiranha(e)
+                // Jefe: patrulla lenta con gravedad (como un andador robusto). Cuenta atrás de
+                // los fotogramas de invulnerabilidad tras un golpe.
+                EnemyBehavior.BOSS -> {
+                    if (e.hurtCooldown > 0) e.hurtCooldown--
+                    e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
+                    moveEnemyVertical(e)
+                    moveEnemyHorizontal(e)
+                    if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+                }
                 EnemyBehavior.WALKER -> {
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
@@ -1396,6 +1427,23 @@ class PlatformerEngine(
     }
 
     /** Pisotón (mata al enemigo y rebota) o contacto lateral (mata al jugador). */
+    /**
+     * Aplica un golpe (pisotón, caparazón, bloque lanzado o bola de fuego) a un enemigo.
+     * Los jefes tienen [PlatformerEnemy.hp] y solo mueren al agotarlo (con invulnerabilidad
+     * entre golpes); el resto muere de un golpe. Devuelve true si el enemigo ha MUERTO.
+     */
+    private fun damageEnemy(e: PlatformerEnemy): Boolean {
+        if (e.isBoss) {
+            if (e.hurtCooldown > 0) return false
+            e.hurtCooldown = BOSS_HURT_COOLDOWN
+            if (--e.hp > 0) return false
+            e.alive = false; e.squashTimer = 20
+            return true
+        }
+        e.alive = false; e.squashTimer = 12
+        return true
+    }
+
     private fun handlePlayerEnemyContact() {
         val p = player
         if (p.dead) return
@@ -1446,6 +1494,13 @@ class PlatformerEngine(
                     if (stompFromAbove) {
                         e.shell = true; e.shellMoving = false; e.vx = 0f
                         bounceMario(); stompEvents++
+                    } else { hurtPlayer(); return }
+                }
+                // Jefe: pisarlo le quita un punto de vida (rebota a Mario, con invulnerabilidad
+                // entre golpes); tocarlo de lado hiere a Mario. Muere al agotar el HP.
+                e.isBoss -> {
+                    if (stompFromAbove) {
+                        damageEnemy(e); bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
                 // Resto: andadores se pisan; Plantas Piraña muerden por cualquier lado.
@@ -1735,6 +1790,17 @@ class PlatformerEngine(
         /** Bola de fuego de la Piraña: X ±0x10 = ±1 px/f, Y 0xD0 = −3 px/f (arriba), gravedad +0.125 px/f². */
         const val PIRANHA_FIRE_VX = 1f
         const val PIRANHA_FIRE_VY = -3f
+
+        // ---- Jefes (conducta SIMPLIFICADA: enemigo grande y resistente, no la IA de Modo 7). ----
+        /** Puntos de vida de un jefe: aguanta varios golpes (pisotón, caparazón, bloque o fuego). */
+        const val BOSS_HP = 5
+        /** Fotogramas de invulnerabilidad del jefe entre golpes (para no gastar todo el HP de una). */
+        const val BOSS_HURT_COOLDOWN = 40
+        /** Caja de colisión del jefe (px). Grande respecto al andador; editable en caliente. */
+        const val BOSS_WIDTH = 28f
+        const val BOSS_HEIGHT = 30f
+        /** Velocidad de patrulla del jefe (px/f): lenta y pesada. */
+        const val BOSS_SPEED = 0.35f
         const val PIRANHA_FIRE_G = 0.125f
 
         // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----

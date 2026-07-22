@@ -325,6 +325,16 @@ object SmwEnemyGraphics {
             ),
             palRow = (8 + 7) * 16,
         ),
+        // Blargg (0xA8): cabeza de dragón de lava, 5 teselas 16×16 (Spr0A8_Blargg_Draw rama
+        // v2==4, $03: kSpr0A8_Blargg_Tiles/XDisp/YDisp). Frame 0 (r3=0), dir sin flip (r2=1):
+        // teselas 0xa2/0xa4 (arriba), 0xc2/0xc4/0xa6 (abajo). Prop 0x05 → paleta 2, página 1.
+        0xA8 to CustomEnemy(
+            listOf(
+                OamTile(0xa2, -8, -8), OamTile(0xa4, 8, -8),
+                OamTile(0xc2, -8, 8), OamTile(0xc4, 8, 8), OamTile(0xa6, 24, 8),
+            ),
+            palRow = (8 + 2) * 16,
+        ),
     )
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */

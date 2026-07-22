@@ -83,9 +83,10 @@ se explican por cuál de las dos usa cada pieza:
     (cabeza 16×16 + 2 teselas de cola 8×8), **Wiggler (0x86)** (oruga de 5 segmentos 16×16
     con arco `WigglerYDisp` + flor 8×8 paleta 5; teselas 0x8c/0xc6/0xc8/0xc4/0x98 de su
     rutina `Spr086_Wiggler`, verificada contra los niveles 0x11e/0x126 que la generan),
-    **Swooper (0xBE)** (murciélago, 1 tesela 0xae) y **Dino-Rhino (0x6E)** (dino 32×32 = 4
-    teselas 16×16, frame 0, paleta 7). El compositor soporta paleta por-tesela y volteo
-    H/V (`OamTile`).
+    **Swooper (0xBE)** (murciélago, 1 tesela 0xae), **Dino-Rhino (0x6E)** (dino 32×32 = 4
+    teselas 16×16, frame 0, paleta 7) y **Blargg (0xA8)** (cabeza de dragón de lava, 5 teselas
+    16×16 de `Spr0A8_Blargg_Draw`, paleta 2). Thwomp 0x26, Thwimp 0x27, Grinder 0x24 ya salen
+    por el atlas genérico. El compositor soporta paleta por-tesela y volteo H/V (`OamTile`).
     **Reznor (0xA9)** (dino-jefe de castillo 32×32, teselas 0x40/0x42/0x60/0x62 de
     `Spr0A9_Reznor_Draw`, paleta 7) y **Big Boo Boss (0xC5)** (boo gigante ~64×64 = 4×4
     teselas 16×16 + boca/colmillos, frame 0 de `NormalSpriteBooDraw`, v-flip en la mitad
@@ -116,8 +117,14 @@ se explican por cuál de las dos usa cada pieza:
   - 🧪 Referencia/validación: `SmwMode7Boss.kt` decodifica las teselas de carácter 3bpp de
     Modo 7 (port de `_BufferTilemap`, 24 B/tesela) y el extractor tiene `--mode7-boss`
     (`--sheet`/`--all-frames`) para volcarlas; sirve de contraste del GFX del jefe.
-  - 🟡 Pendientes: el resto de enemigos con GFX estático (Blargg, etc.); pulir el recorte de
-    los Koopalings restantes (Roy/Ludwig/Iggy/Larry/Lemmy/Wendy) con el mismo script.
+  - 🎮 **Jefes JUGABLES en el motor**: `EnemyBehavior.BOSS` (`PlatformerEngine.kt`) para Bowser
+    (0xA0), Koopaling (0x29), Reznor (0xA9) y Big Boo (0xC5): enemigo GRANDE con varios puntos
+    de vida (`BOSS_HP`), caja de colisión mayor y patrulla lenta; el pisotón/caparazón/bloque/
+    fuego le restan HP (con invulnerabilidad entre golpes vía `damageEnemy`), muere al llegar a
+    0. Se dibuja con su `big_<id>.png` auto-cargado. Conducta **SIMPLIFICADA** (no la IA de
+    Modo 7). Con tests de HP en `PlatformerEngineTest.kt`.
+  - 🟡 Pendientes: pulir el recorte de los 2 Koopalings lanzafuegos (0x98/0xd9, el fuego
+    naranja se funde con el cuerpo); Dino-Torch 0x6F (draw con animación de llamas).
 
 ## Motor 1:1 (progreso y huecos)
 

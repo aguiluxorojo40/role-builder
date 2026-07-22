@@ -184,6 +184,31 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `jefe - identidad, HP y caja grande`() {
+        val e = engineGrab(16, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7,
+            seeds = listOf(EnemySeed(9 * 16, 6 * 16, 0xA0)))  // Bowser
+        val boss = e.enemies.first()
+        assertTrue(boss.isBoss, "0xA0 (Bowser) es un jefe")
+        assertEquals(PlatformerEngine.BOSS_HP, boss.hp, "arranca con el HP de jefe")
+        assertEquals(PlatformerEngine.BOSS_WIDTH, boss.width, "caja ancha de jefe")
+        assertEquals(PlatformerEngine.BOSS_HEIGHT, boss.height, "caja alta de jefe")
+    }
+
+    @Test
+    fun `jefe - un bloque lanzado NO lo mata (a diferencia del enemigo normal)`() {
+        val e = engineGrab(16, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7,
+            seeds = listOf(EnemySeed(9 * 16, 6 * 16, 0xA0)))  // Bowser
+        val boss = e.enemies.first()
+        e.run(20)
+        e.running = true; e.tick()          // coge
+        e.running = false; e.tick()          // suelta
+        e.running = true; e.tick()           // lanza
+        e.run(60)                            // el bloque vuela hasta el jefe
+        assertTrue(boss.alive, "el jefe aguanta un bloque (tiene varios HP)")
+        assertEquals(PlatformerEngine.BOSS_HP - 1, boss.hp, "el bloque le quita un punto de vida")
+    }
+
+    @Test
     fun `throw-block - con abajo pulsado lo deja en vez de lanzarlo`() {
         val e = engineGrab(10, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7)
         e.run(20)
