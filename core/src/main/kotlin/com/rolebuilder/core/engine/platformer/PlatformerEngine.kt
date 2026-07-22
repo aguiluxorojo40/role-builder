@@ -1262,13 +1262,20 @@ class PlatformerEngine(
                 pendingSpawns.add(m)
             }
             piranhaFireEvents++
-        } else {
+        } else if (e.id == 0xA9) {
+            // Reznor: bola de fuego APUNTADA a Mario (AimTowardsPlayer, 0x10), recta.
             if (enemyProjectiles.count { it.alive } >= 6) return
             val dx = (player.x + tuning.playerWidth / 2f - cx).toInt()
             val dy = (player.y + playerHeight / 2f - cy).toInt()
             val (xs, ys) = SmwSpriteAim.aimTowardsPlayer(dx, dy, REZNOR_FIRE_SPEED)
             enemyProjectiles.add(EnemyProjectile(cx, cy, xs / 16f, ys / 16f, arc = false))
-            piranhaFireEvents++   // reutiliza el evento de sonido de "escupir fuego"
+            piranhaFireEvents++
+        } else {
+            // Koopaling (0x29): bola de Ludwig (0x34) HORIZONTAL hacia Mario a 0x20 (2 px/f),
+            // como `Spr029..._01D059` → `Spr034_LudwigFireball` (kSpr029..._DATA_01D0BE = ±0x20).
+            if (enemyProjectiles.count { it.alive } >= 6) return
+            enemyProjectiles.add(EnemyProjectile(cx, cy, dir * LUDWIG_FIRE_SPEED, 0f, arc = false))
+            piranhaFireEvents++
         }
     }
 
@@ -1946,6 +1953,8 @@ class PlatformerEngine(
         /** Velocidad de la bola de fuego de Reznor en unidades SMW (0x10 = 1 px/f en el eje
          *  dominante), como `Spr0A9_Reznor_ReznorFireRt` → `AimTowardsPlayer(k, 0x10)`. */
         const val REZNOR_FIRE_SPEED = 0x10
+        /** Bola de Ludwig del Koopaling: horizontal a 0x20 = 2 px/f (`..._DATA_01D0BE`). */
+        const val LUDWIG_FIRE_SPEED = 2f
         /** Lanzamiento en ARCO de Bowser: ±2 px/f horizontal, −3.5 px/f hacia arriba (arquea). */
         const val BOSS_LOB_VX = 2f
         const val BOSS_LOB_VY = -3.5f

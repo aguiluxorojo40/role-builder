@@ -126,6 +126,9 @@ se explican por cuál de las dos usa cada pieza:
       la matemática y velocidad reales (`SmwSpriteAim.aimTowardsPlayer`, puerto de
       `AimTowardsPlayer` $02:D2FB, velocidad 0x10, como `Spr0A9_Reznor_ReznorFireRt`). Test del
       aim contra valores del disassembly en `SmwSpriteAimTest.kt`.
+    - **Koopaling (0x29)**: bola de Ludwig (0x34) **1:1** — HORIZONTAL hacia Mario a 0x20
+      (2 px/f), recta y sin gravedad (`Spr029..._01D059` → `Spr034_LudwigFireball`,
+      `kSpr029..._DATA_01D0BE`).
     - **Big Boo (0xC5)**: FLOTA persiguiendo a Mario como fantasma (sin gravedad/terreno).
     - **Bowser (0xA0)**: ALTERNA dos ataques con sub-sprites reales (los jefes generan
       sub-sprites vía `pendingSpawns`/`enemies` mutable):
@@ -135,7 +138,6 @@ se explican por cuál de las dos usa cada pieza:
       · **Bola de bolos (0xA1)** — `EnemyBehavior.BOWLING_BALL` (puerto de
         `Spr0A1_BowserBowlingBall`): cae (gravedad +3, tope 0x40), REBOTA con la altura real
         (`BounceYSpeed[(caída>>2)+19]`) y RUEDA hacia Mario a 1 px/f; hiere por cualquier lado.
-    - 🟡 Pendiente (sub-sprite): bola de Ludwig del Koopaling (0x34, rueda por suelo y paredes).
     Con tests de HP y de ataque en `PlatformerEngineTest.kt`.
   - 🟡 Pendientes: pulir el recorte de los 2 Koopalings lanzafuegos (0x98/0xd9, el fuego
     naranja se funde con el cuerpo); Dino-Torch 0x6F (draw con animación de llamas).
