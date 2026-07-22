@@ -78,8 +78,10 @@ se explican por cuál de las dos usa cada pieza:
   `extractSnesTileset --custom-enemy --id 0xNN`.
   - ✅ Hechos: Thwomp (0x26), Pokey (0x70), **Rex (0xAB)**, **Blurp (0xC2)**,
     **Super Koopa suelo (0x73) y capa roja (0x71)** (frame 0 de andar, cuerpo + 3 teselas de
-    capa 8×8; paleta de capa por la fórmula real `(Prop|v4)&~2`: 2 en 0x73, 4 en 0x71). El
-    compositor soporta paleta por-tesela y volteo H/V (`OamTile`).
+    capa 8×8; paleta de capa por la fórmula real `(Prop|v4)&~2`: 2 en 0x73, 4 en 0x71),
+    **PorcuPuffer (0xC3)** (pez globo 32×32 = 4 teselas 16×16, paleta 6) y **Fishbone (0xAA)**
+    (cabeza 16×16 + 2 teselas de cola 8×8). El compositor soporta paleta por-tesela y volteo
+    H/V (`OamTile`).
   - 🟡 Pendientes: Wiggler (0x86, segmentos con posición dinámica; su GFX no queda en el
     slot que carga el extractor) y el resto (Blargg, Reznor…) según valor.
 

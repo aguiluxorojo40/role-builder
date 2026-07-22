@@ -229,6 +229,24 @@ object SmwEnemyGraphics {
         // paleta especial de la fórmula (Prop|v4)&~2: 0x73 (≥0x72, v4=4)→2, 0x71 (v4=8)→4.
         0x73 to CustomEnemy(superKoopaFrame0(capePal = (8 + 2) * 16)),
         0x71 to CustomEnemy(superKoopaFrame0(capePal = (8 + 4) * 16)),
+        // PorcuPuffer (0xC3): pez globo 32×32 = 4 teselas 16×16 en (∓8,∓8) (Spr0C3_PorcuPuffer_Draw,
+        // $03: PocruPufferTiles/DispX/DispY). Frame 0. Paleta 6 (Prop 0x0D → (0xD>>1)&7).
+        0xC3 to CustomEnemy(
+            listOf(
+                OamTile(0x86, -8, -8), OamTile(0xc0, 8, -8),
+                OamTile(0xa6, -8, 8), OamTile(0xc2, 8, 8),
+            ),
+            palRow = (8 + 6) * 16,
+        ),
+        // Fishbone (0xAA): CABEZA 16×16 (0xA6, GenericGFXRtDraw1Tile16x16, paleta $166E) + 2
+        // teselas de COLA 8×8 (0xa3) detrás (Spr0AA_Fishbone_Draw, $03: TailTiles/XDisp/YDisp).
+        0xAA to CustomEnemy(
+            listOf(
+                OamTile(0xA6, 0, 0, size16 = true),
+                OamTile(0xa3, -8, 0, size16 = false),
+                OamTile(0xa3, -8, 8, size16 = false),
+            ),
+        ),
     )
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */
