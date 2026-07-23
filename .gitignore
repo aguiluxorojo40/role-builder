@@ -7,3 +7,9 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# ROMs y assets extraídos (copyright de Nintendo) — nunca subir
+*.sfc
+*.smc
+*.srm
+tools/smw_import/out/

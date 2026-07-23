@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMW · visor de assets reales (local)</title>
+<style>
+  :root{ --bg:#14101f; --panel:#1d1730; --panel-2:#251d3b; --ink:#ece7f7; --muted:#a99fc4;
+    --stroke:#342a4d; --accent:#ffc23b; --accent-ink:#2a1c00; --mono:ui-monospace,Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  header{padding:18px 22px;border-bottom:1px solid var(--stroke);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  h1{margin:0;font-size:18px;letter-spacing:-.01em}
+  .tag{font-family:var(--mono);font-size:11px;color:var(--accent-ink);background:var(--accent);padding:3px 9px;border-radius:7px;font-weight:700}
+  .warn{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+  main{display:grid;grid-template-columns:300px 1fr;gap:0;min-height:calc(100vh - 59px)}
+  @media(max-width:800px){main{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border-right:1px solid var(--stroke);padding:18px;display:flex;flex-direction:column;gap:16px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  select,input[type=range]{width:100%}
+  select{background:var(--panel-2);color:var(--ink);border:1px solid var(--stroke);border-radius:8px;padding:8px;font-family:var(--mono);font-size:12px}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  .pal{display:grid;grid-template-columns:repeat(16,1fr);gap:2px;border:1px solid var(--stroke);border-radius:8px;padding:6px;background:var(--panel-2)}
+  .pal i{aspect-ratio:1;border-radius:3px;cursor:pointer;position:relative}
+  .pal i[data-used="0"]{opacity:.28}
+  .pal i.sel{outline:2px solid var(--accent);outline-offset:1px}
+  .stagewrap{padding:22px;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
+  .stage{background:
+      linear-gradient(45deg,#2a2440 25%,transparent 25%,transparent 75%,#2a2440 75%),
+      linear-gradient(45deg,#2a2440 25%,#221c36 25%,#221c36 75%,#2a2440 75%);
+    background-size:16px 16px;background-position:0 0,8px 8px;border:1px solid var(--stroke);border-radius:8px}
+  canvas{display:block;image-rendering:pixelated}
+  .meta{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7}
+  .meta b{color:var(--ink)}
+  .hint{font-size:12px;color:var(--muted);line-height:1.5}
+  .swatchlbl{font-family:var(--mono);font-size:10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <span class="tag">ROM real</span>
+  <h1>Visor de assets de Super Mario World</h1>
+  <span class="warn" id="sha">local · no se publica</span>
+</header>
+<main>
+  <div class="panel">
+    <div class="field">
+      <label>Banco GFX</label>
+      <select id="bank"></select>
+    </div>
+    <div class="row">
+      <div class="field"><label>Paleta</label><select id="palsrc"></select></div>
+      <div class="field"><label>Fila</label><select id="palrow"></select></div>
+    </div>
+    <div class="field">
+      <label>Colores de la fila</label>
+      <div class="pal" id="palgrid"></div>
+      <span class="swatchlbl">El índice 0 es transparente (fondo ajedrez).</span>
+    </div>
+    <div class="field">
+      <label>Zoom · <span id="zlbl">4×</span></label>
+      <input type="range" id="zoom" min="1" max="10" value="4">
+    </div>
+    <div class="meta" id="meta"></div>
+    <p class="hint">Estos son los gráficos reales de tu ROM, decodificados en el navegador.
+      Cambia la <b>paleta</b> para ver el <i>palette-swap</i> en vivo — el mismo mecanismo que
+      usará el editor para recolorear un nivel entero.</p>
+  </div>
+  <div class="stagewrap">
+    <div class="stage"><canvas id="cv"></canvas></div>
+  </div>
+</main>
+<script src="out/smw_data.js"></script>
+<script>
+(function(){
+  var D = window.SMW;
+  if(!D){ document.getElementById('meta').textContent='Falta out/smw_data.js — ejecuta extract_smw.py --emit-data'; return; }
+  document.getElementById('sha').textContent = 'ROM ' + D.rom_sha1.slice(0,12) + '… · local, no se publica';
+
+  var bankSel=document.getElementById('bank'), srcSel=document.getElementById('palsrc'),
+      rowSel=document.getElementById('palrow'), zoom=document.getElementById('zoom'),
+      zlbl=document.getElementById('zlbl'), palgrid=document.getElementById('palgrid'),
+      cv=document.getElementById('cv'), ctx=cv.getContext('2d'), meta=document.getElementById('meta');
+
+  D.banks.forEach(function(b,i){ var o=document.createElement('option'); o.value=i;
+    o.textContent='GFX'+b.bank.toString(16).padStart(2,'0').toUpperCase()+'  ·  '+b.name+'  ('+b.bpp+'bpp)';
+    bankSel.appendChild(o); });
+  Object.keys(D.palettes).forEach(function(k){ var o=document.createElement('option'); o.value=k; o.textContent=k; srcSel.appendChild(o); });
+
+  // decodifica base64 -> Uint8Array
+  function b64(s){ var bin=atob(s), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+
+  var curPx=null, curBank=null, selColor=-1;
+
+  function fillRows(){
+    var pal=D.palettes[srcSel.value], n=Math.ceil(pal.length/16);
+    rowSel.innerHTML='';
+    for(var r=0;r<n;r++){ var o=document.createElement('option'); o.value=r; o.textContent='fila '+r; rowSel.appendChild(o); }
+  }
+  function curPalette(){
+    var pal=D.palettes[srcSel.value], r=+rowSel.value|0;
+    var out=[]; for(var i=0;i<16;i++){ out.push(pal[r*16+i]||[0,0,0]); } return out;
+  }
+  function usedColors(){
+    // qué índices aparecen en el banco actual
+    var used=new Array(16).fill(0);
+    if(curPx) for(var i=0;i<curPx.length;i++) used[curPx[i]]=1;
+    return used;
+  }
+  function drawPalGrid(){
+    var pal=curPalette(), used=usedColors(); palgrid.innerHTML='';
+    pal.forEach(function(c,i){ var el=document.createElement('i');
+      el.style.background='rgb('+c[0]+','+c[1]+','+c[2]+')';
+      el.dataset.used=used[i]?1:0; el.title='índice '+i+'  rgb('+c.join(',')+')';
+      if(i===selColor) el.className='sel';
+      el.onclick=function(){ selColor=(selColor===i?-1:i); render(); };
+      palgrid.appendChild(el); });
+  }
+  function loadBank(){
+    curBank=D.banks[+bankSel.value]; curPx=b64(curBank.px); render();
+  }
+  function render(){
+    if(!curBank) return;
+    var pal=curPalette(), z=+zoom.value, W=curBank.w, H=curBank.h;
+    cv.width=W*z; cv.height=H*z;
+    var img=ctx.createImageData(W*z,H*z), d=img.data;
+    for(var y=0;y<H;y++) for(var x=0;x<W;x++){
+      var v=curPx[y*W+x];
+      var show = v!==0;                 // 0 transparente
+      var c = pal[v]||[255,0,255];
+      var hi = (selColor>=0 && v===selColor);
+      for(var dy=0;dy<z;dy++) for(var dx=0;dx<z;dx++){
+        var px=((y*z+dy)*W*z + (x*z+dx))*4;
+        if(!show){ d[px+3]=0; continue; }
+        d[px]=hi?255:c[0]; d[px+1]=hi?60:c[1]; d[px+2]=hi?60:c[2]; d[px+3]=255;
+      }
+    }
+    ctx.putImageData(img,0,0);
+    drawPalGrid();
+    meta.innerHTML='Banco <b>GFX'+curBank.bank.toString(16).padStart(2,'0').toUpperCase()+'</b> · '+
+      '<b>'+curBank.tiles+ '</b> tiles '+curBank.bpp+'bpp · '+curBank.cols+'×'+curBank.rows+' · '+
+      W+'×'+H+' px · paleta <b>'+srcSel.value+'</b> fila '+rowSel.value;
+  }
+
+  bankSel.onchange=loadBank;
+  srcSel.onchange=function(){ fillRows(); render(); };
+  rowSel.onchange=render;
+  zoom.oninput=function(){ zlbl.textContent=zoom.value+'×'; render(); };
+
+  // valores por defecto agradables para el primer vistazo
+  (function defaults(){
+    var q=new URLSearchParams(location.search);
+    if(q.get('src') && D.palettes[q.get('src')]) srcSel.value=q.get('src'); else if(D.palettes.sprites) srcSel.value='sprites';
+    var bank=q.get('bank'); if(bank!==null){ var bi=D.banks.findIndex(function(b){return b.bank===parseInt(bank,16);}); if(bi>=0) bankSel.value=bi; }
+    if(q.get('zoom')) zoom.value=q.get('zoom'); else zoom.value=5;
+    zlbl.textContent=zoom.value+'×';
+    fillRows();
+    if(q.get('row')) rowSel.value=q.get('row');
+    loadBank();
+  })();
+})();
+</script>
+</body>
+</html>

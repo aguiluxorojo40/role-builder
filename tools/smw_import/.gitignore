@@ -1,0 +1,9 @@
+# Salida de la ingesta: contiene arte con copyright de Nintendo. NUNCA subir.
+out/
+# ROMs
+*.sfc
+*.smc
+*.srm
+# Python
+__pycache__/
+*.pyc
