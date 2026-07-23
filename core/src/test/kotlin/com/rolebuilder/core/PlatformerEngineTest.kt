@@ -220,13 +220,47 @@ class PlatformerEngineTest {
     }
 
     @Test
-    fun `jefe - Bowser tambien deja caer una bola de bolos (alterna)`() {
-        // Bowser en rango (160px < 220) pero lejos, para que no alcance a Mario y siga atacando.
-        val e = engineGrab(22, 12, startCol = 2, startRow = 8, grabCol = 20, grabRow = 8, floorRow = 9,
-            seeds = listOf(EnemySeed(12 * 16, 8 * 16, 0xA0)))
-        e.run(2 * PlatformerEngine.BOSS_ATTACK_INTERVAL + 10)   // dos ataques: Mechakoopa + bola
+    fun `jefe - Bowser alterna la tanda de bolas de bolos tras la de Mechakoopas`() {
+        // Techo (fila 5) entre Bowser (flota arriba) y Mario (suelo fila 9): los sub-sprites que
+        // caen aterrizan en el techo y NO alcanzan a Mario, que así sobrevive toda la secuencia
+        // (si Mario muere, tick() congela el mundo y Bowser dejaría de atacar).
+        val e = engineEnemies(22, 12, startCol = 2, startRow = 8,
+            seeds = listOf(EnemySeed(12 * 16, 3 * 16, 0xA0))) { g ->
+            for (c in 0 until 22) g[9][c] = SmwSolidity.SOLID   // suelo de Mario
+            for (c in 0 until 22) g[5][c] = SmwSolidity.SOLID   // techo que para a los sub-sprites
+        }
+        // Primero una tanda de Mechakoopas (BOWSER_ATTACKS_PER_PHASE) y luego la de bolas: hay
+        // que dejar pasar toda la primera fase + el primer ataque de la segunda.
+        val n = PlatformerEngine.BOWSER_ATTACKS_PER_PHASE
+        e.run((n + 1) * PlatformerEngine.BOSS_ATTACK_INTERVAL + 10)
+        assertFalse(e.player.dead, "Mario sobrevive bajo el techo (el mundo no se congela)")
         val balls = e.enemies.count { it.behavior == EnemyBehavior.BOWLING_BALL }
-        assertTrue(balls >= 1, "Bowser alterna y deja caer una bola de bolos (0xA1)")
+        assertTrue(balls >= 1, "tras la tanda de Mechakoopas, Bowser deja caer bolas de bolos (0xA1)")
+    }
+
+    @Test
+    fun `jefe - Bowser FLOTA arriba y no cae al suelo`() {
+        val e = engineGrab(20, 14, startCol = 2, startRow = 11, grabCol = 18, grabRow = 11, floorRow = 12,
+            seeds = listOf(EnemySeed(9 * 16, 10 * 16, 0xA0)))  // Bowser arranca abajo
+        val boss = e.enemies.first()
+        val y0 = boss.y
+        e.run(200)
+        // Sube hacia la franja de vuelo (fila BOWSER_HOVER_ROW): NO cae al suelo (fila 12), gana
+        // altura respecto a donde arrancó.
+        assertTrue(boss.y < y0, "Bowser gana altura en vez de caer (y=${boss.y}, y0=$y0)")
+        assertTrue(boss.y < 6 * 16f, "flota en la franja superior (y=${boss.y})")
+        assertTrue(boss.alive)
+    }
+
+    @Test
+    fun `jefe - Bowser flotante DERIVA hacia Mario en X`() {
+        // Mario a la izquierda (col 2); Bowser arranca a la derecha (col 15) y debe acercarse.
+        val e = engineGrab(20, 14, startCol = 2, startRow = 11, grabCol = 18, grabRow = 11, floorRow = 12,
+            seeds = listOf(EnemySeed(15 * 16, 3 * 16, 0xA0)))
+        val boss = e.enemies.first()
+        val x0 = boss.x
+        e.run(60)
+        assertTrue(boss.x < x0, "Bowser deriva hacia Mario (a la izquierda) (x=${boss.x})")
     }
 
     @Test

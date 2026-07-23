@@ -206,8 +206,10 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var carried = false
     /** Mechakoopa LANZADO: vuela recto y ARROLLA a lo que toca (incl. jefes). */
     var thrown = false
-    /** Nº de ataques lanzados por el jefe (Bowser alterna Mechakoopa / bola de bolos). */
+    /** Nº de ataques lanzados por el jefe en la FASE actual (Bowser: cuántos van de la tanda). */
     var attackCount = 0
+    /** Fase de Bowser flotante: 0 = tanda de Mechakoopas, 1 = tanda de bolas de bolos. */
+    var bossPhase = 0
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
     val upsideDown = id == 0x2A
@@ -1281,6 +1283,8 @@ class PlatformerEngine(
      */
     private fun updateBoss(e: PlatformerEnemy) {
         if (e.hurtCooldown > 0) e.hurtCooldown--
+        // Bowser (0xA0): FLOTA arriba (coche-payaso) y va por FASES; conducta propia.
+        if (e.id == 0xA0) { updateBowser(e); return }
         // Big Boo (0xC5): fantasma que persigue flotando, atraviesa el terreno, no dispara.
         if (e.id == 0xC5) {
             val cx = e.x + e.width / 2f; val cy = e.y + e.height / 2f
@@ -1305,32 +1309,61 @@ class PlatformerEngine(
     }
 
     /**
-     * Ataque de proyectil del jefe hacia Mario ([dir] = ±1, sentido a Mario).
-     *  - Reznor (0xA9) y el Koopaling (0x29): bola de fuego APUNTADA al jugador y RECTA, con la
-     *    misma matemática y velocidad que el juego (`Spr0A9_Reznor_ReznorFireRt` →
-     *    `AimTowardsPlayer` con 0x10). El vector [SmwSpriteAim] va en unidades SMW (÷16 = px/f).
-     *  - Bowser (0xA0): ALTERNA entre soltar un Mechakoopa (0xA2, cae en arco y anda) y dejar
-     *    caer una bola de bolos (0xA1, rebota y rueda). Máx. [BOSS_MAX_MECHAKOOPAS] Mechakoopas.
-     * Reutiliza [EnemyProjectile] (fuego) o [enemies] (sub-sprites de Bowser).
+     * Bowser (0xA0), conducta MÁS FIEL (aproximación, no la IA de Modo 7): FLOTA en la franja
+     * superior del nivel (el coche-payaso), DERIVA en X para seguir a Mario y NO cae con
+     * gravedad. Va por FASES alternas ([bossPhase]): una tanda de Mechakoopas (0xA2, cogibles
+     * y lanzables) y una tanda de bolas de bolos (0xA1, rebotan y ruedan), [BOWSER_ATTACKS_PER_PHASE]
+     * ataques por tanda con [BOSS_ATTACK_INTERVAL] de separación. El pisotón le resta HP como al
+     * resto de jefes. (El descenso/embestida del original se documenta como fuera de alcance.)
+     */
+    private fun updateBowser(e: PlatformerEnemy) {
+        // Sube/mantiene la altura de vuelo (franja superior) sin gravedad, con un bob suave.
+        val targetY = BOWSER_HOVER_ROW * tileSize.toFloat()
+        e.y += (targetY - e.y).coerceIn(-BOWSER_VSPEED, BOWSER_VSPEED)
+        // Deriva hacia Mario en X, sin salirse del nivel.
+        val marioCx = player.x + tuning.playerWidth / 2f
+        val cx = e.x + e.width / 2f
+        val dir = if (marioCx >= cx) 1f else -1f
+        e.x = (e.x + dir * BOWSER_HOVER_SPEED).coerceIn(0f, cols * tileSize - e.width)
+        // Máquina de fases: cada [BOSS_ATTACK_INTERVAL] suelta un ataque de la tanda actual;
+        // al completar [BOWSER_ATTACKS_PER_PHASE] cambia de tanda (Mechakoopa <-> bola).
+        if (e.attackTimer > 0) { e.attackTimer--; return }
+        if (e.bossPhase == 0) spawnMechakoopa(e, dir) else dropBowlingBall(e)
+        e.attackCount++
+        if (e.attackCount >= BOWSER_ATTACKS_PER_PHASE) { e.attackCount = 0; e.bossPhase = 1 - e.bossPhase }
+        e.attackTimer = BOSS_ATTACK_INTERVAL
+    }
+
+    /** Bowser suelta un Mechakoopa (0xA2) en arco hacia [dir]; respeta el tope de vivos. */
+    private fun spawnMechakoopa(e: PlatformerEnemy, dir: Float) {
+        if (enemies.count { it.alive && it.behavior == EnemyBehavior.MECHAKOOPA } >= BOSS_MAX_MECHAKOOPAS) return
+        val cx = e.x + e.width / 2f
+        val m = PlatformerEnemy(cx - 7f, e.y - 8f, 0xA2)
+        m.vx = dir * MECHA_TOSS_VX
+        m.vy = MECHA_TOSS_VY
+        pendingSpawns.add(m)
+        piranhaFireEvents++
+    }
+
+    /** Bowser deja caer una bola de bolos (0xA1) desde su posición; rebota y rueda al aterrizar. */
+    private fun dropBowlingBall(e: PlatformerEnemy) {
+        val cx = e.x + e.width / 2f
+        val b = PlatformerEnemy(cx - 8f, e.y, 0xA1)
+        b.vy = BALL_DROP_VY
+        pendingSpawns.add(b)
+        piranhaFireEvents++
+    }
+
+    /**
+     * Ataque de proyectil del jefe hacia Mario ([dir] = ±1, sentido a Mario). Reznor (0xA9) y el
+     * Koopaling (0x29): bola de fuego APUNTADA al jugador y RECTA, con la misma matemática y
+     * velocidad que el juego (`Spr0A9_Reznor_ReznorFireRt` → `AimTowardsPlayer` con 0x10). El
+     * vector [SmwSpriteAim] va en unidades SMW (÷16 = px/f). (Bowser tiene su propia [updateBowser].)
      */
     private fun bossShoot(e: PlatformerEnemy, dir: Float) {
         val cx = e.x + e.width / 2f
         val cy = e.y + e.height / 2f
-        if (e.id == 0xA0) {
-            e.attackCount++
-            if (e.attackCount % 2 == 0) {   // bola de bolos: cae desde Bowser y rueda al rebotar
-                val b = PlatformerEnemy(cx - 8f, e.y, 0xA1)
-                b.vy = BALL_DROP_VY
-                pendingSpawns.add(b)
-            } else {                        // Mechakoopa: sale en arco y luego anda
-                if (enemies.count { it.alive && it.behavior == EnemyBehavior.MECHAKOOPA } >= BOSS_MAX_MECHAKOOPAS) return
-                val m = PlatformerEnemy(cx - 7f, e.y - 8f, 0xA2)
-                m.vx = dir * MECHA_TOSS_VX
-                m.vy = MECHA_TOSS_VY
-                pendingSpawns.add(m)
-            }
-            piranhaFireEvents++
-        } else if (e.id == 0xA9) {
+        if (e.id == 0xA9) {
             // Reznor: bola de fuego APUNTADA a Mario (AimTowardsPlayer, 0x10), recta.
             if (enemyProjectiles.count { it.alive } >= 6) return
             val dx = (player.x + tuning.playerWidth / 2f - cx).toInt()
@@ -2050,6 +2083,12 @@ class PlatformerEngine(
         const val MECHA_TOSS_VY = -3f
         /** Máximo de Mechakoopas vivos que Bowser mantiene a la vez. */
         const val BOSS_MAX_MECHAKOOPAS = 3
+        /** Bowser flotante: fila objetivo de vuelo (franja superior), deriva en X hacia Mario y
+         *  velocidad con que gana altura. Fases de [BOWSER_ATTACKS_PER_PHASE] ataques cada una. */
+        const val BOWSER_HOVER_ROW = 2
+        const val BOWSER_HOVER_SPEED = 0.4f
+        const val BOWSER_VSPEED = 0.5f
+        const val BOWSER_ATTACKS_PER_PHASE = 3
         /** Bola de bolos: gravedad +3 unidades/f y tope 0x40 (=4 px/f); rueda a 0x10 (=1 px/f). */
         const val BALL_GRAVITY = 3f / 16f
         const val BALL_MAX_FALL = 4f

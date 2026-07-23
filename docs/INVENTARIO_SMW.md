@@ -130,8 +130,11 @@ se explican por cuál de las dos usa cada pieza:
       (2 px/f), recta y sin gravedad (`Spr029..._01D059` → `Spr034_LudwigFireball`,
       `kSpr029..._DATA_01D0BE`).
     - **Big Boo (0xC5)**: FLOTA persiguiendo a Mario como fantasma (sin gravedad/terreno).
-    - **Bowser (0xA0)**: ALTERNA dos ataques con sub-sprites reales (los jefes generan
-      sub-sprites vía `pendingSpawns`/`enemies` mutable):
+    - **Bowser (0xA0)**: conducta MÁS FIEL por FASES ([updateBowser]) — FLOTA en la franja
+      superior del nivel (coche-payaso, fila `BOWSER_HOVER_ROW`, sin gravedad) y DERIVA en X
+      siguiendo a Mario; alterna una TANDA de Mechakoopas y una TANDA de bolas de bolos
+      (`BOWSER_ATTACKS_PER_PHASE` ataques por tanda, `bossPhase`), con sub-sprites reales (los
+      jefes los generan vía `pendingSpawns`/`enemies` mutable):
       · **Mechakoopa (0xA2)** — `EnemyBehavior.MECHAKOOPA` (puerto de `Spr0A2_MechaKoopa`): cae
         en arco y luego ANDA a 0.5 px/f re-encarando a Mario cada 0x40 frames, rebota en
         paredes y se cae por los bordes. Al PISARLO se VOLTEA (aturdido, no muere); volteado se
@@ -188,12 +191,17 @@ entre los niveles que contienen cada id). **Descartados** 0x33 Podoboo, 0x30 y
 0x32: su entrada de la tabla OAM genérica no es su aspecto real (rutina de
 dibujo propia; salían tiles de fuente o basura de forma unánime).
 
-**Tanda 2 — INTENTADA Y REVERTIDA (necesita port de rutina propia):** Koopas
-aladas 0x08/0x09/0x0A/0x0B (lo más colocado de la ROM: 84/72/58/42). Se probó
-componer cuerpo genérico + ala (`DrawWingTiles`, tesela 0x5D) y la verificación
-visual suspendió: la entrada de la tabla genérica da el cuerpo SIN caparazón y
-el ala tapa la cabeza. Su aspecto real exige portar su rutina de dibujo
-completa (caparazón + alas con sus offsets), no la vía genérica.
+**Tanda 2 — ENTREGADA (tras un primer intento revertido):** Koopas aladas
+0x08/0x09/0x0A/0x0B (lo más colocado de la ROM: 84/72/58/42). El primer intento
+(cuerpo genérico + ala suelta) suspendió la verificación visual (cuerpo SIN
+caparazón y ala tapando la cabeza), así que se portó su DIBUJO real:
+`SmwEnemyGraphics.wingedKoopaFrames` compone el cuerpo apilado CON caparazón
+(misma entrada que las Koopas de caparazón) + el ala de `KoopaWingGfxRt` con sus
+dos fotogramas de aleteo (tablas `KoopaWing*`, tesela 0x5D/0xC6). Y su MOVIMIENTO
+1:1 en el motor: `PlatformerEngine.updateWingedKoopa` (rutinas ParaKoopa $01) —
+0x08 vuela a la izq. (−0.5 px/f con bob), 0x09 rebota (−3 px/f al tocar suelo),
+0x0A/0x0B oscilan ±1 px/f (rampa con pausa 0x30) en Y/X respectivamente; el
+pisotón les quita las alas y quedan de andador con caparazón. Con tests.
 
 ## Comportamiento de las Plantas Piraña (portado al motor)
 
