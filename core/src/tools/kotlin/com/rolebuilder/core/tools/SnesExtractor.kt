@@ -49,6 +49,13 @@ import javax.imageio.ImageIO
 fun main(args: Array<String>) {
     val opts = parseArgs(args)
 
+    // Modo --compose-tilemap <tilemap.txt> --atlas <atlas.png>: RE-COMPONE un tilemap por capas
+    // (el que emite --scene) sobre su atlas y vuelve a renderizar Layer 1 / Layer 2 / combinada.
+    // No necesita ROM: es el camino de "autorar mapas nuevos" (celda→tesela) fuera de la ROM.
+    if (opts.containsKey("compose-tilemap")) {
+        composeTilemap(opts); return
+    }
+
     // Modo demo: fabrica una ROM procedural (sin material con copyright) y la extrae.
     val demoDir = opts["demo"]
     val demoCompressedDir = opts["demo-compressed"]
@@ -207,21 +214,14 @@ fun main(args: Array<String>) {
         ImageIO.write(toBufferedImage(combined), "png", File(imagesDir, "scene_$hx.png"))
         ImageIO.write(toBufferedImage(m.atlas), "png", File(imagesDir, "atlas_$hx.png"))
 
-        // Datos del TILEMAP por capa: rejilla de índices al atlas (o -1 = vacío). Es la
-        // materia prima para AUTORAR mapas nuevos (celda→tesela) desde estos assets.
-        val tm = StringBuilder()
-        tm.append("# Nivel 0x${hx.uppercase()}  mapa=${m.mapWidth}x${m.mapHeight}  atlas_cols=${m.columns}\n")
-        tm.append("# Rejilla de índices al atlas (atlas_$hx.png), -1 = casilla vacía.\n")
-        fun dumpGrid(name: String, src: List<Int>) {
-            tm.append("[$name]\n")
-            for (y in 0 until m.mapHeight)
-                tm.append((0 until m.mapWidth).joinToString(",") {
-                    src.getOrElse(y * m.mapWidth + it) { -1 }.toString()
-                }).append("\n")
-        }
-        dumpGrid("layer1", m.tiles)
-        if (hasBg) dumpGrid("layer2", m.bgTiles)
-        File(outDir, "tilemap_$hx.txt").writeText(tm.toString())
+        // Datos del TILEMAP por capa (una sola fuente de verdad: TileMapDoc). Es la materia
+        // prima para AUTORAR mapas nuevos (celda→tesela) y --compose-tilemap la re-renderiza.
+        // Orden de dibujo: Layer 2 (fondo) primero, Layer 1 (primer plano) encima.
+        val docLayers = ArrayList<Pair<String, List<Int>>>()
+        if (hasBg) docLayers.add("layer2" to m.bgTiles)
+        docLayers.add("layer1" to m.tiles)
+        val doc = com.rolebuilder.core.model.TileMapDoc.of(m.mapWidth, m.mapHeight, m.columns, docLayers)
+        File(outDir, "tilemap_$hx.txt").writeText("# Nivel 0x${hx.uppercase()} (atlas_$hx.png)\n" + doc.serialize())
 
         println("Escena del nivel 0x${hx.uppercase()}: mapa ${m.mapWidth}×${m.mapHeight} (recortado a $cols cols).")
         println("  Layer 1 (primer plano): images/layer1_$hx.png")
@@ -833,6 +833,51 @@ private fun toBufferedImage(img: ArgbImage): BufferedImage {
     val out = BufferedImage(img.width, img.height, BufferedImage.TYPE_INT_ARGB)
     out.setRGB(0, 0, img.width, img.height, img.pixels, 0, img.width)
     return out
+}
+
+/**
+ * `--compose-tilemap <tilemap.txt> --atlas <atlas.png> [--out <dir>]`: re-renderiza un
+ * [com.rolebuilder.core.model.TileMapDoc] (el que emite `--scene`) pegando sus índices sobre el
+ * atlas. Vuelca cada capa por separado (`compose_<capa>.png`) y la combinada (`compose_scene.png`).
+ * Cierra el ciclo "extraer → editar celdas → volver a imagen" sin tocar la ROM.
+ */
+private fun composeTilemap(opts: Map<String, String>) {
+    val tmPath = opts["compose-tilemap"]
+    if (tmPath.isNullOrBlank()) { println("Uso: --compose-tilemap <tilemap.txt> --atlas <atlas.png>"); return }
+    val atlasPath = opts["atlas"] ?: run { println("Falta --atlas <atlas.png> (el atlas al que apuntan los índices)"); return }
+    val tmFile = File(tmPath); val atlasFile = File(atlasPath)
+    if (!tmFile.isFile) { println("No existe el tilemap: ${tmFile.absolutePath}"); return }
+    if (!atlasFile.isFile) { println("No existe el atlas: ${atlasFile.absolutePath}"); return }
+    val doc = com.rolebuilder.core.model.TileMapDoc.parse(tmFile.readText())
+    val atlas = ImageIO.read(atlasFile) ?: run { println("No se pudo leer el atlas como PNG."); return }
+    val outDir = File(opts["out"] ?: "snes_out").also { it.mkdirs() }
+    val imagesDir = File(outDir, "images").also { it.mkdirs() }
+
+    fun blit(dst: BufferedImage, tile: Int, dx: Int, dy: Int) {
+        if (tile < 0) return
+        val ax = (tile % doc.atlasCols) * 16; val ay = (tile / doc.atlasCols) * 16
+        for (py in 0..15) for (px in 0..15) {
+            if (ax + px >= atlas.width || ay + py >= atlas.height) continue
+            val argb = atlas.getRGB(ax + px, ay + py)
+            if ((argb ushr 24) != 0 && dx + px < dst.width && dy + py < dst.height) dst.setRGB(dx + px, dy + py, argb)
+        }
+    }
+    val w = doc.mapWidth * 16; val h = doc.mapHeight * 16
+    val combined = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+    for (layer in doc.layers) {                 // en orden de dibujo (fondo→primer plano)
+        val img = BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until doc.mapHeight) for (x in 0 until doc.mapWidth) {
+            val t = layer.tiles.getOrElse(y * doc.mapWidth + x) { -1 }
+            blit(img, t, x * 16, y * 16)
+            blit(combined, t, x * 16, y * 16)
+        }
+        ImageIO.write(img, "png", File(imagesDir, "compose_${layer.name}.png"))
+    }
+    ImageIO.write(combined, "png", File(imagesDir, "compose_scene.png"))
+    println("Tilemap compuesto: ${doc.layers.size} capas (${doc.layers.joinToString { it.name }}), " +
+        "${doc.mapWidth}×${doc.mapHeight} casillas.")
+    doc.layers.forEach { println("  images/compose_${it.name}.png") }
+    println("  images/compose_scene.png (combinada)")
 }
 
 /**
