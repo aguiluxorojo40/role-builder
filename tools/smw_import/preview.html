@@ -20,10 +20,8 @@
   input[type=text],select{width:100%;background:var(--panel-2);color:var(--ink);border:1px solid var(--stroke);
     border-radius:8px;padding:9px;font-family:var(--mono);font-size:12px}
   input[type=text]::placeholder{color:var(--muted)}
-  .search{position:relative}
-  .catlist{display:flex;flex-direction:column;gap:6px;max-height:44vh;overflow:auto;padding-right:2px}
-  .cat{display:flex;align-items:center;gap:10px;padding:6px;border:1px solid var(--stroke);border-radius:10px;
-    background:var(--panel-2);cursor:pointer}
+  .catlist{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:auto;padding-right:2px}
+  .cat{display:flex;align-items:center;gap:10px;padding:6px;border:1px solid var(--stroke);border-radius:10px;background:var(--panel-2);cursor:pointer}
   .cat:hover{border-color:var(--accent)}
   .cat canvas{width:40px;height:40px;image-rendering:pixelated;background:#0f1622;border-radius:6px;flex:0 0 auto}
   .cat .n{font-size:13px;font-weight:600;line-height:1.2}
@@ -41,10 +39,9 @@
       linear-gradient(45deg,#2a2440 25%,#221c36 25%,#221c36 75%,#2a2440 75%);
     background-size:16px 16px;background-position:0 0,8px 8px;border:1px solid var(--stroke);border-radius:8px;cursor:crosshair}
   canvas{display:block;image-rendering:pixelated}
-  #sel{position:absolute;border:2px solid var(--accent);background:rgba(255,194,59,.14);pointer-events:none;display:none;
-    box-shadow:0 0 0 1px rgba(0,0,0,.6)}
-  .cropcard{position:sticky;bottom:0;margin-top:14px;background:var(--panel);border:1px solid var(--accent);
-    border-radius:12px;padding:14px;display:none;gap:14px;align-items:flex-start;box-shadow:0 -8px 24px -12px rgba(0,0,0,.6)}
+  #sel{position:absolute;border:2px solid var(--accent);background:rgba(255,194,59,.14);pointer-events:none;display:none;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+  .cropcard{position:sticky;bottom:0;margin-top:14px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;
+    padding:14px;display:none;gap:14px;align-items:flex-start;box-shadow:0 -8px 24px -12px rgba(0,0,0,.6)}
   .cropcard.on{display:flex}
   .cropcard .prev{background:#0f1622;border-radius:8px;padding:6px;flex:0 0 auto}
   .cropcard .prev canvas{image-rendering:pixelated;border-radius:4px}
@@ -65,25 +62,18 @@
 </header>
 <main>
   <div class="panel">
-    <div class="field search">
-      <label>Buscar elemento</label>
-      <input type="text" id="q" placeholder="mario, yoshi, moneda, tubería…">
-    </div>
-    <div class="field">
-      <label>Catálogo <span id="count" class="meta"></span></label>
-      <div class="catlist" id="catlist"></div>
-    </div>
+    <div class="field"><label>Buscar elemento</label>
+      <input type="text" id="q" placeholder="mario, yoshi, moneda, tubería…"></div>
+    <div class="field"><label>Catálogo <span id="count" class="meta"></span></label>
+      <div class="catlist" id="catlist"></div></div>
     <p class="hint"><b>Arrastra un recuadro</b> sobre los tiles del lienzo para recortar un
-      elemento, ponle nombre y guárdalo aquí. Así construyes tu librería: Mario, Yoshi,
-      cada enemigo, cada bloque… y luego lo buscas por nombre.</p>
+      elemento, ponle nombre y guárdalo. Así construyes tu librería (Mario, Yoshi, cada
+      enemigo, cada bloque) y la buscas por nombre. Colores = <b>CGRAM real</b> de SMW.</p>
     <details id="explore">
       <summary>Explorar bancos GFX</summary>
       <div class="grp">
         <div class="field"><label>Banco</label><select id="bank"></select></div>
-        <div class="row">
-          <div class="field"><label>Paleta</label><select id="palsrc"></select></div>
-          <div class="field"><label>Fila</label><select id="palrow"></select></div>
-        </div>
+        <div class="field"><label>Paleta (CGRAM 0-15)</label><select id="palrow"></select></div>
         <div class="field"><label>Zoom · <span id="zlbl">4×</span></label>
           <input type="range" id="zoom" min="1" max="10" value="4"></div>
         <div class="meta" id="bankmeta"></div>
@@ -115,42 +105,41 @@
 (function(){
   var D=window.SMW;
   var meta=document.getElementById('bankmeta');
-  if(!D){ document.getElementById('sha').textContent='Falta out/smw_data.js — corre extract_smw.py --all --emit-data'; return; }
+  if(!D||!D.cgram){ document.getElementById('sha').textContent='Falta out/smw_data.js — corre extract_smw.py --all --emit-data'; return; }
   document.getElementById('sha').textContent='ROM '+D.rom_sha1.slice(0,12)+'… · local, no se publica';
 
   var CATS=['Mario','Yoshi','Enemigos','Bloques','Objetos','Fondo','Overworld','Otro'];
   var SEEDS=[
-    {name:'Mario',    cat:'Mario',    bank:0x32, src:'player',     row:1, tc:0, tr:0, tw:2, th:3, kw:'mario jugador player'},
-    {name:'Champiñón',cat:'Objetos',  bank:0x00, src:'sprites',    row:0, tc:4, tr:2, tw:2, th:2, kw:'mushroom seta hongo powerup'},
-    {name:'Estrella', cat:'Objetos',  bank:0x00, src:'sprites',    row:0, tc:8, tr:5, tw:2, th:2, kw:'star estrella invencible'},
-    {name:'P-Switch', cat:'Bloques',  bank:0x00, src:'sprites',    row:0, tc:2, tr:4, tw:2, th:2, kw:'switch interruptor p'},
-    {name:'? Bloque', cat:'Bloques',  bank:0x14, src:'foreground', row:0, tc:7, tr:0, tw:2, th:2, kw:'question block pregunta interrogacion'},
-    {name:'Suelo',    cat:'Fondo',    bank:0x14, src:'foreground', row:0, tc:0, tr:3, tw:2, th:1, kw:'ground suelo terreno floor'},
+    {name:'Mario',      cat:'Mario',   bank:0x32, row:8,  tc:0, tr:0, tw:2, th:3, kw:'mario jugador player'},
+    {name:'Champiñón',  cat:'Objetos', bank:0x00, row:12, tc:4, tr:2, tw:2, th:2, kw:'mushroom seta hongo powerup super'},
+    {name:'1-UP',       cat:'Objetos', bank:0x00, row:13, tc:4, tr:2, tw:2, th:2, kw:'1up vida hongo verde green'},
+    {name:'Estrella',   cat:'Objetos', bank:0x00, row:10, tc:8, tr:5, tw:2, th:2, kw:'star estrella invencible'},
+    {name:'P-Switch',   cat:'Bloques', bank:0x00, row:11, tc:2, tr:4, tw:2, th:2, kw:'switch interruptor p'},
+    {name:'? Bloque',   cat:'Bloques', bank:0x14, row:2,  tc:7, tr:0, tw:2, th:2, kw:'question block pregunta'},
+    {name:'Suelo',      cat:'Fondo',   bank:0x14, row:2,  tc:0, tr:3, tw:2, th:1, kw:'ground suelo terreno floor'},
   ];
 
-  var bankSel=document.getElementById('bank'), srcSel=document.getElementById('palsrc'),
-      rowSel=document.getElementById('palrow'), zoom=document.getElementById('zoom'), zlbl=document.getElementById('zlbl'),
-      stage=document.getElementById('stage'), cv=document.getElementById('cv'), ctx=cv.getContext('2d'),
-      selBox=document.getElementById('sel'), q=document.getElementById('q'), catlist=document.getElementById('catlist'),
-      cropcard=document.getElementById('cropcard'), cropcv=document.getElementById('cropcv'),
-      cname=document.getElementById('cname'), ccat=document.getElementById('ccat'), crmeta=document.getElementById('crmeta'),
-      countEl=document.getElementById('count');
+  var bankSel=document.getElementById('bank'), rowSel=document.getElementById('palrow'),
+      zoom=document.getElementById('zoom'), zlbl=document.getElementById('zlbl'),
+      cv=document.getElementById('cv'), ctx=cv.getContext('2d'), selBox=document.getElementById('sel'),
+      q=document.getElementById('q'), catlist=document.getElementById('catlist'), cropcard=document.getElementById('cropcard'),
+      cropcv=document.getElementById('cropcv'), cname=document.getElementById('cname'), ccat=document.getElementById('ccat'),
+      crmeta=document.getElementById('crmeta'), countEl=document.getElementById('count');
 
   D.banks.forEach(function(b,i){ var o=document.createElement('option'); o.value=i;
     o.textContent='GFX'+b.bank.toString(16).padStart(2,'0').toUpperCase()+' · '+b.name+' ('+b.bpp+'bpp)'; bankSel.appendChild(o); });
-  Object.keys(D.palettes).forEach(function(k){ var o=document.createElement('option'); o.value=k; o.textContent=k; srcSel.appendChild(o); });
+  for(var r=0;r<16;r++){ var o=document.createElement('option'); o.value=r;
+    o.textContent=r+(r<8?' · fondo':' · sprites')+(r===8?' / Mario':''); rowSel.appendChild(o); }
   CATS.forEach(function(c){ var o=document.createElement('option'); o.value=c; o.textContent=c; ccat.appendChild(o); });
 
   function b64(s){ var bin=atob(s),u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u; }
   var bankByNum={}; D.banks.forEach(function(b,i){ bankByNum[b.bank]=i; });
-  var pxCache={};
-  function bankPx(i){ if(!pxCache[i]) pxCache[i]=b64(D.banks[i].px); return pxCache[i]; }
-  function palette(src,row){ var p=D.palettes[src]||[]; var o=[]; for(var i=0;i<16;i++)o.push(p[row*16+i]||[0,0,0]); return o; }
+  var pxCache={}; function bankPx(i){ if(!pxCache[i])pxCache[i]=b64(D.banks[i].px); return pxCache[i]; }
+  function palette(row){ return D.cgram.slice(row*16,row*16+16); }
 
-  // dibuja un recorte (en tiles) de un banco a un canvas destino, a escala entera
-  function drawCrop(canvas, bankIdx, src, row, tc, tr, tw, th, maxpx){
-    var b=D.banks[bankIdx], px=bankPx(bankIdx), pal=palette(src,row);
-    var cw=tw*8, ch=th*8, s=Math.max(1, Math.floor((maxpx||64)/Math.max(cw,ch)));
+  function drawInto(canvas, bankIdx, row, tc, tr, tw, th, maxpx){
+    var b=D.banks[bankIdx], px=bankPx(bankIdx), pal=palette(row);
+    var cw=tw*8, ch=th*8, s=Math.max(1,Math.floor((maxpx||64)/Math.max(cw,ch)));
     canvas.width=cw*s; canvas.height=ch*s;
     var g=canvas.getContext('2d'), img=g.createImageData(cw*s,ch*s), d=img.data;
     for(var y=0;y<ch;y++)for(var x=0;x<cw;x++){
@@ -161,28 +150,23 @@
     g.putImageData(img,0,0); return canvas;
   }
 
-  // ---------- lienzo del banco ----------
-  var curIdx=0, sel=null; // sel = {tc,tr,tw,th}
+  var curIdx=0, sel=null;
   function renderBank(){
-    var b=D.banks[curIdx], px=bankPx(curIdx), pal=palette(srcSel.value,+rowSel.value|0), z=+zoom.value;
+    var b=D.banks[curIdx], px=bankPx(curIdx), pal=palette(+rowSel.value|0), z=+zoom.value;
     cv.width=b.w*z; cv.height=b.h*z;
     var img=ctx.createImageData(b.w*z,b.h*z), d=img.data;
     for(var y=0;y<b.h;y++)for(var x=0;x<b.w;x++){ var v=px[y*b.w+x], c=pal[v]||[255,0,255];
       for(var dy=0;dy<z;dy++)for(var dx=0;dx<z;dx++){ var p=((y*z+dy)*b.w*z+(x*z+dx))*4;
         if(v===0){d[p+3]=0;} else {d[p]=c[0];d[p+1]=c[1];d[p+2]=c[2];d[p+3]=255;} } }
     ctx.putImageData(img,0,0);
-    meta.innerHTML='GFX'+b.bank.toString(16).padStart(2,'0').toUpperCase()+' · '+b.tiles+' tiles '+b.bpp+'bpp · '+b.w+'×'+b.h+'px';
+    meta.innerHTML='GFX'+b.bank.toString(16).padStart(2,'0').toUpperCase()+' · '+b.tiles+' tiles '+b.bpp+'bpp · paleta '+rowSel.value;
     drawSel();
   }
-  function drawSel(){
-    if(!sel){ selBox.style.display='none'; return; }
-    var z=+zoom.value; selBox.style.display='block';
+  function drawSel(){ if(!sel){selBox.style.display='none';return;} var z=+zoom.value; selBox.style.display='block';
     selBox.style.left=(sel.tc*8*z)+'px'; selBox.style.top=(sel.tr*8*z)+'px';
-    selBox.style.width=(sel.tw*8*z)+'px'; selBox.style.height=(sel.th*8*z)+'px';
-  }
-  function loadBank(i){ curIdx=i; bankSel.value=i; renderBank(); }
+    selBox.style.width=(sel.tw*8*z)+'px'; selBox.style.height=(sel.th*8*z)+'px'; }
+  function loadBank(i,row){ curIdx=i; bankSel.value=i; if(row===undefined)row=(D.banks[i].defRow||0); rowSel.value=row; renderBank(); }
 
-  // selección por arrastre (alineada a tile)
   var dragging=false, anchor=null;
   function tileAt(ev){ var r=cv.getBoundingClientRect(), z=+zoom.value;
     return { c:Math.max(0,Math.floor((ev.clientX-r.left)/(8*z))), r:Math.max(0,Math.floor((ev.clientY-r.top)/(8*z))) }; }
@@ -192,69 +176,47 @@
     sel={tc:Math.min(anchor.c,t.c),tr:Math.min(anchor.r,t.r),tw:Math.abs(t.c-anchor.c)+1,th:Math.abs(t.r-anchor.r)+1}; drawSel(); });
   cv.addEventListener('pointerup',function(){ dragging=false; openCrop(); });
 
-  function openCrop(){
-    if(!sel) return;
-    drawCrop(cropcv, curIdx, srcSel.value, +rowSel.value|0, sel.tc, sel.tr, sel.tw, sel.th, 128);
+  function openCrop(){ if(!sel)return;
+    drawInto(cropcv, curIdx, +rowSel.value|0, sel.tc,sel.tr,sel.tw,sel.th, 128);
     crmeta.textContent='GFX'+D.banks[curIdx].bank.toString(16).padStart(2,'0').toUpperCase()+
-      ' · tiles ('+sel.tc+','+sel.tr+') '+sel.tw+'×'+sel.th+' · paleta '+srcSel.value+' fila '+rowSel.value;
-    cropcard.classList.add('on');
-  }
+      ' · tiles ('+sel.tc+','+sel.tr+') '+sel.tw+'×'+sel.th+' · paleta '+rowSel.value;
+    cropcard.classList.add('on'); }
   document.getElementById('cancel').onclick=function(){ cropcard.classList.remove('on'); sel=null; drawSel(); };
-  document.getElementById('save').onclick=function(){
-    if(!sel) return;
+  document.getElementById('save').onclick=function(){ if(!sel)return;
     catalog.push({name:cname.value.trim()||'Sin nombre', cat:ccat.value, bank:D.banks[curIdx].bank,
-      src:srcSel.value, row:+rowSel.value|0, tc:sel.tc,tr:sel.tr,tw:sel.tw,th:sel.th, kw:''});
-    saveCatalog(); renderCatalog(); cropcard.classList.remove('on'); cname.value='';
-  };
-  document.getElementById('export').onclick=function(){
-    if(!sel) return; var c=document.createElement('canvas');
-    drawCrop(c, curIdx, srcSel.value, +rowSel.value|0, sel.tc,sel.tr,sel.tw,sel.th, sel.tw*8*8);
-    var a=document.createElement('a'); a.download=(cname.value.trim()||'smw_asset')+'.png'; a.href=c.toDataURL('image/png'); a.click();
-  };
+      row:+rowSel.value|0, tc:sel.tc,tr:sel.tr,tw:sel.tw,th:sel.th, kw:''});
+    saveCatalog(); renderCatalog(); cropcard.classList.remove('on'); cname.value=''; };
+  document.getElementById('export').onclick=function(){ if(!sel)return; var c=document.createElement('canvas');
+    drawInto(c, curIdx, +rowSel.value|0, sel.tc,sel.tr,sel.tw,sel.th, sel.tw*8*8);
+    var a=document.createElement('a'); a.download=(cname.value.trim()||'smw_asset')+'.png'; a.href=c.toDataURL('image/png'); a.click(); };
 
-  // ---------- catálogo ----------
   var catalog=[];
-  function loadCatalog(){ try{ catalog=JSON.parse(localStorage.getItem('smwCatalog'))||null; }catch(e){ catalog=null; }
+  function loadCatalog(){ try{ catalog=JSON.parse(localStorage.getItem('smwCatalog2'))||null; }catch(e){ catalog=null; }
     if(!catalog){ catalog=SEEDS.map(function(s){return Object.assign({},s);}); saveCatalog(); } }
-  function saveCatalog(){ try{ localStorage.setItem('smwCatalog', JSON.stringify(catalog)); }catch(e){} }
+  function saveCatalog(){ try{ localStorage.setItem('smwCatalog2', JSON.stringify(catalog)); }catch(e){} }
   function renderCatalog(){
     var term=(q.value||'').toLowerCase().trim();
-    var items=catalog.filter(function(e){ if(!term)return true;
-      return (e.name+' '+e.cat+' '+(e.kw||'')).toLowerCase().indexOf(term)>=0; });
-    countEl.textContent='('+items.length+')';
-    catlist.innerHTML='';
+    var items=catalog.filter(function(e){ return !term || (e.name+' '+e.cat+' '+(e.kw||'')).toLowerCase().indexOf(term)>=0; });
+    countEl.textContent='('+items.length+')'; catlist.innerHTML='';
     if(!items.length){ var e=document.createElement('div'); e.className='empty'; e.textContent=term?'Sin resultados':'Vacío'; catlist.appendChild(e); return; }
-    items.forEach(function(entry){
-      var idx=bankByNum[entry.bank]; if(idx===undefined) return;
+    items.forEach(function(entry){ var idx=bankByNum[entry.bank]; if(idx===undefined)return;
       var row=document.createElement('div'); row.className='cat';
-      var c=document.createElement('canvas'); drawCrop(c, idx, entry.src, entry.row, entry.tc,entry.tr,entry.tw,entry.th, 40);
-      row.appendChild(c);
+      var c=document.createElement('canvas'); drawInto(c, idx, entry.row, entry.tc,entry.tr,entry.tw,entry.th, 40); row.appendChild(c);
       var txt=document.createElement('div'); txt.innerHTML='<div class="n">'+entry.name+'</div><div class="c">'+entry.cat+'</div>'; row.appendChild(txt);
       var del=document.createElement('button'); del.className='del'; del.textContent='×'; del.title='Eliminar';
-      del.onclick=function(ev){ ev.stopPropagation(); catalog.splice(catalog.indexOf(entry),1); saveCatalog(); renderCatalog(); };
-      row.appendChild(del);
-      row.onclick=function(){ srcSel.value=entry.src; fillRows(); rowSel.value=entry.row;
-        loadBank(idx); sel={tc:entry.tc,tr:entry.tr,tw:entry.tw,th:entry.th}; drawSel();
-        document.getElementById('explore').open=true;
-        cv.scrollIntoView({block:'center'}); openCrop(); cname.value=entry.name; ccat.value=entry.cat; };
-      catlist.appendChild(row);
-    });
+      del.onclick=function(ev){ ev.stopPropagation(); catalog.splice(catalog.indexOf(entry),1); saveCatalog(); renderCatalog(); }; row.appendChild(del);
+      row.onclick=function(){ loadBank(idx, entry.row); sel={tc:entry.tc,tr:entry.tr,tw:entry.tw,th:entry.th}; drawSel();
+        document.getElementById('explore').open=true; cv.scrollIntoView({block:'center'}); openCrop(); cname.value=entry.name; ccat.value=entry.cat; };
+      catlist.appendChild(row); });
   }
   q.addEventListener('input',renderCatalog);
 
-  // ---------- controles de banco ----------
-  function fillRows(){ var n=Math.ceil((D.palettes[srcSel.value]||[]).length/16); rowSel.innerHTML='';
-    for(var r=0;r<n;r++){ var o=document.createElement('option'); o.value=r; o.textContent='fila '+r; rowSel.appendChild(o); } }
   bankSel.onchange=function(){ loadBank(+bankSel.value); };
-  srcSel.onchange=function(){ fillRows(); renderBank(); };
   rowSel.onchange=renderBank;
   zoom.oninput=function(){ zlbl.textContent=zoom.value+'×'; renderBank(); };
 
-  // arranque
-  srcSel.value = D.palettes.sprites?'sprites':Object.keys(D.palettes)[0];
-  fillRows(); loadCatalog(); renderCatalog();
-  var q0=new URLSearchParams(location.search);
-  if(q0.get('q')){ q.value=q0.get('q'); renderCatalog(); }
+  loadCatalog(); renderCatalog();
+  var q0=new URLSearchParams(location.search); if(q0.get('q')){ q.value=q0.get('q'); renderCatalog(); }
   loadBank(0);
 })();
 </script>

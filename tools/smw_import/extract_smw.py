@@ -160,6 +160,60 @@ def read_palettes(rom):
 
 
 # --------------------------------------------------------------------------------------
+# CGRAM real de un nivel — replica BufferPalettesRoutines_Levels de smw/src/smw_00.c
+# Devuelve 256 colores RGB = 16 paletas x 16. Es la asignación AUTÉNTICA de SMW:
+#   paletas 0-7 = fondo/primer plano, 8-15 = sprites, y Mario en la paleta 8.
+# --------------------------------------------------------------------------------------
+_RAW = {  # (addr, n_words)
+    "sky": (0x00B0A0, 16), "background": (0x00B0B0, 96), "layer3": (0x00B170, 16),
+    "foreground": (0x00B190, 96), "objects": (0x00B250, 60), "player": (0x00B2C8, 40),
+    "sprites": (0x00B318, 84), "yoshiberry": (0x00B674, 21),
+}
+# offsets por "palette setting" de la cabecera de nivel (kBufferPalettesRoutines_DATA_00ABD3)
+_PSET = [0x0, 0x18, 0x30, 0x48, 0x60, 0x78, 0x90, 0xA8, 0x0, 0x14, 0x28, 0x3C]
+
+def build_cgram(rom, fg=0, spr=0, bg=0):
+    W = {name: rom.words(addr, n) for name, (addr, n) in _RAW.items()}
+    cg = [0] * 256
+
+    def strip(k, val):
+        for _ in range(8):
+            cg[k >> 1] = val; k += 32
+
+    def load(src, dstbyte, count, rows):
+        idx, r8 = 0, rows & 0xFFFF
+        while True:
+            v0, v1 = dstbyte, count
+            while True:
+                if idx < len(src):
+                    cg[v0 >> 1] = src[idx]
+                idx += 1; v0 += 2; v1 -= 1
+                if v1 < 0:
+                    break
+            dstbyte += 32
+            r8 = (r8 - 1) & 0xFFFF
+            if r8 & 0x8000:
+                break
+
+    strip(2, 0x7FDD)
+    strip(0x102, 0x7FFF)
+    load(W["layer3"], 16, 7, 1)
+    load(W["objects"], 132, 5, 9)
+    load(W["foreground"][_PSET[fg] >> 1:], 68, 5, 1)
+    load(W["sprites"][_PSET[spr] >> 1:], 452, 5, 1)
+    load(W["background"][_PSET[bg] >> 1:], 4, 5, 1)
+    load(W["yoshiberry"], 82, 6, 2)
+    load(W["yoshiberry"], 306, 6, 2)
+    # Mario (small): RtlUpdatePalette(GetPlayerPalette(), 0x86, 10) -> paleta 8, colores 6-15
+    for i in range(10):
+        cg[0x86 + i] = W["player"][i]
+    return [bgr555(w) for w in cg]
+
+def cgram_row(cg, row):
+    return cg[row * 16:(row + 1) * 16]
+
+
+# --------------------------------------------------------------------------------------
 # Decodificación de tiles SNES planar (2/3/4 bpp), 8x8
 # --------------------------------------------------------------------------------------
 def tile_bytes(bpp):
@@ -288,6 +342,12 @@ BANK_BPP = {0x28: 4, 0x29: 4, 0x2A: 4, 0x2B: 4, 0x2F: 2, 0x32: 4, 0x33: 4}
 def bpp_for(idx):
     return BANK_BPP.get(idx, 3)
 
+# Fila de CGRAM por defecto para cada banco (paletas reales 0-15).
+# FG/BG usan 0-7; sprites 8-15; Mario la 8.
+DEFAULT_ROW = {0x00: 9, 0x02: 9, 0x10: 8, 0x14: 2, 0x18: 1, 0x1C: 2, 0x28: 2, 0x32: 8, 0x33: 8}
+def row_for(idx):
+    return DEFAULT_ROW.get(idx, 2)
+
 def upscale(w, h, rgba, s):
     if s <= 1:
         return w, h, rgba
@@ -347,6 +407,7 @@ def main():
     gfx_dir = os.path.join(args.out, "gfx")
     os.makedirs(gfx_dir, exist_ok=True)
     pals = read_palettes(rom)
+    cg = build_cgram(rom)  # 256 colores RGB = CGRAM real de un nivel estándar
 
     if args.probe is not None:
         idx = int(args.probe, 0)
@@ -376,8 +437,9 @@ def main():
         except Exception as e:
             print("  banco %#04x: error %s" % (idx, e), file=sys.stderr); continue
         bpp = args.bpp or bpp_for(idx)
-        name, psrc, prow = KEY_BANKS.get(idx, ("gfx_%02x" % idx, "foreground", 0))
-        pal = [(0, 0, 0)] + palette_row(pals, psrc, prow)[1:]
+        name = KEY_BANKS.get(idx, ("gfx_%02x" % idx,))[0]
+        prow = row_for(idx)
+        pal = cgram_row(cg, prow)
         W, H, rgba = render_tilesheet(data, bpp, pal)
         W, H, rgba = upscale(W, H, rgba, args.scale)
         fn = "gfx_%02x_%s.png" % (idx, name)
@@ -386,7 +448,7 @@ def main():
             "bank": idx, "name": name, "file": "gfx/" + fn, "bpp": bpp,
             "tileSize": 8, "cols": 16, "rows": (H // args.scale) // 8,
             "tiles": len(data) // tile_bytes(bpp),
-            "palette": psrc, "paletteRow": prow,
+            "cgramRow": prow,
         })
         montage_sheets.append((W, H, rgba))
         print("  banco %#04x %dbpp -> gfx/%s (%dx%d)" % (idx, bpp, fn, W, H))
@@ -409,9 +471,9 @@ def main():
             W, H, ix = index_sheet(data, bpp)
             data_banks.append({"bank": idx, "name": name, "bpp": bpp,
                                "w": W, "h": H, "cols": 16, "rows": H // 8,
-                               "tiles": len(data) // tile_bytes(bpp),
+                               "tiles": len(data) // tile_bytes(bpp), "defRow": row_for(idx),
                                "px": base64.b64encode(bytes(ix)).decode("ascii")})
-        payload = {"rom_sha1": rom.sha1, "palettes": pals, "banks": data_banks}
+        payload = {"rom_sha1": rom.sha1, "cgram": cg, "palettes": pals, "banks": data_banks}
         with open(os.path.join(args.out, "smw_data.js"), "w") as f:
             f.write("window.SMW = " + json.dumps(payload) + ";\n")
         print("  datos -> smw_data.js (%d bancos)" % len(data_banks))
