@@ -284,7 +284,7 @@ KEY_BANKS = {
 
 # Profundidad de bits por banco: 3bpp por defecto; los bancos de overworld son 4bpp
 # y los de texto/Layer-3 son 2bpp (deducido de los tamaños descomprimidos).
-BANK_BPP = {0x28: 4, 0x29: 4, 0x2A: 4, 0x2B: 4, 0x2F: 2}
+BANK_BPP = {0x28: 4, 0x29: 4, 0x2A: 4, 0x2B: 4, 0x2F: 2, 0x32: 4, 0x33: 4}
 def bpp_for(idx):
     return BANK_BPP.get(idx, 3)
 
