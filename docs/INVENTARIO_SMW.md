@@ -144,8 +144,13 @@ se explican por cuál de las dos usa cada pieza:
         `Spr0A1_BowserBowlingBall`): cae (gravedad +3, tope 0x40), REBOTA con la altura real
         (`BounceYSpeed[(caída>>2)+19]`) y RUEDA hacia Mario a 1 px/f; hiere por cualquier lado.
     Con tests de HP y de ataque en `PlatformerEngineTest.kt`.
-  - 🟡 Pendientes: pulir el recorte de los 2 Koopalings lanzafuegos (0x98/0xd9, el fuego
-    naranja se funde con el cuerpo); Dino-Torch 0x6F (draw con animación de llamas).
+  - 🟡 Pendientes: Dino-Torch 0x6F (draw con animación de llamas). **Koopalings lanzafuegos
+    0x98/0xd9: DESCARTADO tras verificar por emulador** — warpear a esos niveles (L+0x24) NO
+    cae en una arena de Modo 7 con el Koopaling grande, sino en un SUBNIVEL de castillo normal
+    (Mario pequeño andando, lava, ventanas), sin Koopaling de Modo 7 que recortar. La suposición
+    previa ("el fuego naranja se funde con el cuerpo") no aplica: no hay tal recorte. El asset
+    jugable `big_29.png` sigue siendo Morton (sala 0x9a), que es limpio; el motor usa 1 id = 1
+    PNG, así que no falta nada para jugar.
 
 ## Motor 1:1 (progreso y huecos)
 
