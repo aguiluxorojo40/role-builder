@@ -170,25 +170,66 @@ fun main(args: Array<String>) {
             return
         }
         val cols = minOf(m.mapWidth, opts["cols"]?.let { parseInt(it) } ?: 96)
-        val img = ArgbImage(cols * 16, m.mapHeight * 16)
-        fun blitAt(tile: Int, dx: Int, dy: Int) {
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val hx = level.toString(16)
+
+        // Pega una tesela del atlas en (dx,dy) RESPETANDO la transparencia (así el Layer 1
+        // deja ver el Layer 2 por sus huecos, y cada capa suelta queda con fondo transparente).
+        fun blit(dst: ArgbImage, tile: Int, dx: Int, dy: Int) {
             if (tile < 0) return
             val ax = (tile % m.columns) * 16; val ay = (tile / m.columns) * 16
-            for (py in 0..15) for (px in 0..15) img.set(dx + px, dy + py, m.atlas.get(ax + px, ay + py))
+            for (py in 0..15) for (px in 0..15) {
+                val c = m.atlas.get(ax + px, ay + py)
+                if ((c ushr 24) != 0) dst.set(dx + px, dy + py, c)
+            }
         }
+        // Renderiza una CAPA entera (índices al atlas por casilla) con fondo transparente.
+        fun renderLayer(src: List<Int>): ArgbImage {
+            val img = ArgbImage(cols * 16, m.mapHeight * 16)
+            for (y in 0 until m.mapHeight) for (x in 0 until cols)
+                blit(img, src.getOrElse(y * m.mapWidth + x) { -1 }, x * 16, y * 16)
+            return img
+        }
+
+        val hasBg = m.bgTiles.any { it >= 0 }
+        // Layer 1 (primer plano) y Layer 2 (fondo) POR SEPARADO, y la escena combinada.
+        val layer1 = renderLayer(m.tiles)
+        val layer2 = if (hasBg) renderLayer(m.bgTiles) else null
+        val combined = ArgbImage(cols * 16, m.mapHeight * 16)
         for (y in 0 until m.mapHeight) for (x in 0 until cols) {
             val cell = y * m.mapWidth + x
-            blitAt(m.bgTiles.getOrElse(cell) { -1 }, x * 16, y * 16) // Layer 2 (fondo) debajo
-            blitAt(m.tiles[cell], x * 16, y * 16)                    // Layer 1 (primer plano) encima
+            blit(combined, m.bgTiles.getOrElse(cell) { -1 }, x * 16, y * 16) // fondo debajo
+            blit(combined, m.tiles[cell], x * 16, y * 16)                    // primer plano encima
         }
-        val imagesDir = File(outDir, "images").also { it.mkdirs() }
-        val png = File(imagesDir, "scene_${level.toString(16)}.png")
-        ImageIO.write(toBufferedImage(img), "png", png)
-        val hasBg = m.bgTiles.any { it >= 0 }
-        println("Escena del nivel 0x${level.toString(16).uppercase()}: mapa ${m.mapWidth}×${m.mapHeight} " +
-            "(recortado a $cols cols), atlas ${m.atlas.width}×${m.atlas.height}, " +
-            "Layer 2 ${if (hasBg) "SÍ" else "no"}, ${m.enemies.size} enemigos.")
-        println("  -> images/${png.name}")
+
+        ImageIO.write(toBufferedImage(layer1), "png", File(imagesDir, "layer1_$hx.png"))
+        layer2?.let { ImageIO.write(toBufferedImage(it), "png", File(imagesDir, "layer2_$hx.png")) }
+        ImageIO.write(toBufferedImage(combined), "png", File(imagesDir, "scene_$hx.png"))
+        ImageIO.write(toBufferedImage(m.atlas), "png", File(imagesDir, "atlas_$hx.png"))
+
+        // Datos del TILEMAP por capa: rejilla de índices al atlas (o -1 = vacío). Es la
+        // materia prima para AUTORAR mapas nuevos (celda→tesela) desde estos assets.
+        val tm = StringBuilder()
+        tm.append("# Nivel 0x${hx.uppercase()}  mapa=${m.mapWidth}x${m.mapHeight}  atlas_cols=${m.columns}\n")
+        tm.append("# Rejilla de índices al atlas (atlas_$hx.png), -1 = casilla vacía.\n")
+        fun dumpGrid(name: String, src: List<Int>) {
+            tm.append("[$name]\n")
+            for (y in 0 until m.mapHeight)
+                tm.append((0 until m.mapWidth).joinToString(",") {
+                    src.getOrElse(y * m.mapWidth + it) { -1 }.toString()
+                }).append("\n")
+        }
+        dumpGrid("layer1", m.tiles)
+        if (hasBg) dumpGrid("layer2", m.bgTiles)
+        File(outDir, "tilemap_$hx.txt").writeText(tm.toString())
+
+        println("Escena del nivel 0x${hx.uppercase()}: mapa ${m.mapWidth}×${m.mapHeight} (recortado a $cols cols).")
+        println("  Layer 1 (primer plano): images/layer1_$hx.png")
+        println("  Layer 2 (fondo):        " + if (hasBg) "images/layer2_$hx.png" else "— (el nivel no tiene fondo renderizable)")
+        println("  Escena combinada:       images/scene_$hx.png")
+        println("  Atlas de teselas:       images/atlas_$hx.png (${m.columns} cols, ${m.atlas.width}×${m.atlas.height})")
+        println("  Tilemap por capa:       tilemap_$hx.txt (rejilla de índices, para armar mapas nuevos)")
+        println("  Enemigos localizados:   ${m.enemies.size}")
         return
     }
 
