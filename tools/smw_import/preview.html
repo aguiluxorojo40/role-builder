@@ -101,16 +101,17 @@
   </div>
 </main>
 <script src="out/smw_data.js"></script>
+<script src="out/smw_sprites.js"></script>
 <script>
 (function(){
   var D=window.SMW;
+  var SP=(window.SMW_SPRITES&&window.SMW_SPRITES.sprites)||[];
   var meta=document.getElementById('bankmeta');
   if(!D||!D.cgram){ document.getElementById('sha').textContent='Falta out/smw_data.js — corre extract_smw.py --all --emit-data'; return; }
   document.getElementById('sha').textContent='ROM '+D.rom_sha1.slice(0,12)+'… · local, no se publica';
 
   var CATS=['Mario','Yoshi','Enemigos','Bloques','Objetos','Fondo','Overworld','Otro'];
   var SEEDS=[
-    {name:'Mario',      cat:'Mario',   bank:0x32, row:8,  tc:0, tr:0, tw:2, th:3, kw:'mario jugador player'},
     {name:'Champiñón',  cat:'Objetos', bank:0x00, row:12, tc:4, tr:2, tw:2, th:2, kw:'mushroom seta hongo powerup super'},
     {name:'1-UP',       cat:'Objetos', bank:0x00, row:13, tc:4, tr:2, tw:2, th:2, kw:'1up vida hongo verde green'},
     {name:'Estrella',   cat:'Objetos', bank:0x00, row:10, tc:8, tr:5, tw:2, th:2, kw:'star estrella invencible'},
@@ -147,6 +148,17 @@
       for(var dy=0;dy<s;dy++)for(var dx=0;dx<s;dx++){ var p=((y*s+dy)*cw*s+(x*s+dx))*4;
         if(v===0){d[p+3]=0;} else {d[p]=c[0];d[p+1]=c[1];d[p+2]=c[2];d[p+3]=255;} }
     }
+    g.putImageData(img,0,0); return canvas;
+  }
+
+  function drawSpriteInto(canvas, entry, maxpx){
+    var pal=palette(entry.row), px=b64(entry.px), w=entry.w, h=entry.h;
+    var s=Math.max(1,Math.floor((maxpx||64)/Math.max(w,h)));
+    canvas.width=w*s; canvas.height=h*s;
+    var g=canvas.getContext('2d'), img=g.createImageData(w*s,h*s), d=img.data;
+    for(var y=0;y<h;y++)for(var x=0;x<w;x++){ var v=px[y*w+x], c=pal[v]||[255,0,255];
+      for(var dy=0;dy<s;dy++)for(var dx=0;dx<s;dx++){ var p=((y*s+dy)*w*s+(x*s+dx))*4;
+        if(v===0){d[p+3]=0;} else {d[p]=c[0];d[p+1]=c[1];d[p+2]=c[2];d[p+3]=255;} } }
     g.putImageData(img,0,0); return canvas;
   }
 
@@ -191,21 +203,30 @@
     var a=document.createElement('a'); a.download=(cname.value.trim()||'smw_asset')+'.png'; a.href=c.toDataURL('image/png'); a.click(); };
 
   var catalog=[];
-  function loadCatalog(){ try{ catalog=JSON.parse(localStorage.getItem('smwCatalog2'))||null; }catch(e){ catalog=null; }
-    if(!catalog){ catalog=SEEDS.map(function(s){return Object.assign({},s);}); saveCatalog(); } }
-  function saveCatalog(){ try{ localStorage.setItem('smwCatalog2', JSON.stringify(catalog)); }catch(e){} }
+  function spriteSeeds(){ return SP.map(function(s){ return {name:s.name, cat:s.cat, spr:true,
+    w:s.w, h:s.h, row:s.row, px:s.px, kw:'1:1 '+s.name}; }); }
+  function loadCatalog(){ try{ catalog=JSON.parse(localStorage.getItem('smwCatalog3'))||null; }catch(e){ catalog=null; }
+    if(!catalog){ catalog=spriteSeeds().concat(SEEDS.map(function(s){return Object.assign({},s);})); saveCatalog(); } }
+  function saveCatalog(){ try{ localStorage.setItem('smwCatalog3', JSON.stringify(catalog)); }catch(e){} }
   function renderCatalog(){
     var term=(q.value||'').toLowerCase().trim();
     var items=catalog.filter(function(e){ return !term || (e.name+' '+e.cat+' '+(e.kw||'')).toLowerCase().indexOf(term)>=0; });
     countEl.textContent='('+items.length+')'; catlist.innerHTML='';
     if(!items.length){ var e=document.createElement('div'); e.className='empty'; e.textContent=term?'Sin resultados':'Vacío'; catlist.appendChild(e); return; }
-    items.forEach(function(entry){ var idx=bankByNum[entry.bank]; if(idx===undefined)return;
+    items.forEach(function(entry){
+      var idx=entry.spr?-1:bankByNum[entry.bank]; if(!entry.spr && idx===undefined)return;
       var row=document.createElement('div'); row.className='cat';
-      var c=document.createElement('canvas'); drawInto(c, idx, entry.row, entry.tc,entry.tr,entry.tw,entry.th, 40); row.appendChild(c);
-      var txt=document.createElement('div'); txt.innerHTML='<div class="n">'+entry.name+'</div><div class="c">'+entry.cat+'</div>'; row.appendChild(txt);
+      var c=document.createElement('canvas');
+      if(entry.spr) drawSpriteInto(c, entry, 40); else drawInto(c, idx, entry.row, entry.tc,entry.tr,entry.tw,entry.th, 40);
+      row.appendChild(c);
+      var tag=entry.spr?' · 1:1':'';
+      var txt=document.createElement('div'); txt.innerHTML='<div class="n">'+entry.name+'</div><div class="c">'+entry.cat+tag+'</div>'; row.appendChild(txt);
       var del=document.createElement('button'); del.className='del'; del.textContent='×'; del.title='Eliminar';
       del.onclick=function(ev){ ev.stopPropagation(); catalog.splice(catalog.indexOf(entry),1); saveCatalog(); renderCatalog(); }; row.appendChild(del);
-      row.onclick=function(){ loadBank(idx, entry.row); sel={tc:entry.tc,tr:entry.tr,tw:entry.tw,th:entry.th}; drawSel();
+      row.onclick=function(){
+        if(entry.spr){ drawSpriteInto(cropcv, entry, 128); crmeta.textContent='Sprite 1:1 · '+entry.w+'×'+entry.h+' · paleta CGRAM '+entry.row;
+          cname.value=entry.name; ccat.value=entry.cat; cropcard.classList.add('on'); sel=null; return; }
+        loadBank(idx, entry.row); sel={tc:entry.tc,tr:entry.tr,tw:entry.tw,th:entry.th}; drawSel();
         document.getElementById('explore').open=true; cv.scrollIntoView({block:'center'}); openCrop(); cname.value=entry.name; ccat.value=entry.cat; };
       catlist.appendChild(row); });
   }
