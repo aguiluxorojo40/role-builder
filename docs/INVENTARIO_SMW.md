@@ -134,7 +134,9 @@ se explican por cuál de las dos usa cada pieza:
       sub-sprites vía `pendingSpawns`/`enemies` mutable):
       · **Mechakoopa (0xA2)** — `EnemyBehavior.MECHAKOOPA` (puerto de `Spr0A2_MechaKoopa`): cae
         en arco y luego ANDA a 0.5 px/f re-encarando a Mario cada 0x40 frames, rebota en
-        paredes, se cae por los bordes y se puede pisar.
+        paredes y se cae por los bordes. Al PISARLO se VOLTEA (aturdido, no muere); volteado se
+        puede COGER corriendo por encima (como un throw-block) y LANZAR para arrollar a otros
+        enemigos, igual que en SMW; si no lo coges a tiempo se endereza (`MECHA_STUN` frames).
       · **Bola de bolos (0xA1)** — `EnemyBehavior.BOWLING_BALL` (puerto de
         `Spr0A1_BowserBowlingBall`): cae (gravedad +3, tope 0x40), REBOTA con la altura real
         (`BounceYSpeed[(caída>>2)+19]`) y RUEDA hacia Mario a 1 px/f; hiere por cualquier lado.

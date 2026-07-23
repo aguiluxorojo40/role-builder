@@ -253,6 +253,57 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `Mechakoopa - pisarlo lo VOLTEA (aturde) en vez de matarlo`() {
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5,
+            seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0xA2))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        val m = e.enemies.single()
+        e.run(60)
+        assertTrue(m.alive, "el Mechakoopa NO muere al pisarlo (se voltea, como en SMW)")
+        assertTrue(m.stunned, "queda VOLTEADO (aturdido)")
+        assertFalse(e.player.dead, "pisarlo no hiere a Mario")
+    }
+
+    @Test
+    fun `Mechakoopa - volteado se coge y lanzado arrolla a otro enemigo`() {
+        val e = engineEnemies(20, 10, startCol = 2, startRow = 6,
+            seeds = listOf(
+                EnemySeed(44, 8 * 16 - 14, 0xA2),          // Mechakoopa pegado al frente de Mario
+                EnemySeed(12 * 16, 8 * 16 - 14, 0x00))) { g ->  // objetivo lejos a la derecha
+            for (c in 0 until 20) g[8][c] = SmwSolidity.SOLID
+        }
+        val mech = e.enemies.first { it.behavior == EnemyBehavior.MECHAKOOPA }
+        val target = e.enemies.first { it.behavior == EnemyBehavior.WALKER }
+        mech.stunned = true; mech.stunTimer = PlatformerEngine.MECHA_STUN  // ya volteado
+        e.run(20)                          // ambos se posan; el Mechakoopa cae quieto
+        e.moveX = 1f; e.tick()             // Mario mira a la derecha
+        e.running = true; e.tick()         // flanco de correr -> lo coge
+        assertTrue(e.carriedEnemy != null, "Mario coge el Mechakoopa volteado")
+        assertTrue(mech.carried, "el Mechakoopa queda cargado")
+        e.moveX = 0f
+        e.running = false; e.tick()        // suelta el botón
+        e.running = true; e.tick()         // vuelve a pulsar -> lo lanza
+        assertTrue(mech.thrown, "el Mechakoopa sale lanzado")
+        assertTrue(mech.vx > 0f, "vuela hacia la derecha (adonde mira Mario)")
+        e.run(120)                         // vuela hasta el enemigo
+        assertFalse(target.alive, "el Mechakoopa lanzado arrolla al enemigo")
+    }
+
+    @Test
+    fun `Mechakoopa - volteado se endereza al agotar el temporizador`() {
+        val e = engineEnemies(12, 10, startCol = 2, startRow = 6,
+            seeds = listOf(EnemySeed(8 * 16, 8 * 16 - 14, 0xA2))) { g ->  // lejos de Mario
+            for (c in 0 until 12) g[8][c] = SmwSolidity.SOLID
+        }
+        val m = e.enemies.single()
+        m.stunned = true; m.stunTimer = 30
+        e.run(50)
+        assertTrue(m.alive, "sigue vivo")
+        assertFalse(m.stunned, "se endereza (despierta) al agotar el temporizador de volteo")
+    }
+
+    @Test
     fun `jefe - Reznor escupe fuego RECTO apuntando a Mario`() {
         // Reznor (0xA9) a la derecha de Mario -> la bola de fuego sale hacia la IZQUIERDA y recta.
         val e = engineGrab(18, 10, startCol = 2, startRow = 6, grabCol = 16, grabRow = 6, floorRow = 7,

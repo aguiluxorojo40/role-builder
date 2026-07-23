@@ -198,6 +198,14 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var attackTimer = PlatformerEngine.BOSS_ATTACK_INTERVAL
     /** Contador de fotogramas del Mechakoopa: cada 0x40 re-encara a Mario (`spr_table00c2`). */
     var faceTimer = 0
+    /** Mechakoopa VOLTEADO tras un pisotón: quieto e inofensivo, se puede COGER; despierta al
+     *  agotar [stunTimer] (como en SMW, que parpadea antes de levantarse). */
+    var stunned = false
+    var stunTimer = 0
+    /** Mechakoopa que Mario LLEVA en brazos ahora mismo. */
+    var carried = false
+    /** Mechakoopa LANZADO: vuela recto y ARROLLA a lo que toca (incl. jefes). */
+    var thrown = false
     /** Nº de ataques lanzados por el jefe (Bowser alterna Mechakoopa / bola de bolos). */
     var attackCount = 0
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
@@ -386,6 +394,10 @@ class PlatformerEngine(
 
     /** Bloque que Mario lleva ahora mismo, o null. */
     var carriedBlock: GrabBlock? = null
+        private set
+
+    /** Mechakoopa VOLTEADO que Mario lleva ahora mismo, o null (se coge/lanza como un bloque). */
+    var carriedEnemy: PlatformerEnemy? = null
         private set
 
     /** Bolas de fuego de ENEMIGOS en vuelo (Planta Piraña de fuego). */
@@ -582,6 +594,20 @@ class PlatformerEngine(
             carriedBlock = null
             return true
         }
+        // Llevando un Mechakoopa volteado: lo LANZA (o lo deja, volteado, si se pulsa abajo).
+        val mech = carriedEnemy
+        if (mech != null) {
+            mech.carried = false
+            if (inputDown) {
+                mech.vx = 0f   // lo deja en el suelo, aún volteado
+            } else {
+                mech.thrown = true
+                mech.vx = if (player.facingRight) GRAB_THROW_SPEED else -GRAB_THROW_SPEED
+                grabThrowEvents++
+            }
+            carriedEnemy = null
+            return true
+        }
         // Coger un bloque quieto al alcance (solapando el frente de Mario).
         val reach = if (player.facingRight) player.x + tuning.playerWidth + GRAB_REACH
         else player.x - GRAB_REACH
@@ -592,6 +618,18 @@ class PlatformerEngine(
             if (overlapY && nearX) {
                 b.carried = true
                 carriedBlock = b
+                grabEvents++
+                return true
+            }
+        }
+        // Coger un Mechakoopa VOLTEADO al alcance (como un bloque).
+        for (e in enemies) {
+            if (e.behavior != EnemyBehavior.MECHAKOOPA || !e.alive || !e.stunned || e.carried || e.thrown) continue
+            val overlapY = player.y < e.y + e.height && player.y + playerHeight > e.y
+            val nearX = reach >= e.x && reach <= e.x + e.width
+            if (overlapY && nearX) {
+                e.carried = true
+                carriedEnemy = e
                 grabEvents++
                 return true
             }
@@ -1162,8 +1200,38 @@ class PlatformerEngine(
      * Se puede pisar (muere). Lo genera el ataque de Bowser ([bossShoot]).
      */
     private fun updateMechakoopa(e: PlatformerEnemy) {
+        // LLEVADO: pegado delante de Mario a la altura de sus manos (como [carriedBlock]).
+        if (e.carried) {
+            e.x = if (player.facingRight) player.x + tuning.playerWidth - 2f else player.x - e.width + 2f
+            e.y = player.y + playerHeight - e.height - 1f
+            return
+        }
+        // LANZADO: vuela recto y ARROLLA a lo que toque; se rompe contra pared o al salir.
+        if (e.thrown) {
+            val nx = e.x + e.vx
+            val minRow = (e.y / tileSize).toInt()
+            val maxRow = ((e.y + e.height - 0.01f) / tileSize).toInt()
+            val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+            if ((minRow..maxRow).any { r -> wallsAt(frontCol, r) }) { e.alive = false; return }
+            e.x = nx
+            if (e.x < -16f || e.x > (cols + 1) * tileSize) { e.alive = false; return }
+            for (o in enemies) {
+                if (o === e || !o.alive || o.behavior == EnemyBehavior.MECHAKOOPA && (o.carried || o.thrown)) continue
+                if (e.x < o.x + o.width && e.x + e.width > o.x && e.y < o.y + o.height && e.y + e.height > o.y) {
+                    damageEnemy(o); stompEvents++; e.alive = false; break
+                }
+            }
+            return
+        }
         e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
         moveEnemyVertical(e)
+        // VOLTEADO (aturdido): quieto; despierta al agotar el temporizador.
+        if (e.stunned) {
+            e.vx = 0f
+            if (--e.stunTimer <= 0) e.stunned = false
+            if (e.y > (rows + 3) * tileSize) e.alive = false
+            return
+        }
         if (e.onGround) {
             if (e.faceTimer % 0x40 == 0) {  // re-encara a Mario (spr_table157c = pos. relativa X)
                 val toLeft = (player.x + tuning.playerWidth / 2f) < (e.x + e.width / 2f)
@@ -1640,6 +1708,18 @@ class PlatformerEngine(
                 }
                 // Bola de bolos de Bowser: no se puede pisar, hiere por cualquier lado.
                 e.behavior == EnemyBehavior.BOWLING_BALL -> { hurtPlayer(); return }
+                // Mechakoopa: pisarlo lo VOLTEA (aturdido, no muere); volteado es inofensivo y
+                // se puede COGER corriendo por encima (ver [handleGrabThrow]). Pisar uno ya
+                // volteado solo rebota. De lado, uno de pie hiere a Mario. (Como en SMW.)
+                e.behavior == EnemyBehavior.MECHAKOOPA -> {
+                    if (e.stunned) {
+                        if (stompFromAbove) bounceMario()
+                        // volteado y tocado de lado: inofensivo (se recoge con el botón de correr).
+                    } else if (stompFromAbove) {
+                        e.stunned = true; e.stunTimer = MECHA_STUN; e.vx = 0f
+                        bounceMario(); stompEvents++
+                    } else { hurtPlayer(); return }
+                }
                 // Jefe: pisarlo le quita un punto de vida (rebota a Mario, con invulnerabilidad
                 // entre golpes); tocarlo de lado hiere a Mario. Muere al agotar el HP.
                 e.isBoss -> {
@@ -1647,9 +1727,9 @@ class PlatformerEngine(
                         damageEnemy(e); bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Resto: andadores y Mechakoopas se pisan; Plantas Piraña muerden por cualquier lado.
+                // Resto: los andadores se pisan; las Plantas Piraña muerden por cualquier lado.
                 else -> {
-                    val stompable = e.behavior == EnemyBehavior.WALKER || e.behavior == EnemyBehavior.MECHAKOOPA
+                    val stompable = e.behavior == EnemyBehavior.WALKER
                     val stomp = stompable && stompFromAbove
                     if (stomp) {
                         e.alive = false; e.squashTimer = 12; bounceMario(); stompEvents++
@@ -1962,6 +2042,9 @@ class PlatformerEngine(
         const val BIG_BOO_SPEED = 0.8f
         /** Mechakoopa: anda a 0x8 = 0.5 px/f (`kSpr0A2_MechaKoopa_XSpeed` = ±8 unidades SMW). */
         const val MECHA_WALK = 0.5f
+        /** Fotogramas que el Mechakoopa queda VOLTEADO (aturdido) tras pisarlo, tiempo para
+         *  cogerlo antes de que se enderece (`sprite_misc_1594` cuenta atrás en `Spr0A2`). */
+        const val MECHA_STUN = 0x100
         /** Impulso con que Bowser SUELTA el Mechakoopa hacia Mario (px/f): sale en arco. */
         const val MECHA_TOSS_VX = 1.2f
         const val MECHA_TOSS_VY = -3f
