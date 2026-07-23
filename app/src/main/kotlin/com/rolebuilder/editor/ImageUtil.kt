@@ -19,3 +19,17 @@ fun loadAssetImageBitmap(context: Context, assetPath: String): ImageBitmap? =
     runCatching {
         context.assets.open(assetPath).use { BitmapFactory.decodeStream(it)?.asImageBitmap() }
     }.getOrNull()
+
+/**
+ * Carga los sprites GRANDES empaquetados (assets/sprites/big/big_<id>.png): id de sprite
+ * (hex del nombre) → ImageBitmap. Son los jefes y enemigos "grandes" (Bowser, Reznor, Big
+ * Boo, Dino-Torch…) que no caben en el atlas cuadrado `enemies.png`. El mismo conjunto que
+ * el motor dibuja al jugar (ver `PlatformerActivity.loadBigSprites`). Vacío si no hay carpeta.
+ */
+fun loadBigSprites(context: Context): Map<Int, ImageBitmap> = runCatching {
+    (context.assets.list("sprites/big") ?: emptyArray()).mapNotNull { name ->
+        val id = Regex("big_([0-9a-fA-F]+)\\.png").matchEntire(name)?.groupValues?.get(1)
+            ?.toInt(16) ?: return@mapNotNull null
+        loadAssetImageBitmap(context, "sprites/big/$name")?.let { id to it }
+    }.toMap()
+}.getOrDefault(emptyMap())

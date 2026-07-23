@@ -89,10 +89,12 @@ import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwSolidity
+import com.rolebuilder.core.snes.SmwSpriteNames
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.loadAssetImageBitmap
+import com.rolebuilder.editor.loadBigSprites
 import com.rolebuilder.editor.loadImageBitmap
 import com.rolebuilder.editor.snes.AUTO_MAX_LEVELS
 import com.rolebuilder.editor.snes.SnesImport
@@ -365,6 +367,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     }
     // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds).
     val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
+    // Sprites GRANDES (jefes y enemigos mayores) por id: los que no caben en el atlas
+    // cuadrado y se dibujan desde big_<id>.png, para poder COLOCARLOS también en el editor.
+    val bigSprites = remember { loadBigSprites(context) }
     // Hoja de la moneda real de SMW (para el icono del sector Moneda en la rueda).
     val coinAtlas = remember { loadAssetImageBitmap(context, "sprites/coin.png") }
     // Reloj de animación del editor: teselas animadas (monedas, ? bloques…) y las
@@ -665,6 +670,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         tileset = tileset,
                         tilesetBitmap = tilesetBitmap,
                         enemyAtlas = enemyAtlas,
+                        bigSprites = bigSprites,
                         pan = pan,
                         scale = scale,
                         showSolidity = tool == PTool.COLLISION,
@@ -765,7 +771,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         favs.forEach { f ->
-                            FavSlot(f, tileset, tilesetBitmap, enemyAtlas, favEdit) {
+                            FavSlot(f, tileset, tilesetBitmap, enemyAtlas, bigSprites, favEdit) {
                                 if (favEdit) {
                                     favs.remove(f)
                                     persistUi()
@@ -812,11 +818,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 PTool.SELECT -> SelectionPanel(
                     selected = selected,
                     enemyAtlas = enemyAtlas,
+                    bigSprites = bigSprites,
                     onDelete = { selected?.let { deleteSelected(state, state.currentMap ?: map, it); selected = null } },
                     onChangeEnemy = { id -> selected?.let { setSelectedEnemyType(state, state.currentMap ?: map, it, id) } },
                     onToggleItem = { selected?.let { toggleSelectedItem(state, state.currentMap ?: map, it) } },
                 )
-                PTool.ENEMY -> EnemyPalette(enemyAtlas, selectedEnemyId) { selectedEnemyId = it }
+                PTool.ENEMY -> EnemyPalette(enemyAtlas, bigSprites, selectedEnemyId) { selectedEnemyId = it }
                 PTool.COIN -> Hint("Toca para poner o quitar monedas. Se recogen al jugar y suman al contador.")
                 PTool.GOAL -> Hint("Toca para poner la meta (bandera). Al tocarla, el nivel se completa.")
                 PTool.START -> Hint("Toca el nivel para fijar dónde aparece el jugador.")
@@ -936,6 +943,7 @@ private fun Hint(text: String) {
 private fun SelectionPanel(
     selected: Selected?,
     enemyAtlas: ImageBitmap?,
+    bigSprites: Map<Int, ImageBitmap>,
     onDelete: () -> Unit,
     onChangeEnemy: (Int) -> Unit,
     onToggleItem: () -> Unit,
@@ -974,7 +982,7 @@ private fun SelectionPanel(
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(start = 8.dp),
             )
-            EnemyPalette(enemyAtlas, -1) { onChangeEnemy(it) }
+            EnemyPalette(enemyAtlas, bigSprites, -1) { onChangeEnemy(it) }
         }
     }
 }
@@ -1050,17 +1058,59 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
     }
 }
 
+/** Nombre legible de un enemigo para el selector: el del catálogo de gráficos curado y, si no
+ *  está (jefes/sprites grandes), el nombre de sprite genérico de SMW. */
+/** Nombres en español de los enemigos GRANDES (jefes y mayores), para no mezclar el
+ *  catálogo en español con los nombres técnicos en inglés en el selector. */
+private val BIG_ENEMY_NAMES_ES: Map<Int, String> = mapOf(
+    0xA0 to "Bowser", 0xA1 to "Bola de bolos", 0xA2 to "Mechakoopa", 0xA9 to "Reznor",
+    0xC5 to "Big Boo", 0xA8 to "Blargg", 0x86 to "Wiggler", 0xBE to "Swooper",
+    0x6E to "Dino-Rhino", 0x6F to "Dino-Torch", 0xAA to "Fishbone", 0xAB to "Rex",
+    0xC2 to "Blurp", 0xC3 to "Pez globo", 0x71 to "Super Koopa (capa)", 0x73 to "Super Koopa",
+    0x1F to "Magikoopa", 0x26 to "Thwomp", 0x70 to "Pokey", 0x91 to "Chargin' Chuck",
+    0x9F to "Banzai Bill", 0xBF to "Topo gigante",
+)
+
+private fun enemyDisplayName(id: Int): String =
+    SmwEnemyGraphics.nameOf(id) ?: BIG_ENEMY_NAMES_ES[id] ?: SmwSpriteNames.nameOf(id)
+
+/** Ids COLOCABLES: el atlas curado (animado) + los que solo existen como sprite GRANDE
+ *  (jefes y enemigos mayores: Bowser, Reznor, Big Boo, Dino-Torch…), sin duplicar. */
+private fun placeableEnemyIds(bigSprites: Map<Int, ImageBitmap>): List<Int> {
+    val curated = SmwEnemyGraphics.curatedIds
+    return curated + bigSprites.keys.filter { it !in curated }.sorted()
+}
+
+/** Dibuja un sprite GRANDE encajado en la celda actual, conservando proporción y anclado
+ *  abajo-centro (como en la vista de juego). */
+private fun DrawScope.drawBigSpriteFit(img: ImageBitmap) {
+    val scale = minOf(size.width / img.width, size.height / img.height)
+    val w = (img.width * scale).coerceAtLeast(1f)
+    val h = (img.height * scale).coerceAtLeast(1f)
+    drawImage(
+        image = img,
+        srcOffset = IntOffset.Zero,
+        srcSize = IntSize(img.width, img.height),
+        dstOffset = IntOffset(((size.width - w) / 2f).toInt(), (size.height - h).toInt()),
+        dstSize = IntSize(w.toInt(), h.toInt()),
+    )
+}
+
 @Composable
-private fun EnemyPalette(atlas: ImageBitmap?, selected: Int, onSelect: (Int) -> Unit) {
-    val ids = SmwEnemyGraphics.curatedIds
-    val frameW = atlas?.let { it.width / ids.size.coerceAtLeast(1) } ?: 0
+private fun EnemyPalette(
+    atlas: ImageBitmap?, bigSprites: Map<Int, ImageBitmap>, selected: Int, onSelect: (Int) -> Unit,
+) {
+    val curated = SmwEnemyGraphics.curatedIds
+    val ids = remember(bigSprites) { placeableEnemyIds(bigSprites) }
+    val frameW = atlas?.let { it.width / curated.size.coerceAtLeast(1) } ?: 0
     LazyRow(
         modifier = Modifier.fillMaxWidth().height(104.dp).background(Panel),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         items(ids) { id ->
-            val index = ids.indexOf(id)
+            val index = curated.indexOf(id)
+            val big = bigSprites[id]
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Canvas(
                     modifier = Modifier.size(52.dp)
@@ -1071,9 +1121,8 @@ private fun EnemyPalette(atlas: ImageBitmap?, selected: Int, onSelect: (Int) -> 
                         )
                         .clickable { onSelect(id) },
                 ) {
-                    if (atlas != null && frameW > 0) {
-                        // Celda cuadrada (ATLAS_CELL): el sprite va anclado abajo y centrado;
-                        // se muestra el fotograma 0 (reposo). Respeta la proporción 1:1.
+                    if (index >= 0 && atlas != null && frameW > 0) {
+                        // Del atlas: celda cuadrada (ATLAS_CELL), fotograma 0 (reposo), 1:1.
                         val cell = SmwEnemyGraphics.ATLAS_CELL
                         val dstH = size.height
                         val dstW = dstH * frameW / cell
@@ -1084,14 +1133,17 @@ private fun EnemyPalette(atlas: ImageBitmap?, selected: Int, onSelect: (Int) -> 
                             dstOffset = IntOffset(((size.width - dstW) / 2f).toInt(), 0),
                             dstSize = IntSize(dstW.toInt(), dstH.toInt()),
                         )
+                    } else if (big != null) {
+                        drawBigSpriteFit(big)   // jefe / enemigo grande (big_<id>.png)
                     } else {
                         drawRect(Color(0xFFB0303C), size = size)
                     }
                 }
                 Text(
-                    SmwEnemyGraphics.nameOf(id) ?: "#$id",
+                    enemyDisplayName(id),
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
                 )
             }
         }
@@ -1279,6 +1331,7 @@ private fun DrawScope.drawLevel(
     tileset: Tileset?,
     tilesetBitmap: ImageBitmap?,
     enemyAtlas: ImageBitmap?,
+    bigSprites: Map<Int, ImageBitmap>,
     pan: Offset,
     scale: Float,
     showSolidity: Boolean,
@@ -1384,11 +1437,29 @@ private fun DrawScope.drawLevel(
                 dstSize = IntSize((tilePx * 2f).toInt(), (tilePx * 2f).toInt()),
             )
         } else {
-            drawRect(
-                Color(0xCCB0303C),
-                topLeft = Offset(pan.x + e.x * tilePx, pan.y + e.y * tilePx),
-                size = Size(tilePx, tilePx),
-            )
+            val big = bigSprites[e.spriteId]
+            if (big != null) {
+                // Jefe / enemigo grande (big_<id>.png): a ESCALA NATIVA (bmp.w/16 casillas),
+                // centrado en X y anclado por los pies en e.y, igual que al jugar.
+                val wCells = big.width / 16f
+                val hCells = big.height / 16f
+                drawImage(
+                    image = big,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(big.width, big.height),
+                    dstOffset = IntOffset(
+                        (pan.x + (e.x + 0.5f - wCells / 2f) * tilePx).toInt(),
+                        (pan.y + (e.y + 1f - hCells) * tilePx).toInt(),
+                    ),
+                    dstSize = IntSize((wCells * tilePx).toInt(), (hCells * tilePx).toInt()),
+                )
+            } else {
+                drawRect(
+                    Color(0xCCB0303C),
+                    topLeft = Offset(pan.x + e.x * tilePx, pan.y + e.y * tilePx),
+                    size = Size(tilePx, tilePx),
+                )
+            }
         }
     }
 
@@ -1704,6 +1775,7 @@ private fun FavSlot(
     tileset: Tileset?,
     tilesetBitmap: ImageBitmap?,
     enemyAtlas: ImageBitmap?,
+    bigSprites: Map<Int, ImageBitmap>,
     editing: Boolean,
     onClick: () -> Unit,
 ) {
@@ -1735,6 +1807,7 @@ private fun FavSlot(
             PTool.ENEMY -> {
                 val ids = SmwEnemyGraphics.curatedIds
                 val idx = ids.indexOf(fav.enemyId)
+                val big = bigSprites[fav.enemyId]
                 if (enemyAtlas != null && idx >= 0) {
                     val fw = enemyAtlas.width / ids.size.coerceAtLeast(1)
                     Canvas(Modifier.size(44.dp)) {
@@ -1747,6 +1820,8 @@ private fun FavSlot(
                             dstSize = IntSize(size.width.toInt(), size.height.toInt()),
                         )
                     }
+                } else if (big != null) {
+                    Canvas(Modifier.size(44.dp)) { drawBigSpriteFit(big) }
                 } else {
                     FavLabel("Enem.")
                 }
