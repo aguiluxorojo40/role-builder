@@ -325,6 +325,21 @@ object SmwEnemyGraphics {
             ),
             palRow = (8 + 7) * 16,
         ),
+        // Dino-Torch (0x6F): el dino-fuego que ESCUPE llama (Spr06F_DinoTorch_Draw rama
+        // spr_spriteid==111, $03). Cabeza 16×16 = kSpr06F_DinoTorch_DinoTorchTiles[r4] (frame
+        // r4=1 → 0xaa) en (0,0), Prop[4]=0xf → paleta 7. La LLAMA horizontal son 4 teselas
+        // kSpr06F_DinoTorch_DinoFlameTiles[0..3]={0x80,0x82,0x84,0x86} a XDisp
+        // {0xd8,0xe0,0xec,0xf8}={−40,−32,−20,−8} (YDisp 0), con Prop 0x9/0x5/0x5/0x5 →
+        // paletas 4/2/2/2 (fila 8+p). r2!=0 (sin flip): la llama sale a la IZQUIERDA.
+        0x6F to CustomEnemy(
+            listOf(
+                OamTile(0xaa, 0, 0, palRow = (8 + 7) * 16),      // cabeza (frame r4=1)
+                OamTile(0x86, -8, 0, palRow = (8 + 2) * 16),     // llama (cerca de la boca)
+                OamTile(0x84, -20, 0, palRow = (8 + 2) * 16),
+                OamTile(0x82, -32, 0, palRow = (8 + 2) * 16),
+                OamTile(0x80, -40, 0, palRow = (8 + 4) * 16),    // punta de la llama
+            ),
+        ),
         // Blargg (0xA8): cabeza de dragón de lava, 5 teselas 16×16 (Spr0A8_Blargg_Draw rama
         // v2==4, $03: kSpr0A8_Blargg_Tiles/XDisp/YDisp). Frame 0 (r3=0), dir sin flip (r2=1):
         // teselas 0xa2/0xa4 (arriba), 0xc2/0xc4/0xa6 (abajo). Prop 0x05 → paleta 2, página 1.

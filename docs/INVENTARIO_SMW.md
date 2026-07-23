@@ -144,7 +144,13 @@ se explican por cuál de las dos usa cada pieza:
         `Spr0A1_BowserBowlingBall`): cae (gravedad +3, tope 0x40), REBOTA con la altura real
         (`BounceYSpeed[(caída>>2)+19]`) y RUEDA hacia Mario a 1 px/f; hiere por cualquier lado.
     Con tests de HP y de ataque en `PlatformerEngineTest.kt`.
-  - 🟡 Pendientes: Dino-Torch 0x6F (draw con animación de llamas). **Koopalings lanzafuegos
+  - ✅ **Dino-Torch (0x6F)**: el dino que ESCUPE fuego (`Spr06F_DinoTorch_Draw` rama
+    `spr_spriteid==111`, $03) — cabeza 16×16 (`kSpr06F_DinoTorch_DinoTorchTiles`, frame 1) +
+    LLAMA horizontal de 4 teselas (`DinoFlameTiles` {0x80,0x82,0x84,0x86}, XDisp
+    {−40,−32,−20,−8}) con sus paletas reales de fuego (Prop 0x9/0x5 → 4/2). Horneado y
+    verificado por render del ROM (`--custom-enemy --id 0x6F`, nivel 0x105, misma paleta que el
+    Dino-Rhino 0x6E) → `big_6f.png` auto-cargado.
+  - 🟡 Pendientes: **Koopalings lanzafuegos
     0x98/0xd9: DESCARTADO tras verificar por emulador** — warpear a esos niveles (L+0x24) NO
     cae en una arena de Modo 7 con el Koopaling grande, sino en un SUBNIVEL de castillo normal
     (Mario pequeño andando, lava, ventanas), sin Koopaling de Modo 7 que recortar. La suposición
