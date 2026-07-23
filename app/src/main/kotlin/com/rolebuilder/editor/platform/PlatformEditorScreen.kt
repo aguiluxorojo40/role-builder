@@ -87,6 +87,7 @@ import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
+import com.rolebuilder.core.model.MapStamp
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.core.snes.SmwSpriteNames
@@ -137,6 +138,7 @@ private enum class PTool(val label: String, val short: String = label) {
     START("Inicio", "Inicio"),
     COLLISION("Colisión", "Colis."),
     WARP("Warp", "Warp"),
+    STAMP("Sello", "Sello"),
 }
 
 /** Acciones REALES del editor que puede hospedar el raíl configurable (abajo-izq). */
@@ -412,6 +414,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var scale by remember { mutableFloatStateOf(28f) }
     var pan by remember(map?.id) { mutableStateOf(Offset(16f, 16f)) }
     var hover by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
+    // Herramienta SELLO: nombre del sello "en mano" (null = modo DEFINIR región) y la primera
+    // esquina marcada al definir (dos toques: esquina 1 → esquina 2 = guardar).
+    var selectedStampName by remember { mutableStateOf<String?>(null) }
+    var stampAnchor by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
     var showLevelSettings by remember { mutableStateOf(false) }
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
@@ -547,7 +553,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pointerInput(map.id, tool, selectedTile, selectedEnemyId) {
+                        .pointerInput(map.id, tool, selectedTile, selectedEnemyId, selectedStampName) {
                             awaitEachGesture {
                                 val down = awaitFirstDown()
                                 var transform = false
@@ -635,6 +641,32 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                 pendingWarp = tx to ty
                                             }
                                         }
+                                        PTool.STAMP -> {
+                                            val held = state.project.stamps.firstOrNull { it.name == selectedStampName }
+                                            if (held != null) {
+                                                // Sello EN MANO: un toque lo PEGA con su esquina aquí.
+                                                state.updateMap(held.pasteInto(cur, tx, ty))
+                                            } else {
+                                                // Modo DEFINIR: 1er toque marca esquina, 2º guarda la región.
+                                                val a = stampAnchor
+                                                if (a == null) {
+                                                    stampAnchor = tx to ty
+                                                } else {
+                                                    val x0 = minOf(a.first, tx); val y0 = minOf(a.second, ty)
+                                                    val w = kotlin.math.abs(tx - a.first) + 1
+                                                    val h = kotlin.math.abs(ty - a.second) + 1
+                                                    val s = com.rolebuilder.core.model.MapStamp.fromRegion(
+                                                        cur, x0, y0, w, h, "Sello ${state.project.stamps.size + 1}",
+                                                    )
+                                                    stampAnchor = null
+                                                    if (s != null) {
+                                                        state.addStamp(s)
+                                                        selectedStampName = s.name // queda en mano para pegar
+                                                        Toast.makeText(context, "Sello guardado: ${s.name} (${s.width}×${s.height})", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
 
@@ -679,6 +711,11 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         animByBase = animByBase,
                         animFrame = animFrame,
                         coinAtlas = coinAtlas,
+                        stampRect = if (tool == PTool.STAMP && stampAnchor != null) {
+                            val a = stampAnchor!!; val hv = hover
+                            if (hv != null) intArrayOf(minOf(a.first, hv.first), minOf(a.second, hv.second), maxOf(a.first, hv.first), maxOf(a.second, hv.second))
+                            else intArrayOf(a.first, a.second, a.first, a.second)
+                        } else null,
                     )
                 }
 
@@ -853,6 +890,17 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     },
                     currentShape = tileset?.platformSlopeShape?.getOrNull(selectedTile)
                         ?: com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
+                )
+                PTool.STAMP -> StampPanel(
+                    stamps = state.project.stamps,
+                    selected = selectedStampName,
+                    defining = stampAnchor != null,
+                    onDefine = { selectedStampName = null; stampAnchor = null },
+                    onSelect = { selectedStampName = it; stampAnchor = null },
+                    onDelete = { name ->
+                        state.deleteStamp(name)
+                        if (selectedStampName == name) selectedStampName = null
+                    },
                 )
                 else -> {
                     if (tileset != null && tilesetBitmap != null) {
@@ -1150,6 +1198,62 @@ private fun EnemyPalette(
     }
 }
 
+/**
+ * Panel de la herramienta SELLO (prefabs). Un chip "Definir" (modo marcar región con dos
+ * toques) y un chip por sello guardado (nombre · tamaño); al elegir uno queda "en mano" para
+ * pegarlo tocando el nivel. La línea de ayuda dice siempre qué toca hacer ahora.
+ */
+@Composable
+private fun StampPanel(
+    stamps: List<MapStamp>,
+    selected: String?,
+    defining: Boolean,
+    onDefine: () -> Unit,
+    onSelect: (String) -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().background(Panel).padding(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FilterChip(
+                selected = selected == null,
+                onClick = onDefine,
+                label = { Text(if (defining && selected == null) "Marca la 2ª esquina…" else "➕ Definir") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                ),
+            )
+            stamps.forEach { s ->
+                FilterChip(
+                    selected = selected == s.name,
+                    onClick = { onSelect(s.name) },
+                    label = { Text("${s.name} · ${s.width}×${s.height}") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                    ),
+                )
+            }
+        }
+        val hint = when {
+            selected != null -> "Sello \"$selected\" en mano: toca el nivel para PEGARLO."
+            defining -> "Toca la 2ª esquina para GUARDAR esa región como sello."
+            else -> "Toca 2 esquinas del nivel para crear un sello, o elige uno de arriba para pegarlo."
+        }
+        Text(
+            hint,
+            color = Color.White.copy(alpha = 0.85f),
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        if (selected != null) {
+            TextButton(onClick = { onDelete(selected) }) { Text("Borrar sello", color = MarioRed) }
+        }
+    }
+}
+
 @Composable
 private fun CollisionPanel(
     tileset: Tileset?,
@@ -1340,6 +1444,8 @@ private fun DrawScope.drawLevel(
     animByBase: Map<Int, List<Int>> = emptyMap(),
     animFrame: Int = 0,
     coinAtlas: ImageBitmap? = null,
+    /** Región del sello en curso [x0,y0,x1,y1] en casillas (herramienta SELLO), o null. */
+    stampRect: IntArray? = null,
 ) {
     val tilePx = scale
     val minX = floor(-pan.x / tilePx).toInt().coerceAtLeast(0)
@@ -1524,6 +1630,15 @@ private fun DrawScope.drawLevel(
         val topLeft = Offset(pan.x + sel.x * tilePx, pan.y + sel.y * tilePx)
         drawRect(CoinYellow, topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
     }
+
+    // Marco de la región del SELLO en curso (violeta, semitransparente relleno + borde).
+    stampRect?.let { r ->
+        val x0 = r[0]; val y0 = r[1]; val x1 = r[2]; val y1 = r[3]
+        val topLeft = Offset(pan.x + x0 * tilePx, pan.y + y0 * tilePx)
+        val sz = Size((x1 - x0 + 1) * tilePx, (y1 - y0 + 1) * tilePx)
+        drawRect(Color(0x33B388FF), topLeft = topLeft, size = sz)
+        drawRect(Color(0xFFB388FF), topLeft = topLeft, size = sz, style = Stroke(width = 3f))
+    }
 }
 
 // ============================================================================
@@ -1534,8 +1649,8 @@ private fun DrawScope.drawLevel(
 
 /** Herramientas que forman los sectores de la rueda (Seleccionar es el centro). */
 private val WHEEL_TOOLS = listOf(
-    PTool.TERRAIN, PTool.DECOR, PTool.ENEMY, PTool.COIN,
-    PTool.GOAL, PTool.START, PTool.WARP, PTool.COLLISION, PTool.ERASE,
+    PTool.TERRAIN, PTool.DECOR, PTool.ENEMY, PTool.COIN, PTool.GOAL,
+    PTool.START, PTool.WARP, PTool.STAMP, PTool.COLLISION, PTool.ERASE,
 )
 
 /** Color de marca por herramienta (para leer la rueda de un vistazo). */
@@ -1549,6 +1664,7 @@ private fun toolColor(t: PTool): Color = when (t) {
     PTool.COLLISION -> Color(0xFF40C4FF)
     PTool.ERASE -> Color(0xFF9AA6BE)
     PTool.WARP -> Color(0xFF17C0B8)
+    PTool.STAMP -> Color(0xFFB388FF)
     PTool.SELECT -> MarioBlue
 }
 

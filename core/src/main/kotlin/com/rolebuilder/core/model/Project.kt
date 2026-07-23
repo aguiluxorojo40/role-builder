@@ -28,6 +28,8 @@ data class Project(
     val variableNames: List<String> = List(DEFAULT_VARIABLE_COUNT) { "" },
     /** Mapas del proyecto en el orden que muestra el editor. */
     val mapIds: List<Int> = listOf(1),
+    /** Sellos/prefabs reutilizables (trozos de mapa) que el editor puede pegar (ver [MapStamp]). */
+    val stamps: List<MapStamp> = emptyList(),
     /**
      * Estilo visual "HD-2D": post-procesado con desenfoque tilt-shift
      * (efecto maqueta), bloom, viñeta y etalonaje cálido, más sombras

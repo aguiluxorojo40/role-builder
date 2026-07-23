@@ -126,6 +126,16 @@ class EditorState(val projectDir: File) {
         dirty = true
     }
 
+    /** Guarda un sello/prefab nuevo en el proyecto (para pegarlo luego al construir mapas). */
+    fun addStamp(stamp: com.rolebuilder.core.model.MapStamp) {
+        updateProject(project.copy(stamps = project.stamps + stamp))
+    }
+
+    /** Borra el sello con ese nombre. */
+    fun deleteStamp(name: String) {
+        updateProject(project.copy(stamps = project.stamps.filterNot { it.name == name }))
+    }
+
     /** Id libre para un nuevo tileset (mayor existente + 1). */
     fun nextTilesetId(): Int = (database.tilesets.maxOfOrNull { it.id } ?: 0) + 1
 
