@@ -1,0 +1,708 @@
+<style>
+  :root{
+    --bg:#f4f1fb; --panel:#ffffff; --panel-2:#efe9f8; --ink:#1c1630; --muted:#6b6285;
+    --stroke:#e4dcf1; --accent:#f0a319; --accent-2:#a8690a; --accent-ink:#2a1c00;
+    --ok:#2f9e5f; --wip:#c9860f; --plan:#7c86a3;
+    --shadow:0 18px 40px -22px rgba(40,20,70,.45);
+    /* colores de contenido (fijos en ambos temas) */
+    --c-sky1:#8ccdff; --c-sky2:#d9f0ff; --c-ground:#b06a3a; --c-brick:#c8672e;
+    --c-qblock:#f2b632; --c-pipe:#3fae55; --c-coin:#ffd23e; --c-enemy:#c23b6b;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#141021; --panel:#1d1730; --panel-2:#251d3b; --ink:#ece7f7; --muted:#a99fc4;
+      --stroke:#342a4d; --accent:#ffc23b; --accent-2:#ffd066; --accent-ink:#2a1c00;
+      --ok:#3fca77; --wip:#e8a72a; --plan:#8b96b3;
+      --shadow:0 20px 44px -20px rgba(0,0,0,.66);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f1fb; --panel:#ffffff; --panel-2:#efe9f8; --ink:#1c1630; --muted:#6b6285;
+    --stroke:#e4dcf1; --accent:#f0a319; --accent-2:#a8690a; --accent-ink:#2a1c00;
+    --ok:#2f9e5f; --wip:#c9860f; --plan:#7c86a3; --shadow:0 18px 40px -22px rgba(40,20,70,.45);
+  }
+  :root[data-theme="dark"]{
+    --bg:#141021; --panel:#1d1730; --panel-2:#251d3b; --ink:#ece7f7; --muted:#a99fc4;
+    --stroke:#342a4d; --accent:#ffc23b; --accent-2:#ffd066; --accent-ink:#2a1c00;
+    --ok:#3fca77; --wip:#e8a72a; --plan:#8b96b3; --shadow:0 20px 44px -20px rgba(0,0,0,.66);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+  a{color:var(--accent-2)}
+  h1,h2,h3{text-wrap:balance;margin:0;line-height:1.12;letter-spacing:-.02em;font-weight:800}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent-2);font-weight:600}
+  .lead{color:var(--muted);font-size:clamp(15px,1.4vw,18px);max-width:60ch}
+
+  /* ---------- HERO ---------- */
+  header.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--stroke)}
+  .hero-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
+  .hero-shade{position:absolute;inset:0;background:
+    linear-gradient(180deg,transparent 0%,transparent 40%,var(--bg) 100%),
+    radial-gradient(120% 90% at 82% 8%,transparent 40%,var(--bg) 100%)}
+  .hero-in{position:relative;padding:64px 0 clamp(52px,7vw,88px)}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;
+    background:color-mix(in srgb,var(--accent) 16%,var(--panel));color:var(--accent-2);
+    border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);padding:5px 11px;border-radius:999px;font-weight:600}
+  .badge .pix{width:9px;height:9px;background:var(--accent);box-shadow:2px 0 var(--accent),0 2px var(--accent),-2px 0 var(--accent)}
+  h1{font-size:clamp(30px,5.4vw,58px);margin:18px 0 0;max-width:16ch}
+  h1 .amber{color:var(--accent)}
+  .hero .lead{margin-top:18px;font-size:clamp(16px,1.6vw,20px);max-width:56ch}
+  .principle{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px}
+  .principle .p{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--stroke);
+    padding:8px 12px;border-radius:10px;box-shadow:var(--shadow)}
+  .principle .p b{color:var(--ink)}
+  .cta-row{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px}
+  .btn{font-family:var(--sans);font-weight:700;font-size:14px;border-radius:12px;padding:12px 18px;
+    cursor:pointer;border:1px solid var(--stroke);background:var(--panel);color:var(--ink);text-decoration:none;
+    display:inline-flex;align-items:center;gap:8px;transition:transform .12s,border-color .12s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+
+  /* ---------- secciones ---------- */
+  section{padding:clamp(46px,6vw,76px) 0}
+  .sec-head{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;max-width:70ch}
+  .sec-head h2{font-size:clamp(22px,3vw,34px)}
+  .divider{border:none;border-top:1px solid var(--stroke)}
+
+  /* ---------- EDITOR DEMO ---------- */
+  .editor{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:26px;align-items:start}
+  @media (max-width:860px){.editor{grid-template-columns:1fr}}
+  .stage{background:var(--panel);border:1px solid var(--stroke);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  .stage-top{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--stroke);
+    background:var(--panel-2)}
+  .dot3{display:flex;gap:6px}.dot3 i{width:10px;height:10px;border-radius:50%;background:var(--stroke)}
+  .stage-title{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .mode-tag{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent-ink);
+    background:var(--accent);padding:3px 9px;border-radius:7px}
+  .canvas-host{position:relative;background:#0f1622}
+  #lvl{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:none;cursor:crosshair}
+  .toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(12,8,22,.86);color:#fff;
+    font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.on{opacity:1}
+  .selrect{position:absolute;border:2px dashed var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);pointer-events:none;display:none}
+
+  /* radial */
+  .scrim{position:absolute;inset:0;z-index:5;background:rgba(8,5,16,.28)}
+  .scrim[hidden]{display:none}
+  .radial{position:absolute;right:14px;bottom:14px;z-index:6}
+  .fab{width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:none;
+    cursor:pointer;display:grid;place-items:center;font-size:22px;position:relative;z-index:2;
+    box-shadow:0 12px 26px -6px rgba(0,0,0,.55);transition:transform .22s}
+  .radial.open .fab{transform:rotate(135deg)}
+  .fab-label{position:absolute;right:66px;bottom:17px;background:var(--panel);color:var(--ink);border:1px solid var(--stroke);
+    font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;z-index:2;transition:opacity .15s;font-family:var(--mono)}
+  .radial.open .fab-label{opacity:0}
+  .ring-btn{position:absolute;right:5px;bottom:5px;width:48px;height:48px;border-radius:50%;background:var(--panel);
+    color:var(--muted);border:1.5px solid var(--stroke);cursor:pointer;z-index:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:1px;font-size:8.5px;font-weight:700;font-family:var(--mono);
+    opacity:0;transform:translate(0,0) scale(.3);pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,.45);
+    transition:transform .24s cubic-bezier(.2,.9,.35,1.25),opacity .18s}
+  .ring-btn .ic{font-size:17px;line-height:1}
+  .ring-btn[data-on="1"]{color:var(--ink);border-color:var(--tool-c,var(--accent));
+    background:color-mix(in srgb,var(--tool-c,var(--accent)) 18%,var(--panel))}
+
+  .side{display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:16px 17px}
+  .card h3{font-size:15px;margin-bottom:4px}
+  .card p.k{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .sw{flex:1 1 auto;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 6px;
+    border:1.5px solid transparent;border-radius:12px;background:var(--panel-2);cursor:pointer;font-family:var(--mono);
+    font-size:10px;font-weight:700;color:var(--muted)}
+  .sw i{width:26px;height:26px;border-radius:6px;image-rendering:pixelated}
+  .sw[data-on="1"]{border-color:var(--accent);color:var(--ink);background:color-mix(in srgb,var(--accent) 12%,var(--panel-2))}
+  .palrow{display:flex;gap:8px;flex-wrap:wrap}
+  .palbtn{flex:1 1 auto;min-width:70px;cursor:pointer;border:1.5px solid transparent;border-radius:12px;
+    padding:7px;background:var(--panel-2);display:flex;flex-direction:column;gap:5px;align-items:center}
+  .palbtn .ramp{display:flex;width:100%;height:16px;border-radius:5px;overflow:hidden}
+  .palbtn .ramp i{flex:1}
+  .palbtn span{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--muted)}
+  .palbtn[data-on="1"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel-2))}
+  .palbtn[data-on="1"] span{color:var(--ink)}
+  .stampbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-height:44px}
+  .chip{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--stroke);background:var(--panel-2);
+    padding:3px;cursor:pointer;display:grid;place-items:center}
+  .chip canvas{width:100%;height:100%;border-radius:6px;image-rendering:pixelated;background:#0f1622}
+  .chip[data-on="1"]{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+  .chip.empty{font-family:var(--mono);font-size:10px;color:var(--muted);border-style:dashed;cursor:default;background:transparent}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .toggle{display:inline-flex;border:1px solid var(--stroke);border-radius:10px;overflow:hidden;font-family:var(--mono);font-size:11px}
+  .toggle button{border:none;background:var(--panel);color:var(--muted);padding:7px 12px;cursor:pointer;font-weight:700}
+  .toggle button[data-on="1"]{background:var(--accent);color:var(--accent-ink)}
+  .mini{font-size:12px;color:var(--muted)}
+  .btn-reset{font-family:var(--mono);font-size:12px;font-weight:700;border:1px solid var(--stroke);background:var(--panel);
+    color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer}
+  ol.steps{margin:0;padding-left:18px;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:6px}
+  ol.steps b{color:var(--ink)}
+
+  /* ---------- UNIVERSE MAP ---------- */
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .pill{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .pill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent);border:1px solid color-mix(in srgb,var(--ok) 40%,transparent)}
+  .pill.wip{color:var(--wip);background:color-mix(in srgb,var(--wip) 15%,transparent);border:1px solid color-mix(in srgb,var(--wip) 42%,transparent)}
+  .pill.plan{color:var(--plan);background:color-mix(in srgb,var(--plan) 15%,transparent);border:1px solid color-mix(in srgb,var(--plan) 40%,transparent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+  .dcard{background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:11px;
+    position:relative;overflow:hidden}
+  .dcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--rail,var(--accent))}
+  .dcard .top{display:flex;align-items:flex-start;gap:11px}
+  .dcard .ico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:18px;flex:0 0 auto;
+    background:color-mix(in srgb,var(--rail,var(--accent)) 16%,var(--panel-2))}
+  .dcard h3{font-size:15.5px}
+  .dcard .num{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .dcard ul{margin:0;padding-left:16px;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:4px}
+  .dcard ul b{color:var(--ink);font-weight:600}
+  .dcard .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:4px}
+
+  /* ---------- IA / FLOW ---------- */
+  .flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .node{background:var(--panel);border:1px solid var(--stroke);border-radius:14px;padding:15px;display:flex;flex-direction:column;gap:6px}
+  .node .n{font-family:var(--mono);font-size:11px;color:var(--accent-2);font-weight:700}
+  .node h4{margin:0;font-size:14px}
+  .node p{margin:0;font-size:12.5px;color:var(--muted)}
+  .pipeline{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-top:6px}
+  .stepbox{flex:1 1 190px;background:var(--panel);border:1px solid var(--stroke);border-radius:14px;padding:15px 16px}
+  .stepbox .st{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .stepbox h4{margin:6px 0 5px;font-size:15px}
+  .stepbox p{margin:0;font-size:12.5px;color:var(--muted)}
+
+  footer{border-top:1px solid var(--stroke);padding:34px 0 46px}
+  footer .big{font-size:clamp(18px,2.4vw,26px);font-weight:800;max-width:24ch}
+  footer .mono{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:14px}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="hero">
+  <canvas class="hero-canvas" id="hero" aria-hidden="true"></canvas>
+  <div class="hero-shade"></div>
+  <div class="wrap hero-in">
+    <span class="badge"><span class="pix"></span>Plano de diseño · motor gráfico</span>
+    <h1>Un editor que se apropia de <span class="amber">Super Mario World</span>.</h1>
+    <p class="lead">Toma los assets reales de SMW y los pone en tus manos: crea niveles nuevos,
+      juegos nuevos, o modifica el propio SMW. Toda la potencia de un editor de ROM, con la
+      sencillez de tocar la pantalla.</p>
+    <div class="principle">
+      <div class="p"><b>Lunar Magic</b> × <b>Mario Maker 2</b></div>
+      <div class="p">100&nbsp;% del contenido jugable de SMW</div>
+      <div class="p">Eficaz · ordenado · simple · intuitivo</div>
+    </div>
+    <div class="cta-row">
+      <a class="btn primary" href="#editor">Probar el editor ↓</a>
+      <a class="btn" href="#universo">Ver el universo SMW</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= EDITOR ================= -->
+  <section id="editor" class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">El corazón · lienzo primero</span>
+      <h2>Pinta un nivel con el pulgar.</h2>
+      <p class="lead">El lienzo manda; las herramientas viven en un <b>menú radial</b> (el botón ámbar,
+        abajo a la derecha), igual que en la app. Elige una tesela, pinta, define un <b>sello</b> y
+        estámpalo para construir rápido. Esto es el prototipo jugable del flujo.</p>
+    </div>
+
+    <div class="editor">
+      <div class="stage">
+        <div class="stage-top">
+          <span class="dot3"><i></i><i></i><i></i></span>
+          <span class="stage-title">nivel_1 · 22×14 · tesela 16px</span>
+          <span class="mode-tag" id="mode-tag">Pincel</span>
+        </div>
+        <div class="canvas-host" id="host">
+          <canvas id="lvl" width="396" height="252"></canvas>
+          <div class="selrect" id="selrect"></div>
+          <div class="toast" id="toast"></div>
+          <div class="scrim" id="scrim" hidden></div>
+          <div class="radial" id="radial">
+            <span class="fab-label" id="fab-label">Pincel</span>
+            <button class="fab" id="fab" aria-label="Abrir menú de herramientas">🖌️</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="card">
+          <h3>Tesela del pincel</h3>
+          <p class="k">Con la herramienta <b>Pincel</b>, elige qué pintar.</p>
+          <div class="swatches" id="swatches"></div>
+        </div>
+
+        <div class="card">
+          <h3>Paleta del nivel <span class="mini" style="font-weight:400">— palette-swap en vivo</span></h3>
+          <p class="k">Como en SNES: el mismo nivel cambia de ambiente al cambiar la paleta,
+            sin repintar un solo tile. Esto ya se alimenta de las paletas <b>reales</b> de la ROM.</p>
+          <div class="palrow" id="palrow"></div>
+        </div>
+
+        <div class="card">
+          <h3>Sellos <span class="mini" style="font-weight:400">— tu biblioteca de piezas</span></h3>
+          <p class="k">Con <b>Sello</b> activo: <b>arrastra</b> un recuadro sobre el nivel para capturar
+            una zona. Queda “en mano” y se <b>estampa</b> donde toques.</p>
+          <div class="stampbar" id="stampbar"></div>
+          <div class="row" style="margin-top:12px">
+            <span class="mini">Estado del sello:</span>
+            <span class="pill" id="stamp-state">—</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Cómo se prueba</h3>
+          <ol class="steps">
+            <li>Abre el <b>menú radial</b> (botón ámbar) y elige una herramienta.</li>
+            <li><b>Pincel</b>: elige tesela arriba y arrastra sobre el nivel.</li>
+            <li><b>Moneda</b> / <b>Enemigo</b>: toca para colocar marcadores.</li>
+            <li><b>Sello</b>: arrastra para capturar → toca para estampar.</li>
+            <li><b>Borrar</b>: limpia tesela y marcadores de la casilla.</li>
+          </ol>
+          <div class="row" style="margin-top:14px">
+            <button class="btn-reset" id="reset">Reiniciar nivel</button>
+            <span class="mini">El botón ámbar abre el menú radial, como en la app.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================= UNIVERSO SMW ================= -->
+  <section id="universo" class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">El alcance real · lo que el motor debe exponer</span>
+      <h2>El universo de Super Mario World, sistema por sistema.</h2>
+      <p class="lead">“El 100&nbsp;% del contenido jugable” significa esto: cada pieza que forma un juego de
+        SMW, convertida en una herramienta clara. Aún falta muchísimo — este mapa marca honestamente qué
+        está hecho, qué es prototipo y qué está planeado.</p>
+      <div class="legend">
+        <span><span class="pill ok">Hecho</span> ya funciona en el núcleo</span>
+        <span><span class="pill wip">Prototipo</span> diseñado / en pruebas</span>
+        <span><span class="pill plan">Planeado</span> por construir</span>
+      </div>
+    </div>
+
+    <div class="grid" id="universe"></div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================= IA / FLOW ================= -->
+  <section class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Arquitectura de la experiencia</span>
+      <h2>Ordenado significa: cinco lugares, no cincuenta botones.</h2>
+      <p class="lead">La complejidad de un editor de ROM se esconde tras un mapa simple. Cada zona hace
+        una cosa; el lienzo es siempre el centro y las herramientas aparecen bajo el pulgar.</p>
+    </div>
+    <div class="flow">
+      <div class="node"><span class="n">01 · Proyecto</span><h4>Biblioteca</h4><p>Juegos como carpetas. Nuevo, importar ROM/assets, exportar .zip o APK.</p></div>
+      <div class="node"><span class="n">02 · Lienzo</span><h4>Editor de nivel</h4><p>Pintar teselas, sellos, sprites, salidas. Menú radial. Pan/zoom con dos dedos.</p></div>
+      <div class="node"><span class="n">03 · Piezas</span><h4>Paletas y atlas</h4><p>Teselas, sprites, fondos y colores SNES tomados de SMW, listos para colocar.</p></div>
+      <div class="node"><span class="n">04 · Mundo</span><h4>Overworld</h4><p>Mapa del mundo: nodos, caminos, salidas, conexiones entre niveles.</p></div>
+      <div class="node"><span class="n">05 · Jugar</span><h4>▶ Probar</h4><p>El mismo motor ejecuta el nivel al instante, con la física de Mario.</p></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ================= ROADMAP ================= -->
+  <section class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">De la idea al código real</span>
+      <h2>Primero que funcione la idea. Luego, al motor de verdad.</h2>
+      <p class="lead">Este prototipo web valida la UX sin coste. Cuando el flujo convence, se lleva al
+        Compose real del repo — con la lógica en <code>core</code>, verificada por CI, y una APK nueva.</p>
+    </div>
+    <div class="pipeline">
+      <div class="stepbox"><span class="st">Fase A · ahora</span><h4>Prototipo de UX</h4><p>Este plano: lienzo, radial, sellos y el mapa completo de sistemas. Iteramos rápido en HTML.</p></div>
+      <div class="stepbox"><span class="st">Fase B</span><h4>Ingesta de assets SMW</h4><p>Leer teselas, sprites, paletas y fondos de SMW y volcarlos al formato de proyecto JSON+PNG.</p></div>
+      <div class="stepbox"><span class="st">Fase C</span><h4>Editor Compose</h4><p>El flujo aprobado, portado a la app Android real. Lógica en <code>core</code>, probada con tests JVM.</p></div>
+      <div class="stepbox"><span class="st">Fase D</span><h4>Publicar</h4><p>Exportar tu creación como juego independiente (APK) o como nivel/hack de SMW.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="big">El fin: que cualquiera abra su móvil y tenga, entero, Super Mario World para construir.</p>
+    <p class="mono">Plano de diseño vivo · Role Builder → motor SMW · prototipo interactivo, no una ROM.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var toastEl=document.getElementById('toast');
+  function toast(m){ if(!toastEl) return; toastEl.textContent=m; toastEl.classList.add('on');
+    clearTimeout(toast._t); toast._t=setTimeout(function(){toastEl.classList.remove('on');},1100); }
+
+  /* ---------- datos del universo SMW ---------- */
+  var UNIVERSE=[
+    {ico:'🧱',rail:'var(--c-ground)',title:'Teselas y bloques',status:'wip',statusT:'Prototipo',
+     items:['Terreno, ladrillos, <b>?</b> con premio','Tuberías, pendientes, agua, lava','Bloques de comportamiento (nota, on/off, tolva)']},
+    {ico:'👾',rail:'var(--c-enemy)',title:'Sprites y enemigos',status:'wip',statusT:'Prototipo',
+     items:['Goombas, Koopas, Piranhas, Thwomp','Jefes y sprites generadores','Config: movimiento, visión, drops']},
+    {ico:'🍄',rail:'var(--c-brick)',title:'Power-ups y física de Mario',status:'ok',statusT:'Hecho',
+     items:['Correr, saltar, colisión y deslizamiento','Cape, flor, estrella, montura','Estados de daño e invulnerabilidad']},
+    {ico:'🎨',rail:'var(--c-qblock)',title:'Paletas SNES',status:'plan',statusT:'Planeado',
+     items:['16 paletas × 16 colores (15+trans.)','Editor de color 5-5-5 bit','Intercambio de paleta por nivel/sprite']},
+    {ico:'🏞️',rail:'var(--c-pipe)',title:'Fondos y capas',status:'wip',statusT:'Prototipo',
+     items:['Layer 1 (juego), Layer 2 (fondo)','Layer 3 (niebla, HUD, agua)','Parallax y fondos de SMW reales']},
+    {ico:'🚪',rail:'var(--accent)',title:'Cabecera, pantallas y salidas',status:'plan',statusT:'Planeado',
+     items:['Tamaño de nivel y modo (horiz/vert)','Salidas normales y secretas','Tuberías/puertas que enlazan zonas']},
+    {ico:'🗺️',rail:'var(--c-sky1)',title:'Mapa del mundo (Overworld)',status:'plan',statusT:'Planeado',
+     items:['Nodos de nivel y caminos','Eventos: revelar caminos al ganar','Casas fantasma, castillos, switches']},
+    {ico:'🦖',rail:'var(--ok)',title:'Yoshi y monturas',status:'plan',statusT:'Planeado',
+     items:['Colores de Yoshi y habilidades','Comer, escupir, alas','Bloques de montura']},
+    {ico:'🎵',rail:'var(--c-enemy)',title:'Música y sonido',status:'ok',statusT:'Hecho',
+     items:['Pistas chiptune procedurales','Asignación por nivel/zona','SFX sintetizados sin assets']},
+    {ico:'📦',rail:'var(--accent-2)',title:'Ingesta de assets SMW',status:'wip',statusT:'Prototipo',
+     items:['<b>GFX 8×8 reales</b> decodificados (2/3/4bpp)','<b>Paletas reales</b> de la ROM (BGR555)','Visor con palette-swap · Map16 y niveles, próximo']},
+    {ico:'💾',rail:'var(--plan)',title:'Proyecto y guardado',status:'ok',statusT:'Hecho',
+     items:['Cada juego = carpeta JSON+PNG','Multi-ranura con fecha','Exportar/importar .zip']},
+    {ico:'🚀',rail:'var(--c-brick)',title:'Publicar como juego',status:'ok',statusT:'Hecho',
+     items:['APK independiente sin editor','Arranque directo en su título','O compartir como nivel/hack']},
+  ];
+  (function renderUniverse(){
+    var host=document.getElementById('universe'); if(!host) return;
+    UNIVERSE.forEach(function(d,i){
+      var el=document.createElement('article'); el.className='dcard'; el.style.setProperty('--rail',d.rail);
+      var lis=d.items.map(function(x){return '<li>'+x+'</li>';}).join('');
+      el.innerHTML='<div class="top"><div class="ico">'+d.ico+'</div><div>'+
+        '<div class="num">Sistema '+String(i+1).padStart(2,'0')+'</div>'+
+        '<h3>'+d.title+'</h3></div></div>'+
+        '<ul>'+lis+'</ul>'+
+        '<div class="foot"><span class="pill '+d.status+'">'+d.statusT+'</span></div>';
+      host.appendChild(el);
+    });
+  })();
+
+  /* ================= EDITOR ================= */
+  var TILE=18, COLS=22, ROWS=14;
+  var T={SKY:0,GROUND:1,BRICK:2,QBLOCK:3,PIPE:4};
+  var COLORS={};
+  function readColors(){
+    var cs=getComputedStyle(document.documentElement);
+    COLORS={
+      sky1:cs.getPropertyValue('--c-sky1').trim()||'#8ccdff',
+      sky2:cs.getPropertyValue('--c-sky2').trim()||'#d9f0ff',
+      ground:cs.getPropertyValue('--c-ground').trim()||'#b06a3a',
+      brick:cs.getPropertyValue('--c-brick').trim()||'#c8672e',
+      qblock:cs.getPropertyValue('--c-qblock').trim()||'#f2b632',
+      pipe:cs.getPropertyValue('--c-pipe').trim()||'#3fae55',
+      coin:cs.getPropertyValue('--c-coin').trim()||'#ffd23e',
+      enemy:cs.getPropertyValue('--c-enemy').trim()||'#c23b6b'
+    };
+  }
+  var TILECOL={1:'ground',2:'brick',3:'qblock',4:'pipe'};
+
+  var grid, overlay; // overlay: object key "r_c" -> 'coin'|'enemy'
+  function baseLevel(){
+    grid=[]; overlay={};
+    for(var r=0;r<ROWS;r++){ grid[r]=[]; for(var c=0;c<COLS;c++){ grid[r][c]=(r>=ROWS-2)?T.GROUND:T.SKY; } }
+    // un par de plataformas de ejemplo
+    for(var c2=4;c2<8;c2++) grid[8][c2]=T.BRICK;
+    grid[8][6]=T.QBLOCK;
+    grid[ROWS-3][14]=T.PIPE; grid[ROWS-4][14]=T.PIPE;
+    grid[ROWS-3][15]=T.PIPE; grid[ROWS-4][15]=T.PIPE;
+    overlay['5_10']='coin'; overlay['5_11']='coin';
+    overlay[(ROWS-3)+'_18']='enemy';
+  }
+
+  var canvas=document.getElementById('lvl'), ctx=canvas.getContext('2d');
+  ctx.imageSmoothingEnabled=false;
+
+  function drawTile(g,x,y,type){
+    var key=TILECOL[type]; if(!key) return;
+    var col=COLORS[key];
+    g.fillStyle=col; g.fillRect(x,y,TILE,TILE);
+    // borde superior claro + sombra inferior (look pixel)
+    g.fillStyle='rgba(255,255,255,.28)'; g.fillRect(x,y,TILE,2); g.fillRect(x,y,2,TILE);
+    g.fillStyle='rgba(0,0,0,.22)'; g.fillRect(x,y+TILE-2,TILE,2); g.fillRect(x+TILE-2,y,2,TILE);
+    if(type===T.QBLOCK){ g.fillStyle='rgba(60,35,0,.75)'; var cx=x+TILE/2;
+      g.fillRect(cx-3,y+5,6,2); g.fillRect(cx+1,y+7,2,3); g.fillRect(cx-1,y+11,2,2); }
+    if(type===T.BRICK){ g.strokeStyle='rgba(0,0,0,.18)'; g.lineWidth=1;
+      g.beginPath(); g.moveTo(x,y+TILE/2); g.lineTo(x+TILE,y+TILE/2); g.moveTo(x+TILE/2,y); g.lineTo(x+TILE/2,y+TILE/2); g.stroke(); }
+  }
+  function drawCoin(g,x,y){ g.fillStyle=COLORS.coin; g.beginPath();
+    g.ellipse(x+TILE/2,y+TILE/2,TILE*0.28,TILE*0.36,0,0,7); g.fill();
+    g.fillStyle='rgba(120,80,0,.55)'; g.fillRect(x+TILE/2-1,y+5,2,TILE-10); }
+  function drawEnemy(g,x,y){ g.fillStyle=COLORS.enemy;
+    g.fillRect(x+3,y+7,TILE-6,TILE-8); g.fillRect(x+5,y+4,TILE-10,4);
+    g.fillStyle='#fff'; g.fillRect(x+5,y+9,3,3); g.fillRect(x+TILE-8,y+9,3,3);
+    g.fillStyle='#1a1030'; g.fillRect(x+6,y+10,1,1); g.fillRect(x+TILE-7,y+10,1,1); }
+
+  function render(){
+    if(!ctx) return;
+    // cielo
+    var gr=ctx.createLinearGradient(0,0,0,canvas.height);
+    gr.addColorStop(0,COLORS.sky1); gr.addColorStop(1,COLORS.sky2);
+    ctx.fillStyle=gr; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // rejilla tenue
+    ctx.strokeStyle='rgba(20,30,50,.06)'; ctx.lineWidth=1;
+    for(var gx=0;gx<=COLS;gx++){ ctx.beginPath(); ctx.moveTo(gx*TILE+.5,0); ctx.lineTo(gx*TILE+.5,canvas.height); ctx.stroke(); }
+    for(var gy=0;gy<=ROWS;gy++){ ctx.beginPath(); ctx.moveTo(0,gy*TILE+.5); ctx.lineTo(canvas.width,gy*TILE+.5); ctx.stroke(); }
+    // teselas
+    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){ var t=grid[r][c]; if(t) drawTile(ctx,c*TILE,r*TILE,t); }
+    // overlays
+    for(var k in overlay){ if(!overlay.hasOwnProperty(k)) continue;
+      var p=k.split('_'), rr=+p[0], cc=+p[1], x=cc*TILE, y=rr*TILE;
+      if(overlay[k]==='coin') drawCoin(ctx,x,y); else drawEnemy(ctx,x,y); }
+  }
+
+  /* ---- herramientas + radial ---- */
+  var TOOLS=[
+    {id:'brush', ic:'🖌️', label:'Pincel',  c:'--accent'},
+    {id:'coin',  ic:'🪙', label:'Moneda',  c:'--c-coin'},
+    {id:'enemy', ic:'👾', label:'Enemigo', c:'--c-enemy'},
+    {id:'stamp', ic:'🧩', label:'Sello',   c:'--accent'},
+    {id:'erase', ic:'🧽', label:'Borrar',  c:'--muted'}
+  ];
+  var tool='brush', selTile=T.GROUND;
+  var radial=document.getElementById('radial'), fab=document.getElementById('fab'),
+      fabLabel=document.getElementById('fab-label'), scrim=document.getElementById('scrim');
+  var ringBtns=[];
+  TOOLS.forEach(function(t){
+    var b=document.createElement('button'); b.className='ring-btn';
+    b.style.setProperty('--tool-c','var('+t.c+')');
+    b.innerHTML='<span class="ic">'+t.ic+'</span>'+t.label; b.dataset.id=t.id;
+    b.addEventListener('click',function(e){ e.stopPropagation(); setTool(t.id); closeRadial(); });
+    radial.appendChild(b); ringBtns.push(b);
+  });
+  var N=TOOLS.length;
+  function layoutRing(open){
+    ringBtns.forEach(function(b,i){
+      if(open){ var ang=(-95-i*(85/(N-1)))*Math.PI/180, R=82;
+        b.style.transform='translate('+(Math.cos(ang)*R).toFixed(1)+'px,'+(Math.sin(ang)*R).toFixed(1)+'px) scale(1)';
+        b.style.opacity='1'; b.style.pointerEvents='auto';
+      } else { b.style.transform='translate(0,0) scale(.3)'; b.style.opacity='0'; b.style.pointerEvents='none'; }
+    });
+  }
+  var radialOpen=false;
+  function openRadial(){ radialOpen=true; radial.classList.add('open'); scrim.hidden=false; layoutRing(true); }
+  function closeRadial(){ radialOpen=false; radial.classList.remove('open'); scrim.hidden=true; layoutRing(false); }
+  fab.addEventListener('click',function(e){ e.stopPropagation(); radialOpen?closeRadial():openRadial(); });
+  scrim.addEventListener('click',closeRadial);
+
+  function setTool(id){
+    tool=id; anchor=null;
+    var t=TOOLS.filter(function(x){return x.id===id;})[0];
+    fab.textContent=t.ic; fabLabel.textContent=t.label;
+    document.getElementById('mode-tag').textContent=t.label;
+    ringBtns.forEach(function(b){ b.dataset.on=(b.dataset.id===id)?'1':'0'; });
+    updateStampState();
+  }
+
+  /* ---- swatches (pincel) ---- */
+  var SW=[{t:T.GROUND,key:'ground',label:'Suelo'},{t:T.BRICK,key:'brick',label:'Ladrillo'},
+          {t:T.QBLOCK,key:'qblock',label:'? Bloque'},{t:T.PIPE,key:'pipe',label:'Tubería'}];
+  (function(){
+    var host=document.getElementById('swatches'); if(!host) return;
+    SW.forEach(function(s){
+      var b=document.createElement('button'); b.className='sw'; b.dataset.t=s.t;
+      var sw=document.createElement('i'); sw.style.background='var(--c-'+s.key+')';
+      b.appendChild(sw); b.appendChild(document.createTextNode(s.label));
+      b.addEventListener('click',function(){ selTile=s.t; if(tool!=='brush') setTool('brush');
+        markSw(); });
+      host.appendChild(b);
+    });
+    markSw();
+  })();
+  function markSw(){ document.querySelectorAll('.sw').forEach(function(el){ el.dataset.on=(+el.dataset.t===selTile)?'1':'0'; }); }
+
+  /* ---- palette-swap en vivo ---- */
+  var PALS=[
+    {id:'pradera', label:'Pradera', v:{'--c-sky1':'#8ccdff','--c-sky2':'#d9f0ff','--c-ground':'#b06a3a',
+      '--c-brick':'#c8672e','--c-qblock':'#f2b632','--c-pipe':'#3fae55','--c-coin':'#ffd23e','--c-enemy':'#c23b6b'}},
+    {id:'subsuelo', label:'Subsuelo', v:{'--c-sky1':'#241a3e','--c-sky2':'#3a2a5e','--c-ground':'#5a6b8c',
+      '--c-brick':'#7a5aa8','--c-qblock':'#e6c34a','--c-pipe':'#49b0c8','--c-coin':'#ffe27a','--c-enemy':'#e0607a'}},
+    {id:'castillo', label:'Castillo', v:{'--c-sky1':'#2a0f14','--c-sky2':'#521a1a','--c-ground':'#6b6470',
+      '--c-brick':'#8a4a4a','--c-qblock':'#d99a2c','--c-pipe':'#8a6b3a','--c-coin':'#ffcf5a','--c-enemy':'#ff5a4a'}},
+    {id:'nieve', label:'Nieve', v:{'--c-sky1':'#bfe0ff','--c-sky2':'#f0f8ff','--c-ground':'#c8d4e8',
+      '--c-brick':'#9fb4d8','--c-qblock':'#e8c24a','--c-pipe':'#5ac2a0','--c-coin':'#ffd23e','--c-enemy':'#c85a86'}},
+  ];
+  (function(){
+    var host=document.getElementById('palrow'); if(!host) return;
+    PALS.forEach(function(p,i){
+      var b=document.createElement('button'); b.className='palbtn'; b.dataset.id=p.id;
+      var ramp=document.createElement('div'); ramp.className='ramp';
+      ['--c-ground','--c-brick','--c-qblock','--c-pipe','--c-coin','--c-enemy'].forEach(function(k){
+        var s=document.createElement('i'); s.style.background=p.v[k]; ramp.appendChild(s); });
+      b.appendChild(ramp);
+      var lab=document.createElement('span'); lab.textContent=p.label; b.appendChild(lab);
+      b.addEventListener('click',function(){ applyPalette(i); });
+      host.appendChild(b);
+    });
+  })();
+  function applyPalette(i){
+    var p=PALS[i], root=document.documentElement.style;
+    for(var k in p.v){ if(p.v.hasOwnProperty(k)) root.setProperty(k,p.v[k]); }
+    document.querySelectorAll('.palbtn').forEach(function(el){ el.dataset.on=(el.dataset.id===p.id)?'1':'0'; });
+    readColors(); render();
+    if(typeof toast==='function') toast('Paleta: '+p.label);
+  }
+
+  /* ---- sellos ---- */
+  var stamps=[], held=null, anchor=null;
+  var stampbar=document.getElementById('stampbar'), stampState=document.getElementById('stamp-state');
+  function updateStampState(){
+    if(tool!=='stamp'){ stampState.className='pill plan'; stampState.textContent='herramienta Sello inactiva'; return; }
+    if(held!=null){ stampState.className='pill ok'; stampState.textContent='sello en mano — toca para estampar'; }
+    else { stampState.className='pill wip'; stampState.textContent='arrastra para capturar un sello'; }
+  }
+  function renderStampBar(){
+    stampbar.innerHTML='';
+    if(!stamps.length){ var e=document.createElement('div'); e.className='chip empty'; e.textContent='vacío'; stampbar.appendChild(e); }
+    stamps.forEach(function(s,i){
+      var chip=document.createElement('button'); chip.className='chip'; chip.dataset.on=(held===i)?'1':'0';
+      var cv=document.createElement('canvas'); cv.width=s.w*TILE; cv.height=s.h*TILE;
+      var g=cv.getContext('2d'); g.imageSmoothingEnabled=false; drawStampInto(g,s);
+      chip.appendChild(cv);
+      chip.addEventListener('click',function(){ if(tool!=='stamp') setTool('stamp'); held=i; renderStampBar(); updateStampState(); toast('Sello en mano'); });
+      stampbar.appendChild(chip);
+    });
+  }
+  function drawStampInto(g,s){
+    g.fillStyle='#0f1622'; g.fillRect(0,0,s.w*TILE,s.h*TILE);
+    for(var r=0;r<s.h;r++) for(var c=0;c<s.w;c++){ var cell=s.cells[r][c];
+      if(cell.t) drawTile(g,c*TILE,r*TILE,cell.t);
+      if(cell.o==='coin') drawCoin(g,c*TILE,r*TILE); else if(cell.o==='enemy') drawEnemy(g,c*TILE,r*TILE); }
+  }
+  function captureStamp(r0,c0,r1,c1){
+    var rA=Math.min(r0,r1), rB=Math.max(r0,r1), cA=Math.min(c0,c1), cB=Math.max(c0,c1);
+    var w=cB-cA+1, h=rB-rA+1, cells=[];
+    for(var r=0;r<h;r++){ cells[r]=[]; for(var c=0;c<w;c++){
+      var key=(rA+r)+'_'+(cA+c); cells[r][c]={t:grid[rA+r][cA+c], o:overlay[key]||null}; } }
+    stamps.push({w:w,h:h,cells:cells}); held=stamps.length-1;
+    renderStampBar(); updateStampState(); toast('Sello capturado ('+w+'×'+h+')');
+  }
+  function stampAt(r0,c0){
+    var s=stamps[held]; if(!s) return;
+    for(var r=0;r<s.h;r++) for(var c=0;c<s.w;c++){
+      var rr=r0+r, cc=c0+c; if(rr<0||rr>=ROWS||cc<0||cc>=COLS) continue;
+      var cell=s.cells[r][c], key=rr+'_'+cc;
+      grid[rr][cc]=cell.t;
+      if(cell.o) overlay[key]=cell.o; else delete overlay[key];
+    }
+    render();
+  }
+
+  /* ---- pointer ---- */
+  var selrect=document.getElementById('selrect'), host=document.getElementById('host');
+  var painting=false, dragStart=null;
+  function cellFromEvent(ev){
+    var rect=canvas.getBoundingClientRect();
+    var sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+    var x=(ev.clientX-rect.left)*sx, y=(ev.clientY-rect.top)*sy;
+    var c=Math.floor(x/TILE), r=Math.floor(y/TILE);
+    return {r:Math.max(0,Math.min(ROWS-1,r)), c:Math.max(0,Math.min(COLS-1,c))};
+  }
+  function applyPaint(r,c){
+    var key=r+'_'+c;
+    if(tool==='brush'){ grid[r][c]=selTile; delete overlay[key]; }
+    else if(tool==='coin'){ overlay[key]='coin'; }
+    else if(tool==='enemy'){ overlay[key]='enemy'; }
+    else if(tool==='erase'){ grid[r][c]=T.SKY; delete overlay[key]; }
+    render();
+  }
+  function showSelRect(r0,c0,r1,c1){
+    var rect=canvas.getBoundingClientRect();
+    var sx=rect.width/canvas.width, sy=rect.height/canvas.height;
+    var rA=Math.min(r0,r1),rB=Math.max(r0,r1),cA=Math.min(c0,c1),cB=Math.max(c0,c1);
+    selrect.style.display='block';
+    selrect.style.left=(cA*TILE*sx)+'px'; selrect.style.top=(rA*TILE*sy)+'px';
+    selrect.style.width=((cB-cA+1)*TILE*sx)+'px'; selrect.style.height=((rB-rA+1)*TILE*sy)+'px';
+  }
+  canvas.addEventListener('pointerdown',function(ev){
+    if(radialOpen) return; ev.preventDefault();
+    var cell=cellFromEvent(ev);
+    if(tool==='stamp'){
+      if(held!=null){ stampAt(cell.r,cell.c); return; }
+      dragStart=cell; painting=true; showSelRect(cell.r,cell.c,cell.r,cell.c);
+      canvas.setPointerCapture(ev.pointerId); return;
+    }
+    painting=true; applyPaint(cell.r,cell.c); canvas.setPointerCapture(ev.pointerId);
+  });
+  canvas.addEventListener('pointermove',function(ev){
+    if(!painting) return;
+    var cell=cellFromEvent(ev);
+    if(tool==='stamp' && dragStart){ showSelRect(dragStart.r,dragStart.c,cell.r,cell.c); return; }
+    if(tool==='brush'||tool==='coin'||tool==='enemy'||tool==='erase') applyPaint(cell.r,cell.c);
+  });
+  function endDrag(ev){
+    if(!painting) return; painting=false;
+    if(tool==='stamp' && dragStart){ var cell=cellFromEvent(ev);
+      captureStamp(dragStart.r,dragStart.c,cell.r,cell.c); dragStart=null; selrect.style.display='none'; }
+  }
+  canvas.addEventListener('pointerup',endDrag);
+  canvas.addEventListener('pointercancel',function(){ painting=false; dragStart=null; selrect.style.display='none'; });
+
+  document.getElementById('reset').addEventListener('click',function(){ baseLevel(); render(); toast('Nivel reiniciado'); });
+
+  /* ---------- HERO ambient (pixel parallax) ---------- */
+  (function(){
+    var cv=document.getElementById('hero'); if(!cv) return; var g=cv.getContext('2d');
+    var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+    function size(){ var r=cv.parentElement.getBoundingClientRect();
+      cv.width=Math.max(600,Math.floor(r.width)); cv.height=Math.max(280,Math.floor(r.height)); }
+    size(); window.addEventListener('resize',size);
+    var t=0;
+    function frame(){
+      var W=cv.width,H=cv.height; g.imageSmoothingEnabled=false;
+      var cs=getComputedStyle(document.documentElement);
+      var dark=(cs.getPropertyValue('--bg').trim()||'').indexOf('14')===1 || matchMedia('(prefers-color-scheme:dark)').matches;
+      var sky1=dark?'#241a3e':'#bfe4ff', sky2=dark?'#3a2a5e':'#e8f6ff';
+      var gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,sky1); gr.addColorStop(1,sky2);
+      g.fillStyle=gr; g.fillRect(0,0,W,H);
+      // colinas parallax
+      function hills(off,col,base,amp,step){ g.fillStyle=col;
+        for(var x=-40;x<W+40;x+=step){ var xx=((x-off)%(W+80)); var y=base+Math.sin((x)*0.01)*amp;
+          g.fillRect(x,y,step+1,H-y); } }
+      hills(t*0.15%9999,dark?'#2e2350':'#a9d8a0',H*0.62,14,8);
+      hills(t*0.32%9999,dark?'#3b2c66':'#8fc98a',H*0.74,10,8);
+      // suelo
+      g.fillStyle=dark?'#5a3a22':'#b06a3a'; g.fillRect(0,H-22,W,22);
+      g.fillStyle='rgba(255,255,255,.18)'; g.fillRect(0,H-22,W,3);
+      // ? blocks flotando + monedas girando
+      for(var i=0;i<5;i++){
+        var bx=((i*180 - t*0.4)%(W+120)); if(bx<-60) bx+=W+120;
+        var by=H*0.34 + Math.sin(t*0.03+i)*8;
+        g.fillStyle='#f2b632'; g.fillRect(bx,by,26,26);
+        g.fillStyle='rgba(255,255,255,.3)'; g.fillRect(bx,by,26,3);
+        g.fillStyle='rgba(60,35,0,.8)'; g.fillRect(bx+10,by+7,6,3); g.fillRect(bx+14,by+10,3,4); g.fillRect(bx+11,by+16,3,3);
+        // moneda girando encima
+        var cw=Math.abs(Math.cos(t*0.06+i))*10+3;
+        g.fillStyle='#ffd23e'; g.fillRect(bx+13-cw/2, by-22, cw, 16);
+      }
+      t+=1;
+      if(!reduce) raf=requestAnimationFrame(frame);
+    }
+    var raf; frame();
+  })();
+
+  /* ---------- re-render en cambio de tema ---------- */
+  function rerender(){ readColors(); render(); renderStampBar(); }
+  try{ new MutationObserver(rerender).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']}); }catch(e){}
+  try{ matchMedia('(prefers-color-scheme:dark)').addEventListener('change',rerender); }catch(e){}
+
+  /* ---------- arranque blindado ---------- */
+  try{
+    readColors(); baseLevel(); setTool('brush'); markSw(); renderStampBar(); render(); applyPalette(0);
+  }catch(err){
+    var h=document.querySelector('.stage-title'); if(h) h.textContent='Error al iniciar: '+err.message;
+    console.error(err);
+  }
+})();
+window.addEventListener('error',function(e){ console.error(e.message); });
+</script>
