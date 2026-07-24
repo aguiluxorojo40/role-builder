@@ -1,8 +1,11 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SmwOverworld
+import com.rolebuilder.core.snes.SnesDecoder
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Tests SINTÉTICOS de la capa estática del overworld ([SmwOverworld]). Se plantan a mano
@@ -45,6 +48,48 @@ class SmwOverworldTest {
         val warps = SmwOverworld.starRoadWarps(rom, 0)
         assertEquals(27, warps.size)
         assertEquals(SmwOverworld.StarWarp(0xB, 0xE, 0x928, 0x18), warps[3])
+    }
+
+    @Test
+    fun detectsLevelTiles() {
+        val rom = ByteArray(0x80000)
+        // dos casillas-de-nivel (0x56..0x80) y una que NO lo es (0x40) en $0C:F7DF
+        rom[pc(SmwOverworld.LEVEL_TILES_SNES + 0x10)] = 0x56          // límite inferior
+        rom[pc(SmwOverworld.LEVEL_TILES_SNES + 0x11)] = 0x40          // fuera de rango
+        rom[pc(SmwOverworld.LEVEL_TILES_SNES + 0x20)] = 0x80.toByte() // límite superior
+
+        val tiles = SmwOverworld.levelTiles(rom, 0)
+        assertEquals(2, tiles.size)
+        assertEquals(SmwOverworld.LevelTile(0x10, 0x56), tiles[0])
+        assertEquals(SmwOverworld.LevelTile(0x20, 0x80), tiles[1])
+    }
+
+    /**
+     * Verificación con la ROM REAL si está disponible en el scratchpad (no versionada, con
+     * copyright). En CI (sin ROM) el test pasa sin hacer nada. Confirma los ~92 niveles.
+     */
+    @Test
+    fun realRomHasNinetyTwoLevelTiles() {
+        val rom = findRom() ?: return
+        val delta = SnesDecoder.parseHeader(rom).headerOffset - 0x7FC0
+        val tiles = SmwOverworld.levelTiles(rom, delta)
+        assertEquals(92, tiles.size, "SMW US vanilla tiene 92 casillas-de-nivel")
+        val named = SmwOverworld.namedLevels(rom, delta)
+        assertTrue(named.size >= 90, "debería nombrar la gran mayoría de niveles: ${named.size}")
+        assertTrue(named.any { it.translevel == 0x29 && it.name.contains("YOSHI") },
+            "translevel 0x29 = YOSHI'S ISLAND 1")
+    }
+
+    private fun findRom(): ByteArray? {
+        val candidates = listOf(
+            System.getenv("SMW_ROM"),
+            "/tmp/claude-0/-home-user-role-builder/97c51e21-49f4-59ff-af37-f321a2c64985/" +
+                "scratchpad/smw_work/rom/Super Mario World (USA).sfc",
+        )
+        for (p in candidates) {
+            if (p != null && File(p).isFile) return File(p).readBytes()
+        }
+        return null
     }
 
     @Test

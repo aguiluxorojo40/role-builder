@@ -31,6 +31,17 @@ object SmwOverworld {
     /** Valor de "sin evento" en la tabla de eventos. */
     const val EVENT_NONE = 0xFF
 
+    /**
+     * `kLoadOverworldLayer1AndEvents_DATA_0CF7DF` ($0C:F7DF, 0x800 B, SIN comprimir):
+     * la capa de casillas-de-nivel/eventos del overworld. El juego la copia tal cual
+     * (`MemCpy` en `LoadOverworldLayer1AndEvents` $04:DC09) y detecta las casillas-de-nivel
+     * en `04D7F2`: un byte es CASILLA-DE-NIVEL si su valor Map16 está en [0x56, 0x80].
+     */
+    const val LEVEL_TILES_SNES = 0x0CF7DF
+    const val LEVEL_TILES_SIZE = 0x800
+    const val LEVEL_TILE_MIN = 0x56
+    const val LEVEL_TILE_MAX = 0x80
+
     /** `kOwStarPipeWarp_*` (banco $04): 27 warps de Star Road. */
     const val STAR_SRCX_SNES = 0x048431
     const val STAR_SRCY_SNES = 0x048467
@@ -67,5 +78,40 @@ object SmwOverworld {
                 dstX = u16(rom, STAR_DSTX_SNES + 2 * n, delta),
                 dstY = u16(rom, STAR_DSTY_SNES + 2 * n, delta),
             )
+        }
+
+    /** Una casilla-de-nivel del overworld: su posición en la capa y su valor Map16. */
+    data class LevelTile(val position: Int, val map16: Int)
+
+    /**
+     * Las CASILLAS-DE-NIVEL del overworld (los sitios donde entras a un nivel), leídas de
+     * `$0C:F7DF` tal como hace el juego (`04D7F2`): bytes con Map16 en [0x56, 0x80]. En la
+     * ROM US vanilla salen los ~92 niveles reales; excluye por construcción los slots de
+     * test (que no son casillas en el mapa). Es la base del render del worldmap y del filtro
+     * de "solo niveles jugables".
+     */
+    fun levelTiles(rom: ByteArray, delta: Int): List<LevelTile> {
+        val out = ArrayList<LevelTile>()
+        for (j in 0 until LEVEL_TILES_SIZE) {
+            val v = u8(rom, LEVEL_TILES_SNES + j, delta)
+            if (v in LEVEL_TILE_MIN..LEVEL_TILE_MAX) out.add(LevelTile(j, v))
+        }
+        return out
+    }
+
+    /** Un nivel JUGABLE con su nombre real de overworld. */
+    data class NamedLevel(val translevel: Int, val name: String)
+
+    /**
+     * Lista de NIVELES JUGABLES reales: los translevels 0x00..0x5F que tienen NOMBRE de
+     * overworld en la ROM (`SmwLevelNames`). Es la respuesta directa a "solo los niveles que
+     * son jugables en el juego": excluye los slots de test/utilidad (sin nombre) y da el
+     * nombre real de cada uno (p. ej. 0x29 → "YOSHI'S ISLAND 1"). ROM-derivado, sin listas a
+     * mano. (Enlazar cada nivel con SU casilla en el mapa y su nº de datos de nivel es la
+     * siguiente fase.)
+     */
+    fun namedLevels(rom: ByteArray, delta: Int): List<NamedLevel> =
+        (0..MAP_TRANSLEVELS - 1).mapNotNull { tl ->
+            SmwLevelNames.nameOfTranslevel(rom, delta, tl)?.let { NamedLevel(tl, it) }
         }
 }
