@@ -55,6 +55,10 @@ object SnesImport {
     fun overworldGif(rom: ByteArray, header: SnesHeader): ByteArray? =
         SnesGameRecipes.overworldMainMapGif(rom, header)
 
+    /** Todo el mundo (mapa principal + submapas) como (nombre, Bitmap), para exportar completo. */
+    fun overworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, Bitmap>> =
+        SnesGameRecipes.renderOverworldWorld(rom, header).map { (name, img) -> name to toBitmap(img) }
+
     /**
      * EXPORTA [bytes] al almacenamiento del usuario (carpeta Descargas) con [displayName] y
      * [mimeType], para que el asset SALGA de la app (PNG estático o GIF animado). Devuelve la

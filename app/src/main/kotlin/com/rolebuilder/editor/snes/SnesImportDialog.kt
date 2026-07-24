@@ -488,6 +488,24 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 }
                             }, modifier = Modifier.weight(1f)) { Text("⬇ GIF animado") }
                         }
+                        TextButton(onClick = {
+                            val rom = romBytes; val hdr = header
+                            runCatching {
+                                if (rom == null || hdr == null) error("carga la ROM")
+                                val world = SnesImport.overworldWorld(rom, hdr)
+                                if (world.isEmpty()) error("no es SMW")
+                                var saved = 0
+                                world.forEach { (name, bmp) ->
+                                    if (SnesImport.exportToDownloads(
+                                            context, "smw_ow_$name.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                        ) != null
+                                    ) saved++
+                                }
+                                Toast.makeText(context, "Mundo completo: $saved PNG en Descargas", Toast.LENGTH_LONG).show()
+                            }.onFailure {
+                                Toast.makeText(context, "No se pudo exportar el mundo: ${it.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }) { Text("⬇ Mundo completo (todos los submapas, PNG)") }
                     }
 
                     HorizontalDivider()

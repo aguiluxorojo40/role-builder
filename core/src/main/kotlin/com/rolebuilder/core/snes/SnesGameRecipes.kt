@@ -1733,6 +1733,28 @@ object SnesGameRecipes {
         return Gif.encode(w, h, frames.map { Gif.Frame(it.pixels, delayCs) })
     }
 
+    /** Nombre de cada pantalla-submapa del overworld (pantallas 4-7), en orden. */
+    private val SMW_OW_SUBMAP_NAMES = arrayOf(
+        "vanilla_dome", "valle_de_bowser", "bosque_y_special", "star_world",
+    )
+
+    /**
+     * TODO el mundo del overworld como imágenes con nombre: el **mapa principal** (512×512,
+     * pantallas 0-3) + las 4 pantallas-submapa (256×256, pantallas 4-7: Vanilla Dome, Valle
+     * de Bowser, Bosque/Special y Star World), cada una con SU paleta de área. Es la base
+     * para exportar el mundo COMPLETO desde la app (un PNG por mapa). Vacío si no es SMW.
+     */
+    fun renderOverworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, ArgbImage>> {
+        val main = renderOverworldMainMap(rom, header) ?: return emptyList()
+        val out = ArrayList<Pair<String, ArgbImage>>()
+        out.add("mapa_principal" to main)
+        for (s in 4..7) {
+            val img = renderOverworldScreen(rom, header, s, s - 3) ?: continue
+            out.add(SMW_OW_SUBMAP_NAMES[s - 4] to img)
+        }
+        return out
+    }
+
     /**
      * Render de UNA pantalla del overworld (256×256 px), tierra + capa 1, con la paleta del
      * [submap] al que pertenece. Útil para los submapas (pantallas 4-7) y para depurar.
