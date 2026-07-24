@@ -133,9 +133,10 @@ class SmwOverworldTest {
                 ImageIO.write(bi, "png", File(dumpDir, name))
             }
             dump("ow_kotlin_main.png", img)
-            for (s in 4..7) SnesGameRecipes.renderOverworldScreen(rom, header, s, s - 3)?.let {
-                dump("ow_kotlin_screen$s.png", it)
+            for (sm in 1..SmwOverworld.SUBMAP_COUNT) {
+                SnesGameRecipes.renderOverworldSubmap(rom, header, sm)?.let { dump("ow_kotlin_sub$sm.png", it) }
             }
+            SnesGameRecipes.renderOverworldSubmapArea(rom, header, 1)?.let { dump("ow_kotlin_subarea.png", it) }
             // Fotogramas animados + GIF exportable.
             val frames = SnesGameRecipes.renderOverworldMainMapFrames(rom, header)
             if (frames != null) {

@@ -1735,25 +1735,69 @@ object SnesGameRecipes {
         return Gif.encode(w, h, frames.map { Gif.Frame(it.pixels, delayCs) })
     }
 
-    /** Nombre de cada pantalla-submapa del overworld (pantallas 4-7), en orden. */
-    private val SMW_OW_SUBMAP_NAMES = arrayOf(
-        "vanilla_dome", "valle_de_bowser", "bosque_y_special", "star_world",
-    )
+    /**
+     * El **área de submapas** completa (512×512): las pantallas 4-7 en 2×2, tierra + capa 1,
+     * pintada con la paleta del [submap] indicado (1..6). Los 6 submapas del juego son
+     * ventanas de cámara sobre esta misma área — ver [renderOverworldSubmap].
+     */
+    fun renderOverworldSubmapArea(
+        rom: ByteArray, header: SnesHeader, submap: Int = 1,
+        eventCount: Int = SmwOverworld.EVENT_COUNT,
+    ): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldTileVram(rom) ?: return null
+        val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, eventCount)
+        val cgram = overworldCgram(rom, delta, submap.coerceIn(1, SmwOverworld.SUBMAP_COUNT))
+        val cols = SmwOverworld.OW_SUBMAP_AREA_COLS
+        val side = SmwOverworld.OW_SCREEN_SIDE * 8
+        val img = ArgbImage(cols * side, (SmwOverworld.OW_SUBMAP_AREA_SCREENS.size / cols) * side)
+        for (i in img.pixels.indices) img.pixels[i] = cgram[0]
+        SmwOverworld.OW_SUBMAP_AREA_SCREENS.forEachIndexed { idx, screen ->
+            drawOverworldScreen(tilemap, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
+        }
+        SmwOverworld.OW_SUBMAP_AREA_SCREENS.forEachIndexed { idx, screen ->
+            drawOverworldLayer1(rom, delta, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
+        }
+        return img
+    }
 
     /**
-     * TODO el mundo del overworld como imágenes con nombre: el **mapa principal** (512×512,
-     * pantallas 0-3) + las 4 pantallas-submapa (256×256, pantallas 4-7: Vanilla Dome, Valle
-     * de Bowser, Bosque/Special y Star World), cada una con SU paleta de área. Es la base
-     * para exportar el mundo COMPLETO desde la app (un PNG por mapa). Vacío si no es SMW.
+     * Un **submapa** (1..6) tal y como se ve en el juego: la ventana de 256×224 que la cámara
+     * enseña de él ([SmwOverworld.submapCamera], leída de la ROM), con SU paleta de área. Los
+     * seis se solapan sobre la misma área de 512×512, en 2 columnas × 3 filas. Lo que quede
+     * fuera del área se rellena con el color de fondo, como en el juego.
+     */
+    fun renderOverworldSubmap(
+        rom: ByteArray, header: SnesHeader, submap: Int,
+        eventCount: Int = SmwOverworld.EVENT_COUNT,
+    ): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val sm = submap.coerceIn(1, SmwOverworld.SUBMAP_COUNT)
+        val area = renderOverworldSubmapArea(rom, header, sm, eventCount) ?: return null
+        val (cx, cy) = SmwOverworld.submapCamera(rom, delta, sm)
+        val bg = overworldCgram(rom, delta, sm)[0]
+        val out = ArgbImage(SmwOverworld.OW_VIEW_WIDTH, SmwOverworld.OW_VIEW_HEIGHT)
+        for (y in 0 until out.height) for (x in 0 until out.width) {
+            val sx = cx + x; val sy = cy + y
+            out.set(x, y, if (sx in 0 until area.width && sy in 0 until area.height) area.get(sx, sy) else bg)
+        }
+        return out
+    }
+
+    /**
+     * TODO el mundo del overworld como imágenes con nombre: el **mapa principal** (512×512)
+     * + los **6 submapas** (256×224 cada uno, con su ventana de cámara y su paleta reales)
+     * + el área de submapas entera. Es lo que exporta la app como "mundo completo" (un PNG
+     * por mapa). Lista vacía si la ROM no es SMW.
      */
     fun renderOverworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, ArgbImage>> {
         val main = renderOverworldMainMap(rom, header) ?: return emptyList()
         val out = ArrayList<Pair<String, ArgbImage>>()
         out.add("mapa_principal" to main)
-        for (s in 4..7) {
-            val img = renderOverworldScreen(rom, header, s, s - 3) ?: continue
-            out.add(SMW_OW_SUBMAP_NAMES[s - 4] to img)
+        for (sm in 1..SmwOverworld.SUBMAP_COUNT) {
+            renderOverworldSubmap(rom, header, sm)?.let { out.add("submapa_$sm" to it) }
         }
+        renderOverworldSubmapArea(rom, header, 1)?.let { out.add("area_submapas" to it) }
         return out
     }
 

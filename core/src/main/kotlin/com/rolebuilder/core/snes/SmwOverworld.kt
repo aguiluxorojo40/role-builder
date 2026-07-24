@@ -292,6 +292,36 @@ object SmwOverworld {
     const val OW_MAIN_MAP_COLS = 2
 
     /**
+     * El **área de submapas**: las pantallas 4-7, también en 2×2 (512×512). Ojo: NO son
+     * cuatro submapas sueltos. Los **6 submapas** del juego son seis VENTANAS de cámara
+     * (256×224, el tamaño de pantalla de la SNES) recortadas sobre esa área, colocadas en
+     * 2 columnas × 3 filas y solapándose entre sí. Las esquinas de cámara están en
+     * `kOwExitLayerPosition_049A0C` ($04:9A0C, 6 pares x,y con signo), que es justo lo que
+     * usa `HandleOverworldPathExits_SetLayerPositions` ($04:9A93) al cambiar de submapa.
+     */
+    val OW_SUBMAP_AREA_SCREENS = intArrayOf(4, 5, 6, 7)
+    const val OW_SUBMAP_AREA_COLS = 2
+    /** Nº de submapas reales del overworld. */
+    const val SUBMAP_COUNT = 6
+    /** `kOwExitLayerPosition_049A0C` ($04:9A0C): 6 pares (x, y) de esquina de cámara. */
+    const val SUBMAP_CAMERA_SNES = 0x049A0C
+    /** Ventana visible de la SNES en píxeles (lo que se ve de un submapa de golpe). */
+    const val OW_VIEW_WIDTH = 256
+    const val OW_VIEW_HEIGHT = 224
+
+    /**
+     * Esquina (x, y) de la cámara del [submap] (1..6) dentro del área de submapas, leída de
+     * la ROM. Los valores son de 16 bits CON SIGNO (p. ej. `0xFFEF` = -17), así que parte de
+     * la ventana puede caer fuera del área — igual que en el juego.
+     */
+    fun submapCamera(rom: ByteArray, delta: Int, submap: Int): Pair<Int, Int> {
+        val i = (submap.coerceIn(1, SUBMAP_COUNT) - 1) * 2
+        fun signed(v: Int) = if (v >= 0x8000) v - 0x10000 else v
+        return signed(u16(rom, SUBMAP_CAMERA_SNES + 2 * i, delta)) to
+            signed(u16(rom, SUBMAP_CAMERA_SNES + 2 * (i + 1), delta))
+    }
+
+    /**
      * Área de paleta del overworld por número de submapa (`kBufferPalettesRoutines_DATA_00AD1E`,
      * $00:AD1E). El submapa 0 = mapa principal → área 1. Se usa como `tt` para leer
      * `kGlobalPalettes_OW_Areas` ($00:B3D8) al montar la CGRAM del overworld.
