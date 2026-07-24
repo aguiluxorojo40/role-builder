@@ -78,6 +78,11 @@ class SmwOverworldTest {
         assertTrue(named.size >= 90, "debería nombrar la gran mayoría de niveles: ${named.size}")
         assertTrue(named.any { it.translevel == 0x29 && it.name.contains("YOSHI") },
             "translevel 0x29 = YOSHI'S ISLAND 1")
+
+        // El tilemap L2 (mapa visible) descomprime a 0x2000 índices Map16 con variedad real.
+        val l2 = SmwOverworld.layer2Tilemap(rom, delta)
+        assertEquals(0x2000, l2.size)
+        assertTrue(l2.toSet().size in 50..255, "el mapa usa muchos Map16 distintos: ${l2.toSet().size}")
     }
 
     private fun findRom(): ByteArray? {

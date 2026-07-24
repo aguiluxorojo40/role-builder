@@ -99,6 +99,35 @@ object SmwOverworld {
         return out
     }
 
+    /**
+     * Tilemap de LAYER 2 del overworld (el mapa VISIBLE: tierra, agua, decorados), RLE.
+     * El puntero de 24 bits vive en `word($04:DC72) | byte($04:DC79) << 16`; el juego lo
+     * expande en `BufferOverworldLayer2Tilemap` ($04:DABA). Formato RLE: un byte de control
+     * `c`; si `c & 0x80` → run de `(c & 0x7F)+1` copias del siguiente byte; si no → `c+1`
+     * literales. Salen 0x2000 índices Map16 (todos los submapas).
+     */
+    const val L2_PTR_LO_SNES = 0x04DC72   // word: los 16 bits bajos del puntero
+    const val L2_PTR_BANK_SNES = 0x04DC79 // byte: el banco del puntero
+    const val L2_TILE_COUNT = 0x2000
+
+    /** Descomprime el tilemap L2 del overworld → 0x2000 índices Map16 del mapa visible. */
+    fun layer2Tilemap(rom: ByteArray, delta: Int): IntArray {
+        val ptr = u16(rom, L2_PTR_LO_SNES, delta) or (u8(rom, L2_PTR_BANK_SNES, delta) shl 16)
+        val out = IntArray(L2_TILE_COUNT)
+        var j = pc(ptr, delta)
+        var n = 0
+        while (n < out.size && j < rom.size - 1) {
+            val c = rom[j].toInt() and 0xFF; j++
+            if (c and 0x80 != 0) {
+                val v = rom[j].toInt() and 0xFF; j++
+                repeat((c and 0x7F) + 1) { if (n < out.size) out[n++] = v }
+            } else {
+                repeat(c + 1) { if (n < out.size && j < rom.size) out[n++] = rom[j++].toInt() and 0xFF }
+            }
+        }
+        return out
+    }
+
     /** Un nivel JUGABLE con su nombre real de overworld. */
     data class NamedLevel(val translevel: Int, val name: String)
 
