@@ -172,6 +172,109 @@ object SmwOverworld {
         return out
     }
 
+    // --- EVENTOS del overworld (los caminos que se REVELAN) ---------------------------
+    // Al superar un nivel, su evento (ver [translevelEvents]) "parchea" el mapa visible:
+    // aparecen caminos, se abren tuberías y emergen zonas nuevas (p. ej. la entrada al
+    // Valle de Bowser saliendo del agua). El juego lo hace en `LoadOverworldLayer2AndEvents
+    // Tilemaps_04E453` ($04:E453): por cada evento ACTIVO recorre sus "casillas de evento" y
+    // pega en el tilemap un parche de 6×6 (o 2×2) tomado de una tabla de teselas + props.
+    // Aplicando TODOS los eventos sale el mapa tal y como se ve al 100% del juego.
+
+    /** `kLayer2EventData_Ptrs_04E359` ($04:E359, 121 words): rango de casillas por evento. */
+    const val EVENT_PTRS_SNES = 0x04E359
+    /** Nº de eventos del overworld en la ROM vanilla (0..110). */
+    const val EVENT_COUNT = 111
+    /** Puntero largo (24 bits) a `kLayer2EventData_TileEntries` (vanilla $04:DD8D). */
+    const val EVENT_ENTRIES_PTR_SNES = 0x04E49F
+    /** Puntero largo a `kOverworldLayer2EventTilemap_Tiles` (vanilla $0C:8000, 0xD00 B). */
+    const val EVENT_TILES_PTR_SNES = 0x04EAF5
+    /** Puntero (word+banco) a `kOverworldLayer2EventTilemap_Prop`, RLE (vanilla $0C:8D00). */
+    const val EVENT_PROP_PTR_LO_SNES = 0x04DD45
+    const val EVENT_PROP_PTR_BANK_SNES = 0x04DD4A
+    /** Umbral de `j` que separa parches de 6×6 (abajo) de los de 2×2 (arriba). */
+    private const val EVENT_6X6_LIMIT = 0x900
+    /** Tamaño del buffer de casillas del overworld en BYTES (0x2000 casillas × 2). */
+    private const val OW_TILE_BYTES = 0x4000
+
+    private fun u24(rom: ByteArray, snes: Int, delta: Int): Int =
+        u16(rom, snes, delta) or (u8(rom, snes + 2, delta) shl 16)
+
+    /**
+     * Buffer de PROPIEDADES de las casillas de evento (`ow_layer2_event_tiles`), RLE desde
+     * `$0C:8D00` (`LoadOverworldLayer2AndEventsTilemaps_04DD57` $04:DD57). Mismo RLE que el
+     * tilemap, pero escribiendo consecutivo y terminando en dos `0xFF` seguidos. En la ROM US
+     * expande a 0xD00 bytes: exactamente el tamaño de la tabla de teselas (van emparejadas).
+     */
+    private fun eventPropBuffer(rom: ByteArray, delta: Int): IntArray {
+        val ptr = u16(rom, EVENT_PROP_PTR_LO_SNES, delta) or
+            (u8(rom, EVENT_PROP_PTR_BANK_SNES, delta) shl 16)
+        val out = ArrayList<Int>(0x1000)
+        var j = pc(ptr, delta)
+        while (j < rom.size - 1 && out.size < 0x4000) {
+            if ((rom[j].toInt() and 0xFF) == 0xFF && (rom[j + 1].toInt() and 0xFF) == 0xFF) break
+            val c = rom[j].toInt() and 0xFF; j++
+            if (c and 0x80 != 0) {
+                val v = rom[j].toInt() and 0xFF; j++
+                repeat((c and 0x7F) + 1) { out.add(v) }
+            } else {
+                repeat(c + 1) { if (j < rom.size) out.add(rom[j++].toInt() and 0xFF) }
+            }
+        }
+        return out.toIntArray()
+    }
+
+    /**
+     * El tilemap del overworld **con los eventos aplicados**: el mapa tal y como se ve tras
+     * superar los primeros [eventCount] eventos (por defecto TODOS → mapa al 100%, con todos
+     * los caminos abiertos y la entrada al Valle de Bowser emergida). Con `eventCount = 0`
+     * devuelve el mapa de partida nueva. Port de `LoadOverworldLayer2AndEventsTilemaps_04E453`
+     * + `BufferEventTileToLayer2Tilemap` ($04:E496).
+     */
+    fun overworldTilemapWithEvents(rom: ByteArray, delta: Int, eventCount: Int = EVENT_COUNT): IntArray {
+        val base = overworldTilemap(rom, delta)
+        val n = eventCount.coerceIn(0, EVENT_COUNT)
+        if (n == 0) return base
+        // Buffer intercalado como en la RAM del juego: [2i] = tesela, [2i+1] = props.
+        val buf = IntArray(OW_TILE_BYTES)
+        for (i in base.indices) { buf[2 * i] = base[i] and 0xFF; buf[2 * i + 1] = (base[i] shr 8) and 0xFF }
+
+        val entriesSnes = u24(rom, EVENT_ENTRIES_PTR_SNES, delta)
+        val tilesPc = pc(u24(rom, EVENT_TILES_PTR_SNES, delta), delta)
+        val prop = eventPropBuffer(rom, delta)
+
+        for (ev in 0 until n) {
+            val start = u16(rom, EVENT_PTRS_SNES + 2 * ev, delta)
+            val end = u16(rom, EVENT_PTRS_SNES + 2 * (ev + 1), delta)
+            for (i in start until end) {
+                // TileEntries[2i] = índice de origen; TileEntries[2i+1] = destino (en bytes).
+                val src = u16(rom, entriesSnes + 4 * i, delta)
+                val dst = u16(rom, entriesSnes + 4 * i + 2, delta)
+                val side = if (src < EVENT_6X6_LIMIT) 6 else 2
+                var j = src
+                var r4 = dst
+                repeat(side) {
+                    var v2 = r4
+                    repeat(side) {
+                        // Cada casilla = tesela (tabla en ROM) + props (buffer RLE).
+                        if (v2 + 1 < buf.size && tilesPc + j < rom.size) {
+                            buf[v2] = rom[tilesPc + j].toInt() and 0xFF
+                            buf[v2 + 1] = if (j < prop.size) prop[j] else 0
+                        }
+                        v2 += 2; j++
+                        // Borde derecho de la pantalla → misma fila de la pantalla siguiente.
+                        if (v2 and 0x3F == 0) v2 = ((v2 - 1) and 0xFFC0) + 0x800
+                    }
+                    val v4 = r4
+                    r4 = (r4 + 64) and 0xFFFF
+                    // Borde inferior → fila 0 de la pantalla de abajo (el mapa es 2 pantallas
+                    // de ancho, por eso +0x1000 bytes = 2 pantallas).
+                    if (r4 and 0x7C0 == 0) r4 = (v4 and 0xF83F) + 0x1000
+                }
+            }
+        }
+        return IntArray(base.size) { buf[2 * it] or (buf[2 * it + 1] shl 8) }
+    }
+
     // --- Geometría del overworld (verificada por render contra la ROM US) --------------
     /** Nº de "pantallas" (regiones de 32×32 teselas = 256×256 px) en el tilemap. */
     const val OW_SCREENS = 8

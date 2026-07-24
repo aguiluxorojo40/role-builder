@@ -107,6 +107,15 @@ class SmwOverworldTest {
         assertEquals(0x2000, tm.size)
         assertTrue(tm.map { it shr 10 and 7 }.toSet().size >= 4, "el mapa usa varias sub-paletas")
 
+        // EVENTOS: aplicarlos revela caminos y zonas nuevas (mapa al 100%). El mapa de
+        // partida nueva (0 eventos) y el completo tienen que DIFERIR de verdad.
+        val fresh = SmwOverworld.overworldTilemapWithEvents(rom, delta, 0)
+        val full = SmwOverworld.overworldTilemapWithEvents(rom, delta)
+        assertEquals(0x2000, full.size)
+        assertTrue(fresh.contentEquals(tm), "sin eventos = tilemap base")
+        val changed = full.indices.count { full[it] != fresh[it] }
+        assertTrue(changed > 500, "los eventos deben abrir caminos por todo el mapa: $changed casillas")
+
         val img = SnesGameRecipes.renderOverworldMainMap(rom, header)
         assertNotNull(img, "el mapa principal del overworld debe renderizar")
         assertEquals(512, img.width)

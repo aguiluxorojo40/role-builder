@@ -1675,10 +1675,12 @@ object SnesGameRecipes {
      * castillos, casa de Yoshi…) dibujada encima, y los GFX/paleta reales del overworld.
      * Es la base de la pantalla navegable del mundo. Devuelve null si no hay ROM SMW válida.
      */
-    fun renderOverworldMainMap(rom: ByteArray, header: SnesHeader): ArgbImage? {
+    fun renderOverworldMainMap(
+        rom: ByteArray, header: SnesHeader, eventCount: Int = SmwOverworld.EVENT_COUNT,
+    ): ArgbImage? {
         val delta = smwHeaderDelta(header)
         val vram = overworldTileVram(rom) ?: return null
-        val tilemap = SmwOverworld.overworldTilemap(rom, delta)
+        val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, eventCount)
         return paintOverworldMainMap(rom, delta, vram, tilemap, overworldCgram(rom, delta, 0))
     }
 
@@ -1712,7 +1714,7 @@ object SnesGameRecipes {
     fun renderOverworldMainMapFrames(rom: ByteArray, header: SnesHeader): List<ArgbImage>? {
         val delta = smwHeaderDelta(header)
         val vram = overworldTileVram(rom) ?: return null
-        val tilemap = SmwOverworld.overworldTilemap(rom, delta)
+        val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta)
         fun color(pc: Int) = SnesDecoder.bgr15ToArgb(byte(rom, pc + delta) or (byte(rom, pc + delta + 1) shl 8))
         return (0 until SMW_OW_ANIM_FRAMES).map { f ->
             val cgram = overworldCgram(rom, delta, 0)
@@ -1759,10 +1761,13 @@ object SnesGameRecipes {
      * Render de UNA pantalla del overworld (256×256 px), tierra + capa 1, con la paleta del
      * [submap] al que pertenece. Útil para los submapas (pantallas 4-7) y para depurar.
      */
-    fun renderOverworldScreen(rom: ByteArray, header: SnesHeader, screen: Int, submap: Int = 0): ArgbImage? {
+    fun renderOverworldScreen(
+        rom: ByteArray, header: SnesHeader, screen: Int, submap: Int = 0,
+        eventCount: Int = SmwOverworld.EVENT_COUNT,
+    ): ArgbImage? {
         val delta = smwHeaderDelta(header)
         val vram = overworldTileVram(rom) ?: return null
-        val tilemap = SmwOverworld.overworldTilemap(rom, delta)
+        val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, eventCount)
         val cgram = overworldCgram(rom, delta, submap)
         val side = SmwOverworld.OW_SCREEN_SIDE * 8
         val img = ArgbImage(side, side)
