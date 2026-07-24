@@ -1679,7 +1679,13 @@ object SnesGameRecipes {
         val delta = smwHeaderDelta(header)
         val vram = overworldTileVram(rom) ?: return null
         val tilemap = SmwOverworld.overworldTilemap(rom, delta)
-        val cgram = overworldCgram(rom, delta, 0)
+        return paintOverworldMainMap(rom, delta, vram, tilemap, overworldCgram(rom, delta, 0))
+    }
+
+    /** Pinta el mapa principal (tierra + capa 1) con una CGRAM dada. Reutilizado por los fotogramas. */
+    private fun paintOverworldMainMap(
+        rom: ByteArray, delta: Int, vram: Array<IntArray?>, tilemap: IntArray, cgram: IntArray,
+    ): ArgbImage {
         val cols = SmwOverworld.OW_MAIN_MAP_COLS
         val side = SmwOverworld.OW_SCREEN_SIDE * 8 // 256 px
         val img = ArgbImage(cols * side, (SmwOverworld.OW_MAIN_MAP_SCREENS.size / cols) * side)
@@ -1691,6 +1697,40 @@ object SnesGameRecipes {
             drawOverworldLayer1(rom, delta, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
         }
         return img
+    }
+
+    /** Nº de fotogramas del ciclo de destello del overworld (tabla kGlobalPalettes_Flashing). */
+    const val SMW_OW_ANIM_FRAMES = 8
+
+    /**
+     * Fotogramas ANIMADOS del mapa principal del overworld: el juego cicla cada pocos frames
+     * los colores de destello (`UploadOverworldExAnimationData`): DORADO en los índices
+     * 0x64/0x6D y ROJO en 0x7D, desde `kGlobalPalettes_Flashing` ($00:B60C → PC 0x360C, 8
+     * words dorados + 8 rojos). Eso hace latir los marcadores/tiles especiales del mapa. Se
+     * generan [SMW_OW_ANIM_FRAMES] fotogramas para exportar como GIF. Devuelve null sin ROM SMW.
+     */
+    fun renderOverworldMainMapFrames(rom: ByteArray, header: SnesHeader): List<ArgbImage>? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldTileVram(rom) ?: return null
+        val tilemap = SmwOverworld.overworldTilemap(rom, delta)
+        fun color(pc: Int) = SnesDecoder.bgr15ToArgb(byte(rom, pc + delta) or (byte(rom, pc + delta + 1) shl 8))
+        return (0 until SMW_OW_ANIM_FRAMES).map { f ->
+            val cgram = overworldCgram(rom, delta, 0)
+            val gold = color(SMW_FLASHING_PC + 2 * f)
+            val red = color(SMW_FLASHING_PC + 16 + 2 * f)
+            cgram[0x64] = gold; cgram[0x6D] = gold; cgram[0x7D] = red
+            paintOverworldMainMap(rom, delta, vram, tilemap, cgram)
+        }
+    }
+
+    /**
+     * El mapa principal del overworld como **GIF animado** (bucle) listo para exportar desde
+     * la app. Usa [renderOverworldMainMapFrames] + [Gif]. Devuelve null sin ROM SMW válida.
+     */
+    fun overworldMainMapGif(rom: ByteArray, header: SnesHeader, delayCs: Int = 12): ByteArray? {
+        val frames = renderOverworldMainMapFrames(rom, header) ?: return null
+        val w = frames[0].width; val h = frames[0].height
+        return Gif.encode(w, h, frames.map { Gif.Frame(it.pixels, delayCs) })
     }
 
     /**

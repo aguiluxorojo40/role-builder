@@ -127,6 +127,16 @@ class SmwOverworldTest {
             for (s in 4..7) SnesGameRecipes.renderOverworldScreen(rom, header, s, s - 3)?.let {
                 dump("ow_kotlin_screen$s.png", it)
             }
+            // Fotogramas animados + GIF exportable.
+            val frames = SnesGameRecipes.renderOverworldMainMapFrames(rom, header)
+            if (frames != null) {
+                frames.forEachIndexed { i, fr -> dump("ow_kotlin_frame$i.png", fr) }
+                val differ = frames.any { !it.pixels.contentEquals(frames[0].pixels) }
+                println("OWANIM frames=${frames.size} differ=$differ")
+                SnesGameRecipes.overworldMainMapGif(rom, header)?.let {
+                    File(dumpDir, "ow_kotlin.gif").writeBytes(it)
+                }
+            }
         }
 
         // Variedad de color: la paleta de área del mapa principal es 3bpp (pocas filas), así

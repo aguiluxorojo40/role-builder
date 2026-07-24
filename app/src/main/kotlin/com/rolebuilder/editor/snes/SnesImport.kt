@@ -1,10 +1,16 @@
 package com.rolebuilder.editor.snes
 
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.snes.ArgbImage
+import com.rolebuilder.core.snes.SnesGameRecipes
+import com.rolebuilder.core.snes.SnesHeader
 import java.io.File
 
 /**
@@ -36,6 +42,53 @@ object SnesImport {
         dest.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         return fileName
     }
+
+    /**
+     * Mapa del mundo (overworld) de SMW renderizado desde la ROM del usuario como [Bitmap],
+     * o null si la ROM no es SMW. La decodificación (tierra + capa 1 + GFX/paleta reales)
+     * vive en `core` ([SnesGameRecipes.renderOverworldMainMap]); aquí solo se vuelca a Bitmap.
+     */
+    fun overworldMap(rom: ByteArray, header: SnesHeader): Bitmap? =
+        SnesGameRecipes.renderOverworldMainMap(rom, header)?.let { toBitmap(it) }
+
+    /** Overworld como GIF animado (destello real del juego), listo para exportar, o null. */
+    fun overworldGif(rom: ByteArray, header: SnesHeader): ByteArray? =
+        SnesGameRecipes.overworldMainMapGif(rom, header)
+
+    /**
+     * EXPORTA [bytes] al almacenamiento del usuario (carpeta Descargas) con [displayName] y
+     * [mimeType], para que el asset SALGA de la app (PNG estático o GIF animado). Devuelve la
+     * ruta/URI mostrable o null si falla. Usa MediaStore en Android 10+ (sin permisos) y la
+     * carpeta pública de Descargas en versiones anteriores.
+     */
+    fun exportToDownloads(context: Context, displayName: String, mimeType: String, bytes: ByteArray): String? =
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, displayName)
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+                val resolver = context.contentResolver
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: return null
+                resolver.openOutputStream(uri)?.use { it.write(bytes) }
+                values.clear(); values.put(MediaStore.Downloads.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                "Descargas/$displayName"
+            } else {
+                @Suppress("DEPRECATION")
+                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                dir.mkdirs()
+                val dest = File(dir, displayName)
+                dest.outputStream().use { it.write(bytes) }
+                dest.absolutePath
+            }
+        }.getOrNull()
+
+    /** Vuelca un [Bitmap] a PNG en memoria (para exportar). */
+    fun bitmapToPng(bitmap: Bitmap): ByteArray =
+        java.io.ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
 
     /** Normaliza un nombre a un archivo PNG seguro (minúsculas, sin espacios). */
     fun sanitizeFileName(name: String): String {

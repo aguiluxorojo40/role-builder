@@ -141,6 +141,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     // Modo fácil (mapas): TODOS los niveles del juego importables (ficha ligera;
     // el mapa se construye al pulsar "Mapa", no antes).
     var levelListings by remember(romBytes) { mutableStateOf<List<SnesGameRecipes.SmwLevelListing>>(emptyList()) }
+    // Overworld (mapa del mundo): previsualización renderizada desde la ROM.
+    var overworldPreview by remember(romBytes) { mutableStateOf<ImageBitmap?>(null) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     // Juego reconocido con receta (modo fácil), o null.
@@ -426,6 +428,65 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                     Toast.makeText(context, "No se pudo iniciar: ${it.message}", Toast.LENGTH_LONG).show()
                                 }
                             }) { Text("▶") }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Text("🌍 Overworld (mapa del mundo)", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Renderiza el MAPA DEL MUNDO de SMW desde tu ROM (tierra + niveles, castillos, " +
+                            "casa de Yoshi, con GFX y paleta reales) y expórtalo: PNG estático o GIF animado " +
+                            "(destello real del juego). Se guarda en tu carpeta Descargas.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(onClick = {
+                        val rom = romBytes; val hdr = header
+                        if (rom != null && hdr != null) {
+                            overworldPreview = runCatching { SnesImport.overworldMap(rom, hdr)?.asImageBitmap() }.getOrNull()
+                            if (overworldPreview == null) {
+                                Toast.makeText(context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }) { Text("Renderizar overworld") }
+                    overworldPreview?.let { ow ->
+                        Image(
+                            bitmap = ow,
+                            contentDescription = "Overworld",
+                            filterQuality = FilterQuality.None,
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .background(Color(0xFF202024), RoundedCornerShape(4.dp))
+                                .border(1.dp, Color(0xFF555555), RoundedCornerShape(4.dp)),
+                        )
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = {
+                                val rom = romBytes; val hdr = header
+                                runCatching {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    val bmp = SnesImport.overworldMap(rom, hdr) ?: error("no es SMW")
+                                    val where = SnesImport.exportToDownloads(
+                                        context, "smw_overworld.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                    ) ?: error("no se pudo guardar")
+                                    Toast.makeText(context, "PNG guardado en $where", Toast.LENGTH_LONG).show()
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo exportar PNG: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }, modifier = Modifier.weight(1f)) { Text("⬇ PNG") }
+                            TextButton(onClick = {
+                                val rom = romBytes; val hdr = header
+                                runCatching {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    val gif = SnesImport.overworldGif(rom, hdr) ?: error("no es SMW")
+                                    val where = SnesImport.exportToDownloads(
+                                        context, "smw_overworld.gif", "image/gif", gif,
+                                    ) ?: error("no se pudo guardar")
+                                    Toast.makeText(context, "GIF animado guardado en $where", Toast.LENGTH_LONG).show()
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo exportar GIF: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }, modifier = Modifier.weight(1f)) { Text("⬇ GIF animado") }
                         }
                     }
 
