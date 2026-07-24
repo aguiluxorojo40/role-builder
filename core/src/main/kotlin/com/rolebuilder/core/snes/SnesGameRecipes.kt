@@ -1736,6 +1736,94 @@ object SnesGameRecipes {
     }
 
     /**
+     * Conjunto de GFX de sprite que usa el overworld: `LoadOverworldLayer1AndEvents` fija
+     * `graphics_level_sprite_graphics_setting = 17`, así que los ficheros salen de la tabla
+     * de GFX de sprites en `4*17`. Los dos primeros cubren las teselas OAM 0x00-0xFF.
+     */
+    private const val SMW_OW_SPRITE_GFX_SET = 17
+
+    /**
+     * VRAM de SPRITES del overworld: 256 teselas de 8×8 (3bpp) — los dos primeros ficheros
+     * del conjunto 17, que es el rango que direccionan los números de tesela OAM del mapa.
+     */
+    internal fun overworldSpriteVram(rom: ByteArray, delta: Int): Array<IntArray?>? {
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val base = SMW_SPRITE_GFX_TABLE_PC + delta + 4 * SMW_OW_SPRITE_GFX_SET
+        val out = arrayOfNulls<IntArray>(256)
+        var any = false
+        for (page in 0..1) {
+            val file = byte(rom, base + page)
+            if (file == SMW_SLOT_EMPTY) continue
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicFormat.SNES_3BPP
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                out[page * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+                any = true
+            }
+        }
+        return if (any) out else null
+    }
+
+    /** Dibuja una tesela OAM de 8×8 con su sub-paleta de sprite (CGRAM 128 + p*16). */
+    private fun drawSpriteTile(
+        tile: Int, x: Int, y: Int, palette: Int, vram: Array<IntArray?>, cgram: IntArray,
+        img: ArgbImage, hFlip: Boolean = false,
+    ) {
+        val px = vram.getOrNull(tile) ?: return
+        val base = 128 + (palette and 7) * 16
+        for (yy in 0..7) for (xx in 0..7) {
+            val sx = if (hFlip) 7 - xx else xx
+            val ci = px[yy * 8 + sx]
+            if (ci == 0) continue
+            val dx = x + xx; val dy = y + yy
+            if (dx in 0 until img.width && dy in 0 until img.height) img.set(dx, dy, cgram[base + ci])
+        }
+    }
+
+    /** Dibuja un sprite OAM de 16×16 (teselas N, N+1, N+16, N+17). */
+    private fun drawSprite16(
+        tile: Int, x: Int, y: Int, palette: Int, vram: Array<IntArray?>, cgram: IntArray, img: ArgbImage,
+    ) {
+        drawSpriteTile(tile, x, y, palette, vram, cgram, img)
+        drawSpriteTile(tile + 1, x + 8, y, palette, vram, cgram, img)
+        drawSpriteTile(tile + 16, x, y + 8, palette, vram, cgram, img)
+        drawSpriteTile(tile + 17, x + 8, y + 8, palette, vram, cgram, img)
+    }
+
+    /** Tesela base del Boo del overworld (`OWSpr0A_Boo`: tesela 96, props $34 → paleta 2). */
+    private const val SMW_OW_BOO_TILE = 96
+    private const val SMW_OW_BOO_PALETTE = 2
+    /** El cartel de BOWSER (`OWSpr08_BowserSign`): 4 teselas 111..108 hacia la izquierda. */
+    private const val SMW_OW_SIGN_FIRST_TILE = 111
+    private const val SMW_OW_SIGN_TILES = 4
+
+    /**
+     * Dibuja los SPRITES estáticos del mapa sobre el área de submapas. Se portan los tipos
+     * cuyo dibujo es constante y está verificado contra la ROM: el **cartel de BOWSER**
+     * (`OWSpr08_BowserSign` $04:FCE1 — 4 teselas de 8×8, 111→108, hacia la izquierda; su
+     * sub-paleta PARPADEA con `((frame>>1)&6)`, aquí se usa [frame]) y los **Boos**
+     * (`OWSpr0A_Boo` $04:FD70 — 16×16 desde la tesela 96, sub-paleta 2). Los demás tipos
+     * (Bowser, Koopa Kid, humo…) dependen de estado de ejecución y quedan pendientes.
+     */
+    private fun drawOverworldSprites(
+        rom: ByteArray, delta: Int, vram: Array<IntArray?>, cgram: IntArray, img: ArgbImage, frame: Int = 0,
+    ) {
+        for (s in SmwOverworld.mapSprites(rom, delta)) when (s.id) {
+            SmwOverworld.SPRITE_BOWSER_SIGN -> {
+                val pal = (((frame shr 1) and 6) shr 1)
+                for (n in 0 until SMW_OW_SIGN_TILES) {
+                    drawSpriteTile(SMW_OW_SIGN_FIRST_TILE - n, s.x - n * 8, s.y, pal, vram, cgram, img)
+                }
+            }
+            SmwOverworld.SPRITE_BOO ->
+                drawSprite16(SMW_OW_BOO_TILE, s.x, s.y, SMW_OW_BOO_PALETTE, vram, cgram, img)
+        }
+    }
+
+    /**
      * El **área de submapas** completa (512×512): las pantallas 4-7 en 2×2, tierra + capa 1,
      * pintada con la paleta del [submap] indicado (1..6). Los 6 submapas del juego son
      * ventanas de cámara sobre esta misma área — ver [renderOverworldSubmap].
@@ -1758,6 +1846,8 @@ object SnesGameRecipes {
         SmwOverworld.OW_SUBMAP_AREA_SCREENS.forEachIndexed { idx, screen ->
             drawOverworldLayer1(rom, delta, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
         }
+        // Sprites del mapa (cartel de BOWSER, Boos): sus posiciones son de esta misma área.
+        overworldSpriteVram(rom, delta)?.let { drawOverworldSprites(rom, delta, it, cgram, img) }
         return img
     }
 

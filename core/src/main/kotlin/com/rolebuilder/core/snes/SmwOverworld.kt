@@ -328,6 +328,45 @@ object SmwOverworld {
      */
     val OW_AREA_BY_SUBMAP = intArrayOf(1, 0, 3, 4, 3, 5, 2)
 
+    // --- SPRITES del mapa -------------------------------------------------------------
+    /**
+     * `kLoadOverworldSprites_SpriteSlotData` ($04:F625, 65 bytes): 13 ranuras de 5 bytes
+     * `(id, x:16, y:16)` con los sprites ESTÁTICOS del overworld que carga
+     * `LoadOverworldSprites` ($04:F675). Sus coordenadas son del **área de submapas**
+     * (Bowser y su cartel en el Valle, los Boos…). Los decorativos (nubes, pájaros, Lakitu,
+     * Cheep-Cheeps) no salen de aquí: los genera el juego al vuelo.
+     */
+    const val SPRITE_SLOT_DATA_SNES = 0x04F625
+    const val SPRITE_SLOT_COUNT = 13
+
+    /** Tipos de sprite del overworld (índice de `kProcessOverworldSprites_OverworldSpritePtrs`). */
+    const val SPRITE_NONE = 0x00
+    const val SPRITE_LAKITU = 0x01
+    const val SPRITE_BLUE_BIRD = 0x02
+    const val SPRITE_CHEEP_CHEEP = 0x03
+    const val SPRITE_PIRANHA = 0x04
+    const val SPRITE_CLOUD = 0x05
+    const val SPRITE_KOOPA_KID = 0x06
+    const val SPRITE_SMOKE = 0x07
+    const val SPRITE_BOWSER_SIGN = 0x08
+    const val SPRITE_BOWSER = 0x09
+    const val SPRITE_BOO = 0x0A
+
+    /** Un sprite estático del mapa: tipo y posición en el área de submapas. */
+    data class MapSprite(val id: Int, val x: Int, val y: Int)
+
+    /** Los 13 sprites estáticos del overworld, con su tipo y posición. */
+    fun mapSprites(rom: ByteArray, delta: Int): List<MapSprite> =
+        (0 until SPRITE_SLOT_COUNT).map { i ->
+            val b = SPRITE_SLOT_DATA_SNES + i * 5
+            fun signed(v: Int) = if (v >= 0x8000) v - 0x10000 else v
+            MapSprite(
+                id = u8(rom, b, delta),
+                x = signed(u16(rom, b + 1, delta)),
+                y = signed(u16(rom, b + 3, delta)),
+            )
+        }
+
     /** Un nivel JUGABLE con su nombre real de overworld. */
     data class NamedLevel(val translevel: Int, val name: String)
 

@@ -116,6 +116,13 @@ class SmwOverworldTest {
         val changed = full.indices.count { full[it] != fresh[it] }
         assertTrue(changed > 500, "los eventos deben abrir caminos por todo el mapa: $changed casillas")
 
+        // SPRITES del mapa: 13 ranuras con el cartel de BOWSER y los Boos entre ellas.
+        val sprites = SmwOverworld.mapSprites(rom, delta)
+        assertEquals(13, sprites.size)
+        assertTrue(sprites.any { it.id == SmwOverworld.SPRITE_BOWSER_SIGN }, "el cartel de BOWSER")
+        assertEquals(3, sprites.count { it.id == SmwOverworld.SPRITE_BOO }, "tres Boos")
+        assertNotNull(SnesGameRecipes.overworldSpriteVram(rom, delta), "GFX de sprites del OW")
+
         val img = SnesGameRecipes.renderOverworldMainMap(rom, header)
         assertNotNull(img, "el mapa principal del overworld debe renderizar")
         assertEquals(512, img.width)
