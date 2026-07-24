@@ -2,9 +2,13 @@ package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SmwOverworld
 import com.rolebuilder.core.snes.SnesDecoder
+import com.rolebuilder.core.snes.SnesGameRecipes
+import java.awt.image.BufferedImage
 import java.io.File
+import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -83,6 +87,53 @@ class SmwOverworldTest {
         val l2 = SmwOverworld.layer2Tilemap(rom, delta)
         assertEquals(0x2000, l2.size)
         assertTrue(l2.toSet().size in 50..255, "el mapa usa muchos Map16 distintos: ${l2.toSet().size}")
+    }
+
+    /**
+     * Render del MAPA PRINCIPAL del overworld con la ROM real (si está en el scratchpad).
+     * El tilemap del overworld son casillas SNES de 8×8 DIRECTAS (no Map16): byte bajo de
+     * la tabla de teselas, byte alto de la de propiedades (paleta/flip). El mapa principal
+     * son las pantallas 0-3 en 2×2 (512×512). Se comprueba que sale una imagen con COLOR y
+     * VARIEDAD reales (mapa reconocible), no un lienzo plano. En CI (sin ROM) no hace nada.
+     */
+    @Test
+    fun rendersOverworldMainMap() {
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+
+        // Tilemap combinado (bajo|prop<<8): 0x2000 casillas de 8×8 con propiedades reales.
+        val delta = header.headerOffset - 0x7FC0
+        val tm = SmwOverworld.overworldTilemap(rom, delta)
+        assertEquals(0x2000, tm.size)
+        assertTrue(tm.map { it shr 10 and 7 }.toSet().size >= 4, "el mapa usa varias sub-paletas")
+
+        val img = SnesGameRecipes.renderOverworldMainMap(rom, header)
+        assertNotNull(img, "el mapa principal del overworld debe renderizar")
+        assertEquals(512, img.width)
+        assertEquals(512, img.height)
+
+        // Volcado local para inspección visual (solo si existe el scratchpad; nunca en CI ni
+        // versionado: la imagen es contenido derivado de la ROM con copyright).
+        val dumpDir = File(
+            "/tmp/claude-0/-home-user-role-builder/97c51e21-49f4-59ff-af37-f321a2c64985/scratchpad"
+        )
+        if (dumpDir.isDirectory) {
+            fun dump(name: String, im: com.rolebuilder.core.snes.ArgbImage) {
+                val bi = BufferedImage(im.width, im.height, BufferedImage.TYPE_INT_ARGB)
+                bi.setRGB(0, 0, im.width, im.height, im.pixels, 0, im.width)
+                ImageIO.write(bi, "png", File(dumpDir, name))
+            }
+            dump("ow_kotlin_main.png", img)
+            for (s in 4..7) SnesGameRecipes.renderOverworldScreen(rom, header, s, s - 3)?.let {
+                dump("ow_kotlin_screen$s.png", it)
+            }
+        }
+
+        // Variedad de color: la paleta de área del mapa principal es 3bpp (pocas filas), así
+        // que un mapa REAL sale con ~12 colores (verdes, marrones, arena, agua, blanco,
+        // negro, gris); si el decodificado de teselas o paleta fallara saldría 1-2. El umbral
+        // distingue "mapa real" de "lienzo plano" sin exigir más color del que hay.
+        assertTrue(img.pixels.toSet().size >= 8, "el mapa debe tener color y variedad reales: ${img.pixels.toSet().size}")
     }
 
     private fun findRom(): ByteArray? {

@@ -1543,6 +1543,129 @@ object SnesGameRecipes {
         return img
     }
 
+    // ============================ OVERWORLD (mapa del mundo) ============================
+    // El overworld NO usa el pipeline de niveles: su capa visible (tierra/agua) es un
+    // tilemap de casillas SNES de 8×8 DIRECTAS (ver SmwOverworld.overworldTilemap), y sus
+    // 4 ficheros de GFX y su paleta son fijos del modo overworld —no dependen de la cabecera
+    // de un nivel—. Todo esto está verificado por render contra la ROM US (sale el mapa
+    // principal, Vanilla Dome, Star World y "SPECIAL" reconocibles con color real).
+
+    /** Los 4 ficheros GFX del overworld (`kUploadGraphicsFiles_FGAndBGGFXList`, tileset
+     *  0x11-0x17 → índice 4*tileset, todos iguales): slots VRAM 0..3, 0x80 teselas cada uno. */
+    private val SMW_OW_GFX_FILES = intArrayOf(0x1C, 0x1D, 0x08, 0x1E)
+
+    /** Tablas de paleta del overworld (banco $00, `BufferPalettesRoutines_Overworld` $00:AD25). */
+    private const val SMW_OW_PAL_AREAS_PC = 0x33D8   // $00:B3D8 kGlobalPalettes_OW_Areas (28 words/área)
+    private const val SMW_OW_PAL_OBJECTS_PC = 0x3528 // $00:B528 kGlobalPalettes_OW_Objects
+    private const val SMW_OW_PAL_SPRITES_PC = 0x357C // $00:B57C kGlobalPalettes_OW_Sprites
+    private const val SMW_OW_PAL_B5EC_PC = 0x35EC    // $00:B5EC kGlobalPalettes_B5EC
+
+    /**
+     * VRAM del overworld: los 4 ficheros GFX ({0x1C,0x1D,0x08,0x1E}) descomprimidos y
+     * decodificados a 512 teselas de 8×8 (128 por slot, teselas 0x000/0x080/0x100/0x180),
+     * exactamente como los sube `UploadGraphicsFiles`. Todos son 3bpp.
+     */
+    internal fun overworldTileVram(rom: ByteArray): Array<IntArray?>? {
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val vram = arrayOfNulls<IntArray>(512)
+        for (s in 0..3) {
+            val file = SMW_OW_GFX_FILES[s]
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicFormat.SNES_3BPP // el overworld es 3bpp sin excepción
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+            }
+        }
+        if (vram.all { it == null }) return null
+        return vram
+    }
+
+    /**
+     * CGRAM del overworld (256 colores ARGB) para el [submap] dado (0 = mapa principal),
+     * montada como `BufferPalettesRoutines_Overworld` con `LoadColors(src, dstByte, cnt, rows)`
+     * = escribe `cnt+1` colores desde `dstByte>>1`, avanzando 16 colores por fila, `rows+1`
+     * filas. Áreas, objetos, sprites y extra del mundo.
+     */
+    internal fun overworldCgram(rom: ByteArray, delta: Int, submap: Int): IntArray {
+        val pal = IntArray(256)
+        fun color(pc: Int): Int = SnesDecoder.bgr15ToArgb(byte(rom, pc + delta) or (byte(rom, pc + delta + 1) shl 8))
+        fun loadColors(srcPc: Int, dstByte: Int, cnt: Int, rows: Int) {
+            var src = srcPc
+            for (row in 0..rows) {
+                val base = (dstByte shr 1) + row * 16
+                for (c in 0..cnt) { pal[base + c] = color(src); src += 2 }
+            }
+        }
+        val tt = SmwOverworld.OW_AREA_BY_SUBMAP[submap.coerceIn(0, 6)]
+        loadColors(SMW_OW_PAL_AREAS_PC + tt * 28 * 2, 130, 6, 3)
+        loadColors(SMW_OW_PAL_OBJECTS_PC, 82, 6, 5)
+        loadColors(SMW_OW_PAL_SPRITES_PC, 258, 6, 7)
+        loadColors(SMW_OW_PAL_B5EC_PC, 16, 7, 1)
+        return pal
+    }
+
+    /** Dibuja una pantalla (32×32 casillas de 8×8) del tilemap del overworld en (ox,oy). */
+    private fun drawOverworldScreen(
+        tilemap: IntArray, screen: Int, vram: Array<IntArray?>, cgram: IntArray, img: ArgbImage, ox: Int, oy: Int,
+    ) {
+        val base = screen * SmwOverworld.OW_SCREEN_TILES
+        for (p in 0 until SmwOverworld.OW_SCREEN_TILES) {
+            val entry = tilemap[base + p]
+            val tile = entry and 0x3FF
+            val rowP = ((entry shr 10) and 7) * 16
+            val hFlip = (entry and 0x4000) != 0
+            val vFlip = (entry and 0x8000) != 0
+            val px = vram.getOrNull(tile) ?: continue
+            val bx = ox + (p % SmwOverworld.OW_SCREEN_SIDE) * 8
+            val by = oy + (p / SmwOverworld.OW_SCREEN_SIDE) * 8
+            for (yy in 0..7) for (xx in 0..7) {
+                val sx = if (hFlip) 7 - xx else xx
+                val sy = if (vFlip) 7 - yy else yy
+                val ci = px[sy * 8 + sx]
+                if (ci != 0) img.set(bx + xx, by + yy, cgram[rowP + ci])
+            }
+        }
+    }
+
+    /**
+     * Render del **mapa principal** del overworld (512×512 px): las pantallas 0-3 del
+     * tilemap dispuestas en 2×2, con los GFX y la paleta reales del modo overworld. Es la
+     * base de la pantalla navegable del mundo. Devuelve null si no hay ROM SMW válida.
+     */
+    fun renderOverworldMainMap(rom: ByteArray, header: SnesHeader): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldTileVram(rom) ?: return null
+        val tilemap = SmwOverworld.overworldTilemap(rom, delta)
+        val cgram = overworldCgram(rom, delta, 0)
+        val cols = SmwOverworld.OW_MAIN_MAP_COLS
+        val side = SmwOverworld.OW_SCREEN_SIDE * 8 // 256 px
+        val img = ArgbImage(cols * side, (SmwOverworld.OW_MAIN_MAP_SCREENS.size / cols) * side)
+        for (i in img.pixels.indices) img.pixels[i] = cgram[0]
+        SmwOverworld.OW_MAIN_MAP_SCREENS.forEachIndexed { idx, screen ->
+            drawOverworldScreen(tilemap, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
+        }
+        return img
+    }
+
+    /**
+     * Render de UNA pantalla del overworld (256×256 px), con la paleta del [submap] al que
+     * pertenece. Útil para los submapas (pantallas 4-7) y para depurar. `screen` 0-7.
+     */
+    fun renderOverworldScreen(rom: ByteArray, header: SnesHeader, screen: Int, submap: Int = 0): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldTileVram(rom) ?: return null
+        val tilemap = SmwOverworld.overworldTilemap(rom, delta)
+        val cgram = overworldCgram(rom, delta, submap)
+        val side = SmwOverworld.OW_SCREEN_SIDE * 8
+        val img = ArgbImage(side, side)
+        for (i in img.pixels.indices) img.pixels[i] = cgram[0]
+        drawOverworldScreen(tilemap, screen, vram, cgram, img, 0, 0)
+        return img
+    }
+
     /**
      * FONDOS (Layer 2) para la galería: renderiza los fondos de los niveles escaparate
      * ([SMW_SCENE_LEVELS]) que tienen Layer 2 de imagen y pasan el gate de honestidad.

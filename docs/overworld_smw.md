@@ -58,46 +58,56 @@ Posiciones en coordenadas de casilla del overworld (los altos indican submapa).
 (Traducción a texto de nombres y posición en el mapa: requiere el tilemap del
 overworld; ver `docs/auditoria_cobertura_smw.md`.)
 
-## Render del worldmap — RECIPE VERIFICADO (fase "tilemap comprimido" resuelta)
+## Render del worldmap — RECIPE VERIFICADO Y PORTADO A KOTLIN
 
-Reverse-engineering completo y **verificado por render** contra la ROM US. El overworld
-se dibuja como "otro tileset" reutilizando la infra de niveles (`renderSmwBackground`).
+Reverse-engineering completo, **verificado por render** contra la ROM US y **portado a Kotlin**
+(`SnesGameRecipes.renderOverworldMainMap` / `renderOverworldScreen`, con la capa de datos en
+`SmwOverworld`). Corrige errores de una versión anterior de este documento (marcados abajo).
 
-**1. Tilemap L2 (mapa visible)** — ya en `SmwOverworld.layer2Tilemap()`:
-- Puntero: `word($04:DC72) | byte($04:DC79) << 16`. RLE (`BufferOverworldLayer2Tilemap`
-  $04:DABA): control `c`; `c&0x80` → run de `(c&0x7F)+1` del byte siguiente; si no → `c+1`
-  literales. Salen **0x2000 índices Map16**, en 8 submapas de 0x400 (32×32) consecutivos
-  (submapa 0 = mapa principal).
+**CLAVE (lo que antes estaba mal):** la capa VISIBLE del overworld **NO usa Map16**. Es un
+tilemap de **casillas SNES de 8×8 DIRECTAS**. Cada entrada de 16 bits = `vhopppcc cccccccc`
+(tesela 10 bits, paleta bits 10-12, flipX bit14, flipY bit15) — se dibuja tesela a tesela, no
+por bloques Map16. (El Map16 del overworld, `$05:D000`, es de la capa 1 interactiva: dots de
+nivel y caminos, no de la tierra.)
 
-**2. Casillas-de-nivel** — ya en `SmwOverworld.levelTiles()`:
-- `$0C:F7DF`, 0x800 bytes SIN comprimir; casilla-de-nivel = Map16 en **[0x56, 0x80]**
-  (`04D7F2`). 92 en la ROM US.
+**1. Tilemap visible (8×8 directo)** — `SmwOverworld.overworldTilemap()`:
+- DOS tablas RLE, combinadas `entrada = bajo | (alto << 8)`:
+  - **teselas** (byte bajo): puntero `word($04:DC72) | byte($04:DC79)<<16` → **$04:A533**.
+  - **propiedades** (byte alto: paleta/flip): operando en **$04:DC8D** (`LDA #$C02B`), banco
+    reusado de $04:DC79 → **$04:C02B**.
+- RLE (`BufferOverworldLayer2Tilemap` $04:DABA): control `c`; `c&0x80` → run de `(c&0x7F)+1`
+  del byte siguiente; si no → `c+1` literales. Salen **0x2000 casillas de 8×8**.
 
-**3. Map16 del overworld**: `kMap16Data_OverworldLayer1` = **$05:D000** (772 words). Cada
-bloque = 4 tile-words (formato SNES estándar: `vhopppcc cccccccc`, tesela 10 bits, paleta
-bits 10-12, flipX bit14, flipY bit15). Sub-teselas 0=TL,1=BL,2=TR,3=BR.
+**2. Geometría** (`InitializeOverworldTilemaps` $04:D6E9 + `kOwExitLayerPosition_049A0C`):
+- 0x2000 casillas = **8 pantallas** de 0x400 (32×32 teselas = 256×256 px).
+- **Mapa principal = pantallas 0-3 en 2×2** (512×512 px): 0=arr-izq, 1=arr-der, 2=ab-izq,
+  3=ab-der. Da el mapa reconocible (Yoshi's Island, Donut, Star Road, Vanilla, bosque…).
+- **6 submapas = pantallas 4-7** (cada una 256×256), empaquetados según la tabla de cámara
+  `kOwExitLayerPosition_049A0C` (6 posiciones, 2 columnas × 3 filas).
 
-**4. GFX del OW** (`UploadGraphicsFiles` $00:A9DA indexa `4*misc_level_tileset_setting`
-SIN enmascarar): tileset del submapa = `kOwSubmapTileset_04DC02` = {0x11..0x17}. Los 4
-ficheros GFX salen de `kUploadGraphicsFiles_FGAndBGGFXList` (= `SMW_FGBG_GFX_TABLE_PC`
-0x292B) en `4*tileset`:
-- **Mapa principal (tileset 0x11): GFX {0x0E, 0x0F, 0x17, 0x17}** → slots VRAM 0..3.
-- Submapas (0x12-0x17): **{0x1C, 0x1D, 0x08, 0x1E}**.
-- Se descomprimen (LC_LZ2, 3bpp) a los 4 slots (tesela 0x000/0x080/0x100/0x180), como en
-  `renderSmwBackground` (`smwFgbgVramSlot`).
+**3. GFX del OW** (`UploadGraphicsFiles` $00:A9DA indexa `4*misc_level_tileset_setting` SIN
+enmascarar; tileset = `kOwSubmapTileset_04DC02[submapa]` = {0x11..0x17}):
+- **TODOS los mapas del overworld (tileset 0x11-0x17) usan los MISMOS 4 GFX:
+  {0x1C, 0x1D, 0x08, 0x1E}** → slots VRAM 0..3 (teselas 0x000/0x080/0x100/0x180), 3bpp.
+  (CORRECCIÓN: el {0x0E,0x0F,0x17,0x17} que ponía antes es el tileset **0x10**, que el
+  overworld NO usa. `kUploadGraphicsFiles_FGAndBGGFXList[4*0x11..]` = {0x1C,0x1D,0x08,0x1E}.)
+- Se descomprimen (LC_LZ2) igual que en `renderSmwBackground` (`overworldTileVram`).
 
-**5. Paleta del OW** (`BufferPalettesRoutines_Overworld` $00:AD25, mismo `LoadColors` que
-`build_cgram` de niveles):
-- área: `tt = kBufferPalettesRoutines_DATA_00AD1E[(tileset&0xF)-1]` con
-  `DATA_00AD1E = {1,0,3,4,3,5,2}` (submapa 0 → tt=1). Fuente
-  `kGlobalPalettes_OW_Areas` **$B3D8** + `tt*28` words → `LoadColors(_, dst=130, cnt=6, rows=3)`.
-- objetos: `kGlobalPalettes_OW_Objects` **$B528** → `LoadColors(_, 82, 6, 5)`.
-- sprites: `kGlobalPalettes_OW_Sprites` **$B57C** → `LoadColors(_, 258, 6, 7)`.
-- extra: `kGlobalPalettes_B5EC` **$B5EC** → `LoadColors(_, 16, 7, 1)`.
-- `LoadColors(src, dstByte, count, rows)`: escribe `count+1` colores desde `dstByte>>1`,
-  avanzando 16 colores por fila, `rows+1` filas (port en `SmwOverworld`/`build_cgram`).
+**4. Paleta del OW** (`BufferPalettesRoutines_Overworld` $00:AD25, `overworldCgram`):
+- área: `tt = kBufferPalettesRoutines_DATA_00AD1E[(tileset&0xF)-1]`, `DATA_00AD1E =
+  {1,0,3,4,3,5,2}` (submapa 0 → tt=1). Fuente `kGlobalPalettes_OW_Areas` **$00:B3D8**
+  (PC 0x33D8) + `tt*28` words → `LoadColors(_, dst=130, cnt=6, rows=3)`.
+- objetos: `kGlobalPalettes_OW_Objects` **$00:B528** → `LoadColors(_, 82, 6, 5)`.
+- sprites: `kGlobalPalettes_OW_Sprites` **$00:B57C** → `LoadColors(_, 258, 6, 7)`.
+- extra: `kGlobalPalettes_B5EC` **$00:B5EC** → `LoadColors(_, 16, 7, 1)`.
+- `LoadColors(src, dstByte, cnt, rows)` ($00:ACFF): escribe `cnt+1` colores desde
+  `dstByte>>1`, avanzando 16 colores por fila, `rows+1` filas.
 
-**Verificado**: render de los 8 submapas con estas piezas → mapa principal (Yoshi's Island/
-Donut Plains), Vanilla Dome, Star World y el mundo "SPECIAL" reconocibles, con color real.
-Pendiente: portar `renderOverworldSubmap` a Kotlin (transcripción de lo anterior, reutilizando
-`findSmwGfxTable`/`LcLz2`/`SnesDecoder.decodeTile`/`ArgbImage`) y la pantalla navegable.
+**Verificado**: `renderOverworldMainMap` sale idéntico bit a bit al render de referencia — el
+mapa principal completo y reconocible (Yoshi's Island, Donut Plains, Star Road, Vanilla Dome,
+bosque) con color real; las pantallas 4-7 dan Vanilla Dome, Valle, bosque/"SPECIAL" y Star
+World, cada una con su paleta de área. La paleta de área es 3bpp, así que un mapa real sale con
+~12 colores distintos (no es un fallo: es la paleta del juego). Test:
+`SmwOverworldTest.rendersOverworldMainMap` (gated a la ROM local; nunca versiona la imagen).
+Pendiente: la pantalla navegable (mover Mario casilla→casilla, entrar a niveles, progresión
+por `translevelEvents`).

@@ -113,8 +113,44 @@ object SmwOverworld {
     /** Descomprime el tilemap L2 del overworld → 0x2000 índices Map16 del mapa visible. */
     fun layer2Tilemap(rom: ByteArray, delta: Int): IntArray {
         val ptr = u16(rom, L2_PTR_LO_SNES, delta) or (u8(rom, L2_PTR_BANK_SNES, delta) shl 16)
-        val out = IntArray(L2_TILE_COUNT)
-        var j = pc(ptr, delta)
+        return rleDecompress(rom, delta, ptr, L2_TILE_COUNT)
+    }
+
+    /**
+     * Operando (word) del puntero de la tabla de PROPIEDADES del tilemap L2. Descubierto
+     * en el código de `LoadOverworldLayer2AndEventsTilemaps_Sub` ($04:DC8D `LDA #$C02B`):
+     * la segunda pasada de `BufferOverworldLayer2Tilemap` rellena los bytes IMPARES de
+     * `ow_layer2_tiles` con esta tabla (banco reutilizado del puntero bajo, $04:DC79).
+     * Cada entrada del tilemap del overworld NO es un índice Map16: es una casilla SNES
+     * de 8×8 directa `vhopppcc cccccccc`, donde el byte alto (props) trae paleta y flips.
+     */
+    const val L2_PROP_PTR_LO_SNES = 0x04DC8D
+
+    /**
+     * El tilemap VISIBLE del overworld como **casillas SNES de 8×8 directas** (0x2000):
+     * byte bajo = tabla de teselas ($04:A533), byte alto = tabla de propiedades ($04:C02B),
+     * ambas RLE. `entrada = bajo | (alto << 8)`, formato `vhopppcc cccccccc`: tesela 10 bits,
+     * paleta bits 10-12, flipX bit14, flipY bit15. A diferencia de los NIVELES, la capa de
+     * tierra del overworld no pasa por Map16: se dibuja tesela a tesela. Es la base del
+     * render del mapa del mundo (verificado contra la ROM US: sale el mapa principal, Vanilla
+     * Dome, Star World y "SPECIAL" reconocibles con color real).
+     */
+    fun overworldTilemap(rom: ByteArray, delta: Int): IntArray {
+        val loPtr = u16(rom, L2_PTR_LO_SNES, delta) or (u8(rom, L2_PTR_BANK_SNES, delta) shl 16)
+        val hiPtr = u16(rom, L2_PROP_PTR_LO_SNES, delta) or (u8(rom, L2_PTR_BANK_SNES, delta) shl 16)
+        val lo = rleDecompress(rom, delta, loPtr, L2_TILE_COUNT)
+        val hi = rleDecompress(rom, delta, hiPtr, L2_TILE_COUNT)
+        return IntArray(L2_TILE_COUNT) { lo[it] or (hi[it] shl 8) }
+    }
+
+    /**
+     * RLE del overworld (`BufferOverworldLayer2Tilemap` $04:DABA): byte de control `c`;
+     * si `c & 0x80` → run de `(c & 0x7F)+1` copias del byte siguiente; si no → `c+1`
+     * literales. Devuelve [count] bytes.
+     */
+    private fun rleDecompress(rom: ByteArray, delta: Int, snesPtr: Int, count: Int): IntArray {
+        val out = IntArray(count)
+        var j = pc(snesPtr, delta)
         var n = 0
         while (n < out.size && j < rom.size - 1) {
             val c = rom[j].toInt() and 0xFF; j++
@@ -127,6 +163,29 @@ object SmwOverworld {
         }
         return out
     }
+
+    // --- Geometría del overworld (verificada por render contra la ROM US) --------------
+    /** Nº de "pantallas" (regiones de 32×32 teselas = 256×256 px) en el tilemap. */
+    const val OW_SCREENS = 8
+    /** Lado de una pantalla en teselas de 8×8. */
+    const val OW_SCREEN_SIDE = 32
+    /** Teselas por pantalla (32×32). */
+    const val OW_SCREEN_TILES = OW_SCREEN_SIDE * OW_SCREEN_SIDE
+    /**
+     * El **mapa principal** ocupa las pantallas 0-3 dispuestas en 2×2 (512×512 px). Las
+     * pantallas 4-7 son los submapas (Vanilla Dome, Valley, Bosque/SPECIAL, Star World…),
+     * cada uno con su propia paleta de área. Orden de sub-pantallas del mapa 2×2:
+     * 0=arriba-izq, 1=arriba-der, 2=abajo-izq, 3=abajo-der.
+     */
+    val OW_MAIN_MAP_SCREENS = intArrayOf(0, 1, 2, 3)
+    const val OW_MAIN_MAP_COLS = 2
+
+    /**
+     * Área de paleta del overworld por número de submapa (`kBufferPalettesRoutines_DATA_00AD1E`,
+     * $00:AD1E). El submapa 0 = mapa principal → área 1. Se usa como `tt` para leer
+     * `kGlobalPalettes_OW_Areas` ($00:B3D8) al montar la CGRAM del overworld.
+     */
+    val OW_AREA_BY_SUBMAP = intArrayOf(1, 0, 3, 4, 3, 5, 2)
 
     /** Un nivel JUGABLE con su nombre real de overworld. */
     data class NamedLevel(val translevel: Int, val name: String)
