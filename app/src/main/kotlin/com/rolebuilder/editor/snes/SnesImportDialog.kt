@@ -143,6 +143,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     var levelListings by remember(romBytes) { mutableStateOf<List<SnesGameRecipes.SmwLevelListing>>(emptyList()) }
     // Overworld (mapa del mundo): previsualización renderizada desde la ROM.
     var overworldPreview by remember(romBytes) { mutableStateOf<ImageBitmap?>(null) }
+    // Pantalla de título reconstruida desde la ROM.
+    var titlePreview by remember(romBytes) { mutableStateOf<ImageBitmap?>(null) }
 
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     // Juego reconocido con receta (modo fácil), o null.
@@ -506,6 +508,49 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 Toast.makeText(context, "No se pudo exportar el mundo: ${it.message}", Toast.LENGTH_LONG).show()
                             }
                         }) { Text("⬇ Mundo completo (todos los submapas, PNG)") }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    Text("🎬 Pantalla de título", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Reconstruye la PANTALLA DE TÍTULO de SMW desde tu ROM: el nivel de fondo con " +
+                            "el logo \"SUPER MARIO WORLD\" (Layer 3) y su paleta reales. Exportable a PNG.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(onClick = {
+                        val rom = romBytes; val hdr = header
+                        if (rom != null && hdr != null) {
+                            titlePreview = runCatching { SnesImport.titleScreen(rom, hdr)?.asImageBitmap() }.getOrNull()
+                            if (titlePreview == null) {
+                                Toast.makeText(context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }) { Text("Renderizar pantalla de título") }
+                    titlePreview?.let { ts ->
+                        Image(
+                            bitmap = ts,
+                            contentDescription = "Pantalla de título",
+                            filterQuality = FilterQuality.None,
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .background(Color(0xFF202024), RoundedCornerShape(4.dp))
+                                .border(1.dp, Color(0xFF555555), RoundedCornerShape(4.dp)),
+                        )
+                        TextButton(onClick = {
+                            val rom = romBytes; val hdr = header
+                            runCatching {
+                                if (rom == null || hdr == null) error("carga la ROM")
+                                val bmp = SnesImport.titleScreen(rom, hdr) ?: error("no es SMW")
+                                val where = SnesImport.exportToDownloads(
+                                    context, "smw_titulo.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                ) ?: error("no se pudo guardar")
+                                Toast.makeText(context, "PNG guardado en $where", Toast.LENGTH_LONG).show()
+                            }.onFailure {
+                                Toast.makeText(context, "No se pudo exportar: ${it.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }) { Text("⬇ PNG de la pantalla de título") }
                     }
 
                     HorizontalDivider()

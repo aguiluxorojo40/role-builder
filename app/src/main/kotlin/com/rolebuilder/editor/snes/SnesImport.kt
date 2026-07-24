@@ -9,6 +9,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.snes.ArgbImage
+import com.rolebuilder.core.snes.SmwTitleScreen
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesHeader
 import java.io.File
@@ -54,6 +55,13 @@ object SnesImport {
     /** Overworld como GIF animado (destello real del juego), listo para exportar, o null. */
     fun overworldGif(rom: ByteArray, header: SnesHeader): ByteArray? =
         SnesGameRecipes.overworldMainMapGif(rom, header)
+
+    /**
+     * PANTALLA DE TÍTULO de SMW reconstruida desde la ROM (nivel de fondo + logo "SUPER
+     * MARIO WORLD" de Layer 3 con su paleta real), o null si la ROM no es SMW.
+     */
+    fun titleScreen(rom: ByteArray, header: SnesHeader): Bitmap? =
+        SmwTitleScreen.renderComplete(rom, header)?.let { toBitmap(it) }
 
     /** Todo el mundo (mapa principal + submapas) como (nombre, Bitmap), para exportar completo. */
     fun overworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, Bitmap>> =
