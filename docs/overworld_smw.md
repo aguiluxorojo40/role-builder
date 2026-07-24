@@ -82,8 +82,42 @@ nivel y caminos, no de la tierra.)
 - 0x2000 casillas = **8 pantallas** de 0x400 (32×32 teselas = 256×256 px).
 - **Mapa principal = pantallas 0-3 en 2×2** (512×512 px): 0=arr-izq, 1=arr-der, 2=ab-izq,
   3=ab-der. Da el mapa reconocible (Yoshi's Island, Donut, Star Road, Vanilla, bosque…).
-- **6 submapas = pantallas 4-7** (cada una 256×256), empaquetados según la tabla de cámara
-  `kOwExitLayerPosition_049A0C` (6 posiciones, 2 columnas × 3 filas).
+- **Área de submapas = pantallas 4-7, también en 2×2** (512×512). CUIDADO: no son cuatro
+  submapas sueltos. Los **6 submapas** del juego son seis VENTANAS de cámara de 256×224 (el
+  tamaño de pantalla de la SNES) recortadas sobre esa área, en 2 columnas × 3 filas y
+  **solapándose** entre sí. Las esquinas están en `kOwExitLayerPosition_049A0C` ($04:9A0C,
+  6 pares x,y CON SIGNO: x ∈ {-17, 240}, y ∈ {-40, 128, 296}) — la misma tabla que usa
+  `HandleOverworldPathExits_SetLayerPositions` ($04:9A93) al cambiar de submapa. Por eso
+  seis submapas caben en cuatro pantallas.
+  (Port: `SmwOverworld.submapCamera` + `SnesGameRecipes.renderOverworldSubmap`.)
+
+**2b. EVENTOS — los caminos que se revelan** (`LoadOverworldLayer2AndEventsTilemaps_04E453`
+$04:E453 + `BufferEventTileToLayer2Tilemap` $04:E496). Al superar un nivel se activa su
+evento (ver la tabla de arriba) y el mapa se PARCHEA: aparecen caminos, se abren tuberías y
+emergen zonas nuevas. Aplicando los 111 eventos sale el mapa **tal y como se ve al 100%**.
+- `kLayer2EventData_Ptrs_04E359` = **$04:E359** (121 words): rango de casillas por evento.
+- Entradas: puntero largo en **$04:E49F** (vanilla → $04:DD8D). Por casilla `i`, dos words:
+  `[2i]` = índice de origen `j`, `[2i+1]` = destino en BYTES dentro del buffer del tilemap.
+- Teselas: puntero largo en **$04:EAF5** (vanilla → $0C:8000, 0xD00 B, sin comprimir).
+- Props: word en **$04:DD45** + banco en **$04:DD4A** (vanilla → $0C:8D00), RLE con fin en
+  `FF FF`; expande a 0xD00 B, emparejado 1:1 con la tabla de teselas.
+- Parche de **6×6** si `j < 0x900`, si no de **2×2**. El buffer es intercalado
+  (`[2i]`=tesela, `[2i+1]`=props); al pasarse del borde derecho de una pantalla salta a la
+  misma fila de la siguiente (`+0x800`), y al pasarse del borde inferior baja **dos**
+  pantallas (`+0x1000`) — otra confirmación de que el mapa es de 2 pantallas de ancho.
+- Varias casillas del mismo evento escriben al MISMO destino: son ANIMACIONES (p. ej. el
+  evento 78 tiene 9 fotogramas de la entrada al Valle de Bowser emergiendo del agua; el
+  estado final es el último). Port: `SmwOverworld.overworldTilemapWithEvents(rom, delta,
+  eventCount)` — con `eventCount = 0` da el mapa de partida nueva, útil para la PROGRESIÓN.
+
+**2c. SPRITES del mapa** (`LoadOverworldSprites` $04:F675): 13 ranuras de 5 bytes
+`(id, x:16, y:16)` en **$04:F625**, en coordenadas del ÁREA DE SUBMAPAS. GFX = conjunto de
+sprites **17** (3bpp; los dos primeros ficheros cubren las teselas OAM 0x00-0xFF), paleta =
+`kGlobalPalettes_OW_Sprites` (CGRAM 128+). Portados los de dibujo constante y verificado:
+**cartel de BOWSER** ($04:FCE1: 4 teselas 111→108 hacia la izquierda, sub-paleta parpadeante
+`((frame>>1)&6)`) y **Boos** ($04:FD70: 16×16 desde la tesela 96, sub-paleta 2). Pendientes:
+los que dependen de estado de ejecución (Bowser, Koopa Kid, humo) y los decorativos que el
+juego genera al vuelo (nubes, pájaros, Lakitu, Cheep-Cheeps).
 
 **3. GFX del OW** (`UploadGraphicsFiles` $00:A9DA indexa `4*misc_level_tileset_setting` SIN
 enmascarar; tileset = `kOwSubmapTileset_04DC02[submapa]` = {0x11..0x17}):
@@ -103,11 +137,24 @@ enmascarar; tileset = `kOwSubmapTileset_04DC02[submapa]` = {0x11..0x17}):
 - `LoadColors(src, dstByte, cnt, rows)` ($00:ACFF): escribe `cnt+1` colores desde
   `dstByte>>1`, avanzando 16 colores por fila, `rows+1` filas.
 
+**5. CAPA 1 interactiva** (niveles con marcador, castillos, fortalezas, casa de Yoshi): tilemap
+Map16 de **$0C:F7DF** (0x800 B, 8 pantallas de 16×16 bloques; bloque **0 = vacío/agua**,
+transparente) con las definiciones Map16 del overworld en **$05:D000** (4 tile-words por
+bloque). Se dibuja SOBRE la tierra. Port: `drawOverworldLayer1`.
+
 **Verificado**: `renderOverworldMainMap` sale idéntico bit a bit al render de referencia — el
 mapa principal completo y reconocible (Yoshi's Island, Donut Plains, Star Road, Vanilla Dome,
-bosque) con color real; las pantallas 4-7 dan Vanilla Dome, Valle, bosque/"SPECIAL" y Star
-World, cada una con su paleta de área. La paleta de área es 3bpp, así que un mapa real sale con
-~12 colores distintos (no es un fallo: es la paleta del juego). Test:
-`SmwOverworldTest.rendersOverworldMainMap` (gated a la ROM local; nunca versiona la imagen).
-Pendiente: la pantalla navegable (mover Mario casilla→casilla, entrar a niveles, progresión
-por `translevelEvents`).
+bosque) con color real y, con los eventos aplicados, TODOS los caminos abiertos. Los 6 submapas
+salen encuadrados como pantallas de juego, cada uno con su paleta de área. La paleta de área es
+3bpp, así que un mapa real sale con ~12 colores distintos (no es un fallo: es la paleta del
+juego). Test: `SmwOverworldTest` (gated a la ROM local; nunca versiona la imagen).
+
+**Exportación desde la app**: PNG estático, GIF animado (destello real de
+`kGlobalPalettes_Flashing`) y "mundo completo" (mapa principal + los 6 submapas + el área),
+todo generado en el dispositivo desde la ROM del usuario.
+
+**Pendiente**: la pantalla navegable (mover Mario casilla→casilla, entrar a niveles, progresión
+por `translevelEvents` — ya se puede dibujar cualquier estado con `overworldTilemapWithEvents`),
+la animación del agua (`OwTileAnimations` $04:80E0: rota bits de las teselas 0x75-0x7F cada 8
+fotogramas) y el Layer 3 del overworld (marco/rótulo; el decodificador de *stripe images* ya
+está hecho para la pantalla de título).
