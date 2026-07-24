@@ -49,6 +49,14 @@ object SmwOverworld {
     const val STAR_DSTY_SNES = 0x0484D3
     const val STAR_WARP_COUNT = 27
 
+    /**
+     * `kMap16Data_OverworldLayer1` = **$05:D000**: definiciones Map16 del overworld (bloque
+     * B → 8 bytes = 4 tile-words `vhopppcc cccccccc`; sub-teselas word0=TL, 1=BL, 2=TR, 3=BR).
+     * Las usa la CAPA 1 interactiva (casillas-de-nivel con número, castillos, fortalezas,
+     * caminos, casa de Yoshi, tuberías/Star Road) que se dibuja SOBRE la tierra (capa 2).
+     */
+    const val OW_MAP16_DEFS_SNES = 0x05D000
+
     /** SNES LoROM → offset PC, con [delta] = ajuste por cabecera de copiador (0 si headerless). */
     private fun pc(snes: Int, delta: Int): Int =
         (snes shr 16) * 0x8000 + (snes and 0x7FFF) + delta

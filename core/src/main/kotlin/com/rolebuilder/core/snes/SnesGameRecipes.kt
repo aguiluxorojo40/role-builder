@@ -1630,10 +1630,50 @@ object SnesGameRecipes {
         }
     }
 
+    /** Posiciones de las 4 sub-teselas de un bloque Map16: word0=TL, 1=BL, 2=TR, 3=BR. */
+    private val SMW_OW_SUBPOS = arrayOf(intArrayOf(0, 0), intArrayOf(0, 8), intArrayOf(8, 0), intArrayOf(8, 8))
+
+    /**
+     * Dibuja la CAPA 1 interactiva (casillas-de-nivel con número, castillos, fortalezas,
+     * caminos iniciales, casa de Yoshi, tuberías) de una pantalla del overworld SOBRE la
+     * tierra ya pintada. La capa 1 es un tilemap de bloques Map16 (`$0C:F7DF`, 0x800 B, 8
+     * pantallas de 16×16 bloques); el bloque **0 = vacío/agua** (se salta, transparente).
+     * Cada bloque se define en `$05:D000` (4 tile-words). (Los caminos que se REVELAN al
+     * superar niveles salen por el sistema de eventos, aún no portado.)
+     */
+    private fun drawOverworldLayer1(
+        rom: ByteArray, delta: Int, screen: Int, vram: Array<IntArray?>, cgram: IntArray, img: ArgbImage, ox: Int, oy: Int,
+    ) {
+        val l1Base = (SmwOverworld.LEVEL_TILES_SNES shr 16) * 0x8000 + (SmwOverworld.LEVEL_TILES_SNES and 0x7FFF) + delta
+        val defBase = (SmwOverworld.OW_MAP16_DEFS_SNES shr 16) * 0x8000 + (SmwOverworld.OW_MAP16_DEFS_SNES and 0x7FFF) + delta
+        val screenBase = screen * 0x100 // capa 1: 16×16 = 0x100 bloques por pantalla
+        for (p in 0 until 0x100) {
+            val block = byte(rom, l1Base + screenBase + p)
+            if (block == 0) continue
+            val o = defBase + block * 8
+            if (o + 8 > rom.size) continue
+            val bx = ox + (p % 16) * 16; val by = oy + (p / 16) * 16
+            for (k in 0..3) {
+                val word = byte(rom, o + 2 * k) or (byte(rom, o + 2 * k + 1) shl 8)
+                val e = SnesTilemap.decodeEntry(word)
+                val px = vram.getOrNull(e.tileIndex) ?: continue
+                val rowP = (e.palette and 7) * 16
+                val sxb = bx + SMW_OW_SUBPOS[k][0]; val syb = by + SMW_OW_SUBPOS[k][1]
+                for (yy in 0..7) for (xx in 0..7) {
+                    val sx = if (e.hFlip) 7 - xx else xx
+                    val sy = if (e.vFlip) 7 - yy else yy
+                    val ci = px[sy * 8 + sx]
+                    if (ci != 0) img.set(sxb + xx, syb + yy, cgram[rowP + ci])
+                }
+            }
+        }
+    }
+
     /**
      * Render del **mapa principal** del overworld (512×512 px): las pantallas 0-3 del
-     * tilemap dispuestas en 2×2, con los GFX y la paleta reales del modo overworld. Es la
-     * base de la pantalla navegable del mundo. Devuelve null si no hay ROM SMW válida.
+     * tilemap dispuestas en 2×2 (tierra = capa 2), con la CAPA 1 interactiva (niveles,
+     * castillos, casa de Yoshi…) dibujada encima, y los GFX/paleta reales del overworld.
+     * Es la base de la pantalla navegable del mundo. Devuelve null si no hay ROM SMW válida.
      */
     fun renderOverworldMainMap(rom: ByteArray, header: SnesHeader): ArgbImage? {
         val delta = smwHeaderDelta(header)
@@ -1647,12 +1687,15 @@ object SnesGameRecipes {
         SmwOverworld.OW_MAIN_MAP_SCREENS.forEachIndexed { idx, screen ->
             drawOverworldScreen(tilemap, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
         }
+        SmwOverworld.OW_MAIN_MAP_SCREENS.forEachIndexed { idx, screen ->
+            drawOverworldLayer1(rom, delta, screen, vram, cgram, img, (idx % cols) * side, (idx / cols) * side)
+        }
         return img
     }
 
     /**
-     * Render de UNA pantalla del overworld (256×256 px), con la paleta del [submap] al que
-     * pertenece. Útil para los submapas (pantallas 4-7) y para depurar. `screen` 0-7.
+     * Render de UNA pantalla del overworld (256×256 px), tierra + capa 1, con la paleta del
+     * [submap] al que pertenece. Útil para los submapas (pantallas 4-7) y para depurar.
      */
     fun renderOverworldScreen(rom: ByteArray, header: SnesHeader, screen: Int, submap: Int = 0): ArgbImage? {
         val delta = smwHeaderDelta(header)
@@ -1663,6 +1706,7 @@ object SnesGameRecipes {
         val img = ArgbImage(side, side)
         for (i in img.pixels.indices) img.pixels[i] = cgram[0]
         drawOverworldScreen(tilemap, screen, vram, cgram, img, 0, 0)
+        drawOverworldLayer1(rom, delta, screen, vram, cgram, img, 0, 0)
         return img
     }
 
