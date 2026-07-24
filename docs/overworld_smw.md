@@ -57,3 +57,47 @@ Posiciones en coordenadas de casilla del overworld (los altos indican submapa).
 
 (Traducción a texto de nombres y posición en el mapa: requiere el tilemap del
 overworld; ver `docs/auditoria_cobertura_smw.md`.)
+
+## Render del worldmap — RECIPE VERIFICADO (fase "tilemap comprimido" resuelta)
+
+Reverse-engineering completo y **verificado por render** contra la ROM US. El overworld
+se dibuja como "otro tileset" reutilizando la infra de niveles (`renderSmwBackground`).
+
+**1. Tilemap L2 (mapa visible)** — ya en `SmwOverworld.layer2Tilemap()`:
+- Puntero: `word($04:DC72) | byte($04:DC79) << 16`. RLE (`BufferOverworldLayer2Tilemap`
+  $04:DABA): control `c`; `c&0x80` → run de `(c&0x7F)+1` del byte siguiente; si no → `c+1`
+  literales. Salen **0x2000 índices Map16**, en 8 submapas de 0x400 (32×32) consecutivos
+  (submapa 0 = mapa principal).
+
+**2. Casillas-de-nivel** — ya en `SmwOverworld.levelTiles()`:
+- `$0C:F7DF`, 0x800 bytes SIN comprimir; casilla-de-nivel = Map16 en **[0x56, 0x80]**
+  (`04D7F2`). 92 en la ROM US.
+
+**3. Map16 del overworld**: `kMap16Data_OverworldLayer1` = **$05:D000** (772 words). Cada
+bloque = 4 tile-words (formato SNES estándar: `vhopppcc cccccccc`, tesela 10 bits, paleta
+bits 10-12, flipX bit14, flipY bit15). Sub-teselas 0=TL,1=BL,2=TR,3=BR.
+
+**4. GFX del OW** (`UploadGraphicsFiles` $00:A9DA indexa `4*misc_level_tileset_setting`
+SIN enmascarar): tileset del submapa = `kOwSubmapTileset_04DC02` = {0x11..0x17}. Los 4
+ficheros GFX salen de `kUploadGraphicsFiles_FGAndBGGFXList` (= `SMW_FGBG_GFX_TABLE_PC`
+0x292B) en `4*tileset`:
+- **Mapa principal (tileset 0x11): GFX {0x0E, 0x0F, 0x17, 0x17}** → slots VRAM 0..3.
+- Submapas (0x12-0x17): **{0x1C, 0x1D, 0x08, 0x1E}**.
+- Se descomprimen (LC_LZ2, 3bpp) a los 4 slots (tesela 0x000/0x080/0x100/0x180), como en
+  `renderSmwBackground` (`smwFgbgVramSlot`).
+
+**5. Paleta del OW** (`BufferPalettesRoutines_Overworld` $00:AD25, mismo `LoadColors` que
+`build_cgram` de niveles):
+- área: `tt = kBufferPalettesRoutines_DATA_00AD1E[(tileset&0xF)-1]` con
+  `DATA_00AD1E = {1,0,3,4,3,5,2}` (submapa 0 → tt=1). Fuente
+  `kGlobalPalettes_OW_Areas` **$B3D8** + `tt*28` words → `LoadColors(_, dst=130, cnt=6, rows=3)`.
+- objetos: `kGlobalPalettes_OW_Objects` **$B528** → `LoadColors(_, 82, 6, 5)`.
+- sprites: `kGlobalPalettes_OW_Sprites` **$B57C** → `LoadColors(_, 258, 6, 7)`.
+- extra: `kGlobalPalettes_B5EC` **$B5EC** → `LoadColors(_, 16, 7, 1)`.
+- `LoadColors(src, dstByte, count, rows)`: escribe `count+1` colores desde `dstByte>>1`,
+  avanzando 16 colores por fila, `rows+1` filas (port en `SmwOverworld`/`build_cgram`).
+
+**Verificado**: render de los 8 submapas con estas piezas → mapa principal (Yoshi's Island/
+Donut Plains), Vanilla Dome, Star World y el mundo "SPECIAL" reconocibles, con color real.
+Pendiente: portar `renderOverworldSubmap` a Kotlin (transcripción de lo anterior, reutilizando
+`findSmwGfxTable`/`LcLz2`/`SnesDecoder.decodeTile`/`ArgbImage`) y la pantalla navegable.
