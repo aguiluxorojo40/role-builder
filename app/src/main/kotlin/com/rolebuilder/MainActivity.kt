@@ -1,13 +1,20 @@
 package com.rolebuilder
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,6 +23,8 @@ import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.GameMode
 import com.rolebuilder.editor.EditorScreen
 import com.rolebuilder.editor.platform.PlatformEditorScreen
+import com.rolebuilder.player.GameRom
+import com.rolebuilder.player.TitleActivity
 import com.rolebuilder.project.ModeSelectScreen
 import com.rolebuilder.project.ProjectListScreen
 import com.rolebuilder.project.ProjectStore
@@ -67,8 +76,34 @@ private fun AppNavigation() {
 
     NavHost(navController = navController, startDestination = "mode") {
         composable("mode") {
+            val context = LocalContext.current
+            // La ROM del JUEGO se elige una vez y se queda ([GameRom]); el editor sigue
+            // pidiendo la suya cada vez, que es lo suyo cuando estás trasteando con varias.
+            var romChosen by remember { mutableStateOf(GameRom.isPresent(context)) }
+            val pickRom = rememberLauncherForActivityResult(
+                ActivityResultContracts.OpenDocument(),
+            ) { uri ->
+                val file = uri?.let { GameRom.store(context, it) }
+                if (file == null) {
+                    if (uri != null) {
+                        Toast.makeText(context, "No se pudo leer la ROM", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    romChosen = true
+                    context.startActivity(TitleActivity.intent(context, file))
+                }
+            }
             ModeSelectScreen(
                 onSelect = { mode -> navController.navigate("projects/${mode.name}") },
+                onPlaySmw = {
+                    if (romChosen) {
+                        context.startActivity(TitleActivity.intent(context, GameRom.file(context)))
+                    } else {
+                        pickRom.launch(arrayOf("*/*"))
+                    }
+                },
+                onChangeRom = { pickRom.launch(arrayOf("*/*")) },
+                romChosen = romChosen,
             )
         }
         composable("projects/{mode}") { backStackEntry ->

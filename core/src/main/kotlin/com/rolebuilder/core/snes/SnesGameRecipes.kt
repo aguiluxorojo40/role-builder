@@ -1893,8 +1893,32 @@ object SnesGameRecipes {
         val delta = smwHeaderDelta(header)
         val sm = submap.coerceIn(1, SmwOverworld.SUBMAP_COUNT)
         val area = renderOverworldSubmapArea(rom, header, sm, eventCount) ?: return null
-        val (cx, cy) = SmwOverworld.submapCamera(rom, delta, sm)
-        val bg = overworldCgram(rom, delta, sm)[0]
+        return cropToSubmapCamera(rom, delta, sm, area)
+    }
+
+    /**
+     * Igual que [renderOverworldSubmap] pero desde un TILEMAP ya calculado: la vía para
+     * dibujar el submapa de una PARTIDA concreta (sus eventos disparados) sin recalcular el
+     * mapa. Es lo que usa el modo juego, donde solo se ve el mundo en el que estás.
+     */
+    fun renderOverworldSubmapFrom(
+        rom: ByteArray, header: SnesHeader, submap: Int, tilemap: IntArray,
+    ): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val sm = submap.coerceIn(1, SmwOverworld.SUBMAP_COUNT)
+        val area = renderOverworldSubmapAreaFrom(rom, header, sm, tilemap) ?: return null
+        return cropToSubmapCamera(rom, delta, sm, area)
+    }
+
+    /**
+     * Recorta del [area] de 512×512 la ventana de 256×224 que la cámara enseña del [submap].
+     * Lo que caiga fuera del área se rellena con el color de fondo, como en el juego.
+     */
+    private fun cropToSubmapCamera(
+        rom: ByteArray, delta: Int, submap: Int, area: ArgbImage,
+    ): ArgbImage {
+        val (cx, cy) = SmwOverworld.submapCamera(rom, delta, submap)
+        val bg = overworldCgram(rom, delta, submap)[0]
         val out = ArgbImage(SmwOverworld.OW_VIEW_WIDTH, SmwOverworld.OW_VIEW_HEIGHT)
         for (y in 0 until out.height) for (x in 0 until out.width) {
             val sx = cx + x; val sy = cy + y

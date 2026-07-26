@@ -468,7 +468,14 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         }.onFailure {
                             Toast.makeText(context, "No se pudo abrir el mapa: ${it.message}", Toast.LENGTH_LONG).show()
                         }
-                    }) { Text("🗺️ Explorar el mapa (tocar niveles para jugarlos)") }
+                    }) { Text("🗺️ Probar el mapa (modo prueba: no guarda partida)") }
+                    Text(
+                        "Esto es el modo PRUEBA del editor: lo abre todo y no toca ninguna " +
+                            "partida guardada. Para jugar de verdad —título, progresión y " +
+                            "guardado— usa “Jugar Super Mario World” en la pantalla de inicio.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF9AA0A6),
+                    )
                     overworldPreview?.let { ow ->
                         Image(
                             bitmap = ow,

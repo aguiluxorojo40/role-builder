@@ -7,16 +7,38 @@ mapa; la guía de uso y compilación está en [GUIA_DEL_PROYECTO.md](GUIA_DEL_PR
 **Rama de trabajo:** `claude/snes-sprite-color-automation-918asc` (desde el merge
 de `…-59ybqy`, esta rama contiene TODO el trabajo SMW).
 
-## Cómo leer este inventario
+## Los dos oficios de la app: JUGAR y EDITAR
 
-La app tiene **dos rutas de juego** de plataformas, y casi todos los "parcial"
-se explican por cuál de las dos usa cada pieza:
+Desde la pantalla de inicio salen **tres puertas**, y la separación es
+deliberada: el editor sirve para editar y **probar**, y el juego se juega
+aparte, sin que uno pise el estado del otro.
 
-- **Ruta ROM directa** — "▶ Jugar un nivel" en el diálogo de importación SNES →
-  `PlatformerActivity.buildRomRenderer` → `buildEngine`. Monta el motor leyendo
-  la ROM en vivo.
+- **🎮 Jugar Super Mario World** — `TitleActivity` (título real desde la ROM y
+  tres ranuras) → `OverworldActivity` en `MODE_GAME` → `PlatformerActivity` →
+  vuelta al mapa con el camino abierto. La progresión se **guarda en disco**
+  (`SmwGameSave` / `SmwSaveIo`, en `filesDir/smw_saves`). La ROM se elige una
+  vez y se queda (`GameRom`).
+- **🗡️/🍄 Los dos editores** — Role Builder (ARPG) y Platform Builder. Desde el
+  diálogo de importación SNES se puede **probar**: "▶ Jugar un nivel" y "🗺️
+  Probar el mapa". El mapa se abre en `MODE_TEST`: lo enseña todo abierto y
+  **no escribe ninguna partida**.
+
+Dentro del editor hay además **dos rutas de plataformas**, y casi todos los
+"parcial" de las tablas se explican por cuál de las dos usa cada pieza:
+
+- **Ruta ROM directa** — "▶ Jugar un nivel" → `PlatformerActivity.buildRomRenderer`
+  → `buildEngine`. Monta el motor leyendo la ROM en vivo.
 - **Ruta mapa de proyecto** — "Buscar niveles importables" → "Crear mapa" → el
   nivel queda como mapa+tileset del proyecto → `ProjectPlatformer.engine`.
+
+### Ni un byte de Nintendo en el repositorio
+
+Los gráficos, sonidos y música de SMW **no se empaquetan**: se **hornean en el
+dispositivo** desde la ROM del usuario la primera vez que entras al título
+(`SmwBakedAssets` en core, `SmwAssetStore` en la app, que los guarda en
+`filesDir/smw_assets`). En el repositorio van solo las coordenadas y el cómo
+decodificar. Donde más abajo se lea "assets horneados", es eso: ficheros del
+dispositivo, nunca del repositorio.
 
 ## ✅ Logrado y cableado en la app
 
@@ -25,12 +47,12 @@ se explican por cuál de las dos usa cada pieza:
 | **Colisión real por celda** (bordes de un sentido, sólidos, cuestas, pinchos; port de la rutina del juego) | `SmwBlockCollision`, `SmwLayer1` | Ambas rutas |
 | **Físicas reales del jugador** (salto, gravedad, topes; tablas del banco $00) | `SmwPhysicsReader`, `PlatformerTuning.fromSmw` | Ambas rutas |
 | **Punto de inicio real** del nivel | `SmwLevelStartReader` | Ambas rutas |
-| **Mario con su sprite real** (GFX32, hoja 128×64, paleta de jugador de la CGRAM; 5 poses, volteo, anclado por los pies) | `SnesGameRecipes.smwMarioSheet` | Ambas (ROM: en vivo; proyecto: `assets/sprites/mario.png` horneado del mismo tamaño) |
-| **Enemigos con sprite y color reales** (tabla OAM genérica del banco $01 + sub-paleta del tweaker $166E) — 24 ids curados (tandas 0+1) | `SmwEnemyGraphics` | Ambas rutas (atlas `assets/sprites/enemies.png`); la ROM directa además los SIEMBRA desde la lista real de sprites (`smwLevelEnemies`) |
+| **Mario con su sprite real** (GFX32, hoja 128×64, paleta de jugador de la CGRAM; 5 poses, volteo, anclado por los pies) | `SnesGameRecipes.smwMarioSheet` | Ambas (ROM: en vivo; proyecto: `sprites/mario.png` horneado en el dispositivo del mismo tamaño) |
+| **Enemigos con sprite y color reales** (tabla OAM genérica del banco $01 + sub-paleta del tweaker $166E) — 24 ids curados (tandas 0+1) | `SmwEnemyGraphics` | Ambas rutas (atlas `sprites/enemies.png` horneado en el dispositivo); la ROM directa además los SIEMBRA desde la lista real de sprites (`smwLevelEnemies`) |
 | **Monedas y bloques `?` interactivos** (clasificación real del "block code": moneda=0x2B, `?`=0x21..0x24) | `SmwBlockBehavior` + `BlockAction` en el motor | Ambas rutas (la ROM directa desde el commit `2434056`) |
 | **Powerup: seta → crecer → encoger** (el `?` suelta seta si eres pequeño; crecer cambia la caja a 26 px; un golpe encoge con ~1.5 s de invulnerabilidad) | `PlatformerEngine` (`items`, `playerHeight`, `powerupEvents`/`damageEvents`) | Ambas rutas; parpadeo + SFX en el renderer |
-| **SFX reales** (muestras BRR de la ROM: salto, pisotón, moneda, powerup) | `SmwSoundFx`, `SmwSfxCatalog` | `PlatformerAudio.fromRom` (o assets horneados de respaldo) |
-| **Música N-SPC sintetizada** (motor N-SPC + S-DSP portados) | `SmwMusicRenderer`, `SmwDsp` | `PlatformerMusic` (pista fija pre-horneada `assets/music/level.aram`) |
+| **SFX reales** (muestras BRR de la ROM: salto, pisotón, moneda, powerup) | `SmwSoundFx`, `SmwSfxCatalog` | `PlatformerAudio.fromRom` (o los `sfx/*.wav` horneados en el dispositivo) |
+| **Música N-SPC sintetizada** (motor N-SPC + S-DSP portados) | `SmwMusicRenderer`, `SmwDsp` | `PlatformerMusic` (pista fija sintetizada desde la ROM) |
 | **Importar un nivel como mapa jugable** (atlas Map16 + tilemap + colisión + acciones + enemigos + teselas animadas) | `SnesGameRecipes.extractSmwLevelAsMap` | Diálogo de importación SNES |
 | **Escenas/galería de niveles** (tilemap reconstruido + fondos Layer 2 con color real) | `renderSmwLevelScene`, `renderSmwBackground` | Galería del diálogo de importación |
 | **Ficha del nivel** (tamaño, modo, música, paletas, tiempo) | `smwLevelInfo` | CLI del extractor |
@@ -44,7 +66,7 @@ se explican por cuál de las dos usa cada pieza:
    producen bundle multi-mapa con warps jugables (castillos y casas fantasma
    incluidos). Solo faltan las tuberías HORIZONTALES (0x3F, ver Hallazgos).
 3. **Música derivada de la ROM cargada** (`SmwMusic.assembleAram`): hoy la app
-   suena una pista fija pre-horneada; el ensamblador puede derivar la del nivel
+   suena una pista fija; el ensamblador puede derivar la del nivel
    desde la ROM del usuario en runtime.
 4. **Color de enemigo por nivel en vivo** (`SmwEnemyGraphics.spriteImage`): la
    app usa el atlas horneado (paleta del nivel de referencia); en vivo cada
@@ -62,19 +84,19 @@ se explican por cuál de las dos usa cada pieza:
 - ~~**Mario grande se dibuja estirado**~~ → Resuelto: `smwMarioSheet(powerup=1/2/3)`
   compone Mario GRANDE/FUEGO/CAPA con sus teselas reales de GFX32 (16×32 por pose, offset
   de tesela 0x46/0x83 + tablas cabeza/cuerpo). La ruta ROM directa ya los usaba; ahora la
-  ruta de PROYECTO también, con las hojas horneadas `assets/sprites/mario_big|cape|fire.png`
+  ruta de PROYECTO también, con las hojas horneadas en el dispositivo `sprites/mario_big|cape|fire.png`
   (regenerables con `extractSnesTileset --mario --powerup big|cape|fire`).
 - ~~**La seta se dibuja con rectángulos**~~ → Resuelto: `SmwEnemyGraphics.powerupSheet`
   renderiza SETA/FLOR/PLUMA con sus teselas de sprite REALES (`0x24/0x26/0x0E` de
   `kPowerUpAndItemGFXRt_PowerUpTiles`, `$01:C61A`) y su paleta `$166E`, aunque estén fuera
-  de la tabla OAM genérica de enemigos. Horneado en `assets/sprites/powerups.png` (48×16),
+  de la tabla OAM genérica de enemigos. Horneado en el dispositivo como `sprites/powerups.png` (48×16),
   regenerable con `extractSnesTileset --powerup-sheet`; el renderer lo usa por tipo.
 - **Cuestas**: colisionan como bloque completo (la altura sub-píxel de la
   pendiente es un refinamiento pendiente).
 - **Enemigos con rutina de dibujo propia**: fuera del alcance de la tabla OAM genérica
   (ids ≥ 0x54 o multi-tesela). Infraestructura: `SmwEnemyGraphics.customSprite`/
   `customEnemyImage` compone su sprite real a partir del layout de teselas de su rutina
-  `Spr..._Draw`, horneado a `assets/sprites/big/big_<id>.png` (auto-cargado por id) con
+  `Spr..._Draw`, horneado en el dispositivo a `sprites/big/big_<id>.png` (auto-cargado por id) con
   `extractSnesTileset --custom-enemy --id 0xNN`.
   - ✅ Hechos: Thwomp (0x26), Pokey (0x70), **Rex (0xAB)**, **Blurp (0xC2)**,
     **Super Koopa suelo (0x73) y capa roja (0x71)** (frame 0 de andar, cuerpo + 3 teselas de
