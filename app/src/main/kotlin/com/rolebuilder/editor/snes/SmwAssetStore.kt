@@ -76,7 +76,7 @@ object SmwAssetStore {
         }
         // Efectos de sonido, desde las muestras BRR de la propia ROM.
         runCatching {
-            val clips = SmwSfxCatalog.build(rom, header)
+            val clips = SmwSfxCatalog.build(rom, header).orEmpty()
             for ((event, clip) in clips) {
                 val dest = File(root, "sfx/${event.name.lowercase()}.wav")
                 dest.parentFile?.mkdirs()

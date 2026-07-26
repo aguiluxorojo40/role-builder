@@ -90,11 +90,10 @@ class PlatformerAudio private constructor(
         }
 
         /**
-         * Construye el audio desde efectos empaquetados en `assets/sfx/`. **En este repo
-         * NO se versiona ninguno**: los de SMW son de Nintendo y salen de la ROM del
-         * usuario por [fromRom]. Esta vía queda para efectos PROPIOS que se añadan al
-         * proyecto; sin ficheros devuelve `null` y el juego corre sin sonido de
-         * plataformas, que es el comportamiento correcto.
+         * Construye el audio SIN ROM (modo proyecto), leyendo del almacén horneado en el
+         * dispositivo (`SmwAssetStore`). En el repo no se versiona ningún efecto de SMW —son
+         * de Nintendo—: se generan de la ROM del usuario al cargarla. Si aún no se ha
+         * horneado devuelve `null` y el juego corre sin sonido de plataformas.
          */
         fun fromAssets(context: Context): PlatformerAudio? {
             val wavs = mutableMapOf<SmwSfxCatalog.Event, ByteArray>()
