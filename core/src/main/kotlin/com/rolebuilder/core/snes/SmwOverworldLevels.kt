@@ -32,23 +32,23 @@ package com.rolebuilder.core.snes
  * juego mirando si `$04:D813` es `0x5C` —un JML de Lunar Magic—; en la ROM US original vale
  * `0x85`, así que se usa la numeración correlativa de arriba.)
  *
- * ## ⚠️ LA CORRESPONDENCIA NÚMERO↔NIVEL ESTÁ MAL — NO USARLA
- * El barrido en sí (posiciones de las 92 casillas-de-nivel, numeración correlativa) es un
- * port fiel del código de arriba y sale bien. Lo que **no cuadra** es tratar ese número como
- * índice de la tabla de nombres. Dos pruebas independientes lo desmienten:
+ * ## Verificado (y una trampa que conviene conocer)
+ * La correspondencia sale **correcta**: los niveles 37 a 42 son `#1 IGGY'S CASTLE`,
+ * `YOSHI'S ISLAND 4`, `YOSHI'S ISLAND 3`, `YOSHI'S HOUSE`, `YOSHI'S ISLAND 1` y
+ * `YOSHI'S ISLAND 2` — la zona de Yoshi's Island entera y en bloque, que es exactamente lo
+ * que se ve al renderizar esa región del mapa.
  *
- *  1. **Geografía**: los números 40 y 41 —que en la tabla de nombres son YOSHI'S HOUSE y
- *     YOSHI'S ISLAND 1— caen en las pantallas 4-7, o sea en el área de SUBMAPAS. Yoshi's
- *     Island está en el mapa principal.
- *  2. **Tabla de caminos**: `kOwDirectionAfterBeatingLevel_04D678` en esos mismos números da
- *     `0x00` = "no abre ningún camino", también para el nº 37 (#1 IGGY'S CASTLE). Superar un
- *     castillo SIEMPRE abre camino, así que el índice no puede ser ese.
+ * La trampa: esos niveles caen en las pantallas 4-7, o sea en el **área de submapas**, y eso
+ * parece un error hasta que se mira el render. **Yoshi's Island NO está en el mapa principal:
+ * es el submapa 1** (cámara en `(-17, -40)`). El mapa principal (pantallas 0-3) es la zona de
+ * Donut Plains / Vanilla Secret / Chocolate, y por eso sus niveles son los números 1-36
+ * (`VANILLA SECRET 2`, `TOP SECRET AREA`, `DONUT GHOST HOUSE`…).
  *
- * Queda por averiguar dónde está el desfase (orden del barrido, disposición de las pantallas
- * de la capa 1, o que el juego no use el camino secuencial que aquí se porta). Hasta
- * resolverlo: **[OwLevel.name] y [OwLevel.pathDirections] NO son de fiar**; lo único
- * utilizable son [OwLevel.position], [OwLevel.screen], [OwLevel.col]/[OwLevel.row] y
- * [OwLevel.levelNumber] como identificador correlativo sin significado externo.
+ * Segunda trampa, con el nombre de la tabla: `kOwDirectionAfterBeatingLevel_04D678` es la
+ * dirección a la que Mario **se mueve solo tras superar** el nivel, no "los caminos que se
+ * abren". Un `0x00` significa "sin movimiento automático" y es perfectamente normal (los
+ * niveles de Yoshi's Island lo tienen). Los caminos que se revelan van por el sistema de
+ * EVENTOS ([SmwOverworld.overworldTilemapWithEvents]), que es otra cosa.
  */
 object SmwOverworldLevels {
 

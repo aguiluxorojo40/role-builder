@@ -28,15 +28,24 @@ class SmwOverworldLevelsTest {
         assertEquals(92, levels.last().levelNumber)
         assertTrue(levels.map { it.position }.let { it == it.sorted() }, "en orden de barrido")
 
-        // DEFECTO CONOCIDO, documentado a proposito para que no se olvide: tratar el numero
-        // correlativo como indice de la tabla de nombres NO cuadra. El 41 sale "YOSHI'S
-        // ISLAND 1" pero cae en el area de submapas, y su byte de caminos es 0x00 ("no abre
-        // camino"), igual que el 37 (#1 IGGY'S CASTLE) — imposible para un castillo. Este
-        // test FIJA la contradiccion; cuando se resuelva el desfase habra que reescribirlo.
-        val yi1 = levels.firstOrNull { it.levelNumber == 0x29 }
-        assertNotNull(yi1)
-        assertTrue(!yi1!!.onMainMap, "contradiccion conocida: 'YOSHI'S ISLAND 1' cae fuera del mapa principal")
-        assertEquals(0, yi1!!.pathDirections, "contradiccion conocida: no abriria ningun camino")
+        // VERIFICACION FUERTE de la correspondencia numero->nivel: los niveles 37 a 42
+        // tienen que ser la zona de Yoshi's Island ENTERA y en bloque. Si el indice de la
+        // tabla de nombres se desfasara, esto se rompe al instante.
+        val yoshiBlock = (37..42).map { n -> levels.first { it.levelNumber == n }.name }
+        assertEquals(
+            listOf(
+                "#1 IGGY'S CASTLE", "YOSHI'S ISLAND 4", "YOSHI'S ISLAND 3",
+                "YOSHI'S HOUSE", "YOSHI'S ISLAND 1", "YOSHI'S ISLAND 2",
+            ),
+            yoshiBlock,
+            "los niveles 37-42 son la zona de Yoshi's Island",
+        )
+        // OJO: Yoshi's Island es el SUBMAPA 1, no el mapa principal — por eso caen en las
+        // pantallas 4-7. El mapa principal es Donut Plains / Vanilla Secret / Chocolate.
+        assertTrue((37..42).none { n -> levels.first { it.levelNumber == n }.onMainMap },
+            "Yoshi's Island vive en el area de submapas")
+        assertTrue(levels.first { it.levelNumber == 1 }.onMainMap,
+            "los numeros bajos si son del mapa principal")
 
         // Reparto entre mapa principal y área de submapas: los dos tienen niveles de verdad.
         val main = SmwOverworldLevels.mainMapLevels(rom, delta)
