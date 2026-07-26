@@ -32,16 +32,23 @@ package com.rolebuilder.core.snes
  * juego mirando si `$04:D813` es `0x5C` —un JML de Lunar Magic—; en la ROM US original vale
  * `0x85`, así que se usa la numeración correlativa de arriba.)
  *
- * ## PENDIENTE DE VERIFICAR (no dar por bueno sin comprobarlo)
- * El port del ALGORITMO es 1:1 y los nombres que salen son reales y coherentes entre sí
- * ("VANILLA SECRET 2", "DONUT GHOST HOUSE", "DONUT PLAINS 3"…). Lo que **falta confirmar
- * visualmente** es la correspondencia POSICIÓN↔NOMBRE: al mirar dónde cae cada casilla, el
- * nivel nº 0x29 ("YOSHI'S ISLAND 1") aparece en las pantallas 4-7 (área de submapas) y no en
- * el mapa principal, que es donde uno esperaría Yoshi's Island. Puede ser que la intuición
- * sobre la geografía del mapa esté equivocada, o que las pantallas de la CAPA 1 no vayan en
- * el mismo orden que las del tilemap visible. Hasta comprobarlo dibujando marcadores sobre el
- * render y mirándolo, **no usar [OwLevel.x]/[OwLevel.y] como verdad** para colocar cosas en el
- * mapa; el número y el nombre sí salen del mismo sitio que los usa el juego.
+ * ## ⚠️ LA CORRESPONDENCIA NÚMERO↔NIVEL ESTÁ MAL — NO USARLA
+ * El barrido en sí (posiciones de las 92 casillas-de-nivel, numeración correlativa) es un
+ * port fiel del código de arriba y sale bien. Lo que **no cuadra** es tratar ese número como
+ * índice de la tabla de nombres. Dos pruebas independientes lo desmienten:
+ *
+ *  1. **Geografía**: los números 40 y 41 —que en la tabla de nombres son YOSHI'S HOUSE y
+ *     YOSHI'S ISLAND 1— caen en las pantallas 4-7, o sea en el área de SUBMAPAS. Yoshi's
+ *     Island está en el mapa principal.
+ *  2. **Tabla de caminos**: `kOwDirectionAfterBeatingLevel_04D678` en esos mismos números da
+ *     `0x00` = "no abre ningún camino", también para el nº 37 (#1 IGGY'S CASTLE). Superar un
+ *     castillo SIEMPRE abre camino, así que el índice no puede ser ese.
+ *
+ * Queda por averiguar dónde está el desfase (orden del barrido, disposición de las pantallas
+ * de la capa 1, o que el juego no use el camino secuencial que aquí se porta). Hasta
+ * resolverlo: **[OwLevel.name] y [OwLevel.pathDirections] NO son de fiar**; lo único
+ * utilizable son [OwLevel.position], [OwLevel.screen], [OwLevel.col]/[OwLevel.row] y
+ * [OwLevel.levelNumber] como identificador correlativo sin significado externo.
  */
 object SmwOverworldLevels {
 

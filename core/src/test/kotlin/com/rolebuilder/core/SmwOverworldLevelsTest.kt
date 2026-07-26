@@ -5,6 +5,7 @@ import com.rolebuilder.core.snes.SnesDecoder
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -27,11 +28,15 @@ class SmwOverworldLevelsTest {
         assertEquals(92, levels.last().levelNumber)
         assertTrue(levels.map { it.position }.let { it == it.sorted() }, "en orden de barrido")
 
-        // La gran mayoría tiene nombre real; y el nº de nivel es el índice de la tabla de
-        // nombres, así que el 0x29 tiene que ser YOSHI'S ISLAND 1 (verificado 1:1 aparte).
-        assertTrue(levels.count { it.name != null } >= 85, "casi todas con nombre")
+        // DEFECTO CONOCIDO, documentado a proposito para que no se olvide: tratar el numero
+        // correlativo como indice de la tabla de nombres NO cuadra. El 41 sale "YOSHI'S
+        // ISLAND 1" pero cae en el area de submapas, y su byte de caminos es 0x00 ("no abre
+        // camino"), igual que el 37 (#1 IGGY'S CASTLE) — imposible para un castillo. Este
+        // test FIJA la contradiccion; cuando se resuelva el desfase habra que reescribirlo.
         val yi1 = levels.firstOrNull { it.levelNumber == 0x29 }
-        assertTrue(yi1?.name?.contains("YOSHI") == true, "nivel 0x29 = YOSHI'S ISLAND 1: ${yi1?.name}")
+        assertNotNull(yi1)
+        assertTrue(!yi1!!.onMainMap, "contradiccion conocida: 'YOSHI'S ISLAND 1' cae fuera del mapa principal")
+        assertEquals(0, yi1!!.pathDirections, "contradiccion conocida: no abriria ningun camino")
 
         // Reparto entre mapa principal y área de submapas: los dos tienen niveles de verdad.
         val main = SmwOverworldLevels.mainMapLevels(rom, delta)
