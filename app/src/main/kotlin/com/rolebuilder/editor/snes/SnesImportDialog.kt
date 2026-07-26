@@ -450,6 +450,15 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             }
                         }
                     }) { Text("Renderizar overworld") }
+                    Button(onClick = {
+                        val rom = romBytes ?: return@Button
+                        runCatching {
+                            val tmp = java.io.File(context.cacheDir, "smw_play.sfc").apply { writeBytes(rom) }
+                            context.startActivity(com.rolebuilder.player.OverworldActivity.intent(context, tmp))
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo abrir el mapa: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }) { Text("🗺️ Explorar el mapa (tocar niveles para jugarlos)") }
                     overworldPreview?.let { ow ->
                         Image(
                             bitmap = ow,

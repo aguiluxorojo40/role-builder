@@ -124,6 +124,17 @@ object SmwLevelNames {
         else -> null
     }
 
+    /**
+     * INVERSO de [translevelOf]: qué leveldata hay que cargar para jugar el translevel [t]
+     * del mapa. Es lo que enlaza una casilla del overworld con la partida: los translevels
+     * 0x00-0x24 son leveldata directo y los 0x25-0x5F viven en el bloque 0x101-0x13B.
+     */
+    fun levelOfTranslevel(t: Int): Int? = when (t) {
+        in 0x00..0x24 -> t
+        in 0x25..0x5F -> t + 0xDC
+        else -> null
+    }
+
     /** Nombre del NIVEL (leveldata) si es un nivel de mapa; null para sublevels/salas. */
     fun nameOf(rom: ByteArray, delta: Int, level: Int): String? =
         translevelOf(level)?.let { nameOfTranslevel(rom, delta, it) }
