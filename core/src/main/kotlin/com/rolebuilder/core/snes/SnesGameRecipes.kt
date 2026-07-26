@@ -845,6 +845,9 @@ object SnesGameRecipes {
      */
     internal fun smwHeaderDelta(header: SnesHeader): Int = header.headerOffset - 0x7FC0
 
+    /** Acceso público al delta de cabecera (lo necesita la app para llamar a `core`). */
+    fun smwHeaderDeltaPublic(header: SnesHeader): Int = smwHeaderDelta(header)
+
     /**
      * Mapa de COLISIÓN de un nivel de SMW: la solidez de cada celda 16×16, lista para
      * que un motor de plataformas la use directamente. Es la pieza que faltaba para

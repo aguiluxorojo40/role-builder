@@ -329,10 +329,23 @@ class PlatformerActivity : ComponentActivity() {
                 else -> BlockAction.NONE.ordinal
             }
         }
-        // Enemigos reales del nivel (lista de sprites de la ROM), recortados al mapa.
+        // Enemigos reales del nivel (lista de sprites de la ROM), recortados al mapa. Se
+        // EXCLUYE la meta: la cinta/esfera/cerradura viven en la misma lista de sprites, pero
+        // no son bichos — van como ítem de META más abajo.
+        val goalIds = com.rolebuilder.core.snes.SmwLevelGoal.GOAL_SPRITES
         val enemySeeds = SnesGameRecipes.smwLevelEnemies(rom, header, level)
-            .filter { (_, x, y) -> x in 0 until col.cols && y in 0 until col.rows }
+            .filter { (id, x, y) -> id !in goalIds && x in 0 until col.cols && y in 0 until col.rows }
             .map { (id, x, y) -> EnemySeed(x * 16, y * 16, id) }
+        // META del nivel: con esto tocar la cinta marca el nivel como SUPERADO y el mapa del
+        // mundo puede disparar su evento. Los niveles sin meta (castillos, casas) no siembran.
+        val goalSeeds = com.rolebuilder.core.snes.SmwLevelGoal
+            .goalCells(rom, SnesGameRecipes.smwHeaderDeltaPublic(header), level)
+            .filter { (x, y) -> x in 0 until col.cols && y in 0 until col.rows }
+            .map { (x, y) ->
+                com.rolebuilder.core.engine.platformer.ItemSeed(
+                    x * 16, y * 16, com.rolebuilder.core.engine.platformer.ItemKind.GOAL,
+                )
+            }
         // Los bloques `?` son "block code" (el terreno los da como NONE) pero en el
         // juego son SÓLIDOS: se fuerza su solidez, como hace ProjectPlatformer. Es
         // inmutable a propósito: un `?` ya usado sigue siendo sólido.
@@ -359,6 +372,7 @@ class PlatformerActivity : ComponentActivity() {
             // Modo 1:1: el manejo horizontal de Mario usa las tablas REALES de la ROM.
             smwPhysics = phys,
             enemySeeds = enemySeeds,
+            itemSeeds = goalSeeds,
             blockActions = if (anyAction) actions else null,
             warps = warps,
             // Formas de RAMPA reales de la ROM (tabla $00:E55E): las cuestas se juegan
