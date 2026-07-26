@@ -508,6 +508,19 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 Toast.makeText(context, "No se pudo exportar el mundo: ${it.message}", Toast.LENGTH_LONG).show()
                             }
                         }) { Text("⬇ Mundo completo (todos los submapas, PNG)") }
+                        TextButton(onClick = {
+                            val rom = romBytes; val hdr = header
+                            runCatching {
+                                if (rom == null || hdr == null) error("carga la ROM")
+                                val bmp = SnesImport.overworldSpriteSheet(rom, hdr) ?: error("no es SMW")
+                                val where = SnesImport.exportToDownloads(
+                                    context, "smw_ow_sprites.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                ) ?: error("no se pudo guardar")
+                                Toast.makeText(context, "Sprites del mapa guardados en $where", Toast.LENGTH_LONG).show()
+                            }.onFailure {
+                                Toast.makeText(context, "No se pudo exportar los sprites: ${it.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }) { Text("⬇ Sprites del mapa (Boo, nube, piraña…) PNG") }
                     }
 
                     Spacer(Modifier.height(8.dp))

@@ -9,6 +9,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.snes.ArgbImage
+import com.rolebuilder.core.snes.SmwOverworldSprites
 import com.rolebuilder.core.snes.SmwTitleScreen
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesHeader
@@ -62,6 +63,14 @@ object SnesImport {
      */
     fun titleScreen(rom: ByteArray, header: SnesHeader): Bitmap? =
         SmwTitleScreen.renderComplete(rom, header)?.let { toBitmap(it) }
+
+    /**
+     * Hoja con los SPRITES del overworld (Lakitu, pájaro, planta piraña, nube, Koopa Kid,
+     * humo, cartel de BOWSER, Bowser y Boo) dibujados con su arte y paleta reales, o null si
+     * la ROM no es SMW. Fondo transparente.
+     */
+    fun overworldSpriteSheet(rom: ByteArray, header: SnesHeader): Bitmap? =
+        SmwOverworldSprites.renderSheet(rom, header)?.let { toBitmap(it) }
 
     /** Todo el mundo (mapa principal + submapas) como (nombre, Bitmap), para exportar completo. */
     fun overworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, Bitmap>> =
