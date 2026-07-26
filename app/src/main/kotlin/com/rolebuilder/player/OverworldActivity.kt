@@ -106,11 +106,15 @@ private fun OverworldScreen(rom: ByteArray, header: SnesHeader, onPlay: (Int) ->
     val delta = remember(rom) { header.headerOffset - 0x7FC0 }
     var showSubmaps by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<SmwOverworldLevels.OwLevel?>(null) }
+    // PROGRESIÓN: cuántos eventos del overworld están aplicados. 0 = partida nueva (casi sin
+    // caminos), el total = juego al 100%. Es el mismo mecanismo con el que el juego abre los
+    // caminos al superar niveles ([SmwOverworld.overworldTilemapWithEvents]).
+    var events by remember { mutableStateOf(SmwOverworld.EVENT_COUNT) }
 
-    // Render del mapa (se rehace solo al cambiar de vista; lleva su rato con los eventos).
-    val bitmap: Bitmap? = remember(showSubmaps) {
-        val img = if (showSubmaps) SnesGameRecipes.renderOverworldSubmapArea(rom, header, 1)
-        else SnesGameRecipes.renderOverworldMainMap(rom, header)
+    // Render del mapa (se rehace al cambiar de vista o de progresión; lleva su rato).
+    val bitmap: Bitmap? = remember(showSubmaps, events) {
+        val img = if (showSubmaps) SnesGameRecipes.renderOverworldSubmapArea(rom, header, 1, events)
+        else SnesGameRecipes.renderOverworldMainMap(rom, header, events)
         img?.let { SnesImport.toBitmap(it) }
     }
     val levels = remember(rom) { SmwOverworldLevels.levels(rom, delta) }
@@ -123,6 +127,18 @@ private fun OverworldScreen(rom: ByteArray, header: SnesHeader, onPlay: (Int) ->
             }
             TextButton(onClick = { showSubmaps = true; selected = null }) {
                 Text("Submapas", color = if (showSubmaps) Color.White else Color.Gray)
+            }
+        }
+        // Progresión: se ve cómo los eventos van abriendo los caminos del mapa.
+        Row {
+            TextButton(onClick = { events = 0 }) {
+                Text("Partida nueva", color = if (events == 0) Color.White else Color.Gray)
+            }
+            TextButton(onClick = { events = 7 }) {
+                Text("Yoshi's Island", color = if (events == 7) Color.White else Color.Gray)
+            }
+            TextButton(onClick = { events = SmwOverworld.EVENT_COUNT }) {
+                Text("Todo abierto", color = if (events == SmwOverworld.EVENT_COUNT) Color.White else Color.Gray)
             }
         }
         if (bitmap == null) {
