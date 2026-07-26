@@ -186,6 +186,14 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         if (uri == null) return@rememberLauncherForActivityResult
         runCatching {
             val bytes = SnesImport.readRomBytes(context, uri)
+            // HORNEA los assets de SMW (Mario, enemigos, powerups, moneda, jefes y efectos de
+            // sonido) desde la ROM del usuario al almacén del dispositivo. En el repo no va
+            // ninguno: son de Nintendo. Con esto el modo PROYECTO (sin ROM) sigue teniéndolos.
+            if (bytes != null) {
+                runCatching { SmwAssetStore.bake(context, bytes) }.onSuccess { n ->
+                    if (n > 0) Toast.makeText(context, "Assets de SMW generados desde tu ROM ($n)", Toast.LENGTH_SHORT).show()
+                }
+            }
                 ?: error("No se pudo leer el archivo")
             romBytes = bytes
             romName = (context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->

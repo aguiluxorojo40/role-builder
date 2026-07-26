@@ -309,7 +309,8 @@ class PlatformerActivity : ComponentActivity() {
     }.getOrDefault(emptyMap())
 
     private fun loadSprite(path: String): android.graphics.Bitmap? = runCatching {
-        assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it) }
+        com.rolebuilder.editor.snes.SmwAssetStore.open(this, path)
+            ?.let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) }
     }.getOrNull()
 
     /** Extrae de la ROM lo necesario y monta el motor, o null si no es SMW jugable. */

@@ -84,8 +84,8 @@ class PlatformerAudio private constructor(
             // El jingle de MUERTE no sale del catálogo (es la pista de música 9): se
             // toma del asset horneado también en la ruta ROM.
             runCatching {
-                context.assets.open("sfx/death_jingle.wav").use { it.readBytes() }
-            }.onSuccess { wavs[SmwSfxCatalog.Event.DEATH_JINGLE] = it }
+                com.rolebuilder.editor.snes.SmwAssetStore.open(context, "sfx/death_jingle.wav")
+            }.getOrNull()?.let { wavs[SmwSfxCatalog.Event.DEATH_JINGLE] = it }
             return PlatformerAudio(context, wavs)
         }
 
@@ -99,13 +99,16 @@ class PlatformerAudio private constructor(
         fun fromAssets(context: Context): PlatformerAudio? {
             val wavs = mutableMapOf<SmwSfxCatalog.Event, ByteArray>()
             for (event in SmwSfxCatalog.Event.values()) {
-                runCatching {
-                    context.assets.open("sfx/${event.name.lowercase()}.wav").use { it.readBytes() }
-                }.onSuccess { wavs[event] = it }
+                com.rolebuilder.editor.snes.SmwAssetStore
+                    .open(context, "sfx/${event.name.lowercase()}.wav")
+                    ?.let { wavs[event] = it }
             }
             if (wavs.isEmpty()) return null
             return PlatformerAudio(context, wavs)
         }
+
+        /** Empaqueta PCM16 mono a [sampleRate] Hz en un contenedor WAV (para hornear). */
+        fun wavBytes(pcm: ShortArray, sampleRate: Int): ByteArray = wav(pcm, sampleRate)
 
         /** Empaqueta PCM16 mono a [sampleRate] Hz en un contenedor WAV. */
         private fun wav(pcm: ShortArray, sampleRate: Int): ByteArray {

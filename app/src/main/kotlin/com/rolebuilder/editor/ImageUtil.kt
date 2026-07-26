@@ -27,12 +27,10 @@ fun loadAssetImageBitmap(context: Context, assetPath: String): ImageBitmap? =
  * el motor dibuja al jugar (ver `PlatformerActivity.loadBigSprites`). Vacío si no hay carpeta.
  */
 fun loadBigSprites(context: Context): Map<Int, ImageBitmap> = runCatching {
-    // OJO: en este repo NO se versiona ningún PNG aquí. Los sprites de SMW son material
-    // con copyright de Nintendo; la app los extrae de la ROM del usuario en el dispositivo.
-    // Sin ficheros esto devuelve un mapa vacío y quien llame se apaña, que es lo correcto.
-    (context.assets.list("sprites/big") ?: emptyArray()).mapNotNull { name ->
-        val id = Regex("big_([0-9a-fA-F]+)\\.png").matchEntire(name)?.groupValues?.get(1)
-            ?.toInt(16) ?: return@mapNotNull null
-        loadAssetImageBitmap(context, "sprites/big/$name")?.let { id to it }
+    // En el repo NO va ningún PNG de estos: los sprites de SMW son de Nintendo. Salen del
+    // ALMACÉN horneado en el dispositivo desde la ROM del usuario (SmwAssetStore). Si aún no
+    // se ha horneado, mapa vacío y quien llame se apaña.
+    com.rolebuilder.editor.snes.SmwAssetStore.bigSpriteFiles(context).mapNotNull { (id, file) ->
+        BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()?.let { id to it }
     }.toMap()
 }.getOrDefault(emptyMap())

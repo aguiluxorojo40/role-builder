@@ -20,5 +20,6 @@ snes_out/
 # Assets DERIVADOS de la ROM (graficos de sprites y efectos de sonido de SMW):
 # son material con copyright de Nintendo y NO se versionan. La app los genera en el
 # dispositivo a partir de la ROM del usuario (SmwSfxCatalog / la extraccion de GFX).
-app/src/main/assets/sprites/big/
+app/src/main/assets/sprites/
 app/src/main/assets/sfx/
+app/src/main/assets/music/

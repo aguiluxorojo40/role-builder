@@ -84,7 +84,8 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
          */
         fun fromAssets(context: Context, songId: Int = 1): PlatformerMusic? {
             val aram = runCatching {
-                context.assets.open("music/level.aram").use { it.readBytes() }
+                com.rolebuilder.editor.snes.SmwAssetStore.open(context, "music/level.aram")
+                    ?: error("sin música horneada")
             }.getOrNull() ?: return null
             if (aram.size != 0x10000) return null
             val renderer = SmwMusicRenderer(aram)
