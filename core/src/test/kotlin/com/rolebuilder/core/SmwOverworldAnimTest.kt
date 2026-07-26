@@ -1,6 +1,7 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SmwOverworldAnim
+import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesDecoder
 import java.io.File
 import kotlin.test.Test
@@ -23,6 +24,18 @@ class SmwOverworldAnimTest {
         val src = SmwOverworldAnim.waterSourceTiles(rom, delta)
         assertEquals(3, src.size)
         assertTrue(src.contentEquals(intArrayOf(0x50, 0x51, 0x52)), "origen: ${src.toList()}")
+
+        // BLINDAJE del fallo que tuve: la animación tiene que partir de las PROPIAS teselas
+        // del mar. Las fuentes (0x50-0x52 de GFX 0x14) son idénticas byte a byte a las
+        // teselas 0x75-0x77 del overworld (GFX 0x1C). Si alguien cambia el fichero fuente,
+        // el mar cambiaría de aspecto en vez de centellear, y esto lo caza.
+        val ow = SnesGameRecipes.smwGfxFileDataPublic(rom, 0x1C)!!
+        val srcGfx = SnesGameRecipes.smwGfxFileDataPublic(rom, SmwOverworldAnim.WATER_GFX_FILE)!!
+        for (n in 0 until 3) {
+            val a = ow.copyOfRange((0x75 + n) * 24, (0x76 + n) * 24)
+            val b = srcGfx.copyOfRange(src[n] * 24, (src[n] + 1) * 24)
+            assertTrue(a.contentEquals(b), "la fuente $n debe ser la propia tesela del mar")
+        }
 
         val f0 = SmwOverworldAnim.waterTiles(rom, delta, 0)
         assertNotNull(f0, "el agua debe decodificar")

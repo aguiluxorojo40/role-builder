@@ -32,10 +32,16 @@ package com.rolebuilder.core.snes
  * esas direcciones son las teselas `(0xB480-0xAD00)/24 = 0x50`, `0x51` y `0x52` del fichero
  * GFX que hubiera en el búfer.
  *
- * Cuál es ese fichero depende de estado de ejecución (el último descomprimido), pero solo hay
- * una respuesta coherente: **GFX 0x1C**. Es el fichero del slot 0 del overworld —el dueño de
- * las teselas destino 0x75-0x77— y sus teselas 0x50-0x52 son justamente el patrón de oleaje
- * (verificado por render: los demás candidatos dan letras o decorados). Ver [WATER_GFX_FILE].
+ * Cuál es ese fichero depende de estado de ejecución (el último descomprimido), pero se puede
+ * DEMOSTRAR cuál es: las teselas 0x50, 0x51 y 0x52 de **GFX 0x14** son **byte a byte
+ * idénticas** a las teselas 0x75, 0x76 y 0x77 de GFX 0x1C — que son justamente las del mar en
+ * el overworld (la 0x75 sola cubre 1142 casillas del mapa, la tesela más usada de todas).
+ *
+ * O sea: la animación **deforma el propio mar**, no lo sustituye por otro dibujo. Por eso el
+ * efecto real es un centelleo sutil de los puntitos del agua, no un cambio de textura.
+ * (Una versión anterior de este fichero cogía las teselas 0x50-0x52 **de GFX 0x1C** —el offset
+ * correcto aplicado al fichero equivocado—, que son trazos diagonales de otra cosa: el mar
+ * cambiaba de aspecto en vez de centellear. Verificado comparando bytes.)
  */
 object SmwOverworldAnim {
 
@@ -45,8 +51,12 @@ object SmwOverworldAnim {
     const val GFX_DECOMP_RAM_BASE = 0xAD00
     /** Bytes de una tesela 3bpp (para pasar de dirección de RAM a nº de tesela). */
     private const val BYTES_PER_3BPP_TILE = 24
-    /** Fichero GFX del que salen las teselas de oleaje (slot 0 del overworld). */
-    const val WATER_GFX_FILE = 0x1C
+    /**
+     * Fichero GFX que hay en el búfer de descompresión cuando corre la animación. Es el
+     * **0x14**: sus teselas 0x50-0x52 (las que apuntan las direcciones de RAM) son idénticas
+     * byte a byte a las 0x75-0x77 del overworld, o sea a las propias teselas del mar.
+     */
+    const val WATER_GFX_FILE = 0x14
     /** Primera tesela de VRAM que se anima (VRAM word 0x750 en 4bpp = tesela 0x75). */
     const val WATER_VRAM_FIRST_TILE = 0x75
     /** Nº de teselas de agua animadas (0x75, 0x76, 0x77). */

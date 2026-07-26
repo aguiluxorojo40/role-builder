@@ -1721,9 +1721,11 @@ object SnesGameRecipes {
             val vram = overworldTileVram(rom) ?: return null
             SmwOverworldAnim.applyWater(rom, delta, vram, f)
             val cgram = overworldCgram(rom, delta, 0)
-            val gold = color(SMW_FLASHING_PC + 2 * f)
-            val red = color(SMW_FLASHING_PC + 16 + 2 * f)
-            cgram[0x64] = gold; cgram[0x6D] = gold; cgram[0x7D] = red
+            // Destello del overworld: `UploadOverworldExAnimationData` ($00:A4E3) hace SOLO
+            // `YellowFlash(0x6D)` y `RedFlash(0x7D, 16)`. El índice 0x64 es de la variante de
+            // NIVEL; tocarlo aquí teñía de amarillo la arena del desierto, que usa ese color.
+            cgram[0x6D] = color(SMW_FLASHING_PC + 2 * f)
+            cgram[0x7D] = color(SMW_FLASHING_PC + 16 + 2 * f)
             paintOverworldMainMap(rom, delta, vram, tilemap, cgram)
         }
     }
