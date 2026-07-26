@@ -1713,10 +1713,13 @@ object SnesGameRecipes {
      */
     fun renderOverworldMainMapFrames(rom: ByteArray, header: SnesHeader): List<ArgbImage>? {
         val delta = smwHeaderDelta(header)
-        val vram = overworldTileVram(rom) ?: return null
         val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta)
         fun color(pc: Int) = SnesDecoder.bgr15ToArgb(byte(rom, pc + delta) or (byte(rom, pc + delta + 1) shl 8))
         return (0 until SMW_OW_ANIM_FRAMES).map { f ->
+            // VRAM propia de cada fotograma: el OLEAJE del mar reescribe las teselas
+            // 0x75-0x77 en cada paso ([SmwOverworldAnim]), así que no se puede compartir.
+            val vram = overworldTileVram(rom) ?: return null
+            SmwOverworldAnim.applyWater(rom, delta, vram, f)
             val cgram = overworldCgram(rom, delta, 0)
             val gold = color(SMW_FLASHING_PC + 2 * f)
             val red = color(SMW_FLASHING_PC + 16 + 2 * f)
