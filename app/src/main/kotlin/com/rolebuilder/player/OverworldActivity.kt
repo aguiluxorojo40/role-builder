@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -77,12 +79,7 @@ class OverworldActivity : ComponentActivity() {
             return
         }
         val header = SnesDecoder.parseHeader(rom)
-        setContent {
-            OverworldScreen(rom, header) { level ->
-                runCatching { startActivity(PlatformerActivity.intent(this, romFile, level)) }
-                    .onFailure { Toast.makeText(this, "No se pudo entrar: ${it.message}", Toast.LENGTH_LONG).show() }
-            }
-        }
+        setContent { OverworldScreen(rom, header, romFile) }
     }
 
     companion object {
@@ -101,21 +98,42 @@ private const val MAP_SIDE = 512
 private const val TILE = 16
 
 @Composable
-private fun OverworldScreen(rom: ByteArray, header: SnesHeader, onPlay: (Int) -> Unit) {
+private fun OverworldScreen(rom: ByteArray, header: SnesHeader, romFile: File) {
     val context = LocalContext.current
     val delta = remember(rom) { header.headerOffset - 0x7FC0 }
     var showSubmaps by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<SmwOverworldLevels.OwLevel?>(null) }
-    // PROGRESIÓN: cuántos eventos del overworld están aplicados. 0 = partida nueva (casi sin
-    // caminos), el total = juego al 100%. Es el mismo mecanismo con el que el juego abre los
-    // caminos al superar niveles ([SmwOverworld.overworldTilemapWithEvents]).
-    var events by remember { mutableStateOf(SmwOverworld.EVENT_COUNT) }
+    // PROGRESIÓN REAL: el juego lleva un banderín por evento, no un contador. Aquí se guarda
+    // el CONJUNTO de eventos disparados; empieza vacío (partida nueva) y se va llenando con el
+    // evento de cada nivel que el jugador supera. `showAll` es el atajo de "verlo todo".
+    var firedEvents by remember { mutableStateOf(setOf<Int>()) }
+    var showAll by remember { mutableStateOf(true) }
+    val eventTable = remember(rom) { SmwOverworld.translevelEvents(rom, delta) }
 
     // Render del mapa (se rehace al cambiar de vista o de progresión; lleva su rato).
-    val bitmap: Bitmap? = remember(showSubmaps, events) {
-        val img = if (showSubmaps) SnesGameRecipes.renderOverworldSubmapArea(rom, header, 1, events)
-        else SnesGameRecipes.renderOverworldMainMap(rom, header, events)
+    val bitmap: Bitmap? = remember(showSubmaps, firedEvents, showAll) {
+        val active: (Int) -> Boolean = if (showAll) ({ true }) else ({ e: Int -> e in firedEvents })
+        val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, active)
+        val img = if (showSubmaps) SnesGameRecipes.renderOverworldSubmapAreaFrom(rom, header, 1, tilemap)
+        else SnesGameRecipes.renderOverworldMainMapFrom(rom, header, tilemap)
         img?.let { SnesImport.toBitmap(it) }
+    }
+
+    // Lanzador del nivel: cuando vuelve diciendo que se SUPERÓ, se dispara su evento y el
+    // mapa se redibuja con el camino nuevo abierto. Cierra el círculo mapa → nivel → mapa.
+    var lastPlayed by remember { mutableStateOf<Int?>(null) }
+    val playLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        val won = result.data?.getBooleanExtra(PlatformerActivity.RESULT_WON, false) == true
+        val number = lastPlayed
+        if (won && number != null) {
+            val ev = eventTable.getOrNull(number) ?: SmwOverworld.EVENT_NONE
+            if (ev != SmwOverworld.EVENT_NONE) {
+                firedEvents = firedEvents + ev
+                showAll = false
+            }
+        }
     }
     val levels = remember(rom) { SmwOverworldLevels.levels(rom, delta) }
     val shown = remember(showSubmaps, levels) { levels.filter { it.onMainMap != showSubmaps } }
@@ -129,16 +147,13 @@ private fun OverworldScreen(rom: ByteArray, header: SnesHeader, onPlay: (Int) ->
                 Text("Submapas", color = if (showSubmaps) Color.White else Color.Gray)
             }
         }
-        // Progresión: se ve cómo los eventos van abriendo los caminos del mapa.
+        // Progresión: partida nueva (solo lo que has abierto tú) o el mapa al 100%.
         Row {
-            TextButton(onClick = { events = 0 }) {
-                Text("Partida nueva", color = if (events == 0) Color.White else Color.Gray)
+            TextButton(onClick = { showAll = false }) {
+                Text("Mi partida (${firedEvents.size})", color = if (!showAll) Color.White else Color.Gray)
             }
-            TextButton(onClick = { events = 7 }) {
-                Text("Yoshi's Island", color = if (events == 7) Color.White else Color.Gray)
-            }
-            TextButton(onClick = { events = SmwOverworld.EVENT_COUNT }) {
-                Text("Todo abierto", color = if (events == SmwOverworld.EVENT_COUNT) Color.White else Color.Gray)
+            TextButton(onClick = { showAll = true }) {
+                Text("Todo abierto", color = if (showAll) Color.White else Color.Gray)
             }
         }
         if (bitmap == null) {
@@ -203,7 +218,12 @@ private fun OverworldScreen(rom: ByteArray, header: SnesHeader, onPlay: (Int) ->
                 Text("Este translevel no tiene nivel jugable.", color = Color(0xFFBBBBBB))
             } else {
                 Button(
-                    onClick = { onPlay(level) },
+                    onClick = {
+                        lastPlayed = lv.levelNumber
+                        runCatching {
+                            playLauncher.launch(PlatformerActivity.intent(context, romFile, level))
+                        }
+                    },
                     modifier = Modifier.padding(top = 4.dp),
                 ) { Text("▶ Jugar (nivel ${level.toString(16).uppercase()})") }
             }

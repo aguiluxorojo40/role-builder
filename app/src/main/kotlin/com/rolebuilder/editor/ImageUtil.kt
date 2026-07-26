@@ -27,6 +27,9 @@ fun loadAssetImageBitmap(context: Context, assetPath: String): ImageBitmap? =
  * el motor dibuja al jugar (ver `PlatformerActivity.loadBigSprites`). Vacío si no hay carpeta.
  */
 fun loadBigSprites(context: Context): Map<Int, ImageBitmap> = runCatching {
+    // OJO: en este repo NO se versiona ningún PNG aquí. Los sprites de SMW son material
+    // con copyright de Nintendo; la app los extrae de la ROM del usuario en el dispositivo.
+    // Sin ficheros esto devuelve un mapa vacío y quien llame se apaña, que es lo correcto.
     (context.assets.list("sprites/big") ?: emptyArray()).mapNotNull { name ->
         val id = Regex("big_([0-9a-fA-F]+)\\.png").matchEntire(name)?.groupValues?.get(1)
             ?.toInt(16) ?: return@mapNotNull null

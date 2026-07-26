@@ -125,6 +125,28 @@ class SmwFirstLevelsChainTest {
         }
     }
 
+    /**
+     * Progresion por CONJUNTO de eventos (como el juego, que lleva un banderin por evento) y
+     * no por prefijo: activar solo el evento 1 (YOSHI'S ISLAND 1) tiene que abrir camino, y
+     * menos que activar los 7 primeros.
+     */
+    @Test
+    fun singleEventOpensItsOwnPath() {
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+        val delta = header.headerOffset - 0x7FC0
+        val base = SmwOverworld.overworldTilemapWithEvents(rom, delta) { false }
+        val onlyYi1 = SmwOverworld.overworldTilemapWithEvents(rom, delta) { it == 1 }
+        val firstSeven = SmwOverworld.overworldTilemapWithEvents(rom, delta) { it < 7 }
+        val d1 = base.indices.count { base[it] != onlyYi1[it] }
+        val d7 = base.indices.count { base[it] != firstSeven[it] }
+        assertTrue(d1 > 0, "el evento de YOSHI'S ISLAND 1 debe abrir camino: $d1 casillas")
+        assertTrue(d7 > d1, "los 7 primeros abren mas que uno solo: $d7 vs $d1")
+        // Y el conjunto {0..6} tiene que dar lo mismo que el contador 7 (misma cosa).
+        val byCount = SmwOverworld.overworldTilemapWithEvents(rom, delta, 7)
+        assertTrue(byCount.contentEquals(firstSeven), "contador y predicado coinciden")
+    }
+
     private fun findRom(): ByteArray? {
         val candidates = listOf(
             System.getenv("SMW_ROM"),

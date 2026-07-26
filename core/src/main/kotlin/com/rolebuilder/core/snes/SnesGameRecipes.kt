@@ -1684,6 +1684,16 @@ object SnesGameRecipes {
         return paintOverworldMainMap(rom, delta, vram, tilemap, overworldCgram(rom, delta, 0))
     }
 
+    /**
+     * El mapa principal pintado desde un TILEMAP ya calculado, para dibujar una progresión
+     * concreta (el conjunto de eventos que lleve el jugador) sin recalcularlo dos veces.
+     */
+    fun renderOverworldMainMapFrom(rom: ByteArray, header: SnesHeader, tilemap: IntArray): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldTileVram(rom) ?: return null
+        return paintOverworldMainMap(rom, delta, vram, tilemap, overworldCgram(rom, delta, 0))
+    }
+
     /** Pinta el mapa principal (tierra + capa 1) con una CGRAM dada. Reutilizado por los fotogramas. */
     private fun paintOverworldMainMap(
         rom: ByteArray, delta: Int, vram: Array<IntArray?>, tilemap: IntArray, cgram: IntArray,
@@ -1838,8 +1848,19 @@ object SnesGameRecipes {
         eventCount: Int = SmwOverworld.EVENT_COUNT,
     ): ArgbImage? {
         val delta = smwHeaderDelta(header)
-        val vram = overworldTileVram(rom) ?: return null
         val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, eventCount)
+        return renderOverworldSubmapAreaFrom(rom, header, submap, tilemap)
+    }
+
+    /**
+     * El área de submapas pintada desde un TILEMAP ya calculado. Es la vía para dibujar una
+     * progresión concreta (un conjunto de eventos disparados) sin recalcular el mapa dos veces.
+     */
+    fun renderOverworldSubmapAreaFrom(
+        rom: ByteArray, header: SnesHeader, submap: Int, tilemap: IntArray,
+    ): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldTileVram(rom) ?: return null
         val cgram = overworldCgram(rom, delta, submap.coerceIn(1, SmwOverworld.SUBMAP_COUNT))
         val cols = SmwOverworld.OW_SUBMAP_AREA_COLS
         val side = SmwOverworld.OW_SCREEN_SIDE * 8

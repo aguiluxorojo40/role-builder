@@ -92,7 +92,12 @@ class PlatformerActivity : ComponentActivity() {
             PlatformerScreen(
                 renderer,
                 onRestart = { recreate() },
-                onExit = { finish() },
+                // Al salir se devuelve si el nivel se SUPERÓ: es lo que deja al mapa del
+                // mundo aplicar el evento de ese nivel y abrir el camino siguiente.
+                onExit = {
+                    setResult(RESULT_OK, Intent().putExtra(RESULT_WON, renderer.levelWon))
+                    finish()
+                },
                 // Al morir, la música PARA (como SMW) y queda solo el jingle de muerte;
                 // reiniciar (recreate) vuelve a arrancarla.
                 onDeath = { music?.stop() },
@@ -379,6 +384,9 @@ class PlatformerActivity : ComponentActivity() {
         private const val EXTRA_MAP_ID = "mapId"
         private const val EXTRA_START_X = "startX"
         private const val EXTRA_START_Y = "startY"
+
+        /** Extra del resultado: true si el jugador SUPERO el nivel (toco la meta). */
+        const val RESULT_WON = "won"
 
         fun intent(context: Context, romFile: File, level: Int): Intent =
             Intent(context, PlatformerActivity::class.java)

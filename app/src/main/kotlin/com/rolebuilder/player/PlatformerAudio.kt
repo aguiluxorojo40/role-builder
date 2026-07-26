@@ -55,9 +55,10 @@ class PlatformerAudio private constructor(
     }
 
     /**
-     * Muerte de Mario: el JINGLE real de SMW (pista de música 9, horneada a
-     * assets/sfx/death_jingle.wav con el motor N-SPC); si no está, cae al "pisotón"
-     * grave de antes.
+     * Muerte de Mario: el JINGLE real de SMW (pista de música 9). Ese asset YA NO SE
+     * EMPAQUETA —es material con copyright de Nintendo y no se versiona—, así que en la
+     * práctica cae al "pisotón" grave, que es sonido propio. Si algún día se genera desde
+     * la ROM del usuario con el motor N-SPC, se usará ese.
      */
     fun playDeath() {
         val id = ids[SmwSfxCatalog.Event.DEATH_JINGLE]
@@ -89,9 +90,11 @@ class PlatformerAudio private constructor(
         }
 
         /**
-         * Construye el audio desde los efectos EMPAQUETADOS (assets/sfx/<event>.wav,
-         * horneados de la ROM). Es la vía para los proyectos de plataformas, que se
-         * juegan sin ROM. Devuelve `null` si no hay ningún efecto empaquetado.
+         * Construye el audio desde efectos empaquetados en `assets/sfx/`. **En este repo
+         * NO se versiona ninguno**: los de SMW son de Nintendo y salen de la ROM del
+         * usuario por [fromRom]. Esta vía queda para efectos PROPIOS que se añadan al
+         * proyecto; sin ficheros devuelve `null` y el juego corre sin sonido de
+         * plataformas, que es el comportamiento correcto.
          */
         fun fromAssets(context: Context): PlatformerAudio? {
             val wavs = mutableMapOf<SmwSfxCatalog.Event, ByteArray>()

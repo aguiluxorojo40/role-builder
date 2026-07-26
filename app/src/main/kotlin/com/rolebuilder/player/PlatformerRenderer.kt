@@ -86,6 +86,10 @@ class PlatformerRenderer(
     @Volatile var inJumpHeld = false
 
     /** Warp activado por el jugador (tubería/puerta); la UI lo consume y cambia de nivel. */
+    /** true si el jugador ha SUPERADO el nivel (tocó la meta). Lo consulta la Activity al
+     *  salir para devolver el resultado, y con eso el mapa del mundo aplica su evento. */
+    val levelWon: Boolean get() = engine.won
+
     @Volatile var pendingWarp: com.rolebuilder.core.engine.platformer.WarpTarget? = null
         private set
 

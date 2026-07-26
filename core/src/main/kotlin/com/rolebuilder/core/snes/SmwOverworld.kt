@@ -231,9 +231,20 @@ object SmwOverworld {
      * + `BufferEventTileToLayer2Tilemap` ($04:E496).
      */
     fun overworldTilemapWithEvents(rom: ByteArray, delta: Int, eventCount: Int = EVENT_COUNT): IntArray {
-        val base = overworldTilemap(rom, delta)
         val n = eventCount.coerceIn(0, EVENT_COUNT)
-        if (n == 0) return base
+        return overworldTilemapWithEvents(rom, delta) { it < n }
+    }
+
+    /**
+     * Igual que el anterior pero con los eventos ACTIVOS a la carta: [isActive] decide, evento
+     * a evento, si está disparado. Es como funciona el juego de verdad —lleva un banderín por
+     * evento (`ow_event_flags`), no un contador—, así que esta es la forma fiel de dibujar la
+     * progresión real de una partida: el jugador supera niveles sueltos y se activan SUS
+     * eventos, no un prefijo.
+     */
+    fun overworldTilemapWithEvents(rom: ByteArray, delta: Int, isActive: (Int) -> Boolean): IntArray {
+        val base = overworldTilemap(rom, delta)
+        if ((0 until EVENT_COUNT).none(isActive)) return base
         // Buffer intercalado como en la RAM del juego: [2i] = tesela, [2i+1] = props.
         val buf = IntArray(OW_TILE_BYTES)
         for (i in base.indices) { buf[2 * i] = base[i] and 0xFF; buf[2 * i + 1] = (base[i] shr 8) and 0xFF }
@@ -242,7 +253,8 @@ object SmwOverworld {
         val tilesPc = pc(u24(rom, EVENT_TILES_PTR_SNES, delta), delta)
         val prop = eventPropBuffer(rom, delta)
 
-        for (ev in 0 until n) {
+        for (ev in 0 until EVENT_COUNT) {
+            if (!isActive(ev)) continue
             val start = u16(rom, EVENT_PTRS_SNES + 2 * ev, delta)
             val end = u16(rom, EVENT_PTRS_SNES + 2 * (ev + 1), delta)
             for (i in start until end) {
