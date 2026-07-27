@@ -119,6 +119,30 @@ object SnesImport {
     fun bitmapToPng(bitmap: Bitmap): ByteArray =
         java.io.ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
 
+    /**
+     * El CATÁLOGO de extracción, ya clasificado, empaquetado en un ZIP con la estructura de
+     * carpetas `grupo/item/animación/` — cada animación en su propia subcarpeta, con un PNG por
+     * fotograma y un GIF de la animación. Devuelve dónde se guardó, o null si la ROM no es SMW.
+     *
+     * El PNG se codifica aquí (necesita `Bitmap` de Android); el resto —qué sprites hay, sus
+     * animaciones y la estructura de carpetas— lo pone [com.rolebuilder.core.snes.SmwAssetCatalog].
+     */
+    fun exportAssetCatalogZip(context: Context, rom: ByteArray, header: SnesHeader): String? {
+        val groups = com.rolebuilder.core.snes.SmwAssetCatalog.build(rom, header)
+        val entries = com.rolebuilder.core.snes.SmwAssetCatalog.exportEntries(groups)
+        if (entries.isEmpty()) return null
+        val buffer = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(buffer).use { zip ->
+            for (e in entries) {
+                zip.putNextEntry(java.util.zip.ZipEntry(e.path))
+                val bytes = e.gif ?: e.image?.let { bitmapToPng(toBitmap(it)) } ?: ByteArray(0)
+                zip.write(bytes)
+                zip.closeEntry()
+            }
+        }
+        return exportToDownloads(context, "smw_sprites.zip", "application/zip", buffer.toByteArray())
+    }
+
     /** Normaliza un nombre a un archivo PNG seguro (minúsculas, sin espacios). */
     fun sanitizeFileName(name: String): String {
         val base = name.trim().lowercase()

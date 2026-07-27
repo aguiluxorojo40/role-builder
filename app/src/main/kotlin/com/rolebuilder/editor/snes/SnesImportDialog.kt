@@ -444,6 +444,24 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     }
 
                     Spacer(Modifier.height(8.dp))
+                    Text("🎞️ Extraer sprites (catálogo por animación)", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Abre el catálogo navegable de TODO lo que se puede sacar de tu ROM: busca " +
+                            "\"Mario\", \"Koopa\", \"Piraña\"…, ve la animación en vivo y descárgala. Se " +
+                            "guarda clasificado y separado por animación (cada una en su subcarpeta).",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(onClick = {
+                        val rom = romBytes ?: return@Button
+                        runCatching {
+                            val tmp = java.io.File(context.cacheDir, "smw_extract.sfc").apply { writeBytes(rom) }
+                            context.startActivity(AssetBrowserActivity.intent(context, tmp))
+                        }.onFailure {
+                            Toast.makeText(context, "No se pudo abrir el catálogo: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }) { Text("🎞️ Abrir catálogo de extracción") }
+
+                    Spacer(Modifier.height(8.dp))
                     Text("🌍 Overworld (mapa del mundo)", style = MaterialTheme.typography.titleSmall)
                     Text(
                         "Renderiza el MAPA DEL MUNDO de SMW desde tu ROM (tierra + niveles, castillos, " +
