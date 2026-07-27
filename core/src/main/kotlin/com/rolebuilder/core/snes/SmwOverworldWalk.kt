@@ -292,6 +292,56 @@ object SmwOverworldWalk {
             .map { position(submap, it.srcX, it.srcY) }
             .toSet()
 
+    // --- Star Road (tuberías estelares entre mundos lejanos) ----------------------------
+
+    /**
+     * Una tubería del STAR ROAD: al pisar la estrella ([srcX], [srcY]) del mapa [srcSubmap] y
+     * activarla, Mario salta a ([dstX], [dstY]) del mapa [dstSubmap]. A diferencia de las
+     * [PathExit] normales, el Star Road **no salta solo**: en el juego hay que pisar la
+     * estrella y pulsar, porque es un atajo, no un camino. Conecta mundos que de otra forma
+     * quedan lejísimos (Vanilla Dome, el Valle de Bowser, Special, Star World).
+     */
+    data class StarWarp(
+        val srcSubmap: Int,
+        val srcX: Int,
+        val srcY: Int,
+        val dstSubmap: Int,
+        val dstX: Int,
+        val dstY: Int,
+    )
+
+    /**
+     * Las tuberías del Star Road. Port de `HandleOverworldStarPipeWarp_GetIndex` ($04:8509) y
+     * `_SetPlayerDestination` ($04:853B), con sus tablas [SmwOverworld.STAR_SRCX_SNES]…
+     *
+     * El empaquetado no es evidente y se verificó contra la ROM: el origen viene en CASILLAS
+     * —`srcX = submapa<<8 | columna`, `srcY = fila`— mientras que el destino viene en PÍXELES
+     * con el submapa incrustado —`dstX = submapa<<9 | (x_px & 0x1FF)`, y la casilla sale con
+     * `>>4`—. Mezclar los dos formatos es justo lo que confunde si uno se fía del nombre de la
+     * tabla en vez de medir.
+     */
+    fun starWarps(rom: ByteArray, delta: Int): List<StarWarp> =
+        (0 until SmwOverworld.STAR_WARP_COUNT).map { n ->
+            val sx = u16(rom, SmwOverworld.STAR_SRCX_SNES + 2 * n, delta)
+            val sy = u16(rom, SmwOverworld.STAR_SRCY_SNES + 2 * n, delta)
+            val dx = u16(rom, SmwOverworld.STAR_DSTX_SNES + 2 * n, delta)
+            val dy = u16(rom, SmwOverworld.STAR_DSTY_SNES + 2 * n, delta)
+            StarWarp(
+                srcSubmap = sx shr 8, srcX = sx and 0xFF, srcY = sy,
+                dstSubmap = (dx shr 9) and 0xF, dstX = (dx and 0x1FF) shr 4, dstY = dy shr 4,
+            )
+        }
+
+    /** La tubería estelar cuyo origen es la casilla ([x], [y]) del mapa [submap], o null. */
+    fun starWarpAt(warps: List<StarWarp>, submap: Int, x: Int, y: Int): StarWarp? =
+        warps.firstOrNull { it.srcSubmap == submap && it.srcX == x && it.srcY == y }
+
+    /** Casillas del [submap] donde Mario para porque hay una estrella del Star Road. */
+    fun starStops(warps: List<StarWarp>, submap: Int): Set<Int> =
+        warps.filter { it.srcSubmap == submap }
+            .map { position(submap, it.srcX, it.srcY) }
+            .toSet()
+
     // --- Partida nueva -----------------------------------------------------------------
 
     /** Dónde empieza una partida nueva, leído de la ROM. */

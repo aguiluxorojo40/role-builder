@@ -225,6 +225,8 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
     }
     // Las salidas de camino (tuberías) que cambian de mundo, y las casillas donde paran.
     val exits = remember(rom) { SmwOverworldWalk.pathExits(rom, delta) }
+    // El Star Road: atajos estelares entre mundos lejanos. No saltan solos (van a botón).
+    val starWarps = remember(rom) { SmwOverworldWalk.starWarps(rom, delta) }
     // Mario del mapa, dibujado con su sprite real desde la ROM: uno por dirección.
     val marioSprites = remember(rom) {
         listOf(
@@ -246,7 +248,14 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
 
     // Nivel sobre el que está Mario ahora mismo (0 si es una casilla que no es de nivel).
     val hereLevel = levelNumbers.getOrElse(SmwOverworldWalk.position(world, marioX, marioY)) { 0 }
-    val exitStops = remember(exits, world) { SmwOverworldWalk.exitStops(exits, world) }
+    // Mario para en las tuberías normales Y en las estrellas del Star Road.
+    val exitStops = remember(exits, starWarps, world) {
+        SmwOverworldWalk.exitStops(exits, world) + SmwOverworldWalk.starStops(starWarps, world)
+    }
+    // ¿Está sobre una estrella del Star Road? Entonces se ofrece el atajo.
+    val starHere = remember(starWarps, world, marioX, marioY) {
+        SmwOverworldWalk.starWarpAt(starWarps, world, marioX, marioY)
+    }
     // Direcciones que Mario puede tomar desde aquí. En una casilla-de-nivel manda el candado
     // de caminos del juego (settings); en una boca de tubería, adonde haya camino físico.
     val open = remember(settings, hereLevel, world, marioX, marioY) {
@@ -400,7 +409,20 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) { Text("▶ Entrar al nivel") }
         }
-        if (open.isEmpty() && !walking) {
+        // Star Road: si Mario está sobre una estrella, el atajo a otro mundo.
+        if (starHere != null && !walking) {
+            Button(
+                onClick = {
+                    val w = starHere
+                    world = w.dstSubmap
+                    marioX = w.dstX
+                    marioY = w.dstY
+                    persist(save.movedTo(w.dstSubmap, SmwOverworldWalk.position(w.dstSubmap, w.dstX, w.dstY)))
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            ) { Text("⭐ Usar el Star Road") }
+        }
+        if (open.isEmpty() && starHere == null && !walking) {
             Text(
                 "No hay camino abierto desde aquí. Supera este nivel para abrirlo.",
                 style = MaterialTheme.typography.bodySmall,

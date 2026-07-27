@@ -1,5 +1,6 @@
 package com.rolebuilder.core
 
+import com.rolebuilder.core.snes.SmwOverworld
 import com.rolebuilder.core.snes.SmwOverworldWalk
 import com.rolebuilder.core.snes.SnesDecoder
 import java.io.File
@@ -241,6 +242,38 @@ class SmwOverworldWalkTest {
             "se llega a una casilla real del submapa",
         )
         assertTrue(levels.isNotEmpty())
+    }
+
+    @Test
+    fun starRoadWarpsConnectDistantWorlds() {
+        val rom = findRom() ?: return
+        val delta = SnesDecoder.parseHeader(rom).headerOffset - 0x7FC0
+        val warps = SmwOverworldWalk.starWarps(rom, delta)
+        assertEquals(SmwOverworld.STAR_WARP_COUNT, warps.size, "27 tuberías estelares")
+
+        // La primera lleva del mapa principal (17,7) a Vanilla Dome (submapa 2). Verificado
+        // decodificando el empaquetado real: origen en casillas, destino en píxeles.
+        val first = warps[0]
+        assertEquals(0, first.srcSubmap); assertEquals(17, first.srcX); assertEquals(7, first.srcY)
+        assertEquals(2, first.dstSubmap); assertEquals(10, first.dstX); assertEquals(20, first.dstY)
+
+        // Y tiene su recíproca: desde Vanilla Dome (10,20) se vuelve al mapa principal (17,7).
+        val back = SmwOverworldWalk.starWarpAt(warps, 2, 10, 20)
+        assertNotNull(back)
+        assertEquals(0, back.dstSubmap); assertEquals(17, back.dstX); assertEquals(7, back.dstY)
+
+        // El Star Road toca los mundos lejanos: Vanilla Dome, el Valle, Special y Star World.
+        val worlds = warps.map { it.dstSubmap }.toSet()
+        assertTrue(worlds.containsAll(setOf(0, 2, 4, 6)), "conecta el mapa principal con esos mundos")
+
+        // Sus estrellas caen sobre teselas de estrella/tubería reales (0x82, 0x5A, 0x5F…),
+        // no en cualquier sitio: si el empaquetado estuviera mal, apuntarían a vacío.
+        val tiles = SmwOverworldWalk.layer1(rom, delta)
+        val starTiles = setOf(0x82, 0x5A, 0x5F, 0x5B, 0x56)
+        val onStar = warps.count {
+            SmwOverworldWalk.tileAt(tiles, if (it.srcSubmap == 0) 0 else it.srcSubmap, it.srcX, it.srcY) in starTiles
+        }
+        assertTrue(onStar >= warps.size - 2, "casi todas las estrellas caen sobre su tesela ($onStar/${warps.size})")
     }
 
     @Test
