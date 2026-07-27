@@ -5,6 +5,7 @@ import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -31,6 +32,20 @@ class SmwOverworldMarioTest {
             val painted = img.pixels.count { (it ushr 24) != 0 }
             assertTrue(painted > 20, "tiene cuerpo (píxeles opacos): $painted")
         }
+    }
+
+    @Test
+    fun theWalkCycleHasAStepFrameThatDiffersFromStanding() {
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+        // El ciclo es quieto → paso → quieto → paso-alterno: el fotograma 0 y el 2 son la
+        // pose quieta (iguales), y el 1 es el paso (distinto). Si no, no habría animación.
+        val stand0 = SnesGameRecipes.overworldMarioSprite(rom, header, SmwOverworldWalk.DIR_DOWN, 0)
+        val step1 = SnesGameRecipes.overworldMarioSprite(rom, header, SmwOverworldWalk.DIR_DOWN, 1)
+        val stand2 = SnesGameRecipes.overworldMarioSprite(rom, header, SmwOverworldWalk.DIR_DOWN, 2)
+        assertNotNull(stand0); assertNotNull(step1); assertNotNull(stand2)
+        assertTrue(stand0.pixels.contentEquals(stand2.pixels), "0 y 2 son la misma pose quieta")
+        assertFalse(stand0.pixels.contentEquals(step1.pixels), "el 1 es un paso distinto")
     }
 
     @Test

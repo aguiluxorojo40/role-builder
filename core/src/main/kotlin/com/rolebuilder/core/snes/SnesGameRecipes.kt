@@ -1791,9 +1791,13 @@ object SnesGameRecipes {
      */
     private const val SMW_OW_PLAYER_TILEMAP_SNES = 0x0487CB
 
+    /** Cuántos fotogramas tiene el ciclo de andar del jugador del mapa (quieto/paso/…). */
+    const val OW_MARIO_FRAMES = 4
+
     /**
      * MARIO tal y como se ve en el mapa del mundo, mirando hacia [direction]
-     * ([SmwOverworldWalk.DIR_UP]/`DOWN`/`LEFT`/`RIGHT`), como un 16×16 transparente.
+     * ([SmwOverworldWalk.DIR_UP]/`DOWN`/`LEFT`/`RIGHT`) en el fotograma [frame] (0..3), como un
+     * 16×16 transparente.
      *
      * Port del dibujo de `DrawOverworldPlayer_DrawCurrentPlayer` ($04:894F) sin Yoshi: 4
      * teselas 2×2 sacadas de `kOwSpriteTilemap`, con las teselas y la paleta de sprite del
@@ -1801,18 +1805,23 @@ object SnesGameRecipes {
      *
      * El índice de animación es la **propia dirección** (0/2/4/6): el juego guarda
      * `ow_players_animation = dirección | bit_de_paso`, y el idle por defecto que fija
-     * `GameMode0C_LoadOverworld` es el 2 (mirando hacia abajo, a cámara). Se dibuja el
-     * fotograma quieto (frame 0); la animación de paso es un refinamiento aparte.
+     * `GameMode0C_LoadOverworld` es el 2 (mirando hacia abajo, a cámara). El fotograma es el
+     * término `counter_global_frames & 0x18` del juego: el ciclo de andar es quieto → paso →
+     * quieto → paso-alterno, por eso el fotograma 0 es también la pose de estar parado.
      */
-    fun overworldMarioSprite(rom: ByteArray, header: SnesHeader, direction: Int): ArgbImage? {
+    fun overworldMarioSprite(
+        rom: ByteArray, header: SnesHeader, direction: Int, frame: Int = 0,
+    ): ArgbImage? {
         val delta = smwHeaderDelta(header)
         val vram = overworldSpriteVram(rom, delta) ?: return null
         // La paleta del jugador es la 2, pero cada tesela ya trae su paleta en el word OAM.
         val cgram = overworldCgram(rom, delta, 1)
         val img = ArgbImage(16, 16)
         val anim = direction.coerceIn(0, 7)
-        // kOwSpriteTilemap es de words; el estado n empieza en el word 8*n (16*n bytes).
-        val tmSnes = SMW_OW_PLAYER_TILEMAP_SNES + 16 * anim
+        val f = frame.coerceIn(0, OW_MARIO_FRAMES - 1)
+        // kOwSpriteTilemap es de words; dirección D y fotograma F empiezan en el word 8*D+4*F
+        // (byte 16*D + 8*F), que es el `16*anim + (counter & 0x18)` del juego.
+        val tmSnes = SMW_OW_PLAYER_TILEMAP_SNES + 16 * anim + 8 * f
         val tmPc = (tmSnes shr 16) * 0x8000 + (tmSnes and 0x7FFF) + delta
         for (i in 0 until 4) {
             val word = byte(rom, tmPc + 2 * i) or (byte(rom, tmPc + 2 * i + 1) shl 8)

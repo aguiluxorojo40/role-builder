@@ -227,17 +227,21 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
     val exits = remember(rom) { SmwOverworldWalk.pathExits(rom, delta) }
     // El Star Road: atajos estelares entre mundos lejanos. No saltan solos (van a botón).
     val starWarps = remember(rom) { SmwOverworldWalk.starWarps(rom, delta) }
-    // Mario del mapa, dibujado con su sprite real desde la ROM: uno por dirección.
+    // Mario del mapa, dibujado con su sprite real desde la ROM: los 4 fotogramas de andar por
+    // cada dirección (quieto/paso/quieto/paso-alterno), horneados una vez.
     val marioSprites = remember(rom) {
         listOf(
             SmwOverworldWalk.DIR_UP, SmwOverworldWalk.DIR_DOWN,
             SmwOverworldWalk.DIR_LEFT, SmwOverworldWalk.DIR_RIGHT,
         ).associateWith { dir ->
-            SnesGameRecipes.overworldMarioSprite(rom, header, dir)?.let { SnesImport.toBitmap(it) }
+            (0 until SnesGameRecipes.OW_MARIO_FRAMES).map { f ->
+                SnesGameRecipes.overworldMarioSprite(rom, header, dir, f)?.let { SnesImport.toBitmap(it) }
+            }
         }
     }
-    // Hacia dónde mira: por defecto abajo (el idle del juego), y cambia al andar.
+    // Hacia dónde mira (por defecto abajo, el idle del juego) y en qué fotograma va del ciclo.
     var facing by remember { mutableStateOf(SmwOverworldWalk.DIR_DOWN) }
+    var marioFrame by remember { mutableStateOf(0) }
     val view = remember(world, save.firedEvents) {
         renderView(rom, header, delta, world, cameraCrop = true, active = save.activeEvents())
     }
@@ -273,7 +277,7 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
     LaunchedEffect(route) {
         val r = route ?: return@LaunchedEffect
         var px = marioX; var py = marioY
-        for (step in r.steps) {
+        r.steps.forEachIndexed { i, step ->
             delay(WALK_MS)
             // Mario mira hacia donde da el paso, casilla a casilla.
             facing = when {
@@ -282,10 +286,14 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
                 step.y < py -> SmwOverworldWalk.DIR_UP
                 else -> SmwOverworldWalk.DIR_DOWN
             }
+            // Y avanza el ciclo de andar un fotograma por casilla.
+            marioFrame = (i + 1) % SnesGameRecipes.OW_MARIO_FRAMES
             px = step.x; py = step.y
             marioX = step.x
             marioY = step.y
         }
+        // Al parar, vuelve a la pose quieta.
+        marioFrame = 0
         // Llegada: el juego abre la dirección CONTRARIA en la casilla de destino.
         if (r.endLevel > 0 && r.endLevel < settings.size) {
             val opened = settings.copyOf()
@@ -332,7 +340,7 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
             Text("Esta ROM no parece ser Super Mario World.", color = Color.White)
             return@Column
         }
-        val marioBitmap = marioSprites[facing]
+        val marioBitmap = marioSprites[facing]?.getOrNull(marioFrame) ?: marioSprites[facing]?.firstOrNull()
         Box(Modifier.fillMaxWidth().aspectRatio(view.viewWidth.toFloat() / view.viewHeight)) {
             Image(
                 bitmap = view.bitmap.asImageBitmap(),
