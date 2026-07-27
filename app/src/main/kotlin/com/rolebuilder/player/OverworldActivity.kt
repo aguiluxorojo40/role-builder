@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.snes.SmwGameSave
 import com.rolebuilder.core.snes.SmwLevelNames
@@ -69,9 +71,9 @@ import kotlin.math.abs
  *    el conmutador "Todo abierto" para ver el mapa al 100% y el área de submapas entera, que
  *    es lo que hace falta cuando estás iterando sobre un nivel.
  *
- * Alcance honesto: aquí se navega **tocando** las casillas. Que Mario ande paso a paso por los
- * caminos necesita portar `OwProcess04_PlayerIsMoving` y el manejo de rutas; mientras tanto el
- * selector de mundo hace de sustituto para poder llegar a todos los mapas.
+ * En modo JUEGO Mario **anda de verdad** por los caminos (con su sprite real de la ROM,
+ * mirando hacia donde va), y las tuberías lo llevan de un mundo a otro. En modo PRUEBA se
+ * navega tocando las casillas, que es lo cómodo cuando iteras sobre un nivel.
  */
 class OverworldActivity : ComponentActivity() {
 
@@ -223,6 +225,17 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
     }
     // Las salidas de camino (tuberías) que cambian de mundo, y las casillas donde paran.
     val exits = remember(rom) { SmwOverworldWalk.pathExits(rom, delta) }
+    // Mario del mapa, dibujado con su sprite real desde la ROM: uno por dirección.
+    val marioSprites = remember(rom) {
+        listOf(
+            SmwOverworldWalk.DIR_UP, SmwOverworldWalk.DIR_DOWN,
+            SmwOverworldWalk.DIR_LEFT, SmwOverworldWalk.DIR_RIGHT,
+        ).associateWith { dir ->
+            SnesGameRecipes.overworldMarioSprite(rom, header, dir)?.let { SnesImport.toBitmap(it) }
+        }
+    }
+    // Hacia dónde mira: por defecto abajo (el idle del juego), y cambia al andar.
+    var facing by remember { mutableStateOf(SmwOverworldWalk.DIR_DOWN) }
     val view = remember(world, save.firedEvents) {
         renderView(rom, header, delta, world, cameraCrop = true, active = save.activeEvents())
     }
@@ -250,8 +263,17 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
     var route by remember { mutableStateOf<SmwOverworldWalk.Walk?>(null) }
     LaunchedEffect(route) {
         val r = route ?: return@LaunchedEffect
+        var px = marioX; var py = marioY
         for (step in r.steps) {
             delay(WALK_MS)
+            // Mario mira hacia donde da el paso, casilla a casilla.
+            facing = when {
+                step.x < px -> SmwOverworldWalk.DIR_LEFT
+                step.x > px -> SmwOverworldWalk.DIR_RIGHT
+                step.y < py -> SmwOverworldWalk.DIR_UP
+                else -> SmwOverworldWalk.DIR_DOWN
+            }
+            px = step.x; py = step.y
             marioX = step.x
             marioY = step.y
         }
@@ -301,6 +323,7 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
             Text("Esta ROM no parece ser Super Mario World.", color = Color.White)
             return@Column
         }
+        val marioBitmap = marioSprites[facing]
         Box(Modifier.fillMaxWidth().aspectRatio(view.viewWidth.toFloat() / view.viewHeight)) {
             Image(
                 bitmap = view.bitmap.asImageBitmap(),
@@ -309,20 +332,30 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize(),
             )
+            // Mario, con su sprite real de la ROM, en la casilla EXACTA en la que está. Si por
+            // lo que sea no se pudo hornear el sprite, cae a un marcador para no quedarse ciego.
             Canvas(Modifier.fillMaxSize()) {
                 val sx = size.width / view.viewWidth
                 val sy = size.height / view.viewHeight
-                // Mario. Todavía no es su sprite del mapa (eso es otro port): es un marcador,
-                // pero está en la casilla EXACTA en la que estaría él.
-                drawRect(
-                    color = Color(0xFFFF4136),
-                    topLeft = Offset(
-                        (marioX * TILE - view.originX) * sx,
-                        (marioY * TILE - view.originY) * sy,
-                    ),
-                    size = androidx.compose.ui.geometry.Size(TILE * sx, TILE * sy),
-                    style = Stroke(width = 4f),
-                )
+                val left = (marioX * TILE - view.originX) * sx
+                val top = (marioY * TILE - view.originY) * sy
+                if (marioBitmap != null) {
+                    val dst = IntSize((TILE * sx).toInt(), (TILE * sy).toInt())
+                    drawImage(
+                        image = marioBitmap.asImageBitmap(),
+                        srcSize = IntSize(marioBitmap.width, marioBitmap.height),
+                        dstOffset = IntOffset(left.toInt(), top.toInt()),
+                        dstSize = dst,
+                        filterQuality = FilterQuality.None,
+                    )
+                } else {
+                    drawRect(
+                        color = Color(0xFFFF4136),
+                        topLeft = Offset(left, top),
+                        size = androidx.compose.ui.geometry.Size(TILE * sx, TILE * sy),
+                        style = Stroke(width = 4f),
+                    )
+                }
             }
         }
 

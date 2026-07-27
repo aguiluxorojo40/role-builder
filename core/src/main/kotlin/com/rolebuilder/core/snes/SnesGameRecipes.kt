@@ -1785,6 +1785,45 @@ object SnesGameRecipes {
         return if (any) out else null
     }
 
+    /**
+     * `kOwSpriteTilemap` ($04:87CB): por cada estado de animación del jugador del mapa, las 4
+     * teselas OAM (2×2) de cada fotograma. Cada word es formato OAM `vhopppcc cccccccc`.
+     */
+    private const val SMW_OW_PLAYER_TILEMAP_SNES = 0x0487CB
+
+    /**
+     * MARIO tal y como se ve en el mapa del mundo, mirando hacia [direction]
+     * ([SmwOverworldWalk.DIR_UP]/`DOWN`/`LEFT`/`RIGHT`), como un 16×16 transparente.
+     *
+     * Port del dibujo de `DrawOverworldPlayer_DrawCurrentPlayer` ($04:894F) sin Yoshi: 4
+     * teselas 2×2 sacadas de `kOwSpriteTilemap`, con las teselas y la paleta de sprite del
+     * overworld (GFX set 17, las mismas que ya carga [overworldSpriteVram]).
+     *
+     * El índice de animación es la **propia dirección** (0/2/4/6): el juego guarda
+     * `ow_players_animation = dirección | bit_de_paso`, y el idle por defecto que fija
+     * `GameMode0C_LoadOverworld` es el 2 (mirando hacia abajo, a cámara). Se dibuja el
+     * fotograma quieto (frame 0); la animación de paso es un refinamiento aparte.
+     */
+    fun overworldMarioSprite(rom: ByteArray, header: SnesHeader, direction: Int): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val vram = overworldSpriteVram(rom, delta) ?: return null
+        // La paleta del jugador es la 2, pero cada tesela ya trae su paleta en el word OAM.
+        val cgram = overworldCgram(rom, delta, 1)
+        val img = ArgbImage(16, 16)
+        val anim = direction.coerceIn(0, 7)
+        // kOwSpriteTilemap es de words; el estado n empieza en el word 8*n (16*n bytes).
+        val tmSnes = SMW_OW_PLAYER_TILEMAP_SNES + 16 * anim
+        val tmPc = (tmSnes shr 16) * 0x8000 + (tmSnes and 0x7FFF) + delta
+        for (i in 0 until 4) {
+            val word = byte(rom, tmPc + 2 * i) or (byte(rom, tmPc + 2 * i + 1) shl 8)
+            val tile = word and 0x1FF
+            val pal = (word shr 9) and 7
+            val hFlip = (word shr 14) and 1 == 1
+            drawSpriteTile(tile, (i % 2) * 8, (i / 2) * 8, pal, vram, cgram, img, hFlip)
+        }
+        return img
+    }
+
     /** Dibuja una tesela OAM de 8×8 con su sub-paleta de sprite (CGRAM 128 + p*16). */
     private fun drawSpriteTile(
         tile: Int, x: Int, y: Int, palette: Int, vram: Array<IntArray?>, cgram: IntArray,
