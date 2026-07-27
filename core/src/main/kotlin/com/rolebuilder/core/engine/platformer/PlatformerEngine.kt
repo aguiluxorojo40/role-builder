@@ -76,7 +76,7 @@ class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
  * [PIPE_PIRANHA] (asoma del tubo por ciclos, no sale si Mario está encima) y
  * [JUMPING_PIRANHA] (salta en arco; la de fuego escupe bolas).
  */
-enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA, BOWLING_BALL }
+enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA, BOWLING_BALL, BULLET_BILL }
 
 /**
  * Ids de los JEFES soportados como enemigos jugables (dibujados con su `big_<id>.png`):
@@ -93,6 +93,7 @@ fun enemyBehaviorOf(id: Int): EnemyBehavior = when {
     id == 0xA1 -> EnemyBehavior.BOWLING_BALL                      // bola de bolos de Bowser
     id == 0x1A || id == 0x2A -> EnemyBehavior.PIPE_PIRANHA        // recta / cabeza-abajo
     id == 0x4F || id == 0x50 -> EnemyBehavior.JUMPING_PIRANHA     // saltarina / saltarina de fuego
+    id == 0x1C -> EnemyBehavior.BULLET_BILL                       // Bala Bill: vuela recto, sin gravedad
     else -> EnemyBehavior.WALKER
 }
 
@@ -276,6 +277,9 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
             EnemyBehavior.BOSS -> {}
             EnemyBehavior.MECHAKOOPA -> {}
             EnemyBehavior.BOWLING_BALL -> {}
+            // Bala Bill: vuela recto y sin gravedad; la dirección la fija el motor al sembrarla
+            // (hacia el lado de Mario), aquí solo se anula la velocidad de andar por defecto.
+            EnemyBehavior.BULLET_BILL -> vx = 0f
             EnemyBehavior.WALKER -> {}
         }
     }
@@ -1179,6 +1183,8 @@ class PlatformerEngine(
                 EnemyBehavior.MECHAKOOPA -> updateMechakoopa(e)
                 // Bola de bolos de Bowser (0xA1): cae, rebota y rueda hacia Mario.
                 EnemyBehavior.BOWLING_BALL -> updateBowlingBall(e)
+                // Bala Bill (0x1C): vuela recto y constante, sin gravedad ni terreno.
+                EnemyBehavior.BULLET_BILL -> updateBulletBill(e)
                 EnemyBehavior.WALKER -> {
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
@@ -1378,6 +1384,21 @@ class PlatformerEngine(
             enemyProjectiles.add(EnemyProjectile(cx, cy, dir * LUDWIG_FIRE_SPEED, 0f, arc = false))
             piranhaFireEvents++
         }
+    }
+
+    /**
+     * Bala Bill (`Spr01C_BulletBill`, $01:8FE7): vuela en LÍNEA RECTA a velocidad constante,
+     * **sin gravedad y sin colisión con el terreno** (usa `UpdateNormalSpritePosition` directo,
+     * no `HandleNormalSpriteGravity`). La dirección se fija la primera vez hacia el lado de
+     * Mario, que es como el generador la lanza. Se apaga al salir de la pantalla; se pisa como
+     * un andador.
+     */
+    private fun updateBulletBill(e: PlatformerEnemy) {
+        if (e.vx == 0f) {
+            e.vx = if (player.x + tuning.playerWidth / 2f < e.x) -BULLET_BILL_SPEED else BULLET_BILL_SPEED
+        }
+        e.x += e.vx // recto: ni gravedad ni paredes lo paran
+        if (e.x < -32f || e.x > (cols + 2) * tileSize) e.alive = false
     }
 
     /**
@@ -1760,9 +1781,11 @@ class PlatformerEngine(
                         damageEnemy(e); bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Resto: los andadores se pisan; las Plantas Piraña muerden por cualquier lado.
+                // Resto: los andadores y la Bala Bill se pisan; las Plantas Piraña muerden por
+                // cualquier lado.
                 else -> {
-                    val stompable = e.behavior == EnemyBehavior.WALKER
+                    val stompable = e.behavior == EnemyBehavior.WALKER ||
+                        e.behavior == EnemyBehavior.BULLET_BILL
                     val stomp = stompable && stompFromAbove
                     if (stomp) {
                         e.alive = false; e.squashTimer = 12; bounceMario(); stompEvents++
@@ -2129,5 +2152,10 @@ class PlatformerEngine(
         const val SPRITE_GRAVITY = 3f / 16f
         /** `DATA_01902E` = 0x40 = 64/16 = **4 px/f** de caída terminal de un sprite. */
         const val SPRITE_MAX_FALL = 0x40 / 16f
+        /**
+         * Bala Bill (`kSpr01C_BulletBill_XSpeed`, $01:8FE7): 0x20 en unidades de SMW (1/16 px)
+         * = **2 px/f**. Vuela recto y constante, sin gravedad ni colisión con el terreno.
+         */
+        const val BULLET_BILL_SPEED = 0x20 / 16f
     }
 }

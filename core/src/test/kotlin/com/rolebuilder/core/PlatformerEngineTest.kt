@@ -823,6 +823,51 @@ class PlatformerEngineTest {
         assertEquals(1, e.deathEvents)
     }
 
+    // --------------------------------------------------------------- Bala Bill (0x1C)
+
+    @Test
+    fun `la Bala Bill vuela recto atravesando muros`() {
+        val cols = 20; val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID // suelo
+        // Un muro macizo entre la bala (a la derecha) y Mario (a la izquierda).
+        for (r in 0 until 8) grid[r][10] = SmwSolidity.SOLID
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 3 * 16, startPixelY = 8 * 16 - 14,
+            tuning = tuning,
+            enemySeeds = listOf(EnemySeed(15 * 16, 4 * 16, 0x1C)),
+        )
+        val bill = e.enemies.single()
+        assertEquals(EnemyBehavior.BULLET_BILL, bill.behavior)
+        val startX = bill.x
+        e.run(50) // a 2 px/frame, 50 frames = 100 px: cruza de sobra la columna 10 (x=160)
+        // Vuela hacia Mario (a la izquierda) y NO la para ni el muro ni la gravedad: sigue
+        // a su altura de salida (no cae) y cruza la columna 10.
+        assertTrue(bill.x < startX, "vuela hacia Mario, a la izquierda")
+        assertEquals(4 * 16, bill.y.toInt(), "no cae: vuela a su altura, sin gravedad")
+        assertTrue(bill.x < 10 * 16, "atraviesa el muro de la columna 10")
+    }
+
+    @Test
+    fun `la Bala Bill se pisa`() {
+        val cols = 20; val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID
+        // Mario justo encima de la bala, cayendo sobre ella.
+        val e = PlatformerEngine(
+            cols, rows, solidityAt = { c, r -> grid[r][c] },
+            startPixelX = 6 * 16, startPixelY = 6 * 16,
+            tuning = tuning,
+            enemySeeds = listOf(EnemySeed(6 * 16, 7 * 16, 0x1C)),
+        )
+        val bill = e.enemies.single()
+        e.run(30)
+        assertFalse(bill.alive, "pisada muere")
+        assertTrue(e.stompEvents >= 1)
+        assertFalse(e.player.dead, "pisarla no mata a Mario")
+    }
+
     // --------------------------------------------------------------- flor de fuego
 
     /** Motor que ARRANCA grande, con suelo lleno, un `?` sobre la cabeza y enemigos. */
