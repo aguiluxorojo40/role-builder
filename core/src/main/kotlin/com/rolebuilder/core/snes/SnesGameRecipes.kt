@@ -574,6 +574,20 @@ object SnesGameRecipes {
         return sheet
     }
 
+    /**
+     * Los fotogramas de la MONEDA girando (cada uno 16×16), para el catálogo de extracción. Es
+     * la [smwCoinSheet] partida en sus [SMW_TILEANIM_FRAMES] fotogramas, lista para animar y
+     * exportar como GIF. Null si la ROM no es SMW.
+     */
+    fun smwCoinFrames(rom: ByteArray, header: SnesHeader, level: Int = 0x106): List<ArgbImage>? {
+        val sheet = smwCoinSheet(rom, header, level) ?: return null
+        return (0 until SMW_TILEANIM_FRAMES).map { f ->
+            val frame = ArgbImage(16, 16)
+            for (y in 0 until 16) for (x in 0 until 16) frame.set(x, y, sheet.get(f * 16 + x, y))
+            frame
+        }
+    }
+
     /** Ficha ligera de un nivel importable, SIN construir su mapa (eso es caro). */
     class SmwLevelListing(
         val level: Int,

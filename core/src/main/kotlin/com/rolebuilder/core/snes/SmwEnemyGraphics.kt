@@ -381,6 +381,22 @@ object SmwEnemyGraphics {
         return if (any) img else null
     }
 
+    /** Nombres de los powerups, en el mismo orden que [POWERUP_SPRITES]. */
+    val POWERUP_NAMES = listOf("Seta", "Flor de fuego", "Pluma")
+
+    /**
+     * Los POWERUPS por separado (nombre → imagen 16×16 transparente), para el catálogo de
+     * extracción: la [powerupSheet] partida en su celda por powerup. Null si no es SMW.
+     */
+    fun powerupImages(rom: ByteArray, header: SnesHeader, level: Int): List<Pair<String, ArgbImage>>? {
+        val sheet = powerupSheet(rom, header, level) ?: return null
+        return POWERUP_NAMES.mapIndexed { i, name ->
+            val cell = ArgbImage(16, 16)
+            for (y in 0 until 16) for (x in 0 until 16) cell.set(x, y, sheet.get(i * 16 + x, y))
+            name to cell
+        }
+    }
+
     /**
      * FOTOGRAMAS de ANDAR del enemigo [spriteId] como los dibuja el juego, cada uno en
      * una celda UNIFORME de 16×32 anclada por los pies:

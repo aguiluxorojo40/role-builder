@@ -42,7 +42,35 @@ object SmwAssetCatalog {
         val groups = ArrayList<AssetGroup>()
         marioOverworld(rom, header)?.let { groups.add(it) }
         enemies(rom, header)?.let { groups.add(it) }
+        objects(rom, header)?.let { groups.add(it) }
+        overworldMapSprites(rom, header)?.let { groups.add(it) }
+        screens(rom, header)?.let { groups.add(it) }
         return groups
+    }
+
+    /** Grupo "Objetos": la MONEDA (girando, animada) y los POWERUPS (seta, flor, pluma). */
+    fun objects(rom: ByteArray, header: SnesHeader): AssetGroup? {
+        val items = ArrayList<AssetItem>()
+        SnesGameRecipes.smwCoinFrames(rom, header)?.let { frames ->
+            items.add(AssetItem("Moneda", listOf(AnimationClip("girar", frames))))
+        }
+        SmwEnemyGraphics.powerupImages(rom, header, ENEMY_REF_LEVEL)?.forEach { (name, img) ->
+            items.add(AssetItem(name, listOf(AnimationClip("quieto", listOf(img)))))
+        }
+        return if (items.isEmpty()) null else AssetGroup("Objetos", items)
+    }
+
+    /** Grupo "Overworld (mapa)": los sprites del mapa (Boo, nube, piraña, cartel de Bowser…). */
+    fun overworldMapSprites(rom: ByteArray, header: SnesHeader): AssetGroup? {
+        val imgs = SmwOverworldSprites.images(rom, header) ?: return null
+        val items = imgs.map { (name, img) -> AssetItem(name, listOf(AnimationClip("quieto", listOf(img)))) }
+        return if (items.isEmpty()) null else AssetGroup("Overworld (mapa)", items)
+    }
+
+    /** Grupo "Pantallas": la pantalla de TÍTULO reconstruida desde la ROM. */
+    fun screens(rom: ByteArray, header: SnesHeader): AssetGroup? {
+        val title = SmwTitleScreen.renderComplete(rom, header) ?: return null
+        return AssetGroup("Pantallas", listOf(AssetItem("Titulo", listOf(AnimationClip("completa", listOf(title))))))
     }
 
     /** Grupo "Mario (mapa)": el Mario del overworld, una animación de andar por dirección. */

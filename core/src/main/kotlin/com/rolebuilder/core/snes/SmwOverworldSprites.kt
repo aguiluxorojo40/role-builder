@@ -124,6 +124,22 @@ object SmwOverworldSprites {
         return img
     }
 
+    /**
+     * Cada sprite del mapa por separado (nombre → imagen [CELL_W]×[CELL_H] transparente), para
+     * el catálogo de extracción. Es la [renderSheet] partida en su celda por sprite: así cada
+     * uno (Boo, nube, piraña, cartel de Bowser…) sale a su propia carpeta. Null si no es SMW.
+     */
+    fun images(rom: ByteArray, header: SnesHeader): List<Pair<String, ArgbImage>>? {
+        val sheet = renderSheet(rom, header) ?: return null
+        return CATALOG.mapIndexed { i, def ->
+            val cell = ArgbImage(CELL_W, CELL_H)
+            for (y in 0 until CELL_H) for (x in 0 until CELL_W) {
+                cell.set(x, y, sheet.get(i * CELL_W + x, y))
+            }
+            def.name to cell
+        }
+    }
+
     /** Dibuja una tesela OAM de 8×8 con su sub-paleta de sprite (CGRAM `128 + P*16`). */
     private fun drawTile(
         tile: Int, x: Int, y: Int, palette: Int,
