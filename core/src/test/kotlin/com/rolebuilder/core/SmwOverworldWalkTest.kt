@@ -195,6 +195,55 @@ class SmwOverworldWalkTest {
     }
 
     @Test
+    fun pathExitsConnectTheMainMapToTheSubmaps() {
+        val rom = findRom() ?: return
+        val delta = SnesDecoder.parseHeader(rom).headerOffset - 0x7FC0
+        val exits = SmwOverworldWalk.pathExits(rom, delta)
+        assertEquals(SmwOverworldWalk.EXIT_COUNT, exits.size, "hay 14 salidas de camino")
+
+        // La primera es la tubería de Yoshi's Island: del mapa principal (2,20) al submapa 1.
+        val yi = SmwOverworldWalk.exitAt(exits, submap = 0, x = 2, y = 20)
+        assertNotNull(yi)
+        assertEquals(1, yi.dstSubmap, "lleva al submapa 1 (Yoshi's Island)")
+        assertEquals(4, yi.dstX); assertEquals(0, yi.dstY)
+
+        // Y hay vuelta: desde el submapa se puede volver al mapa principal. Si no, habría
+        // mundos sin salida y el juego no se podría recorrer entero.
+        val backToMain = exits.filter { it.srcSubmap != 0 && it.dstSubmap == 0 }
+        assertTrue(backToMain.isNotEmpty(), "hay salidas que devuelven al mapa principal")
+
+        // Cada submapa alcanzable desde el mapa principal tiene su vuelta.
+        val reachable = exits.filter { it.srcSubmap == 0 }.map { it.dstSubmap }.toSet()
+        val returning = exits.filter { it.dstSubmap == 0 }.map { it.srcSubmap }.toSet()
+        assertTrue(returning.containsAll(reachable), "de todo submapa alcanzable se puede volver")
+    }
+
+    @Test
+    fun walkingOntoAPipeTriggersTheExit() {
+        val rom = findRom() ?: return
+        val delta = SnesDecoder.parseHeader(rom).headerOffset - 0x7FC0
+        val tiles = SmwOverworldWalk.layer1(rom, delta)
+        val levels = SmwOverworldWalk.levelNumbers(tiles)
+        val exits = SmwOverworldWalk.pathExits(rom, delta)
+
+        // La tubería de ida a Yoshi's Island está en el mapa principal (2,20). Sin marcarla
+        // como parada, el recorrido pasaría de largo; con ella, Mario se planta en la boca.
+        val stops = SmwOverworldWalk.exitStops(exits, submap = 0)
+        assertTrue(stops.contains(SmwOverworldWalk.position(0, 2, 20)), "la boca de la tubería para")
+
+        // Un recorrido que llegue a (2,20) debe pararse ahí y ofrecer su salida.
+        val exit = SmwOverworldWalk.exitAt(exits, 0, 2, 20)
+        assertNotNull(exit)
+        assertEquals(1, exit.dstSubmap)
+        // La casilla de destino es pisable: se llega a un sitio real, no al vacío.
+        assertTrue(
+            SmwOverworldWalk.isWalkable(SmwOverworldWalk.tileAt(tiles, exit.dstSubmap, exit.dstX, exit.dstY)),
+            "se llega a una casilla real del submapa",
+        )
+        assertTrue(levels.isNotEmpty())
+    }
+
+    @Test
     fun positionMatchesTheGamesFormula() {
         // CalculateOverworldPlayerPosition: pantallas en 2×2 y +0x400 en el área de submapas.
         assertEquals(0, SmwOverworldWalk.position(0, 0, 0))

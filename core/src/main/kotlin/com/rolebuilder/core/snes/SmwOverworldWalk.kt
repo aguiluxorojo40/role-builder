@@ -96,6 +96,22 @@ object SmwOverworldWalk {
     /** `kSharedOverworldPathTables_DATA_049060` ($04:9060): desplazamiento por tipo de salida. */
     const val EXIT_SHIFT_SNES = 0x049060
 
+    // --- Salidas de camino (cambian de mapa/submapa) -----------------------------------
+    /** `kOwExitSource_049964` ($04:9964): 14 entradas `{y:u16, x:u16, submapa:u8}` (5 bytes). */
+    const val EXIT_SRC_SNES = 0x049964
+
+    /** `kOwExitDest_0499AA` ($04:99AA): 14 entradas del mismo formato: adónde te lleva. */
+    const val EXIT_DST_SNES = 0x0499AA
+
+    /** `kOwExitExtra_0499F0` ($04:99F0): 28 bytes, `(fila, columna)` de llegada por salida. */
+    const val EXIT_EXTRA_SNES = 0x0499F0
+
+    /** Cuántas salidas de camino hay. */
+    const val EXIT_COUNT = 14
+
+    /** Bytes por entrada de las tablas de salida: y (word) + x (word) + submapa (byte). */
+    const val EXIT_STRIDE = 5
+
     /** Tamaño de `ow_level_tile_settings` (lo que copia `UpdateSaveBuffer`, más margen). */
     const val SETTINGS_SIZE = 141
 
@@ -224,6 +240,58 @@ object SmwOverworldWalk {
     /** ¿Es una casilla donde Mario SE PARA (nivel o especial), en vez de camino de paso? */
     fun isStop(tile: Int): Boolean = tile > PATH_TILE_MAX && tile <= STOP_TILE_MAX
 
+    // --- Salidas de camino (tuberías que cambian de mapa) ------------------------------
+
+    /**
+     * Una SALIDA de camino: al pisar la casilla ([srcX], [srcY]) del mapa [srcSubmap], Mario
+     * salta a la casilla ([dstX], [dstY]) del mapa [dstSubmap]. Es lo que conecta el mapa
+     * principal con los submapas (Yoshi's Island, Vanilla Dome, el Bosque…) y lo que hace
+     * falta para recorrer el juego entero: sin esto hay mundos a los que no se llega jugando.
+     */
+    data class PathExit(
+        val srcSubmap: Int,
+        val srcX: Int,
+        val srcY: Int,
+        val dstSubmap: Int,
+        val dstX: Int,
+        val dstY: Int,
+    )
+
+    /**
+     * Las 14 salidas de camino de la ROM. Port de `HandleOverworldPathExits` ($04:9A24) y sus
+     * tablas. Cada entrada empareja una casilla de origen (posición en píxeles → casilla con
+     * `>>4`) con una de destino, cuya casilla de llegada da la tabla `extra` ya en la rejilla.
+     *
+     * **Ojo con el submapa**: los seis submapas comparten la misma región de la capa 1 (0x400),
+     * así que el campo de submapa NO cambia dónde se lee la tesela —eso lo decide "¿es área de
+     * submapas?"— sino **qué cámara de submapa mostrar** al llegar. Por eso el origen se
+     * identifica por (submapa, casilla): la misma casilla existe en los seis, pero solo se pisa
+     * en el submapa cuya cámara la enseña.
+     */
+    fun pathExits(rom: ByteArray, delta: Int): List<PathExit> {
+        fun entry(base: Int, k: Int): Triple<Int, Int, Int> {
+            val o = base + EXIT_STRIDE * k
+            return Triple(u16(rom, o, delta), u16(rom, o + 2, delta), u8(rom, o + 4, delta))
+        }
+        return (0 until EXIT_COUNT).map { k ->
+            val (sy, sx, sm) = entry(EXIT_SRC_SNES, k)
+            val dm = u8(rom, EXIT_DST_SNES + EXIT_STRIDE * k + 4, delta)
+            val dgy = u8(rom, EXIT_EXTRA_SNES + 2 * k, delta)
+            val dgx = u8(rom, EXIT_EXTRA_SNES + 2 * k + 1, delta)
+            PathExit(sm, sx shr 4, sy shr 4, dm, dgx, dgy)
+        }
+    }
+
+    /** La salida cuyo origen es la casilla ([x], [y]) del mapa [submap], o null si no hay. */
+    fun exitAt(exits: List<PathExit>, submap: Int, x: Int, y: Int): PathExit? =
+        exits.firstOrNull { it.srcSubmap == submap && it.srcX == x && it.srcY == y }
+
+    /** Índices en la capa 1 de las casillas-origen de salida del [submap] dado. */
+    fun exitStops(exits: List<PathExit>, submap: Int): Set<Int> =
+        exits.filter { it.srcSubmap == submap }
+            .map { position(submap, it.srcX, it.srcY) }
+            .toSet()
+
     // --- Partida nueva -----------------------------------------------------------------
 
     /** Dónde empieza una partida nueva, leído de la ROM. */
@@ -324,11 +392,15 @@ object SmwOverworldWalk {
         x: Int,
         y: Int,
         dir: Int,
+        extraStops: Set<Int> = emptySet(),
     ): Walk? {
         // Puerta de entrada: la casilla en la dirección pedida tiene que ser pisable.
         val firstX = if (dir >= 4) x + STEP[dir shr 1] else x
         val firstY = if (dir < 4) y + STEP[dir shr 1] else y
         if (!isWalkable(tileAt(tiles, submap, firstX, firstY))) return null
+
+        fun stops(px: Int, py: Int, tile: Int): Boolean =
+            isStop(tile) || position(submap, px, py) in extraStops
 
         var cx = x
         var cy = y
@@ -360,7 +432,10 @@ object SmwOverworldWalk {
             }
             cx = nx; cy = ny
             steps.add(Step(cx, cy, tile))
-            if (isStop(tile)) {
+            // Mario para en una casilla-de-nivel, o en una casilla-origen de salida (una
+            // tubería): esas paran aunque su tesela sea de camino, porque la boca de la
+            // tubería de vuelta es el cuerpo de la tubería, no una casilla-de-nivel.
+            if (stops(cx, cy, tile)) {
                 return Walk(
                     steps, cx, cy, tile,
                     levels.getOrElse(position(submap, cx, cy)) { 0 }, d,

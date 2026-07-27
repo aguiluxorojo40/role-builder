@@ -186,6 +186,11 @@ private fun OverworldScreen(
  * si esa salida está abierta, y Mario recorre casilla a casilla hasta la siguiente parada,
  * doblando las esquinas que doble el camino. Al llegar se abre la dirección contraria —así se
  * puede volver— y se guarda.
+ *
+ * Y las **tuberías cambian de mundo**: si un recorrido acaba en una boca de tubería
+ * ([SmwOverworldWalk.pathExits]), Mario salta al submapa de destino, como en el juego. Es lo
+ * que conecta Yoshi's Island, Vanilla Dome, el Bosque y demás con el mapa principal — sin
+ * ello habría mundos a los que no se llega jugando.
  */
 @Composable
 private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slot: Int) {
@@ -216,6 +221,8 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
     val walkTiles = remember(save.firedEvents) {
         SmwOverworldWalk.layer1WithEvents(rom, delta, save.activeEvents())
     }
+    // Las salidas de camino (tuberías) que cambian de mundo, y las casillas donde paran.
+    val exits = remember(rom) { SmwOverworldWalk.pathExits(rom, delta) }
     val view = remember(world, save.firedEvents) {
         renderView(rom, header, delta, world, cameraCrop = true, active = save.activeEvents())
     }
@@ -226,7 +233,18 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
 
     // Nivel sobre el que está Mario ahora mismo (0 si es una casilla que no es de nivel).
     val hereLevel = levelNumbers.getOrElse(SmwOverworldWalk.position(world, marioX, marioY)) { 0 }
-    val open = remember(settings, hereLevel) { SmwOverworldWalk.openDirections(settings, hereLevel) }
+    val exitStops = remember(exits, world) { SmwOverworldWalk.exitStops(exits, world) }
+    // Direcciones que Mario puede tomar desde aquí. En una casilla-de-nivel manda el candado
+    // de caminos del juego (settings); en una boca de tubería, adonde haya camino físico.
+    val open = remember(settings, hereLevel, world, marioX, marioY) {
+        if (hereLevel > 0) {
+            SmwOverworldWalk.openDirections(settings, hereLevel)
+        } else {
+            SmwOverworldWalk.SEARCH_ORDER.filter { dir ->
+                SmwOverworldWalk.walk(walkTiles, levelNumbers, world, marioX, marioY, dir, exitStops) != null
+            }
+        }
+    }
 
     // Recorrido en curso: la lista de casillas y por cuál vamos.
     var route by remember { mutableStateOf<SmwOverworldWalk.Walk?>(null) }
@@ -245,7 +263,16 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
             settings = opened
         }
         route = null
-        persist(save.movedTo(world, SmwOverworldWalk.position(world, r.endX, r.endY)))
+        // ¿Ha parado en una tubería? Entonces salta al otro mundo, como en el juego.
+        val exit = SmwOverworldWalk.exitAt(exits, world, r.endX, r.endY)
+        if (exit != null) {
+            world = exit.dstSubmap
+            marioX = exit.dstX
+            marioY = exit.dstY
+            persist(save.movedTo(exit.dstSubmap, SmwOverworldWalk.position(exit.dstSubmap, exit.dstX, exit.dstY)))
+        } else {
+            persist(save.movedTo(world, SmwOverworldWalk.position(world, r.endX, r.endY)))
+        }
     }
 
     val playLauncher = rememberLauncherForActivityResult(
@@ -320,7 +347,7 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
                 Button(
                     onClick = {
                         route = SmwOverworldWalk.walk(
-                            walkTiles, levelNumbers, world, marioX, marioY, dir,
+                            walkTiles, levelNumbers, world, marioX, marioY, dir, exitStops,
                         )
                     },
                     enabled = can,
