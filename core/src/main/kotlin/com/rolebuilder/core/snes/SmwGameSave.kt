@@ -40,6 +40,13 @@ data class SmwGameSave(
     val submap: Int = START_SUBMAP,
     /** Casilla del overworld (índice 0..0x7FF en la capa 1), o null si aún no se ha movido. */
     val position: Int? = null,
+    /**
+     * `ow_level_tile_settings`: por nivel, qué direcciones tiene abiertas y si está superado.
+     * Es lo que decide por dónde puede ANDAR Mario ([SmwOverworldWalk]). Vacío significa
+     * "partida recién creada": quien la use debe sembrarlo con
+     * [SmwOverworldWalk.newGameSettings], que necesita la ROM y por eso no se hace aquí.
+     */
+    val tileSettings: List<Int> = emptyList(),
     val lives: Int = START_LIVES,
     val coins: Int = 0,
     /** Marca de tiempo del último guardado, para ordenar las ranuras. */
@@ -68,6 +75,16 @@ data class SmwGameSave(
     /** Mueve a Mario a la casilla [position] del mapa [submap]. */
     fun movedTo(submap: Int, position: Int): SmwGameSave =
         copy(submap = submap, position = position)
+
+    /**
+     * Los `ow_level_tile_settings` de esta partida, o [fallback] si aún no se han sembrado.
+     * Devuelve una copia: quien la modifique tiene que volver con [withSettings].
+     */
+    fun settingsOr(fallback: IntArray): IntArray =
+        if (tileSettings.size == fallback.size) tileSettings.toIntArray() else fallback.copyOf()
+
+    /** La partida con estos `ow_level_tile_settings`. */
+    fun withSettings(settings: IntArray): SmwGameSave = copy(tileSettings = settings.toList())
 
     companion object {
         /** Valor de [submap] que significa "en el mapa principal" (pantallas 0-3). */

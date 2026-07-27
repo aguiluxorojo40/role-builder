@@ -206,6 +206,18 @@ object SmwOverworldWalk {
     fun position(submap: Int, x: Int, y: Int): Int =
         (if (submap != 0) 0x400 else 0) + ((y / 16) * 2 + (x / 16)) * 0x100 + (y % 16) * 16 + (x % 16)
 
+    /**
+     * INVERSO de [position]: del índice de la capa 1 a la casilla (x, y) de la rejilla 32×32.
+     * El submapa no se puede deducir (los seis comparten el área 0x400..0x7FF), así que quien
+     * llame ya lo sabe por su cuenta.
+     */
+    fun gridOf(position: Int): Pair<Int, Int> {
+        val local = position and 0x3FF
+        val screen = local / 0x100
+        val inScreen = local % 0x100
+        return ((screen % 2) * 16 + inScreen % 16) to ((screen / 2) * 16 + inScreen / 16)
+    }
+
     /** ¿Se puede pisar esta tesela? Ni vacía ni de las que no dejan pasar. */
     fun isWalkable(tile: Int): Boolean = tile != 0 && tile <= STOP_TILE_MAX
 

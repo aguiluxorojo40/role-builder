@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,11 +47,13 @@ import com.rolebuilder.core.snes.SmwGameSave
 import com.rolebuilder.core.snes.SmwLevelNames
 import com.rolebuilder.core.snes.SmwOverworld
 import com.rolebuilder.core.snes.SmwOverworldLevels
+import com.rolebuilder.core.snes.SmwOverworldWalk
 import com.rolebuilder.core.snes.SmwSaveIo
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.editor.snes.SnesImport
+import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.math.abs
 
@@ -115,11 +118,13 @@ class OverworldActivity : ComponentActivity() {
 private const val MAP_SIDE = 512
 /** Lado de una casilla del mapa (un bloque Map16). */
 private const val TILE = 16
+/** Milisegundos por casilla al andar. A ojo del original, que va a ~8 px por fotograma. */
+private const val WALK_MS = 90L
 
 /**
  * Lo que se está mirando: el mapa principal o uno de los seis submapas. En modo juego el
  * submapa se recorta a su ventana de cámara, así que hay que llevar el origen para poder
- * convertir un toque en coordenadas del área.
+ * convertir coordenadas del área a coordenadas de la imagen.
  */
 private data class MapView(
     val bitmap: Bitmap,
@@ -129,6 +134,34 @@ private data class MapView(
     val originY: Int,
 )
 
+/** Dibuja el mapa de [world] con los eventos de [active] aplicados. */
+private fun renderView(
+    rom: ByteArray,
+    header: SnesHeader,
+    delta: Int,
+    world: Int,
+    cameraCrop: Boolean,
+    active: (Int) -> Boolean,
+): MapView? {
+    val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, active)
+    if (world == SmwGameSave.MAIN_MAP) {
+        val img = SnesGameRecipes.renderOverworldMainMapFrom(rom, header, tilemap) ?: return null
+        return MapView(SnesImport.toBitmap(img), MAP_SIDE, MAP_SIDE, 0, 0)
+    }
+    if (!cameraCrop) {
+        val img = SnesGameRecipes.renderOverworldSubmapAreaFrom(rom, header, world, tilemap)
+            ?: return null
+        return MapView(SnesImport.toBitmap(img), MAP_SIDE, MAP_SIDE, 0, 0)
+    }
+    val img = SnesGameRecipes.renderOverworldSubmapFrom(rom, header, world, tilemap) ?: return null
+    val camera = SmwOverworld.submapCamera(rom, delta, world)
+    return MapView(
+        SnesImport.toBitmap(img),
+        SmwOverworld.OW_VIEW_WIDTH, SmwOverworld.OW_VIEW_HEIGHT,
+        camera.first, camera.second,
+    )
+}
+
 @Composable
 private fun OverworldScreen(
     rom: ByteArray,
@@ -137,75 +170,212 @@ private fun OverworldScreen(
     isGame: Boolean,
     slot: Int,
 ) {
+    if (isGame) GameMapScreen(rom, header, romFile, slot)
+    else TestMapScreen(rom, header, romFile)
+}
+
+// ---------------------------------------------------------------------------------------
+// MODO JUEGO: Mario anda por los caminos
+// ---------------------------------------------------------------------------------------
+
+/**
+ * El mapa del mundo **jugándose**: Mario en su casilla, la cruceta para andar por los caminos
+ * reales ([SmwOverworldWalk]) y la partida guardándose en su ranura.
+ *
+ * Andar no es teletransportarse: se pulsa una dirección, se comprueba con las reglas del juego
+ * si esa salida está abierta, y Mario recorre casilla a casilla hasta la siguiente parada,
+ * doblando las esquinas que doble el camino. Al llegar se abre la dirección contraria —así se
+ * puede volver— y se guarda.
+ */
+@Composable
+private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slot: Int) {
     val context = LocalContext.current
     val delta = remember(rom) { header.headerOffset - 0x7FC0 }
     val saveDir = remember(context) { File(context.filesDir, SmwSaveIo.DIR) }
-
-    // ESTADO DE LA PARTIDA. En modo juego se carga de disco (o se crea nueva) y todo lo que
-    // pase aquí se persiste. En modo prueba es un objeto de usar y tirar que nadie guarda.
-    var save by remember {
-        mutableStateOf(
-            if (isGame) SmwSaveIo.load(saveDir, slot) ?: SmwGameSave(slot = slot)
-            else SmwGameSave(slot = slot),
-        )
-    }
-    // Solo en modo prueba: ver el mapa al 100% sin haber jugado nada.
-    var showAll by remember { mutableStateOf(!isGame) }
-    /** [SmwGameSave.MAIN_MAP] o 1..6. En juego lo manda la partida; en prueba, los botones. */
-    var world by remember { mutableStateOf(if (isGame) save.submap else SmwGameSave.MAIN_MAP) }
-    var selected by remember { mutableStateOf<SmwOverworldLevels.OwLevel?>(null) }
     val eventTable = remember(rom) { SmwOverworld.translevelEvents(rom, delta) }
+    // La numeración de niveles va sobre la capa SIN eventos, como hace el juego.
+    val levelNumbers = remember(rom) { SmwOverworldWalk.levelNumbers(rom, delta) }
+    val start = remember(rom) { SmwOverworldWalk.newGameStart(rom, delta) }
 
-    // Render del mapa. Se rehace al cambiar de mundo o de progresión; lleva su rato.
-    val view: MapView? = remember(world, save.firedEvents, showAll) {
-        val active: (Int) -> Boolean = if (showAll) ({ true }) else save.activeEvents()
-        val tilemap = SmwOverworld.overworldTilemapWithEvents(rom, delta, active)
-        when {
-            world == SmwGameSave.MAIN_MAP ->
-                SnesGameRecipes.renderOverworldMainMapFrom(rom, header, tilemap)?.let {
-                    MapView(SnesImport.toBitmap(it), MAP_SIDE, MAP_SIDE, 0, 0)
-                }
-            // En el juego, un submapa es SU ventana de cámara: ves ese mundo y solo ese.
-            isGame ->
-                SnesGameRecipes.renderOverworldSubmapFrom(rom, header, world, tilemap)?.let {
-                    val camera = SmwOverworld.submapCamera(rom, delta, world)
-                    MapView(
-                        SnesImport.toBitmap(it),
-                        SmwOverworld.OW_VIEW_WIDTH, SmwOverworld.OW_VIEW_HEIGHT,
-                        camera.first, camera.second,
-                    )
-                }
-            // Probando: el área entera, que es donde caben los seis mundos a la vez.
-            else ->
-                SnesGameRecipes.renderOverworldSubmapAreaFrom(rom, header, world, tilemap)?.let {
-                    MapView(SnesImport.toBitmap(it), MAP_SIDE, MAP_SIDE, 0, 0)
-                }
-        }
+    var save by remember {
+        mutableStateOf(SmwSaveIo.load(saveDir, slot) ?: SmwGameSave(slot = slot))
+    }
+    // Los settings deciden por dónde se puede andar; una partida nueva los siembra de la ROM.
+    var settings by remember {
+        mutableStateOf(save.settingsOr(SmwOverworldWalk.newGameSettings(rom, delta)))
+    }
+    // Dónde está Mario. Sin posición guardada, la casilla de salida de la ROM.
+    var world by remember { mutableStateOf(if (save.position == null) start.submap else save.submap) }
+    var marioX by remember {
+        mutableStateOf(save.position?.let { SmwOverworldWalk.gridOf(it).first } ?: start.x)
+    }
+    var marioY by remember {
+        mutableStateOf(save.position?.let { SmwOverworldWalk.gridOf(it).second } ?: start.y)
     }
 
-    // Lanzador del nivel: cuando vuelve diciendo que se SUPERÓ, se dispara su evento, el mapa
-    // se redibuja con el camino nuevo abierto y —si estamos jugando— se guarda en la ranura.
-    var lastPlayed by remember { mutableStateOf<Int?>(null) }
+    val walkTiles = remember(save.firedEvents) {
+        SmwOverworldWalk.layer1WithEvents(rom, delta, save.activeEvents())
+    }
+    val view = remember(world, save.firedEvents) {
+        renderView(rom, header, delta, world, cameraCrop = true, active = save.activeEvents())
+    }
+
+    fun persist(next: SmwGameSave) {
+        save = SmwSaveIo.save(saveDir, next.withSettings(settings))
+    }
+
+    // Nivel sobre el que está Mario ahora mismo (0 si es una casilla que no es de nivel).
+    val hereLevel = levelNumbers.getOrElse(SmwOverworldWalk.position(world, marioX, marioY)) { 0 }
+    val open = remember(settings, hereLevel) { SmwOverworldWalk.openDirections(settings, hereLevel) }
+
+    // Recorrido en curso: la lista de casillas y por cuál vamos.
+    var route by remember { mutableStateOf<SmwOverworldWalk.Walk?>(null) }
+    LaunchedEffect(route) {
+        val r = route ?: return@LaunchedEffect
+        for (step in r.steps) {
+            delay(WALK_MS)
+            marioX = step.x
+            marioY = step.y
+        }
+        // Llegada: el juego abre la dirección CONTRARIA en la casilla de destino.
+        if (r.endLevel > 0 && r.endLevel < settings.size) {
+            val opened = settings.copyOf()
+            opened[r.endLevel] = opened[r.endLevel] or
+                SmwOverworldWalk.dirBit(SmwOverworldWalk.opposite(r.endDirection))
+            settings = opened
+        }
+        route = null
+        persist(save.movedTo(world, SmwOverworldWalk.position(world, r.endX, r.endY)))
+    }
+
     val playLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         val won = result.data?.getBooleanExtra(PlatformerActivity.RESULT_WON, false) == true
-        val translevel = lastPlayed
-        if (won && translevel != null) {
-            val ev = eventTable.getOrNull(translevel) ?: SmwOverworld.EVENT_NONE
-            val next = save.withLevelBeaten(translevel, ev)
-            save = if (isGame) SmwSaveIo.save(saveDir, next) else next
-            showAll = false
+        if (won && hereLevel > 0) {
+            // Superar el nivel abre su camino: la dirección sale de $04:D678 según la salida.
+            val bit = SmwOverworldWalk.unlockedDirection(rom, delta, hereLevel, exitAction = 1)
+            val opened = settings.copyOf()
+            if (hereLevel < opened.size) opened[hereLevel] = opened[hereLevel] or bit or 0x80
+            settings = opened
+            val ev = eventTable.getOrNull(hereLevel) ?: SmwOverworld.EVENT_NONE
+            persist(save.withLevelBeaten(hereLevel, ev))
         }
     }
 
+    Column(Modifier.fillMaxSize().background(Color(0xFF121216)).safeDrawingPadding().padding(8.dp)) {
+        Text(
+            "Ranura $slot · ${save.completedTranslevels.size} niveles · " +
+                "${save.firedEvents.size} caminos · ${save.lives} vidas",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFFBBBBBB),
+        )
+        if (view == null) {
+            Text("Esta ROM no parece ser Super Mario World.", color = Color.White)
+            return@Column
+        }
+        Box(Modifier.fillMaxWidth().aspectRatio(view.viewWidth.toFloat() / view.viewHeight)) {
+            Image(
+                bitmap = view.bitmap.asImageBitmap(),
+                contentDescription = "Mapa del mundo",
+                filterQuality = FilterQuality.None,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Canvas(Modifier.fillMaxSize()) {
+                val sx = size.width / view.viewWidth
+                val sy = size.height / view.viewHeight
+                // Mario. Todavía no es su sprite del mapa (eso es otro port): es un marcador,
+                // pero está en la casilla EXACTA en la que estaría él.
+                drawRect(
+                    color = Color(0xFFFF4136),
+                    topLeft = Offset(
+                        (marioX * TILE - view.originX) * sx,
+                        (marioY * TILE - view.originY) * sy,
+                    ),
+                    size = androidx.compose.ui.geometry.Size(TILE * sx, TILE * sy),
+                    style = Stroke(width = 4f),
+                )
+            }
+        }
+
+        val name = if (hereLevel > 0) SmwLevelNames.nameOfTranslevel(rom, delta, hereLevel) else null
+        Text(
+            name ?: if (hereLevel > 0) "Nivel $hereLevel" else "Camino",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
+        val walking = route != null
+        // Cruceta. Solo se encienden las direcciones que el juego tiene abiertas desde aquí.
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            for ((dir, label) in listOf(
+                SmwOverworldWalk.DIR_LEFT to "◀",
+                SmwOverworldWalk.DIR_UP to "▲",
+                SmwOverworldWalk.DIR_DOWN to "▼",
+                SmwOverworldWalk.DIR_RIGHT to "▶",
+            )) {
+                val can = !walking && dir in open
+                Button(
+                    onClick = {
+                        route = SmwOverworldWalk.walk(
+                            walkTiles, levelNumbers, world, marioX, marioY, dir,
+                        )
+                    },
+                    enabled = can,
+                    modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
+                ) { Text(label) }
+            }
+        }
+
+        val playable = if (hereLevel > 0) SmwLevelNames.levelOfTranslevel(hereLevel) else null
+        if (playable != null && !walking) {
+            Button(
+                onClick = {
+                    runCatching {
+                        playLauncher.launch(PlatformerActivity.intent(context, romFile, playable))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            ) { Text("▶ Entrar al nivel") }
+        }
+        if (open.isEmpty() && !walking) {
+            Text(
+                "No hay camino abierto desde aquí. Supera este nivel para abrirlo.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFBBBBBB),
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------
+// MODO PRUEBA: el mapa entero, tocando casillas, sin partida
+// ---------------------------------------------------------------------------------------
+
+/**
+ * El mapa **para probar desde el editor**: lo enseña todo abierto, se toca una casilla y se
+ * entra al nivel. No carga ni escribe ninguna partida, a propósito: cuando estás iterando
+ * sobre un nivel, una progresión guardada solo estorba.
+ */
+@Composable
+private fun TestMapScreen(rom: ByteArray, header: SnesHeader, romFile: File) {
+    val context = LocalContext.current
+    val delta = remember(rom) { header.headerOffset - 0x7FC0 }
+    var world by remember { mutableStateOf(SmwGameSave.MAIN_MAP) }
+    var showAll by remember { mutableStateOf(true) }
+    var selected by remember { mutableStateOf<SmwOverworldLevels.OwLevel?>(null) }
+
+    val view = remember(world, showAll) {
+        renderView(rom, header, delta, world, cameraCrop = false) { showAll }
+    }
     val levels = remember(rom) { SmwOverworldLevels.levels(rom, delta) }
     val onMain = world == SmwGameSave.MAIN_MAP
     val shown = remember(world, levels) { levels.filter { it.onMainMap == onMain } }
 
     Column(Modifier.fillMaxSize().background(Color(0xFF121216)).safeDrawingPadding().padding(8.dp)) {
-        // Selector de mundo. Hasta que Mario ande por los caminos, esto es lo que permite
-        // llegar a los otros mapas; en el juego de verdad te llevan las salidas de los niveles.
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
             TextButton(onClick = { world = SmwGameSave.MAIN_MAP; selected = null }) {
                 Text("Principal", color = if (onMain) Color.White else Color.Gray)
@@ -216,43 +386,26 @@ private fun OverworldScreen(
                 }
             }
         }
-        if (isGame) {
-            Text(
-                "Ranura $slot · ${save.completedTranslevels.size} niveles superados · " +
-                    "${save.firedEvents.size} caminos abiertos · ${save.lives} vidas",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFBBBBBB),
-            )
-        } else {
-            // Solo probando: el atajo de verlo todo abierto sin haber jugado.
-            Row {
-                TextButton(onClick = { showAll = false }) {
-                    Text(
-                        "Sin abrir (${save.firedEvents.size})",
-                        color = if (!showAll) Color.White else Color.Gray,
-                    )
-                }
-                TextButton(onClick = { showAll = true }) {
-                    Text("Todo abierto", color = if (showAll) Color.White else Color.Gray)
-                }
+        Row {
+            TextButton(onClick = { showAll = false }) {
+                Text("Sin abrir", color = if (!showAll) Color.White else Color.Gray)
+            }
+            TextButton(onClick = { showAll = true }) {
+                Text("Todo abierto", color = if (showAll) Color.White else Color.Gray)
             }
         }
-
-        val v = view
-        if (v == null) {
+        if (view == null) {
             Text("Esta ROM no parece ser Super Mario World.", color = Color.White)
             return@Column
         }
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(v.viewWidth.toFloat() / v.viewHeight)
+                .aspectRatio(view.viewWidth.toFloat() / view.viewHeight)
                 .pointerInput(world, shown) {
                     detectTapGestures { off ->
-                        // Pantalla → coordenadas del área del mapa (sumando el origen de la
-                        // cámara cuando se está viendo la ventana de un submapa).
-                        val mx = v.originX + (off.x / size.width * v.viewWidth).toInt()
-                        val my = v.originY + (off.y / size.height * v.viewHeight).toInt()
+                        val mx = view.originX + (off.x / size.width * view.viewWidth).toInt()
+                        val my = view.originY + (off.y / size.height * view.viewHeight).toInt()
                         selected = shown.firstOrNull {
                             abs(it.x + TILE / 2 - mx) <= TILE && abs(it.y + TILE / 2 - my) <= TILE
                         }
@@ -260,38 +413,31 @@ private fun OverworldScreen(
                 },
         ) {
             Image(
-                bitmap = v.bitmap.asImageBitmap(),
+                bitmap = view.bitmap.asImageBitmap(),
                 contentDescription = "Mapa del mundo",
                 filterQuality = FilterQuality.None,
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier.fillMaxSize(),
             )
-            // Marcadores de las casillas-de-nivel: la seleccionada resaltada, las ya superadas
-            // en verde para que se vea de un vistazo por dónde vas.
             Canvas(Modifier.fillMaxSize()) {
-                val sx = size.width / v.viewWidth
-                val sy = size.height / v.viewHeight
+                val sx = size.width / view.viewWidth
+                val sy = size.height / view.viewHeight
                 for (lv in shown) {
                     val isSel = lv === selected
-                    val beaten = lv.levelNumber in save.completedTranslevels
                     drawRect(
-                        color = when {
-                            isSel -> Color(0xFFFFEB3B)
-                            beaten -> Color(0x8877E777)
-                            else -> Color(0x66FFFFFF)
-                        },
-                        topLeft = Offset((lv.x - v.originX) * sx, (lv.y - v.originY) * sy),
+                        color = if (isSel) Color(0xFFFFEB3B) else Color(0x66FFFFFF),
+                        topLeft = Offset((lv.x - view.originX) * sx, (lv.y - view.originY) * sy),
                         size = androidx.compose.ui.geometry.Size(TILE * sx, TILE * sy),
                         style = Stroke(width = if (isSel) 3f else 1f),
                     )
                 }
             }
         }
-
         val lv = selected
         if (lv == null) {
             Text(
-                "Toca una casilla marcada para entrar al nivel. ${shown.size} niveles en esta vista.",
+                "Modo prueba: toca una casilla para entrar al nivel. " +
+                    "${shown.size} niveles en esta vista.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFFBBBBBB),
                 modifier = Modifier.padding(top = 8.dp),
@@ -303,29 +449,20 @@ private fun OverworldScreen(
                 color = Color.White,
                 modifier = Modifier.padding(top = 8.dp),
             )
-            if (lv.levelNumber in save.completedTranslevels) {
-                Text(
-                    "✓ Ya superado",
-                    color = Color(0xFF77E777),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
             val level = SmwLevelNames.levelOfTranslevel(lv.levelNumber)
             if (level == null) {
                 Text("Este translevel no tiene nivel jugable.", color = Color(0xFFBBBBBB))
             } else {
                 Button(
                     onClick = {
-                        lastPlayed = lv.levelNumber
-                        // Al entrar se apunta dónde está Mario: si cierras la app y vuelves,
-                        // el mapa se abre en el mundo correcto.
-                        if (isGame) save = SmwSaveIo.save(saveDir, save.movedTo(world, lv.position))
                         runCatching {
-                            playLauncher.launch(PlatformerActivity.intent(context, romFile, level))
+                            context.startActivity(
+                                PlatformerActivity.intent(context, romFile, level),
+                            )
                         }
                     },
                     modifier = Modifier.padding(top = 4.dp),
-                ) { Text("▶ Jugar (nivel ${level.toString(16).uppercase()})") }
+                ) { Text("▶ Probar (nivel ${level.toString(16).uppercase()})") }
             }
         }
     }
