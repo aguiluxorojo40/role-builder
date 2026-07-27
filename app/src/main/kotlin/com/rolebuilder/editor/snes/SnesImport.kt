@@ -72,6 +72,14 @@ object SnesImport {
     fun overworldSpriteSheet(rom: ByteArray, header: SnesHeader): Bitmap? =
         SmwOverworldSprites.renderSheet(rom, header)?.let { toBitmap(it) }
 
+    /** MARIO del mapa: las 4 direcciones en su pose quieta (hoja transparente), o null. */
+    fun overworldMarioSheet(rom: ByteArray, header: SnesHeader): Bitmap? =
+        SnesGameRecipes.overworldMarioSheet(rom, header)?.let { toBitmap(it) }
+
+    /** GIF del Mario del mapa ANDANDO hacia [direction] (ciclo de 4 fotogramas), o null. */
+    fun overworldMarioGif(rom: ByteArray, header: SnesHeader, direction: Int): ByteArray? =
+        SnesGameRecipes.overworldMarioGif(rom, header, direction)
+
     /** Todo el mundo (mapa principal + submapas) como (nombre, Bitmap), para exportar completo. */
     fun overworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, Bitmap>> =
         SnesGameRecipes.renderOverworldWorld(rom, header).map { (name, img) -> name to toBitmap(img) }

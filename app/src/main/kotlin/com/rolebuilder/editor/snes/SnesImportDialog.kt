@@ -547,6 +547,36 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 Toast.makeText(context, "No se pudo exportar los sprites: ${it.message}", Toast.LENGTH_LONG).show()
                             }
                         }) { Text("⬇ Sprites del mapa (Boo, nube, piraña…) PNG") }
+                        // MARIO del mapa: la hoja de las 4 direcciones (PNG) y el GIF andando.
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            TextButton(onClick = {
+                                val rom = romBytes; val hdr = header
+                                runCatching {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    val bmp = SnesImport.overworldMarioSheet(rom, hdr) ?: error("no es SMW")
+                                    val where = SnesImport.exportToDownloads(
+                                        context, "smw_ow_mario.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                    ) ?: error("no se pudo guardar")
+                                    Toast.makeText(context, "Mario del mapa guardado en $where", Toast.LENGTH_LONG).show()
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo exportar Mario: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }, modifier = Modifier.weight(1f)) { Text("⬇ Mario mapa PNG") }
+                            TextButton(onClick = {
+                                val rom = romBytes; val hdr = header
+                                runCatching {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    // Dirección 2 = mirando a cámara (el idle del juego).
+                                    val gif = SnesImport.overworldMarioGif(rom, hdr, 2) ?: error("no es SMW")
+                                    val where = SnesImport.exportToDownloads(
+                                        context, "smw_ow_mario_walk.gif", "image/gif", gif,
+                                    ) ?: error("no se pudo guardar")
+                                    Toast.makeText(context, "Mario andando (GIF) guardado en $where", Toast.LENGTH_LONG).show()
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo exportar el GIF: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }, modifier = Modifier.weight(1f)) { Text("⬇ Mario andando GIF") }
+                        }
                     }
 
                     Spacer(Modifier.height(8.dp))

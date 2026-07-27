@@ -1833,6 +1833,40 @@ object SnesGameRecipes {
         return img
     }
 
+    /** Orden de las direcciones del Mario del mapa para exportar (arriba, abajo, izq, der). */
+    private val OW_MARIO_DIRS = intArrayOf(0, 2, 4, 6)
+
+    /**
+     * HOJA del Mario del mapa para EXTRAER: las cuatro direcciones (arriba, abajo, izquierda,
+     * derecha) en su pose quieta, una al lado de otra (64×16, transparente). Es "esto de
+     * Mario" listo para descargar como PNG desde la herramienta de extracción.
+     */
+    fun overworldMarioSheet(rom: ByteArray, header: SnesHeader): ArgbImage? {
+        val cells = OW_MARIO_DIRS.map { overworldMarioSprite(rom, header, it) ?: return null }
+        val sheet = ArgbImage(16 * cells.size, 16)
+        cells.forEachIndexed { i, cell ->
+            for (y in 0 until 16) for (x in 0 until 16) {
+                val p = cell.get(x, y)
+                if (p ushr 24 != 0) sheet.set(i * 16 + x, y, p)
+            }
+        }
+        return sheet
+    }
+
+    /**
+     * GIF del Mario del mapa ANDANDO hacia [direction]: los cuatro fotogramas del ciclo
+     * (quieto → paso → quieto → paso-alterno) en bucle. Es la versión animada de "esto de
+     * Mario" para descargar desde la herramienta de extracción.
+     */
+    fun overworldMarioGif(
+        rom: ByteArray, header: SnesHeader, direction: Int, delayCs: Int = 12,
+    ): ByteArray? {
+        val frames = (0 until OW_MARIO_FRAMES).map {
+            overworldMarioSprite(rom, header, direction, it) ?: return null
+        }
+        return Gif.encode(16, 16, frames.map { Gif.Frame(it.pixels, delayCs) })
+    }
+
     /** Dibuja una tesela OAM de 8×8 con su sub-paleta de sprite (CGRAM 128 + p*16). */
     private fun drawSpriteTile(
         tile: Int, x: Int, y: Int, palette: Int, vram: Array<IntArray?>, cgram: IntArray,

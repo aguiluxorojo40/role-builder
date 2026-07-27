@@ -49,6 +49,23 @@ class SmwOverworldMarioTest {
     }
 
     @Test
+    fun theExtractionToolCanLocateAndExportMario() {
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+        // La hoja de las 4 direcciones para descargar como PNG: 64×16, con cuerpo real.
+        val sheet = SnesGameRecipes.overworldMarioSheet(rom, header)
+        assertNotNull(sheet)
+        assertTrue(sheet.width == 64 && sheet.height == 16, "4 direcciones en fila")
+        assertTrue(sheet.pixels.count { (it ushr 24) != 0 } > 80, "tiene los 4 Marios dibujados")
+        // El GIF andando: bytes de un GIF89a de verdad (cabecera "GIF89a").
+        val gif = SnesGameRecipes.overworldMarioGif(rom, header, SmwOverworldWalk.DIR_DOWN)
+        assertNotNull(gif)
+        assertTrue(gif.size > 6, "el GIF tiene contenido")
+        val magic = String(gif.copyOfRange(0, 6), Charsets.US_ASCII)
+        assertTrue(magic == "GIF89a" || magic == "GIF87a", "es un GIF de verdad ($magic)")
+    }
+
+    @Test
     fun leftAndRightAreMirrorImages() {
         val rom = findRom() ?: return
         val header = SnesDecoder.parseHeader(rom)
