@@ -14,6 +14,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -314,10 +316,13 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
         }
     }
 
+    // Game over: se enseña cuando te quedas sin vidas. Salir borra la ranura (partida perdida).
+    var gameOver by remember { mutableStateOf(false) }
     val playLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         val won = result.data?.getBooleanExtra(PlatformerActivity.RESULT_WON, false) == true
+        val died = result.data?.getBooleanExtra(PlatformerActivity.RESULT_DIED, false) == true
         if (won && hereLevel > 0) {
             // Superar el nivel abre su camino: la dirección sale de $04:D678 según la salida.
             val bit = SmwOverworldWalk.unlockedDirection(rom, delta, hereLevel, exitAction = 1)
@@ -326,7 +331,38 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
             settings = opened
             val ev = eventTable.getOrNull(hereLevel) ?: SmwOverworld.EVENT_NONE
             persist(save.withLevelBeaten(hereLevel, ev))
+        } else if (died) {
+            // Morir cuesta una vida, como en el juego. A cero, se acabó la partida.
+            val remaining = (save.lives - 1)
+            if (remaining < 0) {
+                gameOver = true
+            } else {
+                persist(save.copy(lives = remaining))
+                if (remaining == 0) gameOver = true
+            }
         }
+    }
+
+    // GAME OVER: sin vidas, se acabó. Volver al título borra la ranura, como en el juego.
+    if (gameOver) {
+        val activity = context as? android.app.Activity
+        Column(
+            Modifier.fillMaxSize().background(Color(0xFF0A0A0F)).safeDrawingPadding().padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("GAME OVER", color = Color(0xFFFF5D5D), style = MaterialTheme.typography.headlineLarge)
+            Text(
+                "Te quedaste sin vidas.",
+                color = Color(0xFFBBBBBB),
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+            )
+            Button(onClick = {
+                SmwSaveIo.delete(saveDir, slot)
+                activity?.finish()
+            }) { Text("Volver al título") }
+        }
+        return
     }
 
     Column(Modifier.fillMaxSize().background(Color(0xFF121216)).safeDrawingPadding().padding(8.dp)) {

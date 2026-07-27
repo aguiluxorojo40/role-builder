@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -95,7 +97,13 @@ class PlatformerActivity : ComponentActivity() {
                 // Al salir se devuelve si el nivel se SUPERÓ: es lo que deja al mapa del
                 // mundo aplicar el evento de ese nivel y abrir el camino siguiente.
                 onExit = {
-                    setResult(RESULT_OK, Intent().putExtra(RESULT_WON, renderer.levelWon))
+                    setResult(
+                        RESULT_OK,
+                        Intent()
+                            .putExtra(RESULT_WON, renderer.levelWon)
+                            // Murió si está muerto y NO llegó a la meta: al mapa le cuesta una vida.
+                            .putExtra(RESULT_DIED, renderer.dead && !renderer.levelWon),
+                    )
                     finish()
                 },
                 // Al morir, la música PARA (como SMW) y queda solo el jingle de muerte;
@@ -403,6 +411,9 @@ class PlatformerActivity : ComponentActivity() {
         /** Extra del resultado: true si el jugador SUPERO el nivel (toco la meta). */
         const val RESULT_WON = "won"
 
+        /** Extra del resultado: true si el jugador MURIO en el nivel (cuesta una vida). */
+        const val RESULT_DIED = "died"
+
         fun intent(context: Context, romFile: File, level: Int): Intent =
             Intent(context, PlatformerActivity::class.java)
                 .putExtra(EXTRA_ROM_PATH, romFile.absolutePath)
@@ -499,6 +510,28 @@ private fun PlatformerScreen(
             }
             TextButton(onClick = onExit, modifier = Modifier.align(Alignment.TopStart)) {
                 Text("Salir", color = Color.White.copy(alpha = 0.8f))
+            }
+
+            // Al morir, un panel claro: reintentar el nivel o volver al mapa (que descuenta
+            // la vida). Sin esto, morir dejaba a Mario tirado esperando que adivinaras qué
+            // botón diminuto pulsar.
+            if (died) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center)
+                        .background(Color(0xE6101018), RoundedCornerShape(12.dp))
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text("Has perdido una vida", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = onRestart) { Text("Reintentar") }
+                        Button(
+                            onClick = onExit,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555B70)),
+                        ) { Text("Volver al mapa") }
+                    }
+                }
             }
 
             // Panel de FÍSICAS en vivo: ver los valores reales del motor y ajustarlos
