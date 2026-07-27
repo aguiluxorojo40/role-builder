@@ -95,26 +95,52 @@ object SmwAssetCatalog {
     data class ExportEntry(val path: String, val image: ArgbImage?, val gif: ByteArray?)
 
     /**
-     * Aplana [groups] a la lista de ficheros a escribir, con la estructura de carpetas
-     * `grupo/item/animación/`. Cada clip aporta un PNG por fotograma (`frame_00.png`…) y, si
-     * está animado, un GIF (`animación.gif`). Los nombres se sanean para ser válidos como
-     * carpeta (sin acentos ni espacios).
+     * Aplana [groups] a la lista de ficheros a escribir, ya clasificados en carpetas.
+     *
+     * La estructura busca ser CLARA para quien la abra:
+     *  - Un sprite con **varias animaciones** (Mario del mapa) → `grupo/item/animación/` con
+     *    los PNG de cada fotograma y un `animación.gif`.
+     *  - Un sprite con **una sola animación** (casi todos los enemigos) → `grupo/item/`
+     *    directamente, sin una subcarpeta de más, y el GIF se llama como el propio sprite.
+     *
+     * Los nombres de carpeta se sanean (sin acentos ni espacios) y se hacen **únicos dentro de
+     * su grupo**: si dos sprites comparten nombre (hay dos "Cheep-Cheep", dos "Topo"…) el
+     * segundo pasa a `cheep_cheep_2`, para que ninguno pise al otro.
      */
     fun exportEntries(groups: List<AssetGroup>): List<ExportEntry> {
         val out = ArrayList<ExportEntry>()
-        for (g in groups) for (item in g.items) for (clip in item.clips) {
-            val dir = "${slug(g.name)}/${slug(item.name)}/${slug(clip.name)}"
-            clip.frames.forEachIndexed { i, img ->
-                out.add(ExportEntry("$dir/frame_%02d.png".format(i), img, null))
-            }
-            if (clip.animated) {
-                val w = clip.frames[0].width
-                val h = clip.frames[0].height
-                val gif = Gif.encode(w, h, clip.frames.map { Gif.Frame(it.pixels, clip.delayCs) })
-                out.add(ExportEntry("$dir/${slug(clip.name)}.gif", null, gif))
+        for (g in groups) {
+            val gSlug = slug(g.name)
+            val used = HashSet<String>()
+            for (item in g.items) {
+                val itemSlug = uniqueName(slug(item.name), used)
+                val single = item.clips.size == 1
+                for (clip in item.clips) {
+                    // Un solo clip: los fotogramas van en la carpeta del sprite y el GIF lleva
+                    // su nombre. Varios clips: cada uno en su subcarpeta con su nombre.
+                    val dir = if (single) "$gSlug/$itemSlug" else "$gSlug/$itemSlug/${slug(clip.name)}"
+                    val gifName = if (single) itemSlug else slug(clip.name)
+                    clip.frames.forEachIndexed { i, img ->
+                        out.add(ExportEntry("$dir/frame_%02d.png".format(i), img, null))
+                    }
+                    if (clip.animated) {
+                        val w = clip.frames[0].width
+                        val h = clip.frames[0].height
+                        val gif = Gif.encode(w, h, clip.frames.map { Gif.Frame(it.pixels, clip.delayCs) })
+                        out.add(ExportEntry("$dir/$gifName.gif", null, gif))
+                    }
+                }
             }
         }
         return out
+    }
+
+    /** Devuelve [base], o `base_2`, `base_3`… si ya está en [used]. Lo registra. */
+    private fun uniqueName(base: String, used: MutableSet<String>): String {
+        if (used.add(base)) return base
+        var n = 2
+        while (!used.add("${base}_$n")) n++
+        return "${base}_$n"
     }
 
     /** Nombre válido como carpeta: minúsculas, sin acentos, espacios y símbolos a `_`. */

@@ -58,6 +58,19 @@ class SmwAssetCatalogTest {
         // El GIF de Mario es un GIF de verdad.
         val gif = marioDown.first { it.path.endsWith(".gif") }.gif!!
         assertTrue(String(gif.copyOfRange(0, 6), Charsets.US_ASCII).startsWith("GIF8"), "GIF real")
+
+        // NINGUNA ruta se repite: si dos sprites comparten nombre no deben pisarse.
+        val paths = entries.map { it.path }
+        assertEquals(paths.size, paths.toSet().size, "no hay ficheros con la misma ruta")
+
+        // Un enemigo de una sola animación va directo en su carpeta, sin subcarpeta 'anim'.
+        val koopa = entries.filter { it.path.startsWith("enemigos/koopa_verde/") }
+        assertTrue(koopa.any { it.path == "enemigos/koopa_verde/koopa_verde.gif" }, "GIF con el nombre del sprite")
+        assertTrue(koopa.none { it.path.contains("/anim/") }, "sin subcarpeta redundante")
+
+        // Los nombres repetidos se distinguen: hay 'cheep_cheep' y 'cheep_cheep_2'.
+        val cheeps = paths.filter { it.startsWith("enemigos/cheep_cheep") }.map { it.substringAfter("enemigos/").substringBefore('/') }.toSet()
+        assertTrue(cheeps.contains("cheep_cheep") && cheeps.contains("cheep_cheep_2"), "los dos Cheep-Cheep, separados")
     }
 
     @Test
