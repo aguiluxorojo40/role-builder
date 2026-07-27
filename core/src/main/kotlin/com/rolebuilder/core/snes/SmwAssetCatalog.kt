@@ -25,8 +25,18 @@ object SmwAssetCatalog {
         val animated: Boolean get() = frames.size > 1
     }
 
-    /** Un SPRITE concreto (Mario, un Koopa…) con todas sus animaciones. */
-    data class AssetItem(val name: String, val clips: List<AnimationClip>)
+    /** Un SONIDO extraído: su nombre (será el del fichero) y el WAV ya codificado. */
+    data class AudioClip(val name: String, val wav: ByteArray)
+
+    /**
+     * Un asset concreto con nombre. La mayoría son sprites (una o varias animaciones en
+     * [clips]); algunos son sonidos ([audio]). Un item es de un tipo o del otro, no de los dos.
+     */
+    data class AssetItem(
+        val name: String,
+        val clips: List<AnimationClip> = emptyList(),
+        val audio: AudioClip? = null,
+    )
 
     /** Un GRUPO de sprites de la misma familia (Mario, enemigos…). */
     data class AssetGroup(val name: String, val items: List<AssetItem>)
@@ -41,11 +51,33 @@ object SmwAssetCatalog {
     fun build(rom: ByteArray, header: SnesHeader): List<AssetGroup> {
         val groups = ArrayList<AssetGroup>()
         marioOverworld(rom, header)?.let { groups.add(it) }
+        marioLevel(rom, header)?.let { groups.add(it) }
         enemies(rom, header)?.let { groups.add(it) }
         objects(rom, header)?.let { groups.add(it) }
         overworldMapSprites(rom, header)?.let { groups.add(it) }
         screens(rom, header)?.let { groups.add(it) }
+        audio(rom, header)?.let { groups.add(it) }
         return groups
+    }
+
+    /** Grupo "Mario (nivel)": sus 4 estados (pequeño/grande/capa/fuego), la hoja de poses. */
+    fun marioLevel(rom: ByteArray, header: SnesHeader): AssetGroup? {
+        val states = listOf("Mario pequeño" to 0, "Mario grande" to 1, "Mario capa" to 2, "Mario fuego" to 3)
+        val items = states.mapNotNull { (name, pu) ->
+            val sheet = SnesGameRecipes.smwMarioSheet(rom, header, pu) ?: return@mapNotNull null
+            AssetItem(name, listOf(AnimationClip("poses", listOf(sheet))))
+        }
+        return if (items.isEmpty()) null else AssetGroup("Mario (nivel)", items)
+    }
+
+    /** Grupo "Audio": los efectos de sonido de SMW, sintetizados desde sus muestras BRR. */
+    fun audio(rom: ByteArray, header: SnesHeader): AssetGroup? {
+        val clips = SmwSfxCatalog.build(rom, header) ?: return null
+        val items = clips.map { (event, clip) ->
+            val name = event.name.lowercase()
+            AssetItem(name, audio = AudioClip(name, Wav.encode(clip.pcm, clip.sampleRate)))
+        }
+        return if (items.isEmpty()) null else AssetGroup("Audio", items)
     }
 
     /** Grupo "Objetos": la MONEDA (girando, animada) y los POWERUPS (seta, flor, pluma). */
@@ -114,13 +146,19 @@ object SmwAssetCatalog {
     }
 
     /**
-     * Un fichero a exportar: su ruta relativa dentro del paquete (con subcarpetas) y de dónde
-     * sale la imagen. Es lo que la app recorre para escribir el ZIP/carpeta clasificada.
+     * Un fichero a exportar: su ruta relativa dentro del paquete (con subcarpetas) y su
+     * contenido. Es lo que la app recorre para escribir el ZIP/carpeta clasificada.
      *
-     * [gif] es null para los PNG de cada fotograma; para el GIF de una animación, [image] es
-     * null y [gif] trae los bytes ya codificados. Así la app solo tiene que codificar los PNG.
+     * Solo uno de los tres viene informado: [image] para un PNG (la app lo codifica), [gif]
+     * para el GIF de una animación, o [bytes] para lo ya listo (un WAV). Así la app solo tiene
+     * que saber codificar PNG; lo demás llega hecho desde `core`.
      */
-    data class ExportEntry(val path: String, val image: ArgbImage?, val gif: ByteArray?)
+    data class ExportEntry(
+        val path: String,
+        val image: ArgbImage? = null,
+        val gif: ByteArray? = null,
+        val bytes: ByteArray? = null,
+    )
 
     /**
      * Aplana [groups] a la lista de ficheros a escribir, ya clasificados en carpetas.
@@ -142,6 +180,10 @@ object SmwAssetCatalog {
             val used = HashSet<String>()
             for (item in g.items) {
                 val itemSlug = uniqueName(slug(item.name), used)
+                // Item de AUDIO: un WAV directo en la carpeta del grupo.
+                item.audio?.let { a ->
+                    out.add(ExportEntry("$gSlug/${slug(a.name)}.wav", bytes = a.wav))
+                }
                 val single = item.clips.size == 1
                 for (clip in item.clips) {
                     // Un solo clip: los fotogramas van en la carpeta del sprite y el GIF lleva

@@ -163,7 +163,8 @@ private fun AssetBrowserScreen(rom: ByteArray, header: SnesHeader) {
                         java.util.zip.ZipOutputStream(buffer).use { zip ->
                             for (e in entries) {
                                 zip.putNextEntry(java.util.zip.ZipEntry(e.path))
-                                val bytes = e.gif ?: e.image?.let { SnesImport.bitmapToPng(SnesImport.toBitmap(it)) }
+                                val bytes = e.gif ?: e.bytes
+                                    ?: e.image?.let { SnesImport.bitmapToPng(SnesImport.toBitmap(it)) }
                                     ?: ByteArray(0)
                                 zip.write(bytes); zip.closeEntry()
                             }
@@ -201,8 +202,10 @@ private fun AssetRow(row: Row, tick: Int, onExport: () -> Unit) {
         }
         Column(Modifier.weight(1f)) {
             Text(row.item.name, color = Color.White, style = MaterialTheme.typography.bodyLarge)
+            val detail = if (row.item.audio != null) "sonido (WAV)"
+            else "${row.item.clips.size} animación(es)"
             Text(
-                "${row.group.name} · ${row.item.clips.size} animación(es)",
+                "${row.group.name} · $detail",
                 color = Color(0xFF9AA0A6), style = MaterialTheme.typography.bodySmall,
             )
         }

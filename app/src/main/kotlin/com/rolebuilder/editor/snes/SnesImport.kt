@@ -135,7 +135,7 @@ object SnesImport {
         java.util.zip.ZipOutputStream(buffer).use { zip ->
             for (e in entries) {
                 zip.putNextEntry(java.util.zip.ZipEntry(e.path))
-                val bytes = e.gif ?: e.image?.let { bitmapToPng(toBitmap(it)) } ?: ByteArray(0)
+                val bytes = e.gif ?: e.bytes ?: e.image?.let { bitmapToPng(toBitmap(it)) } ?: ByteArray(0)
                 zip.write(bytes)
                 zip.closeEntry()
             }

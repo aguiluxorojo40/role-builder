@@ -49,11 +49,15 @@ class SmwAssetCatalogTest {
         assertEquals(4, marioDown.count { it.path.endsWith(".png") }, "4 PNG de fotograma")
         assertEquals(1, marioDown.count { it.path.endsWith(".gif") }, "y un GIF de la animación")
 
-        // Los PNG llevan imagen y los GIF, bytes; nunca los dos ni ninguno.
+        // Cada fichero lleva EXACTAMENTE una fuente: imagen (PNG), gif o bytes (WAV).
         for (e in entries) {
-            val isPng = e.path.endsWith(".png")
-            assertEquals(isPng, e.image != null, "el PNG lleva imagen: ${e.path}")
-            assertEquals(!isPng, e.gif != null, "el GIF lleva bytes: ${e.path}")
+            val sources = listOfNotNull(e.image, e.gif, e.bytes).size
+            assertEquals(1, sources, "una sola fuente por fichero: ${e.path}")
+            when {
+                e.path.endsWith(".png") -> assertTrue(e.image != null, "PNG lleva imagen: ${e.path}")
+                e.path.endsWith(".gif") -> assertTrue(e.gif != null, "GIF lleva bytes: ${e.path}")
+                e.path.endsWith(".wav") -> assertTrue(e.bytes != null, "WAV lleva bytes: ${e.path}")
+            }
         }
         // El GIF de Mario es un GIF de verdad.
         val gif = marioDown.first { it.path.endsWith(".gif") }.gif!!
@@ -71,6 +75,22 @@ class SmwAssetCatalogTest {
         // Los nombres repetidos se distinguen: hay 'cheep_cheep' y 'cheep_cheep_2'.
         val cheeps = paths.filter { it.startsWith("enemigos/cheep_cheep") }.map { it.substringAfter("enemigos/").substringBefore('/') }.toSet()
         assertTrue(cheeps.contains("cheep_cheep") && cheeps.contains("cheep_cheep_2"), "los dos Cheep-Cheep, separados")
+    }
+
+    @Test
+    fun theCatalogAlsoExtractsSound() {
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+        val groups = SmwAssetCatalog.build(rom, header)
+        val audio = groups.firstOrNull { it.name == "Audio" } ?: return // gated si no hay SFX
+        assertTrue(audio.items.all { it.audio != null }, "los items de audio traen su WAV")
+        // El WAV de un efecto es un RIFF/WAVE de verdad.
+        val wav = audio.items.first().audio!!.wav
+        assertTrue(String(wav.copyOfRange(0, 4), Charsets.US_ASCII) == "RIFF", "cabecera RIFF")
+        assertTrue(String(wav.copyOfRange(8, 12), Charsets.US_ASCII) == "WAVE", "formato WAVE")
+        // Y sale como .wav en la estructura de export.
+        val entries = SmwAssetCatalog.exportEntries(listOf(audio))
+        assertTrue(entries.all { it.path.endsWith(".wav") && it.bytes != null }, "todo WAV")
     }
 
     @Test
