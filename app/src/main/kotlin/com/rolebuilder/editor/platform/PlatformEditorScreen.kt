@@ -74,6 +74,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -427,6 +429,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // última herramienta de pintar para alternar con Seleccionar desde el centro.
     var wheelOpen by remember { mutableStateOf(false) }
     var cleanMode by remember { mutableStateOf(false) }
+    // En HORIZONTAL el alto es oro: la fila del selector de nivel se convierte en un chip que
+    // FLOTA sobre el lienzo (esquina) en vez de robar una fila entera. En vertical, fila normal.
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     var lastPaint by remember { mutableStateOf(PTool.TERRAIN) }
     // Config de UI (raíl + favoritos) PERSISTENTE por proyecto (SharedPreferences).
     val uiPrefs = remember(projectDir) {
@@ -520,8 +525,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            // ---------- fila 1: nivel y acciones (se oculta en modo limpio) ----------
-            if (!cleanMode) {
+            // ---------- fila 1: nivel (se oculta en modo limpio; en HORIZONTAL flota sobre
+            // el lienzo para no robar alto — ver el chip dentro del Box del lienzo) ----------
+            if (!cleanMode && !isLandscape) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -848,9 +854,31 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     onClick = { cleanMode = !cleanMode },
                     modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 86.dp),
                 )
+                // HORIZONTAL: el selector de nivel flota en la esquina superior izquierda del
+                // lienzo, sin robarle alto a la vista de edición (que en horizontal es lo justo).
+                if (!cleanMode && isLandscape) {
+                    Box(
+                        Modifier.align(Alignment.TopStart).padding(8.dp)
+                            .clip(RoundedCornerShape(12.dp)).background(Glass)
+                            .border(1.dp, GlassStroke, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        DropdownField(
+                            label = "Nivel",
+                            options = state.mapList,
+                            selected = map,
+                            optionLabel = { "${it.id}: ${it.name}" },
+                            onSelect = { state.selectMap(it.id) },
+                        )
+                    }
+                }
             }
 
-            // ---------- paleta inferior (se oculta en modo limpio) ----------
+            // ---------- paleta inferior (se oculta en modo limpio; en horizontal se limita el
+            // alto para no comerse el lienzo) ----------
+            val paletteMod = if (isLandscape) Modifier.fillMaxWidth().heightIn(max = 150.dp)
+            else Modifier.fillMaxWidth()
+            Box(paletteMod) {
             if (!cleanMode) when (tool) {
                 PTool.SELECT -> SelectionPanel(
                     selected = selected,
@@ -910,6 +938,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     }
                 }
             }
+            } // cierra el Box de la paleta (limitado en alto en horizontal)
         }
     }
 
