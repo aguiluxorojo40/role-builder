@@ -93,6 +93,28 @@ fun main(args: Array<String>) {
     println("Cabecera: \"${header.title}\"  ${header.mapping}  ${header.romTypeDescription}")
     println("  ${header.country} · ${header.licensee} · checksum ${if (header.isChecksumValid) "válido" else "no válido"}")
 
+    // Modo --gfx-library: la BIBLIOTECA de GFX (SmwGfxLibrary). Lista bancos + paletas y, con
+    // --bank 0xNN [--pal-row R], renderiza ese banco coloreado con la fila R (palette-swap).
+    if (opts.containsKey("gfx-library")) {
+        val level = opts["level"]?.let { parseInt(it) } ?: 0x105
+        val banks = com.rolebuilder.core.snes.SmwGfxLibrary.banks(rom)
+        val rows = com.rolebuilder.core.snes.SmwGfxLibrary.paletteRows(rom, header, level)
+        println("Bancos GFX (${banks.size}): " +
+            banks.joinToString(" ") { "0x%02x[%dt/%s]".format(it.id, it.tileCount, it.format.name.removePrefix("SNES_")) })
+        println("Paletas del nivel 0x${level.toString(16).uppercase()}: ${rows.size} filas")
+        val bank = opts["bank"]?.let { parseInt(it) }
+        if (bank == null) { println("Añade --bank 0xNN [--pal-row R]."); return }
+        val palRow = opts["pal-row"]?.let { parseInt(it) } ?: 0
+        val row = rows.getOrNull(palRow) ?: IntArray(16) { 0xFFFFFFFF.toInt() }
+        val img = com.rolebuilder.core.snes.SmwGfxLibrary.bankSheet(rom, bank, row)
+            ?: run { println("Banco 0x${bank.toString(16)} no disponible."); return }
+        val imagesDir = File(outDir, "images").also { it.mkdirs() }
+        val png = File(imagesDir, "gfxlib_${bank.toString(16)}_p${palRow}.png")
+        ImageIO.write(toBufferedImage(img), "png", png)
+        println("Banco 0x${bank.toString(16)} · paleta fila $palRow: ${img.width}x${img.height}px -> images/${png.name}")
+        return
+    }
+
     // Modo --recipe: "modo fácil FIABLE". Si la ROM es un juego conocido, usa su
     // mapa gráfico real y vuelca sus gráficos limpios, sin adivinar nada.
     if (opts.containsKey("recipe")) {

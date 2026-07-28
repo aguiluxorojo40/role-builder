@@ -9,17 +9,25 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -42,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.snes.ArgbImage
 import com.rolebuilder.core.snes.SmwAssetCatalog
+import com.rolebuilder.core.snes.SmwGfxLibrary
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesHeader
 import kotlinx.coroutines.Dispatchers
@@ -94,6 +103,8 @@ private fun AssetBrowserScreen(rom: ByteArray, header: SnesHeader) {
     var groups by remember { mutableStateOf<List<SmwAssetCatalog.AssetGroup>?>(null) }
     var query by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    // 0 = catálogo de sprites (por animación); 1 = bancos GFX + paletas (palette-swap).
+    var mode by remember { mutableIntStateOf(0) }
 
     // Construir el catálogo recorre la ROM: fuera del hilo de interfaz.
     LaunchedEffect(rom) {
@@ -107,10 +118,23 @@ private fun AssetBrowserScreen(rom: ByteArray, header: SnesHeader) {
     Column(
         Modifier.fillMaxSize().background(Color(0xFF121216)).safeDrawingPadding().padding(12.dp),
     ) {
-        Text("Extraer sprites de tu ROM", style = MaterialTheme.typography.titleLarge, color = Color.White)
+        Text("Biblioteca de assets de tu ROM", style = MaterialTheme.typography.titleLarge, color = Color.White)
+
+        // Conmutador: catálogo de sprites (por animación) vs bancos GFX crudos con palette-swap.
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ModeTab("Sprites", mode == 0) { mode = 0 }
+            ModeTab("GFX y Paletas", mode == 1) { mode = 1 }
+        }
+
+        if (mode == 1) {
+            GfxPaletteView(rom, header)
+            return@Column
+        }
+
         Text(
             "Clasificado y separado por animación. Cada animación se descarga en su carpeta.",
             style = MaterialTheme.typography.bodySmall, color = Color(0xFFBBBBBB),
+            modifier = Modifier.padding(top = 6.dp),
         )
         val all = groups
         if (all == null) {
@@ -210,6 +234,112 @@ private fun AssetRow(row: Row, tick: Int, onExport: () -> Unit) {
             )
         }
         TextButton(onClick = onExport) { Text("⬇") }
+    }
+}
+
+/** Pestaña/píldora del conmutador de modo. */
+@Composable
+private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .background(if (selected) Color(0xFF6C8EFF) else Color(0xFF23232B), RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Text(label, color = if (selected) Color.Black else Color.White, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+/**
+ * Navegador de BANCOS GFX crudos con **palette-swap** en vivo (estilo Lunar Magic / YY-CHR):
+ * eliges una de las 16 filas de paleta de la CGRAM y una tesela-banco, y ves el banco recoloreado
+ * al instante. Es la vía de "GFX + paletas" que complementa el catálogo de sprites. Reutiliza
+ * [SmwGfxLibrary] (bancos + paletas + render).
+ */
+@Composable
+private fun GfxPaletteView(rom: ByteArray, header: SnesHeader) {
+    val banks = remember(rom) { SmwGfxLibrary.banks(rom) }
+    val rows = remember(rom) { SmwGfxLibrary.paletteRows(rom, header) }
+    var bankIdx by remember { mutableIntStateOf(0) }
+    var palRow by remember { mutableIntStateOf(if (rows.size > 8) 8 else 0) }
+
+    if (banks.isEmpty() || rows.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No se pudieron leer bancos/paletas (¿ROM no SMW?).", color = Color.White)
+        }
+        return
+    }
+
+    val sheet: Bitmap? = remember(bankIdx, palRow) {
+        val bank = banks.getOrNull(bankIdx) ?: return@remember null
+        val row = rows.getOrNull(palRow) ?: return@remember null
+        SmwGfxLibrary.bankSheet(rom, bank.id, row)?.let { SnesImport.toBitmap(it) }
+    }
+
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        Text(
+            "Bancos de gráficos crudos, con la paleta que elijas (como Lunar Magic).",
+            style = MaterialTheme.typography.bodySmall, color = Color(0xFFBBBBBB),
+            modifier = Modifier.padding(vertical = 6.dp),
+        )
+
+        Text("Paleta · 16 filas de la CGRAM", color = Color(0xFF9AA0A6), style = MaterialTheme.typography.labelMedium)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            rows.forEachIndexed { i, colors -> PaletteSwatch(colors, selected = i == palRow) { palRow = i } }
+        }
+
+        sheet?.let {
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = "Banco GFX",
+                filterQuality = FilterQuality.None,
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+            )
+        }
+
+        Text("Banco · ${banks.size} en la ROM", color = Color(0xFF9AA0A6), style = MaterialTheme.typography.labelMedium)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            banks.forEachIndexed { i, b ->
+                Box(
+                    Modifier
+                        .background(if (i == bankIdx) Color(0xFF6C8EFF) else Color(0xFF23232B), RoundedCornerShape(8.dp))
+                        .clickable { bankIdx = i }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                ) {
+                    Text(
+                        "0x%02X".format(b.id),
+                        color = if (i == bankIdx) Color.Black else Color.White,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Muestra una fila de paleta como una tira de 16 colores; resalta la seleccionada. */
+@Composable
+private fun PaletteSwatch(colors: IntArray, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .border(
+                if (selected) 2.dp else 1.dp,
+                if (selected) Color(0xFF6C8EFF) else Color(0x33FFFFFF),
+                RoundedCornerShape(4.dp),
+            )
+            .clickable { onClick() }
+            .padding(2.dp),
+    ) {
+        for (i in 0 until 16) {
+            Box(Modifier.width(6.dp).height(20.dp).background(Color(colors.getOrElse(i) { 0xFF000000.toInt() })))
+        }
     }
 }
 
