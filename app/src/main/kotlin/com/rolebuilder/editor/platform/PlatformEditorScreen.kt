@@ -96,9 +96,9 @@ import com.rolebuilder.core.snes.SmwSpriteNames
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.editor.EditorState
-import com.rolebuilder.editor.loadAssetImageBitmap
 import com.rolebuilder.editor.loadBigSprites
 import com.rolebuilder.editor.loadImageBitmap
+import com.rolebuilder.editor.loadStoreImageBitmap
 import com.rolebuilder.editor.snes.AUTO_MAX_LEVELS
 import com.rolebuilder.editor.snes.SnesImport
 import com.rolebuilder.editor.snes.SnesImportDialog
