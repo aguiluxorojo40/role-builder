@@ -258,6 +258,7 @@ private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
  */
 @Composable
 private fun GfxPaletteView(rom: ByteArray, header: SnesHeader) {
+    val context = LocalContext.current
     val banks = remember(rom) { SmwGfxLibrary.banks(rom) }
     val rows = remember(rom) { SmwGfxLibrary.paletteRows(rom, header) }
     var bankIdx by remember { mutableIntStateOf(0) }
@@ -291,14 +292,27 @@ private fun GfxPaletteView(rom: ByteArray, header: SnesHeader) {
             rows.forEachIndexed { i, colors -> PaletteSwatch(colors, selected = i == palRow) { palRow = i } }
         }
 
-        sheet?.let {
+        sheet?.let { bmp ->
             Image(
-                bitmap = it.asImageBitmap(),
+                bitmap = bmp.asImageBitmap(),
                 contentDescription = "Banco GFX",
                 filterQuality = FilterQuality.None,
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
             )
+            // Exporta el banco tal y como se ve (con la paleta elegida) a Descargas.
+            Button(
+                onClick = {
+                    val bankId = banks.getOrNull(bankIdx)?.id ?: 0
+                    exportInBackground(context, onDone = {}) {
+                        SnesImport.exportToDownloads(
+                            context, "smw_gfx_%02x_p%d.png".format(bankId, palRow),
+                            "image/png", SnesImport.bitmapToPng(bmp),
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            ) { Text("⬇ Exportar este banco (PNG, con esta paleta)") }
         }
 
         Text("Banco · ${banks.size} en la ROM", color = Color(0xFF9AA0A6), style = MaterialTheme.typography.labelMedium)
