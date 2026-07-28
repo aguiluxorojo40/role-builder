@@ -199,8 +199,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
             // ninguno: son de Nintendo. Con esto el modo PROYECTO (sin ROM) sigue teniéndolos.
             runCatching { SmwAssetStore.bake(context, bytes) }.onSuccess { n ->
                 if (n > 0) {
+                    val music = if (SmwAssetStore.isMusicBaked(context)) "música ✓" else "música ✗"
                     Toast.makeText(
-                        context, "Assets de SMW generados desde tu ROM ($n)", Toast.LENGTH_SHORT,
+                        context, "Assets de SMW generados desde tu ROM ($n) · $music", Toast.LENGTH_LONG,
                     ).show()
                 }
             }

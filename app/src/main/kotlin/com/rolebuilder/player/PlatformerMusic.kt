@@ -65,6 +65,9 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
         }.apply { isDaemon = true; start() }
     }
 
+    /** ¿Está el hilo de audio activo y el secuenciador con una canción sonando? */
+    fun isPlaying(): Boolean = running && runCatching { renderer.isPlaying() }.getOrDefault(false)
+
     fun stop() {
         running = false
         thread?.join(300)

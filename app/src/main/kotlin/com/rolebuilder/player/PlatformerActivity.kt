@@ -111,6 +111,15 @@ class PlatformerActivity : ComponentActivity() {
                 // Al morir, la música PARA (como SMW) y queda solo el jingle de muerte;
                 // reiniciar (recreate) vuelve a arrancarla.
                 onDeath = { music?.stop() },
+                // Diagnóstico del HUD: 0 = no cargó (recarga la ROM), 1 = cargada muda, 2 = sonando.
+                musicState = {
+                    val m = music
+                    when {
+                        m == null -> 0
+                        m.isPlaying() -> 2
+                        else -> 1
+                    }
+                },
                 // Warp consumido (tubería/puerta): en modo ROM el destino es un número
                 // de NIVEL de SMW; en modo proyecto, un id de MAPA del proyecto (con su
                 // casilla de entrada). En ambos casos se relanza la actividad allí.
@@ -455,6 +464,12 @@ private fun PlatformerScreen(
     onWarp: (com.rolebuilder.core.engine.platformer.WarpTarget) -> Unit = {},
     /** Primera vez que Mario muere: la actividad para la música (suena el jingle). */
     onDeath: () -> Unit = {},
+    /**
+     * Estado de la música para el indicador de diagnóstico del HUD: 0 = no cargó (ARAM sin
+     * hornear → recarga la ROM), 1 = cargada pero en silencio (problema de audio del móvil),
+     * 2 = sonando. Ayuda a saber POR QUÉ no se oye sin tener el dispositivo delante.
+     */
+    musicState: () -> Int = { 2 },
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var glView by remember { mutableStateOf<GLSurfaceView?>(null) }
@@ -501,13 +516,33 @@ private fun PlatformerScreen(
                     kotlinx.coroutines.delay(120)
                 }
             }
-            Text(
-                "🪙 $coinCount",
+            // Diagnóstico de música: 🎵 suena · 🔈 cargada pero muda (audio del móvil) ·
+            // 🔇 no cargó (recarga la ROM en la app para hornear la banda sonora).
+            var musicIcon by remember { mutableStateOf("") }
+            LaunchedEffect(Unit) {
+                // Un pequeño margen para que el secuenciador arranque antes de juzgar.
+                kotlinx.coroutines.delay(600)
+                musicIcon = when (musicState()) {
+                    0 -> "🔇"
+                    1 -> "🔈"
+                    else -> "🎵"
+                }
+            }
+            Row(
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    "🪙 $coinCount",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (musicIcon.isNotEmpty()) {
+                    Text(musicIcon, fontSize = 18.sp)
+                }
+            }
 
             // Joystick: eje X mueve; eje Y entra por tuberías (abajo) y puertas (arriba).
             VirtualJoystick(

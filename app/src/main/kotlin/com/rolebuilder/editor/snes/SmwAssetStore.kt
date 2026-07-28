@@ -31,6 +31,9 @@ object SmwAssetStore {
     /** ¿Ya se horneó? Basta con que exista el atlas de enemigos. */
     fun isBaked(context: Context): Boolean = File(dir(context), "sprites/enemies.png").isFile
 
+    /** ¿Se horneó la MÚSICA (imagen ARAM del banco de nivel) desde la ROM? Para diagnóstico. */
+    fun isMusicBaked(context: Context): Boolean = File(dir(context), "music/level.aram").isFile
+
     /**
      * Abre el asset [relPath] (p. ej. `sprites/mario.png`): primero del almacén horneado y, si
      * no está, de los `assets/` empaquetados. Null si no aparece en ninguno.
