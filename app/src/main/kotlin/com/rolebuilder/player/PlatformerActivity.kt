@@ -505,8 +505,24 @@ private fun PlatformerScreen(
                 HoldButton("Salto", Color(0xFFFF5D5D)) { renderer.inJumpHeld = it }
             }
 
-            TextButton(onClick = onRestart, modifier = Modifier.align(Alignment.TopEnd)) {
-                Text("↺", color = Color.White, fontSize = 22.sp)
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Visualizador de FÍSICAS: superpone las hitboxes (Mario verde, enemigos rojos,
+                // ítems amarillos), la rejilla de solidez coloreada por tipo, la línea de
+                // superficie de las rampas y las bocas de warp. Para depurar el tacto del motor.
+                var showHb by remember { mutableStateOf(renderer.showHitboxes) }
+                TextButton(onClick = { showHb = !showHb; renderer.showHitboxes = showHb }) {
+                    Text(
+                        "🔧",
+                        color = if (showHb) Color(0xFF7CFF7C) else Color.White.copy(alpha = 0.55f),
+                        fontSize = 20.sp,
+                    )
+                }
+                TextButton(onClick = onRestart) {
+                    Text("↺", color = Color.White, fontSize = 22.sp)
+                }
             }
             TextButton(onClick = onExit, modifier = Modifier.align(Alignment.TopStart)) {
                 Text("Salir", color = Color.White.copy(alpha = 0.8f))

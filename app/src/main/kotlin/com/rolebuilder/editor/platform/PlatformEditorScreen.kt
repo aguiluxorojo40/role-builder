@@ -369,13 +369,16 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val tilesetBitmap = remember(tileset?.image) {
         tileset?.let { loadImageBitmap(state.projectDir, it.image) }
     }
-    // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds).
-    val enemyAtlas = remember { loadAssetImageBitmap(context, "sprites/enemies.png") }
+    // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds). Se lee del
+    // ALMACÉN horneado desde la ROM (SmwAssetStore), NO de assets/ —en el repo no va (Nintendo)—;
+    // por eso se re-lee cuando cambia el estado de horneado (tras cargar la ROM ya aparece).
+    val baked = com.rolebuilder.editor.snes.SmwAssetStore.isBaked(context)
+    val enemyAtlas = remember(baked) { loadStoreImageBitmap(context, "sprites/enemies.png") }
     // Sprites GRANDES (jefes y enemigos mayores) por id: los que no caben en el atlas
     // cuadrado y se dibujan desde big_<id>.png, para poder COLOCARLOS también en el editor.
-    val bigSprites = remember { loadBigSprites(context) }
+    val bigSprites = remember(baked) { loadBigSprites(context) }
     // Hoja de la moneda real de SMW (para el icono del sector Moneda en la rueda).
-    val coinAtlas = remember { loadAssetImageBitmap(context, "sprites/coin.png") }
+    val coinAtlas = remember(baked) { loadStoreImageBitmap(context, "sprites/coin.png") }
     // Reloj de animación del editor: teselas animadas (monedas, ? bloques…) y las
     // MONEDAS COLOCADAS cobran vida. Solo tictea si hay algo que animar (si no, no
     // redibuja de balde) — cuidando el rendimiento.

@@ -21,6 +21,17 @@ fun loadAssetImageBitmap(context: Context, assetPath: String): ImageBitmap? =
     }.getOrNull()
 
 /**
+ * Carga un asset de SMW ([relPath], p. ej. `sprites/enemies.png`) desde el ALMACÉN horneado en
+ * el dispositivo ([SmwAssetStore], generado desde la ROM del usuario) y, si aún no está, de los
+ * `assets/` empaquetados. Es la vía correcta para los gráficos de SMW: en el repo NO va ninguno
+ * (son de Nintendo), así que leerlos solo de `assets/` los daría siempre por ausentes (de ahí
+ * los cuadros rojos de relleno). Null si no aparece en ninguno de los dos.
+ */
+fun loadStoreImageBitmap(context: Context, relPath: String): ImageBitmap? =
+    com.rolebuilder.editor.snes.SmwAssetStore.open(context, relPath)
+        ?.let { runCatching { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }.getOrNull() }
+
+/**
  * Carga los sprites GRANDES empaquetados (assets/sprites/big/big_<id>.png): id de sprite
  * (hex del nombre) → ImageBitmap. Son los jefes y enemigos "grandes" (Bowser, Reznor, Big
  * Boo, Dino-Torch…) que no caben en el atlas cuadrado `enemies.png`. El mismo conjunto que
