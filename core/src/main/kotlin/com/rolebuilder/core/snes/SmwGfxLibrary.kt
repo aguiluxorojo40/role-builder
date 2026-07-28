@@ -54,14 +54,22 @@ object SmwGfxLibrary {
      * transparente). [columns] teselas por fila. null si el banco no existe o no tiene teselas.
      * Cambiar [paletteRow] entre llamadas es el *palette-swap*.
      */
-    fun bankSheet(rom: ByteArray, bankId: Int, paletteRow: IntArray, columns: Int = 16): ArgbImage? {
+    fun bankSheet(rom: ByteArray, bankId: Int, paletteRow: IntArray, columns: Int = 16): ArgbImage? =
+        bankTileSheet(rom, bankId, paletteRow, columns)?.image
+
+    /**
+     * Igual que [bankSheet] pero devuelve la [TileSheet] completa (imagen + rejilla de 8×8), para
+     * poder registrarla como TILESET del proyecto (`SnesAssetExtractor.toTileset`) y componer
+     * bloques Map16 desde ella. null si el banco no existe o no tiene teselas.
+     */
+    fun bankTileSheet(rom: ByteArray, bankId: Int, paletteRow: IntArray, columns: Int = 16): SnesAssetExtractor.TileSheet? {
         val data = SnesGameRecipes.smwGfxFileDataPublic(rom, bankId) ?: return null
         val fmt = formatOf(data)
         val tiles = data.size / fmt.bytesPerTile
         if (tiles <= 0) return null
         val pal = if (paletteRow.size >= fmt.colorCount) paletteRow
         else IntArray(fmt.colorCount) { paletteRow.getOrElse(it) { 0xFF000000.toInt() } }
-        return SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, tiles, columns).image
+        return SnesAssetExtractor.extractTileSheet(data, 0, fmt, pal, tiles, columns)
     }
 
     /** Formato de un banco: detectado, con 3bpp (el habitual en SMW) como respaldo. */
