@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -51,6 +53,7 @@ import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.Tileset
+import com.rolebuilder.core.snes.SmwGfxLibrary
 import com.rolebuilder.core.snes.SmwLevelBundle
 import com.rolebuilder.core.snes.SmwWarpTiles
 import com.rolebuilder.core.snes.SnesHeader
@@ -460,6 +463,11 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             Toast.makeText(context, "No se pudo abrir el catálogo: ${it.message}", Toast.LENGTH_LONG).show()
                         }
                     }) { Text("🎞️ Abrir catálogo de extracción") }
+
+                    if (gameRecipe.contains("Mario World", ignoreCase = true) && header != null) {
+                        Spacer(Modifier.height(8.dp))
+                        GfxBankToTilesetSection(state, romBytes!!, header)
+                    }
 
                     Spacer(Modifier.height(8.dp))
                     Text("🌍 Overworld (mapa del mundo)", style = MaterialTheme.typography.titleSmall)
@@ -876,6 +884,134 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+/**
+ * Puente GFX → EDITOR: coge un BANCO de gráficos de SMW (GFX00..GFX33) con la FILA DE PALETA
+ * que elijas (palette-swap en vivo) y lo hornea como TILESET 8×8 del proyecto. Ese tileset de
+ * 8×8 es justo lo que come el editor Map16 para COMPONER bloques de 16×16 y pintar mapas nuevos
+ * — el eslabón que faltaba entre "el extractor saca y ordena" y "el editor suministra y ordena".
+ *
+ * Nada derivado de la ROM se versiona: el PNG se hornea en el proyecto del usuario, en su
+ * dispositivo, igual que el resto de importaciones.
+ */
+@Composable
+private fun GfxBankToTilesetSection(state: EditorState, rom: ByteArray, header: SnesHeader) {
+    val context = LocalContext.current
+    val banks = remember(rom) { SmwGfxLibrary.banks(rom) }
+    if (banks.isEmpty()) return
+    val paletteRows = remember(rom, header) { SmwGfxLibrary.paletteRows(rom, header) }
+    val rowCount = if (paletteRows.isNotEmpty()) paletteRows.size else SmwGfxLibrary.PALETTE_ROWS
+
+    var bankIdx by remember { mutableStateOf(0) }
+    // Fila 2 (sprites) es un arranque razonable; cualquiera vale con el palette-swap.
+    var palRow by remember { mutableStateOf(2.coerceIn(0, rowCount - 1)) }
+
+    val bank = banks[bankIdx.coerceIn(0, banks.size - 1)]
+    fun paletteRow(): IntArray = paletteRows.getOrNull(palRow) ?: VIVID_16
+
+    val previewSheet = remember(rom, bank.id, palRow, paletteRows) {
+        runCatching { SmwGfxLibrary.bankTileSheet(rom, bank.id, paletteRow()) }.getOrNull()
+    }
+
+    Text("🧩 Banco GFX → hoja del proyecto", style = MaterialTheme.typography.titleSmall)
+    Text(
+        "Elige un BANCO de gráficos de SMW y su FILA DE PALETA (mismo banco, colores distintos). " +
+            "\"Usar este banco\" lo guarda como TILESET de 8×8 en tu proyecto; luego el editor " +
+            "Map16 arma bloques de 16×16 con él para pintar mapas nuevos.",
+        style = MaterialTheme.typography.bodySmall,
+    )
+
+    // Selector de banco.
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = { bankIdx = (bankIdx - 1 + banks.size) % banks.size }) { Text("◀") }
+        Text(
+            "Banco GFX%02X · %d teselas".format(bank.id, bank.tileCount),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = { bankIdx = (bankIdx + 1) % banks.size }) { Text("▶") }
+    }
+
+    // Selector de fila de paleta (palette-swap).
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = { palRow = (palRow - 1 + rowCount) % rowCount }) { Text("◀") }
+        Text("Paleta $palRow", style = MaterialTheme.typography.bodySmall)
+        TextButton(onClick = { palRow = (palRow + 1) % rowCount }) { Text("▶") }
+        // Muestras de la fila elegida.
+        Row(
+            modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            paletteRow().forEach { argb ->
+                Spacer(
+                    Modifier
+                        .width(12.dp)
+                        .height(12.dp)
+                        .background(Color(argb), RoundedCornerShape(2.dp))
+                        .border(1.dp, Color(0xFF555555), RoundedCornerShape(2.dp)),
+                )
+            }
+        }
+    }
+
+    // Vista previa del banco recoloreado.
+    if (previewSheet != null) {
+        val img = SnesImport.toBitmap(previewSheet.image).asImageBitmap()
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .background(Color(0xFF202024), RoundedCornerShape(8.dp)),
+        ) {
+            val scale = floor(minOf(size.width / img.width, size.height / img.height)).coerceAtLeast(1f)
+            drawImage(
+                image = img,
+                srcOffset = IntOffset.Zero,
+                srcSize = IntSize(img.width, img.height),
+                dstOffset = IntOffset(
+                    ((size.width - img.width * scale) / 2f).toInt().coerceAtLeast(0),
+                    ((size.height - img.height * scale) / 2f).toInt().coerceAtLeast(0),
+                ),
+                dstSize = IntSize((img.width * scale).toInt(), (img.height * scale).toInt()),
+                filterQuality = FilterQuality.None,
+            )
+        }
+        Text(
+            "${previewSheet.columns}×${previewSheet.rows} teselas · " +
+                "${img.width}×${img.height} px · celda ${previewSheet.tileSize}px",
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+
+    Button(
+        enabled = previewSheet != null,
+        onClick = {
+            val sheet = previewSheet ?: return@Button
+            runCatching {
+                val fileName = SnesImport.sanitizeFileName("smw_gfx_%02x_p%d".format(bank.id, palRow))
+                SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(sheet.image))
+                state.addTileset(
+                    SnesAssetExtractor.toTileset(
+                        sheet, state.nextTilesetId(),
+                        "GFX%02X · pal %d".format(bank.id, palRow), fileName,
+                    ),
+                )
+                Toast.makeText(
+                    context, "Tileset 8×8 añadido: $fileName (úsalo en el editor Map16)",
+                    Toast.LENGTH_LONG,
+                ).show()
+            }.onFailure {
+                Toast.makeText(context, "No se pudo guardar: ${it.message}", Toast.LENGTH_LONG).show()
+            }
+        },
+    ) { Text("Usar este banco → hoja del proyecto") }
 }
 
 /** Máximo de niveles que auto-carga el Platform Builder de una ROM de un toque. */
