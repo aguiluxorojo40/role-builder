@@ -536,6 +536,54 @@ object SnesGameRecipes {
         }
 
     /**
+     * Render de un nivel POR CAPAS separadas: primer plano (Layer 1), fondo (Layer 2) y la
+     * escena combinada. Cada capa suelta lleva fondo transparente, así el Layer 1 deja ver el
+     * Layer 2 por sus huecos. [layer2] es null cuando el nivel no tiene fondo renderizable.
+     */
+    class SmwLevelRender(
+        val layer1: ArgbImage,
+        val layer2: ArgbImage?,
+        val combined: ArgbImage,
+    )
+
+    /**
+     * Rasteriza un [SmwLevelMap] en sus DOS CAPAS reales usando su propio atlas Map16 —la
+     * única fuente de verdad para "diferenciar Layer 1 y Layer 2": Layer 1 (primer plano, con
+     * huecos transparentes), Layer 2 (fondo, o null si el nivel no lo tiene) y la escena
+     * combinada (fondo debajo, primer plano encima). [cols] recorta el ancho (por defecto,
+     * el mapa entero). Lo comparten el modo `--scene` del CLI y la exportación de la app.
+     */
+    fun renderLevelLayers(m: SmwLevelMap, cols: Int = m.mapWidth): SmwLevelRender {
+        val w = cols.coerceIn(1, m.mapWidth)
+        // Pega una tesela del atlas en (dx,dy) respetando el alpha (índice 0 transparente).
+        fun blit(dst: ArgbImage, tile: Int, dx: Int, dy: Int) {
+            if (tile < 0) return
+            val ax = (tile % m.columns) * 16; val ay = (tile / m.columns) * 16
+            if (ax + 16 > m.atlas.width || ay + 16 > m.atlas.height) return
+            for (py in 0..15) for (px in 0..15) {
+                val c = m.atlas.get(ax + px, ay + py)
+                if ((c ushr 24) != 0) dst.set(dx + px, dy + py, c)
+            }
+        }
+        fun renderLayer(src: List<Int>): ArgbImage {
+            val img = ArgbImage(w * 16, m.mapHeight * 16)
+            for (y in 0 until m.mapHeight) for (x in 0 until w)
+                blit(img, src.getOrElse(y * m.mapWidth + x) { -1 }, x * 16, y * 16)
+            return img
+        }
+        val hasBg = m.bgTiles.any { it >= 0 }
+        val layer1 = renderLayer(m.tiles)
+        val layer2 = if (hasBg) renderLayer(m.bgTiles) else null
+        val combined = ArgbImage(w * 16, m.mapHeight * 16)
+        for (y in 0 until m.mapHeight) for (x in 0 until w) {
+            val cell = y * m.mapWidth + x
+            blit(combined, m.bgTiles.getOrElse(cell) { -1 }, x * 16, y * 16) // fondo debajo
+            blit(combined, m.tiles.getOrElse(cell) { -1 }, x * 16, y * 16)   // primer plano encima
+        }
+        return SmwLevelRender(layer1, layer2, combined)
+    }
+
+    /**
      * Hoja del sprite de MONEDA REAL de SMW: el bloque Map16 0x2B (la moneda, según
      * [SmwBlockBehavior]) renderizado en sus [SMW_TILEANIM_FRAMES] fotogramas de
      * animación (la moneda GIRA) con el color real de la CGRAM. Devuelve una tira

@@ -1,5 +1,6 @@
 package com.rolebuilder.editor.snes
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -406,7 +407,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     if (levelListings.isNotEmpty()) {
                         Text(
                             "${levelListings.size} niveles del juego reconstruibles. \"Mapa\" lo importa " +
-                                "COMPLETO (con sus sub-niveles y warps); ▶ lo juega directo de la ROM.",
+                                "COMPLETO (con sus sub-niveles y warps); \"Capas\" exporta Layer 1 y Layer 2 " +
+                                "por SEPARADO (PNG); ▶ lo juega directo de la ROM.",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -432,6 +434,35 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                     Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
                                 }
                             }) { Text("Mapa") }
+                            // Diferencia Layer 1 / Layer 2 del nivel y los SACA como PNG separados
+                            // (más la escena combinada) a Descargas: el extractor a la altura de la app.
+                            TextButton(onClick = {
+                                val rom = romBytes; val hdr = header
+                                runCatching {
+                                    if (rom == null || hdr == null) error("carga primero la ROM")
+                                    val layers = SnesImport.levelLayers(rom, hdr, listing.level)
+                                        ?: error("nivel no reconstruible")
+                                    val hx = listing.level.toString(16).uppercase()
+                                    var saved = 0
+                                    fun put(suffix: String, bmp: Bitmap) {
+                                        if (SnesImport.exportToDownloads(
+                                                context, "smw_${hx}_$suffix.png", "image/png",
+                                                SnesImport.bitmapToPng(bmp),
+                                            ) != null
+                                        ) saved++
+                                    }
+                                    put("layer1", layers.layer1)
+                                    layers.layer2?.let { put("layer2", it) }
+                                    put("scene", layers.scene)
+                                    val bg = if (layers.layer2 != null) "" else " (este nivel no tiene fondo)"
+                                    Toast.makeText(
+                                        context, "Capas exportadas: $saved PNG en Descargas$bg",
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                }.onFailure {
+                                    Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
+                                }
+                            }) { Text("Capas") }
                             TextButton(onClick = {
                                 val rom = romBytes ?: return@TextButton
                                 runCatching {

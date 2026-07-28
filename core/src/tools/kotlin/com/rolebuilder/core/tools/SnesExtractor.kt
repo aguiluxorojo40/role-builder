@@ -202,38 +202,15 @@ fun main(args: Array<String>) {
         val imagesDir = File(outDir, "images").also { it.mkdirs() }
         val hx = level.toString(16)
 
-        // Pega una tesela del atlas en (dx,dy) RESPETANDO la transparencia (así el Layer 1
-        // deja ver el Layer 2 por sus huecos, y cada capa suelta queda con fondo transparente).
-        fun blit(dst: ArgbImage, tile: Int, dx: Int, dy: Int) {
-            if (tile < 0) return
-            val ax = (tile % m.columns) * 16; val ay = (tile / m.columns) * 16
-            for (py in 0..15) for (px in 0..15) {
-                val c = m.atlas.get(ax + px, ay + py)
-                if ((c ushr 24) != 0) dst.set(dx + px, dy + py, c)
-            }
-        }
-        // Renderiza una CAPA entera (índices al atlas por casilla) con fondo transparente.
-        fun renderLayer(src: List<Int>): ArgbImage {
-            val img = ArgbImage(cols * 16, m.mapHeight * 16)
-            for (y in 0 until m.mapHeight) for (x in 0 until cols)
-                blit(img, src.getOrElse(y * m.mapWidth + x) { -1 }, x * 16, y * 16)
-            return img
-        }
+        // Diferenciación Layer 1 / Layer 2: MISMA fuente de verdad que la app
+        // (SnesGameRecipes.renderLevelLayers), así el CLI y el dispositivo separan las capas
+        // idénticamente. Layer 1 con huecos transparentes, Layer 2 aparte, escena combinada.
+        val render = SnesGameRecipes.renderLevelLayers(m, cols)
+        val hasBg = render.layer2 != null
 
-        val hasBg = m.bgTiles.any { it >= 0 }
-        // Layer 1 (primer plano) y Layer 2 (fondo) POR SEPARADO, y la escena combinada.
-        val layer1 = renderLayer(m.tiles)
-        val layer2 = if (hasBg) renderLayer(m.bgTiles) else null
-        val combined = ArgbImage(cols * 16, m.mapHeight * 16)
-        for (y in 0 until m.mapHeight) for (x in 0 until cols) {
-            val cell = y * m.mapWidth + x
-            blit(combined, m.bgTiles.getOrElse(cell) { -1 }, x * 16, y * 16) // fondo debajo
-            blit(combined, m.tiles[cell], x * 16, y * 16)                    // primer plano encima
-        }
-
-        ImageIO.write(toBufferedImage(layer1), "png", File(imagesDir, "layer1_$hx.png"))
-        layer2?.let { ImageIO.write(toBufferedImage(it), "png", File(imagesDir, "layer2_$hx.png")) }
-        ImageIO.write(toBufferedImage(combined), "png", File(imagesDir, "scene_$hx.png"))
+        ImageIO.write(toBufferedImage(render.layer1), "png", File(imagesDir, "layer1_$hx.png"))
+        render.layer2?.let { ImageIO.write(toBufferedImage(it), "png", File(imagesDir, "layer2_$hx.png")) }
+        ImageIO.write(toBufferedImage(render.combined), "png", File(imagesDir, "scene_$hx.png"))
         ImageIO.write(toBufferedImage(m.atlas), "png", File(imagesDir, "atlas_$hx.png"))
 
         // Datos del TILEMAP por capa (una sola fuente de verdad: TileMapDoc). Es la materia

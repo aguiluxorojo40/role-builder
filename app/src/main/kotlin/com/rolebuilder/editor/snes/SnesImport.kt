@@ -84,6 +84,21 @@ object SnesImport {
     fun overworldWorld(rom: ByteArray, header: SnesHeader): List<Pair<String, Bitmap>> =
         SnesGameRecipes.renderOverworldWorld(rom, header).map { (name, img) -> name to toBitmap(img) }
 
+    /** Las CAPAS de un nivel de SMW ya diferenciadas: Layer 1, Layer 2 y escena, como Bitmaps. */
+    class LevelLayers(val layer1: Bitmap, val layer2: Bitmap?, val scene: Bitmap)
+
+    /**
+     * Diferencia el [level] de SMW en sus DOS CAPAS reales y las devuelve como Bitmaps:
+     * Layer 1 (primer plano, con huecos transparentes), Layer 2 (fondo, o null si el nivel no
+     * lo tiene) y la escena combinada. null si el nivel no es reconstruible. La separación vive
+     * en `core` ([SnesGameRecipes.renderLevelLayers]); aquí solo se vuelca a Bitmap.
+     */
+    fun levelLayers(rom: ByteArray, header: SnesHeader, level: Int): LevelLayers? {
+        val m = SnesGameRecipes.extractSmwLevelAsMap(rom, header, level) ?: return null
+        val r = SnesGameRecipes.renderLevelLayers(m)
+        return LevelLayers(toBitmap(r.layer1), r.layer2?.let { toBitmap(it) }, toBitmap(r.combined))
+    }
+
     /**
      * EXPORTA [bytes] al almacenamiento del usuario (carpeta Descargas) con [displayName] y
      * [mimeType], para que el asset SALGA de la app (PNG estático o GIF animado). Devuelve la
