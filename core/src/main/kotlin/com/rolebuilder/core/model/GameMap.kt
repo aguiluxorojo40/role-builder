@@ -36,6 +36,13 @@ data class GameMap(
      * instancia el motor de Platform Builder; el RPG los ignora.
      */
     val platformItems: List<PlatformItemMark> = emptyList(),
+    /**
+     * Índice de MÚSICA de SMW del nivel (el `musicIndex` de su cabecera), para que el motor de
+     * Platform Builder toque LA canción real del nivel al jugarlo (songId = índice + 1). -1 =
+     * sin especificar → el reproductor usa la canción de nivel por defecto. Lo rellena la
+     * importación de niveles SMW; el RPG lo ignora.
+     */
+    val platformMusicIndex: Int = -1,
     /** Pista de música de fondo del mapa (ver MusicTracks); null = silencio. */
     val bgm: String? = null,
     /** Clima ambiental al entrar al mapa. */

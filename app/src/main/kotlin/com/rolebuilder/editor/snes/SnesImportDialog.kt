@@ -1092,6 +1092,8 @@ internal fun importSmwLevelMap(
             },
             platformItems = if (rom != null && hdr != null && level != null)
                 smwGoalMarks(rom, hdr, level, m.mapWidth, m.mapHeight) else emptyList(),
+            platformMusicIndex = if (rom != null && hdr != null && level != null)
+                smwMusicIndex(rom, hdr, level) else -1,
         ),
     )
     return tsId
@@ -1109,6 +1111,13 @@ private fun smwGoalMarks(rom: ByteArray, hdr: SnesHeader, level: Int, w: Int, h:
             .filter { (x, y) -> x in 0 until w && y in 0 until h }
             .map { (x, y) -> PlatformItemMark(PlatformItemType.GOAL, x, y) }
     }.getOrDefault(emptyList())
+
+/**
+ * Índice de MÚSICA del nivel [level] de SMW (de su cabecera), para que el mapa importado toque
+ * SU canción real al jugarlo. -1 si no se puede leer (el reproductor cae a la canción por defecto).
+ */
+private fun smwMusicIndex(rom: ByteArray, hdr: SnesHeader, level: Int): Int =
+    runCatching { SnesGameRecipes.smwLevelInfo(rom, hdr, level)?.musicIndex ?: -1 }.getOrDefault(-1)
 
 /**
  * Importa el nivel [level] de SMW como MAPAS del proyecto: el nivel elegido MÁS sus
@@ -1168,6 +1177,8 @@ private fun importSmwLevelBundle(
                 // JUGAR el mapa importado tocar la meta cuente como SUPERADO (antes no se sembraba
                 // ninguna → el nivel no tenía final).
                 platformItems = smwGoalMarks(rom, hdr, lv, m.mapWidth, m.mapHeight),
+                // Música real del sub-nivel: al jugar el mapa suena SU canción (no la genérica).
+                platformMusicIndex = smwMusicIndex(rom, hdr, lv),
             )
         )
         mapIdByLevel[lv] = stored.id

@@ -87,9 +87,11 @@ class PlatformerActivity : ComponentActivity() {
             buildRomRenderer() ?: run { finish(); return }
         }
         // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming. En
-        // la ruta ROM (▶) suena la música REAL del nivel (su musicIndex del header);
-        // si falla o es ruta proyecto, cae a la pista pre-horneada.
-        music = (buildRomMusic() ?: PlatformerMusic.fromAssets(this))?.also { it.start() }
+        // la ruta ROM (▶) suena la música REAL del nivel (su musicIndex del header); en modo
+        // PROYECTO, la del mapa importado (su platformMusicIndex); si nada de eso, la canción
+        // de nivel por defecto del banco horneado.
+        music = (buildRomMusic() ?: buildProjectMusic() ?: PlatformerMusic.fromAssets(this))
+            ?.also { it.start() }
         setContent {
             PlatformerScreen(
                 renderer,
@@ -253,6 +255,24 @@ class PlatformerActivity : ComponentActivity() {
         val header = SnesDecoder.parseHeader(rom)
         val musicIndex = SnesGameRecipes.smwLevelInfo(rom, header, level)?.musicIndex ?: return null
         return PlatformerMusic.fromRom(rom, musicIndex + 1)
+    }
+
+    /**
+     * Música para el modo PROYECTO (mapa importado, sin ROM). Si el mapa guarda su índice de
+     * música de SMW ([GameMap.platformMusicIndex], que rellena la importación de niveles), toca
+     * ESA canción del banco de música horneado (songId = índice + 1) — así cada nivel importado
+     * suena SU tema (atlético, castillo, subterráneo…), no el genérico. Null si no es modo
+     * proyecto o el mapa no trae índice → cae a la canción de nivel por defecto.
+     */
+    private fun buildProjectMusic(): PlatformerMusic? {
+        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH) ?: return null
+        val dir = File(projectPath)
+        return runCatching {
+            val startId = ProjectIo.loadProject(dir).startMapId
+            val mapId = intent.getIntExtra(EXTRA_MAP_ID, startId)
+            val idx = ProjectIo.loadMap(dir, mapId).platformMusicIndex
+            if (idx < 0) null else PlatformerMusic.fromAssets(this, songId = idx + 1)
+        }.getOrNull()
     }
 
     /** Carga el sprite de Mario empaquetado (assets/sprites/mario.png), o null si falta. */
