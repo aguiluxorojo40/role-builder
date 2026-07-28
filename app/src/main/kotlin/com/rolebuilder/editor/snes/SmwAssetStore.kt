@@ -3,6 +3,7 @@ package com.rolebuilder.editor.snes
 import android.content.Context
 import android.graphics.Bitmap
 import com.rolebuilder.core.snes.SmwBakedAssets
+import com.rolebuilder.core.snes.SmwMusic
 import com.rolebuilder.core.snes.SmwSfxCatalog
 import com.rolebuilder.core.snes.SnesDecoder
 import java.io.File
@@ -81,6 +82,19 @@ object SmwAssetStore {
                 val dest = File(root, "sfx/${event.name.lowercase()}.wav")
                 dest.parentFile?.mkdirs()
                 dest.writeBytes(com.rolebuilder.player.PlatformerAudio.wavBytes(clip.pcm, clip.sampleRate))
+                count++
+            }
+        }
+        // MÚSICA del banco de NIVEL (imagen ARAM de 64 KiB, ensamblada de la ROM igual que
+        // PlatformerMusic.fromRom). Sin esto, el modo PROYECTO (jugar un mapa importado, sin
+        // ROM) se quedaba MUDO: fromAssets busca este fichero horneado y no existía.
+        runCatching {
+            val delta = header.headerOffset - 0x7FC0
+            val aram = SmwMusic.assembleAram(rom, delta, SmwMusic.LEVEL_MUSIC)
+            if (aram != null && aram.size == 0x10000) {
+                val dest = File(root, "music/level.aram")
+                dest.parentFile?.mkdirs()
+                dest.writeBytes(aram)
                 count++
             }
         }

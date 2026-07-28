@@ -269,8 +269,8 @@ internal fun autoImportSmwRom(state: EditorState, romBytes: ByteArray): Int {
     val starterId = state.currentMapId
     val starter = state.currentMap
     var firstId: Int? = null
-    maps.forEach { (_, nm, m) ->
-        importSmwLevelMap(state, nm, m)
+    maps.forEach { (lv, nm, m) ->
+        importSmwLevelMap(state, nm, m, romBytes, header, lv)
         if (firstId == null) firstId = state.currentMapId
     }
     firstId?.let { state.selectMap(it) }

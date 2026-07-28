@@ -53,9 +53,12 @@ import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
+import com.rolebuilder.core.model.PlatformItemMark
+import com.rolebuilder.core.model.PlatformItemType
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwGfxLibrary
 import com.rolebuilder.core.snes.SmwLevelBundle
+import com.rolebuilder.core.snes.SmwLevelGoal
 import com.rolebuilder.core.snes.SmwWarpTiles
 import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesAssetExtractor
@@ -1057,6 +1060,11 @@ internal fun importSmwLevelMap(
     state: EditorState,
     name: String,
     m: SnesGameRecipes.SmwLevelMap,
+    // ROM/cabecera/nivel: opcionales, solo para sembrar la META real del nivel. Sin ellos el
+    // mapa se importa igual pero sin meta (compatibilidad con llamadas antiguas).
+    rom: ByteArray? = null,
+    hdr: SnesHeader? = null,
+    level: Int? = null,
 ): Int {
     val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
     SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
@@ -1082,10 +1090,25 @@ internal fun importSmwLevelMap(
             platformEnemies = m.enemies.map {
                 PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
             },
+            platformItems = if (rom != null && hdr != null && level != null)
+                smwGoalMarks(rom, hdr, level, m.mapWidth, m.mapHeight) else emptyList(),
         ),
     )
     return tsId
 }
+
+/**
+ * Marcas de META del nivel [level] de SMW (cinta/esfera/cerradura reales, [SmwLevelGoal.goalCells])
+ * como ítems del mapa, recortadas a [w]×[h]. Vacío si el nivel no tiene meta (castillos con jefe,
+ * casas de Yoshi) o si falla la lectura. Con esto el mapa importado se puede SUPERAR al jugarlo:
+ * tocar la meta lo marca como completado, igual que la ruta ▶ directa de la ROM.
+ */
+private fun smwGoalMarks(rom: ByteArray, hdr: SnesHeader, level: Int, w: Int, h: Int): List<PlatformItemMark> =
+    runCatching {
+        SmwLevelGoal.goalCells(rom, SnesGameRecipes.smwHeaderDeltaPublic(hdr), level)
+            .filter { (x, y) -> x in 0 until w && y in 0 until h }
+            .map { (x, y) -> PlatformItemMark(PlatformItemType.GOAL, x, y) }
+    }.getOrDefault(emptyList())
 
 /**
  * Importa el nivel [level] de SMW como MAPAS del proyecto: el nivel elegido MÁS sus
@@ -1141,6 +1164,10 @@ private fun importSmwLevelBundle(
                 platformEnemies = m.enemies.map {
                     PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
                 },
+                // META del nivel: la cinta/esfera/cerradura reales del sub-nivel, para que al
+                // JUGAR el mapa importado tocar la meta cuente como SUPERADO (antes no se sembraba
+                // ninguna → el nivel no tenía final).
+                platformItems = smwGoalMarks(rom, hdr, lv, m.mapWidth, m.mapHeight),
             )
         )
         mapIdByLevel[lv] = stored.id
