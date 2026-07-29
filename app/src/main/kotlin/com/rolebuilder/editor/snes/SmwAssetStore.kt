@@ -25,11 +25,30 @@ object SmwAssetStore {
 
     private const val DIR = "smw_assets"
 
+    /**
+     * Versión del horneado. SÚBELA al añadir o rehacer assets horneados (nuevos sprites, la
+     * imagen ARAM de música…). [isBaked] compara contra ella: si un almacén viejo tiene una
+     * versión anterior, se considera OBSOLETO y se re-hornea, para que quien horneó antes de un
+     * cambio reciba los assets nuevos sin borrar datos a mano.
+     *   v1: sprites + SFX.   v2: + música de nivel (music/level.aram).
+     */
+    private const val BAKE_VERSION = 2
+
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
 
-    /** ¿Ya se horneó? Basta con que exista el atlas de enemigos. */
-    fun isBaked(context: Context): Boolean = File(dir(context), "sprites/enemies.png").isFile
+    private fun versionFile(context: Context): File = File(dir(context), ".bake_version")
+
+    /**
+     * ¿Ya se horneó con la versión ACTUAL? No basta con que existan los ficheros: un almacén de
+     * una versión anterior (p. ej. sin la música) cuenta como NO horneado, para forzar el
+     * re-horneado y que aparezcan los assets nuevos.
+     */
+    fun isBaked(context: Context): Boolean {
+        if (!File(dir(context), "sprites/enemies.png").isFile) return false
+        val v = runCatching { versionFile(context).readText().trim().toIntOrNull() }.getOrNull()
+        return v == BAKE_VERSION
+    }
 
     /** ¿Se horneó la MÚSICA (imagen ARAM del banco de nivel) desde la ROM? Para diagnóstico. */
     fun isMusicBaked(context: Context): Boolean = File(dir(context), "music/level.aram").isFile
@@ -101,6 +120,9 @@ object SmwAssetStore {
                 count++
             }
         }
+        // Sella la versión del horneado SOLO si algo se escribió: así isBaked reconoce el
+        // almacén como al día y un cambio futuro (BAKE_VERSION mayor) fuerza el re-horneado.
+        if (count > 0) runCatching { versionFile(context).writeText(BAKE_VERSION.toString()) }
         count
     }.getOrDefault(0)
 }
