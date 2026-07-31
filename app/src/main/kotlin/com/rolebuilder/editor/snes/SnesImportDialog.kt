@@ -31,6 +31,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +73,7 @@ import com.rolebuilder.core.snes.SnesPaletteMatcher
 import com.rolebuilder.core.snes.compression.CompressionCodecs
 import com.rolebuilder.core.snes.compression.LcLz2
 import com.rolebuilder.editor.EditorState
+import com.rolebuilder.player.PlatformerMusic
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import kotlin.math.floor
@@ -133,6 +135,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
     var romBytes by remember { mutableStateOf<ByteArray?>(null) }
     var romName by remember { mutableStateOf("") }
+    // Reproductor de la PRUEBA de música (directo de la ROM). Se para al salir del diálogo.
+    var musicTest by remember { mutableStateOf<PlatformerMusic?>(null) }
     var format by remember { mutableStateOf(SnesGraphicFormat.SNES_4BPP) }
     var offsetText by remember { mutableStateOf("0x0") }
     var columns by remember { mutableStateOf(16) }
@@ -344,6 +348,36 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 Toast.makeText(context, "No se pudo iniciar el nivel: ${it.message}", Toast.LENGTH_LONG).show()
                             }
                         }) { Text("▶ Jugar un nivel (plataformas)") }
+
+                        // PRUEBA DIRECTA DE MÚSICA: toca la banda sonora del nivel ENSAMBLADA en
+                        // vivo de la ROM (PlatformerMusic.fromRom), sin pasar por el almacén ni el
+                        // modo proyecto. Aísla el fallo: si aquí se OYE, el motor de audio va bien
+                        // y el problema era el horneado; si no ensambla, avisa (la ROM no trae ese
+                        // banco); si ensambla pero no suena, es el audio del móvil.
+                        DisposableEffect(Unit) { onDispose { musicTest?.stop() } }
+                        Button(onClick = {
+                            val cur = musicTest
+                            if (cur != null) { cur.stop(); musicTest = null; return@Button }
+                            val rom = romBytes ?: return@Button
+                            val hdr = header
+                            val song = (hdr?.let {
+                                runCatching { SnesGameRecipes.smwLevelInfo(rom, it, 0x105)?.musicIndex }.getOrNull()
+                            } ?: 0) + 1
+                            val m = runCatching { com.rolebuilder.player.PlatformerMusic.fromRom(rom, song) }.getOrNull()
+                            if (m == null) {
+                                Toast.makeText(
+                                    context,
+                                    "🔇 Esta ROM no ensambla la música (✗): no trae el banco esperado o no es SMW estándar.",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            } else {
+                                m.start(); musicTest = m
+                                Toast.makeText(
+                                    context, "🔊 Sonando la canción $song de la ROM. ¿La oyes? (sube el volumen MULTIMEDIA). Toca otra vez para parar.",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }) { Text(if (musicTest != null) "⏹ Parar prueba de música" else "🔊 Probar música (directo de la ROM)") }
                     }
 
                     if (recipeFindings.isNotEmpty()) {
