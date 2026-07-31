@@ -378,6 +378,32 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 ).show()
                             }
                         }) { Text(if (musicTest != null) "⏹ Parar prueba de música" else "🔊 Probar música (directo de la ROM)") }
+
+                        // ESTADO de la música del MODO PROYECTO: el editor la lee del fichero
+                        // horneado (music/level.aram); las rutas ▶/título la ensamblan de la ROM y
+                        // no lo necesitan (por eso "suena en lo demás pero no en el editor" = falta
+                        // este horneado). El botón la hornea al momento desde la ROM ya cargada.
+                        var musicBaked by remember(romBytes) {
+                            mutableStateOf(SmwAssetStore.isMusicBaked(context))
+                        }
+                        Text(
+                            "Música del editor (modo proyecto): " +
+                                if (musicBaked) "✓ horneada" else "✗ sin hornear",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        if (!musicBaked) {
+                            Button(onClick = {
+                                val rom = romBytes ?: return@Button
+                                val ok = SmwAssetStore.bakeMusic(context, rom)
+                                musicBaked = ok
+                                Toast.makeText(
+                                    context,
+                                    if (ok) "🎵 Música horneada: ya sonará al jugar el mapa en el editor"
+                                    else "🔇 Esta ROM no ensambla la música (✗): no trae el banco esperado",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            }) { Text("🎵 Hornear música para el editor") }
+                        }
                     }
 
                     if (recipeFindings.isNotEmpty()) {

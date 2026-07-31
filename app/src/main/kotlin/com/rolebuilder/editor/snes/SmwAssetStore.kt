@@ -54,6 +54,22 @@ object SmwAssetStore {
     fun isMusicBaked(context: Context): Boolean = File(dir(context), "music/level.aram").isFile
 
     /**
+     * Hornea SOLO la música (imagen ARAM del banco de nivel) desde [rom] al almacén, sin re-hacer
+     * el resto de assets. Para el botón "hornear música" del editor: deja el modo proyecto con
+     * banda sonora al instante. Devuelve true si la escribió (false si la ROM no la ensambla).
+     */
+    fun bakeMusic(context: Context, rom: ByteArray): Boolean = runCatching {
+        val header = SnesDecoder.parseHeader(rom)
+        val delta = header.headerOffset - 0x7FC0
+        val aram = SmwMusic.assembleAram(rom, delta, SmwMusic.LEVEL_MUSIC) ?: return false
+        if (aram.size != 0x10000) return false
+        val dest = File(dir(context), "music/level.aram")
+        dest.parentFile?.mkdirs()
+        dest.writeBytes(aram)
+        true
+    }.getOrDefault(false)
+
+    /**
      * Abre el asset [relPath] (p. ej. `sprites/mario.png`): primero del almacén horneado y, si
      * no está, de los `assets/` empaquetados. Null si no aparece en ninguno.
      */
