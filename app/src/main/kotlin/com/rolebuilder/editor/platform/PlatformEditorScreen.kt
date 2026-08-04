@@ -1093,7 +1093,7 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
         m
     }
     val cats = remember(byCat) { TileCat.entries.filter { !byCat[it].isNullOrEmpty() } }
-    var cat by remember(tileset) { mutableStateOf(cats.firstOrNull() ?: TileCat.TERRENO) }
+    var cat by remember(tileset) { mutableStateOf(cats.firstOrNull() ?: TileCat.SUELO) }
     // Reloj + mapa de animación para que las teselas animadas se muevan en la paleta.
     val anim = remember(tileset) { animMap(tileset) }
     var frame by remember { mutableIntStateOf(0) }
