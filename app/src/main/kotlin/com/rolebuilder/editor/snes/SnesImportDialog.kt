@@ -503,10 +503,24 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     Button(onClick = {
                         val rom = romBytes; val hdr = header
                         if (rom != null && hdr != null) {
-                            levelListings = runCatching { SnesGameRecipes.listImportableSmwLevels(rom, hdr) }.getOrDefault(emptyList())
-                            if (levelListings.isEmpty()) {
-                                Toast.makeText(context, "No hay niveles reconstruibles en esta ROM", Toast.LENGTH_SHORT).show()
-                            }
+                            // Antes un FALLO del código y una ROM sin niveles daban el mismo
+                            // mensaje ("no hay niveles"), o sea que se culpaba a la ROM de
+                            // nuestros errores. Ahora se distingue y se dice el motivo real.
+                            runCatching { SnesGameRecipes.listImportableSmwLevels(rom, hdr) }
+                                .onSuccess {
+                                    levelListings = it
+                                    if (it.isEmpty()) Toast.makeText(
+                                        context, "Esta ROM no tiene niveles reconstruibles.", Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                                .onFailure { e ->
+                                    levelListings = emptyList()
+                                    Toast.makeText(
+                                        context,
+                                        "Fallo al listar niveles (no es culpa de la ROM): ${e::class.simpleName}: ${e.message}",
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                }
                         }
                     }) { Text("Buscar niveles importables") }
                     if (levelListings.isNotEmpty()) {
@@ -616,10 +630,20 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     Button(onClick = {
                         val rom = romBytes; val hdr = header
                         if (rom != null && hdr != null) {
-                            overworldPreview = runCatching { SnesImport.overworldMap(rom, hdr)?.asImageBitmap() }.getOrNull()
-                            if (overworldPreview == null) {
-                                Toast.makeText(context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG).show()
-                            }
+                            runCatching { SnesImport.overworldMap(rom, hdr)?.asImageBitmap() }
+                                .onSuccess {
+                                    overworldPreview = it
+                                    if (it == null) Toast.makeText(
+                                        context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG,
+                                    ).show()
+                                }
+                                .onFailure { e ->
+                                    overworldPreview = null
+                                    Toast.makeText(
+                                        context, "Fallo al renderizar el overworld: ${e::class.simpleName}: ${e.message}",
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                }
                         }
                     }) { Text("Renderizar overworld") }
                     Button(onClick = {
@@ -751,10 +775,20 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     Button(onClick = {
                         val rom = romBytes; val hdr = header
                         if (rom != null && hdr != null) {
-                            titlePreview = runCatching { SnesImport.titleScreen(rom, hdr)?.asImageBitmap() }.getOrNull()
-                            if (titlePreview == null) {
-                                Toast.makeText(context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG).show()
-                            }
+                            runCatching { SnesImport.titleScreen(rom, hdr)?.asImageBitmap() }
+                                .onSuccess {
+                                    titlePreview = it
+                                    if (it == null) Toast.makeText(
+                                        context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG,
+                                    ).show()
+                                }
+                                .onFailure { e ->
+                                    titlePreview = null
+                                    Toast.makeText(
+                                        context, "Fallo al reconstruir el título: ${e::class.simpleName}: ${e.message}",
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                }
                         }
                     }) { Text("Renderizar pantalla de título") }
                     titlePreview?.let { ts ->
@@ -1212,6 +1246,10 @@ private fun smwGoalMarks(rom: ByteArray, hdr: SnesHeader, level: Int, w: Int, h:
         SmwLevelGoal.goalCells(rom, SnesGameRecipes.smwHeaderDeltaPublic(hdr), level)
             .filter { (x, y) -> x in 0 until w && y in 0 until h }
             .map { (x, y) -> PlatformItemMark(PlatformItemType.GOAL, x, y) }
+    }.onFailure {
+        // Antes esto se tragaba y el nivel quedaba SIN META sin que nadie lo supiera: un
+        // nivel imposible de superar y ninguna pista de por qué. Ahora al menos queda traza.
+        android.util.Log.w("SnesImport", "sin meta en el nivel ${level.toString(16)}: ${it.message}")
     }.getOrDefault(emptyList())
 
 /**
@@ -1237,7 +1275,13 @@ private fun importSmwLevelBundle(
     level: Int,
     name: String,
 ): String {
-    val bundle = runCatching { SmwLevelBundle.extract(rom, hdr, level) }.getOrNull()
+    // Si el paquete (nivel + sub-niveles + warps) no se puede extraer, se cae a UN solo nivel.
+    // Eso es una degradación real —te llevas menos de lo que crees— así que se deja traza y
+    // el mensaje final la refleja, en vez de fingir que se importó todo.
+    var bundleError: String? = null
+    val bundle = runCatching { SmwLevelBundle.extract(rom, hdr, level) }
+        .onFailure { bundleError = "${it::class.simpleName}: ${it.message}" }
+        .getOrNull()
     val entries: List<Pair<Int, SnesGameRecipes.SmwLevelMap>> =
         bundle?.levels?.zip(bundle.maps)
             ?: listOf(level to (SnesGameRecipes.extractSmwLevelAsMap(rom, hdr, level) ?: error("nivel no reconstruible")))
@@ -1308,9 +1352,10 @@ private fun importSmwLevelBundle(
     // Deja abierto el nivel PRINCIPAL (el primero), no el último sub-nivel del
     // bundle: si no, tras importar el editor mostraba una salita casi vacía.
     created.firstOrNull()?.let { state.selectMap(it.second.id) }
+    val aviso = bundleError?.let { " — ⚠ solo el nivel principal: falló el paquete ($it)" } ?: ""
     return if (created.size > 1) {
-        "Nivel completo: ${created.size} mapas y $warpCount warps (SMW $name)"
+        "Nivel completo: ${created.size} mapas y $warpCount warps (SMW $name)$aviso"
     } else {
-        "Mapa creado: SMW $name" + if (warpCount > 0) " ($warpCount warps)" else ""
+        "Mapa creado: SMW $name" + (if (warpCount > 0) " ($warpCount warps)" else "") + aviso
     }
 }
