@@ -1527,24 +1527,117 @@ object SnesGameRecipes {
         return ByteArray(out.size) { out[it] }
     }
 
-    internal fun layer2BgEntries(rom: ByteArray, delta: Int, level: Int): List<SnesTilemap.TilemapEntry> {
+    /**
+     * Resultado del parseo del fondo de un nivel. Antes TODO devolvía `emptyList()`, lo que
+     * mezclaba dos cosas distintas y destruía la capacidad de diagnosticar: "este nivel no
+     * tiene Layer 2" y "el parser falló" eran indistinguibles. Ahora se dicen por separado.
+     */
+    sealed interface BgParse {
+        /** El nivel tiene fondo y se leyó: [entries] teselas, desde [dataPc], página [page]. */
+        data class Success(
+            val entries: List<SnesTilemap.TilemapEntry>,
+            val isBg: Int,
+            val page: Int,
+            val dataPc: Int,
+            val blocks: Int,
+        ) : BgParse
+
+        /** El nivel NO tiene fondo tilemap (su Layer 2 son objetos). No es un fallo. */
+        data class NoBackground(val isBg: Int) : BgParse
+
+        /** El parser NO pudo leerlo. [reason] dice por qué. Esto SÍ es un fallo. */
+        data class Error(val reason: String, val isBg: Int?) : BgParse
+    }
+
+    /**
+     * Parseo DIAGNÓSTICO del fondo de [level]: igual que [layer2BgEntries] pero diciendo qué
+     * pasó exactamente. Es la base de la auditoría ([auditLayer2]) — sin esto, cualquier
+     * arreglo de los offsets [PROBABLE] sería especulativo, porque no sabríamos ni cuántos
+     * niveles fallan ni por qué.
+     */
+    internal fun layer2BgParse(rom: ByteArray, delta: Int, level: Int): BgParse {
         val p = SMW_LAYER2_PTR_PC + delta + 3 * level
-        if (p < 0 || p + 2 >= rom.size) return emptyList()
+        if (p < 0 || p + 2 >= rom.size) return BgParse.Error("puntero fuera del ROM", null)
         val isBg = byte(rom, p + 2)
-        if (isBg and 2 == 0) return emptyList() // bit1: Layer 2 de imagen; si no, son objetos
+        // OJO: la constante SMW_BG_IS_BACKGROUND vale 0xFF pero aquí se mira el BIT 1. Esa
+        // discrepancia está SIN RESOLVER a propósito: la auditoría vuelca el valor real de
+        // isBg de cada nivel para decidir con datos, no con suposiciones.
+        if (isBg and 2 == 0) return BgParse.NoBackground(isBg)
         val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
-        if (addr < 0x8000) return emptyList()
+        if (addr < 0x8000) return BgParse.Error("dirección $%04X fuera de banco".format(addr), isBg)
         val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)
-        if (dataPc < 0 || dataPc >= rom.size) return emptyList()
+        if (dataPc < 0 || dataPc >= rom.size) return BgParse.Error("datos fuera del ROM (pc=$dataPc)", isBg)
         val blocks = decompressSmwBackground(rom, dataPc)
-        if (blocks.size < 4) return emptyList()
-        // block = (hi<<8)|lo. LoadSublevel: si bit2 está set (fondos vanilla, is_bg=0xFF)
-        // el juego NO rellena hi → hi=0 (página 0); si no, hi = is_bg>>4.
-        // Página del Map16 de fondo (hi del índice de bloque). Con is_bg vanilla el juego
-        // deja el hi en el estado previo de WRAM, que resulta ser 0 o 1 según el grupo de
-        // datos; el umbral de PC (reverse-engineered) lo distingue: los datos por encima
-        // de él usan la página 1 del Map16 de fondo.
-        val hi = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
+        if (blocks.size < 4) return BgParse.Error("descompresión dio ${blocks.size} bloques", isBg)
+        val page = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
+        val entries = bgEntriesFrom(rom, delta, blocks, page)
+        return BgParse.Success(entries, isBg, page, dataPc, blocks.size)
+    }
+
+    /**
+     * Audita el fondo de TODOS los niveles: para cada uno, qué valor tiene su byte `isBg`, qué
+     * página Map16 se eligió, desde dónde y cuántas teselas salieron. Es la evidencia objetiva
+     * que hace falta ANTES de tocar los offsets [PROBABLE]: sin ella, "arreglar" el umbral o
+     * la condición de fondo sería adivinar.
+     */
+    fun auditLayer2(rom: ByteArray, header: SnesHeader, levels: IntRange = 0x000..0x1FF): List<String> {
+        val delta = smwHeaderDelta(header)
+        val out = ArrayList<String>()
+        out.add("nivel\tisBg\tpagina\tdataPc\tteselas\testado")
+        for (lv in levels) {
+            val r = runCatching { layer2BgParse(rom, delta, lv) }.getOrElse {
+                BgParse.Error("excepción: ${it.message}", null)
+            }
+            val row = when (r) {
+                is BgParse.Success ->
+                    "%03X\t0x%02X\t%d\t0x%X\t%d\tOK".format(lv, r.isBg, r.page, r.dataPc, r.entries.size)
+                is BgParse.NoBackground -> "%03X\t0x%02X\t-\t-\t0\tsin fondo".format(lv, r.isBg)
+                is BgParse.Error ->
+                    "%03X\t%s\t-\t-\t0\tERROR: %s".format(lv, r.isBg?.let { "0x%02X".format(it) } ?: "?", r.reason)
+            }
+            out.add(row)
+        }
+        return out
+    }
+
+    /** Resumen de la auditoría: cuántos niveles OK / sin fondo / con error, y qué isBg salen. */
+    fun auditLayer2Summary(rom: ByteArray, header: SnesHeader): String {
+        val delta = smwHeaderDelta(header)
+        var ok = 0; var none = 0; var err = 0
+        val isBgSeen = sortedMapOf<Int, Int>()
+        val pages = sortedMapOf<Int, Int>()
+        val reasons = HashMap<String, Int>()
+        for (lv in 0x000..0x1FF) {
+            when (val r = runCatching { layer2BgParse(rom, delta, lv) }.getOrElse { BgParse.Error("excepción", null) }) {
+                is BgParse.Success -> {
+                    ok++; isBgSeen.merge(r.isBg, 1, Int::plus); pages.merge(r.page, 1, Int::plus)
+                }
+                is BgParse.NoBackground -> { none++; isBgSeen.merge(r.isBg, 1, Int::plus) }
+                is BgParse.Error -> { err++; reasons.merge(r.reason.take(40), 1, Int::plus) }
+            }
+        }
+        return buildString {
+            appendLine("Fondos (Layer 2) de los 512 slots: OK=$ok · sin fondo=$none · ERROR=$err")
+            appendLine("Valores de isBg vistos: " + isBgSeen.entries.joinToString { "0x%02X×%d".format(it.key, it.value) })
+            appendLine("Página Map16 elegida: " + pages.entries.joinToString { "pág.${it.key}×${it.value}" })
+            if (reasons.isNotEmpty()) appendLine("Motivos de error: " + reasons.entries.joinToString { "${it.key} ×${it.value}" })
+        }
+    }
+
+    internal fun layer2BgEntries(rom: ByteArray, delta: Int, level: Int): List<SnesTilemap.TilemapEntry> =
+        (layer2BgParse(rom, delta, level) as? BgParse.Success)?.entries ?: emptyList()
+
+    /** Traduce índices de bloque a entradas de tilemap usando la página [page] del Map16 de fondo. */
+    private fun bgEntriesFrom(
+        rom: ByteArray,
+        delta: Int,
+        blocks: ByteArray,
+        page: Int,
+    ): List<SnesTilemap.TilemapEntry> {
+        // Página del Map16 de fondo (byte alto del índice de bloque). La elige quien llama,
+        // a partir del umbral SMW_BG_PAGE_THRESHOLD_PC, que es conocimiento DEDUCIDO y sin
+        // verificar: la auditoría ([auditLayer2]) existe para medir si acierta.
+        val hi = page
         val map16Base = SMW_MAP16_L2_PC + delta
         val entries = ArrayList<SnesTilemap.TilemapEntry>(blocks.size * 4)
         for (bb in blocks) {

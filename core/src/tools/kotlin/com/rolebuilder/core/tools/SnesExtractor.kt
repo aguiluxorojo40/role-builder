@@ -190,6 +190,20 @@ fun main(args: Array<String>) {
     // DEBAJO + primer plano Layer 1 encima, con el mismo atlas Map16). Es el equivalente
     // visual de --music: ver un nivel sin abrir la app. --level elige el nivel y --cols
     // recorta el ancho (por defecto 96 casillas = 1536 px) para verlo con detalle.
+    // Modo --audit-bg: AUDITORÍA de los fondos (Layer 2) de los 512 slots. Vuelca, por nivel,
+    // el valor real del byte isBg, qué página Map16 se eligió, desde dónde y cuántas teselas
+    // salieron. Es la evidencia OBJETIVA que hace falta antes de tocar los offsets [PROBABLE]:
+    // sin ella, "arreglar" el umbral de página o la condición de fondo seria adivinar.
+    if (opts.containsKey("audit-bg")) {
+        println(SnesGameRecipes.auditLayer2Summary(rom, header))
+        val rows = SnesGameRecipes.auditLayer2(rom, header)
+        val dest = File(outDir, "audit_bg.tsv")
+        dest.writeText(rows.joinToString("\n"))
+        println("Detalle por nivel -> ${dest.path} (${rows.size - 1} slots)")
+        println("Columnas: nivel, isBg, pagina, dataPc, teselas, estado")
+        return
+    }
+
     if (opts.containsKey("scene")) {
         val level = opts["level"]?.let { parseInt(it) } ?: 0x105
         val m = SnesGameRecipes.extractSmwLevelAsMap(rom, header, level)
