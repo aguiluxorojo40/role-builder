@@ -428,6 +428,39 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             }
                         }
 
+                        // AUDITORÍA DE FONDOS en el propio móvil: recorre los 512 slots y dice
+                        // qué valor real tiene el byte isBg de cada nivel, qué página Map16 se
+                        // eligió y cuántos fallan. Es la evidencia para resolver los offsets
+                        // [PROBABLE] SIN sacar la ROM del dispositivo (nada sube a ningún sitio).
+                        var auditResumen by remember(romBytes) { mutableStateOf<String?>(null) }
+                        Button(onClick = {
+                            val rom = romBytes ?: return@Button
+                            val hdr = header ?: return@Button
+                            runCatching {
+                                auditResumen = SnesGameRecipes.auditLayer2Summary(rom, hdr)
+                                // Detalle por nivel a Descargas, para poder mirarlo con calma.
+                                val tsv = SnesGameRecipes.auditLayer2(rom, hdr).joinToString("\n")
+                                SnesImport.exportToDownloads(
+                                    context, "smw_audit_fondos.tsv", "text/tab-separated-values",
+                                    tsv.toByteArray(),
+                                )
+                            }.onFailure {
+                                auditResumen = "Falló la auditoría: ${it::class.simpleName}: ${it.message}"
+                            }
+                        }) { Text("🔎 Auditar fondos (Layer 2) de esta ROM") }
+                        auditResumen?.let { r ->
+                            Text(
+                                r,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF9AD0F5),
+                            )
+                            Text(
+                                "Detalle por nivel guardado en Descargas: smw_audit_fondos.tsv",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF9AA0A6),
+                            )
+                        }
+
                         Button(onClick = {
                             val rom = romBytes ?: return@Button
                             // Parte DETALLADO: dice qué paso falló y por qué, en vez del 0 mudo.

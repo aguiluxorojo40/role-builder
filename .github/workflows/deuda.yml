@@ -1,0 +1,54 @@
+name: Informe de deuda técnica
+
+# Lo que SÍ se puede auditar en CI sin la ROM: fallos silenciosos, aproximaciones
+# auto-confesadas, datos sin verificar y ficheros gigantes. Lo que NO se puede hacer aquí es
+# nada que necesite la ROM (auditoría de fondos, trazas de enemigos): esa ROM es del usuario y
+# no debe subirse a GitHub ni como secret — se audita EN EL DISPOSITIVO, desde la app.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # lunes por la mañana
+
+jobs:
+  informe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Contar deuda y publicarla en el resumen
+        run: |
+          {
+            echo "## Informe de deuda técnica"
+            echo ""
+            echo "### Fallos silenciosos (excepciones tragadas)"
+            echo "Un \`getOrNull\`/\`getOrDefault\` sin aviso convierte un fallo en un resultado"
+            echo "vacío indistinguible de 'no hay datos'. Es la raíz de los cuadros rojos y la música muda."
+            echo ""
+            echo '| Fichero | Capturas mudas | Avisos |'
+            echo '|---|---:|---:|'
+            for f in $(grep -rlE "getOrNull\(\)|getOrDefault|\.getOrElse" --include=*.kt core/src/main app/src/main | sort); do
+              mudos=$(grep -cE "getOrNull\(\)|getOrDefault|\.getOrElse" "$f" || echo 0)
+              avisos=$(grep -c "onFailure" "$f" || echo 0)
+              echo "| \`${f#*/kotlin/}\` | $mudos | $avisos |"
+            done | sort -t'|' -k3 -rn | head -12
+            echo ""
+            echo "### Aproximaciones y datos sin verificar"
+            echo '| Marca | Casos |'
+            echo '|---|---:|'
+            echo "| \`[PROBABLE]\` (offsets deducidos) | $(grep -rc "PROBABLE" --include=*.kt core/src/main | awk -F: '{s+=$2} END {print s+0}') |"
+            echo "| aproximación / simplificado / a ojo | $(grep -rciE "aproximaci|simplificad|a ojo|no es 1:1" --include=*.kt core/src/main app/src/main | awk -F: '{s+=$2} END {print s+0}') |"
+            echo ""
+            echo "### Ficheros grandes (mantenibilidad)"
+            echo '| Fichero | Líneas |'
+            echo '|---|---:|'
+            find core/src/main app/src/main -name "*.kt" -exec wc -l {} + \
+              | sort -rn | grep -v total | head -6 \
+              | awk '{printf "| `%s` | %s |\n", $2, $1}'
+            echo ""
+            echo "### Cobertura de tests"
+            echo "- core: $(ls core/src/test/kotlin/com/rolebuilder/core/*.kt 2>/dev/null | wc -l) ficheros"
+            echo "- app:  $(find app/src/test -name '*.kt' 2>/dev/null | wc -l) ficheros"
+            echo ""
+            echo "> Lo que necesita la ROM (auditoría de fondos, trazas de enemigos) NO se puede"
+            echo "> hacer aquí: se ejecuta en el dispositivo desde la app, y la ROM nunca sale de él."
+          } >> "$GITHUB_STEP_SUMMARY"
