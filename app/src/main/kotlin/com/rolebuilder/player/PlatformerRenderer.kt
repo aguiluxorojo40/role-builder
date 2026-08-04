@@ -90,6 +90,9 @@ class PlatformerRenderer(
      *  salir para devolver el resultado, y con eso el mapa del mundo aplica su evento. */
     val levelWon: Boolean get() = engine.won
 
+    /** ¿Se ganó por la salida SECRETA (cerradura)? Abre un camino distinto en el mapa. */
+    val levelWonSecret: Boolean get() = engine.wonSecret
+
     @Volatile var pendingWarp: com.rolebuilder.core.engine.platformer.WarpTarget? = null
         private set
 

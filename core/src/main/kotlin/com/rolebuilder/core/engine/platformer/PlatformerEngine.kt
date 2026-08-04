@@ -113,7 +113,12 @@ class EnemyProjectile(var x: Float, var y: Float, var vx: Float, var vy: Float,
 }
 
 /** Tipo de ítem COLOCADO en el editor de plataformas. */
-enum class ItemKind { COIN, GOAL }
+/**
+ * Tipo de ítem colocado. [GOAL] es el final NORMAL (cinta/esfera) y [GOAL_SECRET] la salida
+ * SECRETA (cerradura): en SMW no son intercambiables — abren caminos DISTINTOS en el mapa del
+ * mundo, y por eso el motor tiene que decir por CUÁL se acabó el nivel.
+ */
+enum class ItemKind { COIN, GOAL, GOAL_SECRET }
 
 /** Semilla de un ítem colocado: posición en píxeles y tipo (moneda/meta). */
 class ItemSeed(val xPixel: Int, val yPixel: Int, val kind: ItemKind)
@@ -438,8 +443,16 @@ class PlatformerEngine(
     val placedItems: List<PlacedItem> =
         itemSeeds.map { PlacedItem(it.xPixel.toFloat(), it.yPixel.toFloat(), it.kind) }
 
-    /** true cuando el jugador toca una META colocada (nivel completado). */
+    /** true cuando el jugador toca una META colocada (nivel completado, por cualquier salida). */
     var won = false
+        private set
+
+    /**
+     * true si el nivel se completó por la salida SECRETA (la cerradura), no por la meta normal.
+     * Solo tiene sentido con [won] a true. El mapa del mundo lo necesita para abrir el camino
+     * correcto: en SMW cada salida de un nivel lleva a un sitio distinto.
+     */
+    var wonSecret = false
         private set
 
     /**
@@ -1037,6 +1050,8 @@ class PlatformerEngine(
             when (item.kind) {
                 ItemKind.COIN -> { item.collected = true; coins++; coinEvents++ }
                 ItemKind.GOAL -> won = true
+                // Cerradura: también gana el nivel, pero POR LA SALIDA SECRETA.
+                ItemKind.GOAL_SECRET -> { won = true; wonSecret = true }
             }
         }
     }

@@ -103,6 +103,8 @@ class PlatformerActivity : ComponentActivity() {
                         RESULT_OK,
                         Intent()
                             .putExtra(RESULT_WON, renderer.levelWon)
+                            // Por QUÉ salida: el mapa abre un camino u otro (normal vs secreta).
+                            .putExtra(RESULT_WON_SECRET, renderer.levelWonSecret)
                             // Murió si está muerto y NO llegó a la meta: al mapa le cuesta una vida.
                             .putExtra(RESULT_DIED, renderer.dead && !renderer.levelWon),
                     )
@@ -378,12 +380,17 @@ class PlatformerActivity : ComponentActivity() {
             .map { (id, x, y) -> EnemySeed(x * 16, y * 16, id) }
         // META del nivel: con esto tocar la cinta marca el nivel como SUPERADO y el mapa del
         // mundo puede disparar su evento. Los niveles sin meta (castillos, casas) no siembran.
+        // Cada meta va con SU tipo de salida: la cerradura siembra GOAL_SECRET (salida secreta),
+        // la cinta/esfera GOAL. Así el motor sabe por cuál se acabó y el mapa abre el camino real.
         val goalSeeds = com.rolebuilder.core.snes.SmwLevelGoal
-            .goalCells(rom, SnesGameRecipes.smwHeaderDeltaPublic(header), level)
-            .filter { (x, y) -> x in 0 until col.cols && y in 0 until col.rows }
-            .map { (x, y) ->
+            .goalCellsWithKind(rom, SnesGameRecipes.smwHeaderDeltaPublic(header), level)
+            .filter { it.xTile in 0 until col.cols && it.yTile in 0 until col.rows }
+            .map { g ->
                 com.rolebuilder.core.engine.platformer.ItemSeed(
-                    x * 16, y * 16, com.rolebuilder.core.engine.platformer.ItemKind.GOAL,
+                    g.xTile * 16, g.yTile * 16,
+                    if (g.kind == com.rolebuilder.core.snes.SmwLevelGoal.ExitKind.SECRET)
+                        com.rolebuilder.core.engine.platformer.ItemKind.GOAL_SECRET
+                    else com.rolebuilder.core.engine.platformer.ItemKind.GOAL,
                 )
             }
         // Los bloques `?` son "block code" (el terreno los da como NONE) pero en el
@@ -441,6 +448,9 @@ class PlatformerActivity : ComponentActivity() {
 
         /** Extra del resultado: true si el jugador SUPERO el nivel (toco la meta). */
         const val RESULT_WON = "won"
+
+        /** Extra del resultado: true si se ganó por la salida SECRETA (cerradura). */
+        const val RESULT_WON_SECRET = "won_secret"
 
         /** Extra del resultado: true si el jugador MURIO en el nivel (cuesta una vida). */
         const val RESULT_DIED = "died"
