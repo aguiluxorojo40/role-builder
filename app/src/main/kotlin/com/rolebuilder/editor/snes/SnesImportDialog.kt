@@ -404,6 +404,28 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 color = Color(0xFFE0A030),
                             )
                         }
+                        // Offsets marcados [PROBABLE] en el core (tablas Map16 de terreno y de
+                        // fondo): son deducciones, no datos verificados. Si apuntan mal, el fondo
+                        // sale incorrecto SIN avisar. Aquí se comprueban contra TU ROM y se dice.
+                        val map16 = remember(romBytes) {
+                            romBytes?.let { SnesGameRecipes.checkProbableOffsets(it) }.orEmpty()
+                        }
+                        if (map16.isNotEmpty()) {
+                            Text(
+                                "Tablas Map16 (offsets no verificados): " +
+                                    map16.joinToString(" · ") { "${it.name} ${if (it.ok) "✓" else "✗"}" },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (map16.all { it.ok }) Color(0xFF9AA0A6) else Color(0xFFE0A030),
+                            )
+                            map16.filter { !it.ok }.forEach {
+                                Text(
+                                    "⚠ ${it.name}: ${it.reason} → el fondo/terreno de esta ROM puede salir mal.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFE0A030),
+                                )
+                            }
+                        }
+
                         Button(onClick = {
                             val rom = romBytes ?: return@Button
                             val n = runCatching { SmwAssetStore.bake(context, rom) }.getOrDefault(0)

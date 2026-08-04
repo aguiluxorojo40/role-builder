@@ -861,6 +861,51 @@ object SnesGameRecipes {
     /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000 [PROBABLE]. */
     internal const val SMW_MAP16_FG_PC = 0x68000
 
+    // ---- Validación de los offsets [PROBABLE] contra la ROM del usuario ----
+    //
+    // Estos offsets NO están verificados contra el desensamblado: son deducciones. Hasta ahora
+    // se usaban a ciegas, así que si apuntaban a sitio equivocado el fondo salía MAL sin que
+    // nada avisara (una imagen plausible pero falsa, que es la peor clase de fallo). Esto no
+    // demuestra que el offset sea el correcto —para eso hace falta el desensamblado— pero SÍ
+    // caza el modo de fallo real: que apunte a zona vacía, a relleno o a algo que no es una
+    // tabla Map16. Mejor "no me fío de esta tabla" que un fondo inventado.
+
+    /** Veredicto de una tabla Map16: si los datos de [pc] parecen de verdad una tabla. */
+    class Map16Check(val name: String, val pc: Int, val ok: Boolean, val reason: String)
+
+    /**
+     * ¿Los bytes en [pc] parecen una tabla de definiciones Map16 ([blocks] bloques × 8 bytes)?
+     * Señales de que NO lo son: se sale del ROM, es todo el mismo byte (zona vacía o sin usar),
+     * o casi no hay variedad de teselas (una tabla real referencia muchas teselas distintas).
+     */
+    fun checkMap16Table(rom: ByteArray, pc: Int, name: String, blocks: Int = 128): Map16Check {
+        val size = blocks * 8
+        if (pc < 0 || pc + size > rom.size) {
+            return Map16Check(name, pc, false, "se sale del ROM (${rom.size} bytes)")
+        }
+        val bytes = ByteArray(size) { rom[pc + it] }
+        val distinct = bytes.toSet().size
+        if (distinct <= 1) {
+            return Map16Check(name, pc, false, "todo el mismo byte: zona vacía o de relleno")
+        }
+        // Nº de tesela = byte par de cada palabra. Una tabla real usa muchas distintas.
+        val tiles = (0 until size step 2).map { bytes[it].toInt() and 0xFF }.toSet().size
+        if (tiles < 8) {
+            return Map16Check(name, pc, false, "solo $tiles teselas distintas: no parece una tabla Map16")
+        }
+        return Map16Check(name, pc, true, "$tiles teselas distintas en $blocks bloques")
+    }
+
+    /**
+     * Comprueba las tablas Map16 marcadas [PROBABLE] contra [rom]. Lo usa la app/CLI para
+     * DECIR si el fondo (Layer 2) y el terreno se están leyendo de un sitio creíble, en vez
+     * de renderizar callando.
+     */
+    fun checkProbableOffsets(rom: ByteArray): List<Map16Check> = listOf(
+        checkMap16Table(rom, SMW_MAP16_FG_PC, "Map16 FG (Layer 1)"),
+        checkMap16Table(rom, SMW_MAP16_L2_PC, "Map16 Layer 2 (fondo)"),
+    )
+
     // -------------------- Mario (GFX32): puntero especial + paleta REAL --------------------
     //
     // GFX32 (los gráficos de Mario) NO está en la tabla de punteros estándar: usa un
