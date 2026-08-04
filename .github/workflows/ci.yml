@@ -51,6 +51,9 @@ jobs:
 
       # ubuntu-latest trae el Android SDK preinstalado (ANDROID_HOME),
       # así que settings.gradle.kts activa el módulo :app automáticamente.
+      - name: Tests del módulo :app (JVM, sin emulador)
+        run: ./gradlew :app:testDebugUnitTest --console=plain
+
       - name: Compilar APK de depuración
         run: ./gradlew :app:assembleDebug --console=plain
 

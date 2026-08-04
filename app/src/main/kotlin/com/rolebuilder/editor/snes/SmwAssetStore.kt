@@ -44,29 +44,44 @@ object SmwAssetStore {
      * una versión anterior (p. ej. sin la música) cuenta como NO horneado, para forzar el
      * re-horneado y que aparezcan los assets nuevos.
      */
-    fun isBaked(context: Context): Boolean {
-        if (!File(dir(context), "sprites/enemies.png").isFile) return false
-        val v = runCatching { versionFile(context).readText().trim().toIntOrNull() }.getOrNull()
+    fun isBaked(context: Context): Boolean = isBakedAt(dir(context))
+
+    /**
+     * Igual que [isBaked] pero sobre una carpeta suelta, SIN depender de Android. Existe para
+     * poder testear en JVM la regla que nos costó la musica muda: un almacen de version
+     * anterior cuenta como NO horneado.
+     */
+    fun isBakedAt(root: File): Boolean {
+        if (!File(root, "sprites/enemies.png").isFile) return false
+        val v = runCatching { File(root, ".bake_version").readText().trim().toIntOrNull() }.getOrNull()
         return v == BAKE_VERSION
     }
 
+    /** Version de horneado que exige [isBakedAt] (para los tests y para sellar). */
+    fun bakeVersion(): Int = BAKE_VERSION
+
     /** ¿Se horneó la MÚSICA (imagen ARAM del banco de nivel) desde la ROM? Para diagnóstico. */
-    fun isMusicBaked(context: Context): Boolean = File(dir(context), "music/level.aram").isFile
+    fun isMusicBaked(context: Context): Boolean = isMusicBakedAt(dir(context))
+
+    /** [isMusicBaked] sobre una carpeta suelta (testeable en JVM). */
+    fun isMusicBakedAt(root: File): Boolean = File(root, "music/level.aram").isFile
 
     /**
      * ESTADO real del almacén, para poder decir al usuario qué falta en vez de fallar en
      * silencio (los cuadros rojos en vez de enemigos son exactamente esto: el atlas no está).
      * Devuelve pares (etiqueta, ¿está?) en el orden en que importan.
      */
-    fun status(context: Context): List<Pair<String, Boolean>> {
-        val root = dir(context)
-        val bigCount = bigSpriteFiles(context).size
+    fun status(context: Context): List<Pair<String, Boolean>> = statusAt(dir(context))
+
+    /** [status] sobre una carpeta suelta (testeable en JVM, sin Context ni Bitmap). */
+    fun statusAt(root: File): List<Pair<String, Boolean>> {
+        val bigCount = bigSpriteFilesAt(root).size
         return listOf(
             "enemigos" to File(root, "sprites/enemies.png").isFile,
             "Mario" to File(root, "sprites/mario.png").isFile,
             "moneda" to File(root, "sprites/coin.png").isFile,
             "jefes ($bigCount)" to (bigCount > 0),
-            "música" to isMusicBaked(context),
+            "música" to isMusicBakedAt(root),
         )
     }
 
@@ -97,8 +112,11 @@ object SmwAssetStore {
     }
 
     /** Los sprites grandes horneados (id → PNG), o vacío si no se ha horneado. */
-    fun bigSpriteFiles(context: Context): Map<Int, File> {
-        val d = File(dir(context), "sprites/big")
+    fun bigSpriteFiles(context: Context): Map<Int, File> = bigSpriteFilesAt(dir(context))
+
+    /** [bigSpriteFiles] sobre una carpeta suelta (testeable en JVM). */
+    fun bigSpriteFilesAt(root: File): Map<Int, File> {
+        val d = File(root, "sprites/big")
         if (!d.isDirectory) return emptyMap()
         return d.listFiles().orEmpty().mapNotNull { f ->
             Regex("big_([0-9a-fA-F]+)\\.png").matchEntire(f.name)?.groupValues?.get(1)
