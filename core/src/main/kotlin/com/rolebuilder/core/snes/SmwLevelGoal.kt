@@ -29,6 +29,32 @@ object SmwLevelGoal {
     val GOAL_SPRITES = setOf(GOAL_TAPE, GOAL_SPHERE, KEYHOLE)
 
     /**
+     * QUÉ salida es. En SMW un nivel puede tener DOS y **no son intercambiables**: cada una
+     * marca su propio banderín en la tabla de banderines de nivel del mapa (`OwLvFlags`,
+     * indexada por translevel: bit 0 = salida normal, bit 1 = salida secreta) y abre un camino
+     * DISTINTO en el overworld. Es la mecánica que sostiene las casas fantasma, las zonas
+     * secretas (Vanilla/Donut Secret) y el acceso a Star Road: sin distinguirlas, "superar el
+     * nivel" abre siempre el mismo camino y la progresión deja de ser la del juego.
+     */
+    enum class ExitKind {
+        /** Cinta/esfera de meta: el final NORMAL del nivel. */
+        NORMAL,
+
+        /** Cerradura (con la llave): la salida SECRETA. */
+        SECRET,
+    }
+
+    /** Bit del banderín de nivel de esta salida (como `OwLvFlags`: 0x01 normal, 0x02 secreta). */
+    fun exitFlagBit(kind: ExitKind): Int = if (kind == ExitKind.SECRET) 0x02 else 0x01
+
+    /** Qué salida representa el sprite [spriteId], o null si no es una meta. */
+    fun exitKindOf(spriteId: Int): ExitKind? = when (spriteId) {
+        KEYHOLE -> ExitKind.SECRET
+        GOAL_TAPE, GOAL_SPHERE -> ExitKind.NORMAL
+        else -> null
+    }
+
+    /**
      * Alto en casillas que se le da a la meta. La cinta de SMW es un poste ALTO: se cruza
      * tanto por abajo como saltando arriba, y el sprite guarda solo su base. Sembrar una sola
      * casilla dejaría pasar al jugador por encima sin acabar el nivel, así que se cubre la
@@ -57,4 +83,21 @@ object SmwLevelGoal {
         goalsOf(rom, delta, level).flatMap { g ->
             (0 until GOAL_HEIGHT_TILES).map { g.xTile to (g.yTile - it) }
         }.filter { it.second >= 0 }
+
+    /** Una casilla de meta con QUÉ salida es (normal o secreta). */
+    data class GoalCell(val xTile: Int, val yTile: Int, val kind: ExitKind)
+
+    /**
+     * Igual que [goalCells] pero diciendo de QUÉ salida es cada casilla, para que el nivel
+     * jugable distinga "he acabado por la meta" de "he acabado por la cerradura" y el mapa abra
+     * el camino que toca.
+     */
+    fun goalCellsWithKind(rom: ByteArray, delta: Int, level: Int): List<GoalCell> =
+        goalsOf(rom, delta, level).flatMap { g ->
+            val kind = exitKindOf(g.spriteId) ?: ExitKind.NORMAL
+            (0 until GOAL_HEIGHT_TILES).mapNotNull { d ->
+                val y = g.yTile - d
+                if (y >= 0) GoalCell(g.xTile, y, kind) else null
+            }
+        }
 }

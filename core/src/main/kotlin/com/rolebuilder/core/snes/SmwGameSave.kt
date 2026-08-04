@@ -47,6 +47,13 @@ data class SmwGameSave(
      * [SmwOverworldWalk.newGameSettings], que necesita la ROM y por eso no se hace aquí.
      */
     val tileSettings: List<Int> = emptyList(),
+    /**
+     * Banderines de SALIDA por translevel, como la tabla `OwLvFlags` del juego: bit 0x01 = se
+     * superó por la salida NORMAL, bit 0x02 = por la SECRETA (cerradura). Un nivel de dos
+     * salidas solo está al 100% con los dos bits. Es lo que distingue "he pasado la casa
+     * fantasma" de "he encontrado su salida secreta", que abren caminos distintos.
+     */
+    val levelExitFlags: Map<Int, Int> = emptyMap(),
     val lives: Int = START_LIVES,
     val coins: Int = 0,
     /** Marca de tiempo del último guardado, para ordenar las ranuras. */
@@ -71,6 +78,24 @@ data class SmwGameSave(
         completedTranslevels = completedTranslevels + translevel,
         firedEvents = if (event == SmwOverworld.EVENT_NONE) firedEvents else firedEvents + event,
     )
+
+    /**
+     * Igual que [withLevelBeaten] pero apuntando además POR QUÉ SALIDA se superó ([exit]), en
+     * los banderines de nivel ([levelExitFlags]) como hace el juego. Así un nivel de dos salidas
+     * recuerda cuál lleva hecha y el mapa puede abrir el camino correcto de cada una.
+     */
+    fun withLevelBeatenBy(
+        translevel: Int,
+        event: Int,
+        exit: SmwLevelGoal.ExitKind,
+    ): SmwGameSave = withLevelBeaten(translevel, event).copy(
+        levelExitFlags = levelExitFlags +
+            (translevel to ((levelExitFlags[translevel] ?: 0) or SmwLevelGoal.exitFlagBit(exit))),
+    )
+
+    /** ¿Se superó el [translevel] por la salida [exit]? */
+    fun hasExit(translevel: Int, exit: SmwLevelGoal.ExitKind): Boolean =
+        ((levelExitFlags[translevel] ?: 0) and SmwLevelGoal.exitFlagBit(exit)) != 0
 
     /** Mueve a Mario a la casilla [position] del mapa [submap]. */
     fun movedTo(submap: Int, position: Int): SmwGameSave =
