@@ -1483,10 +1483,15 @@ class PlatformerEngine(
             e.vx = if (player.x + tuning.playerWidth / 2f < e.x) -EERIE_SPEED else EERIE_SPEED
         }
         e.x += e.vx
-        e.pTimer++
-        // Onda vertical suave alrededor de su altura de origen.
-        e.y = e.spawnY + EERIE_WAVE_AMPLITUDE *
-            kotlin.math.sin(e.pTimer * EERIE_WAVE_SPEED.toDouble()).toFloat()
+        // 0x38 vuela RECTO; solo el 0x39 ondula ("39 - Eerie, wave motion" en el
+        // desensamblado). Antes ondulaban los dos por igual.
+        if (e.id == 0x39) {
+            if (e.vy == 0f) e.vy = EERIE_SPEED_Y
+            e.y += e.vy
+            // Invierte al salirse de la banda alrededor de su altura de origen.
+            if (e.y > e.spawnY + EERIE_WAVE_AMPLITUDE) { e.y = e.spawnY + EERIE_WAVE_AMPLITUDE; e.vy = -e.vy }
+            if (e.y < e.spawnY - EERIE_WAVE_AMPLITUDE) { e.y = e.spawnY - EERIE_WAVE_AMPLITUDE; e.vy = -e.vy }
+        }
         if (e.x < -32f || e.x > (cols + 2) * tileSize) e.alive = false
     }
 
@@ -2296,12 +2301,19 @@ class PlatformerEngine(
         /** Boo: persecución lenta mientras no lo miras. */
         const val BOO_SPEED = 0.55f
 
-        /** Eerie: avance horizontal constante. */
-        const val EERIE_SPEED = 0.9f
+        /**
+         * Eerie: velocidades REALES del desensamblado (`EerieSpeedX: .DB 16,-16`,
+         * `EerieSpeedY: .DB 24,-24`, en unidades de 1/16 px/frame) → 1.0 px/f en horizontal
+         * y 1.5 px/f en la oscilación vertical. Ya no son valores "a ojo".
+         */
+        const val EERIE_SPEED = 16 / 16f
+        const val EERIE_SPEED_Y = 24 / 16f
 
-        /** Eerie: amplitud (px) y velocidad de su onda vertical. */
-        const val EERIE_WAVE_AMPLITUDE = 10f
-        const val EERIE_WAVE_SPEED = 0.06f
+        /**
+         * Alcance (px) de la oscilación vertical del Eerie ondulante antes de invertir. El
+         * juego invierte por contador; esta banda es la parte APROXIMADA que queda.
+         */
+        const val EERIE_WAVE_AMPLITUDE = 12f
 
         /** Cheep-Cheep: avance y onda al nadar. */
         const val SWIM_SPEED = 0.6f

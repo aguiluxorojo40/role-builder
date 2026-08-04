@@ -86,4 +86,25 @@ class FloatingEnemiesTest {
         repeat(40) { cerca.tick() }
         assertTrue(despierto.x < x1, "cerca de Mario despierta y lo persigue")
     }
+
+    @Test
+    fun `el Eerie usa las velocidades reales y solo el 0x39 ondula`() {
+        // Velocidades del desensamblado: EerieSpeedX 16 y EerieSpeedY 24 (1/16 px por frame).
+        assertEquals(1.0f, PlatformerEngine.EERIE_SPEED)
+        assertEquals(1.5f, PlatformerEngine.EERIE_SPEED_Y)
+
+        // 0x38 vuela RECTO: mantiene su altura.
+        val recto = engineWith(0x38, 20, 6)
+        val e38 = recto.enemies[0]
+        val y38 = e38.y
+        repeat(40) { recto.tick() }
+        assertEquals(y38, e38.y, "el 0x38 no ondula")
+
+        // 0x39 ONDULA: cambia de altura.
+        val onda = engineWith(0x39, 20, 6)
+        val e39 = onda.enemies[0]
+        val y39 = e39.y
+        repeat(20) { onda.tick() }
+        assertTrue(abs(e39.y - y39) > 1f, "el 0x39 ondula en vertical")
+    }
 }
