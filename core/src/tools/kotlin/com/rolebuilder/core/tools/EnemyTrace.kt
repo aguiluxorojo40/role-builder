@@ -32,7 +32,15 @@ object EnemyTrace {
         val id = (o["id"] ?: "0x37").let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
         val frames = o["frames"]?.toIntOrNull() ?: 600
         val out = o["out"] ?: "ours_enemy.csv"
-        val floor = o["floor"]?.toIntOrNull()
+        // SUELO por defecto: sin él, Mario se CAE del mapa, muere, y el motor congela el
+        // mundo — la traza sale con el enemigo "parado" y parece un bug del enemigo cuando
+        // en realidad es del banco de pruebas. Pasa --floor -1 para forzar mundo sin suelo.
+        val floorArg = o["floor"]?.toIntOrNull()
+        val floor = when {
+            floorArg == null -> 12      // suelo por defecto: Mario sobrevive y el enemigo vuela
+            floorArg < 0 -> null        // explícitamente sin suelo (a sabiendas)
+            else -> floorArg
+        }
         val ex = o["ex"]?.toIntOrNull() ?: 14
         val ey = o["ey"]?.toIntOrNull() ?: 6
         val px = o["px"]?.toIntOrNull() ?: 5
@@ -59,8 +67,13 @@ object EnemyTrace {
         }
         var prevX = e.x
         var prevY = e.y
+        var diedAt = -1
         for (f in 0 until frames) {
             engine.tick()
+            // Si Mario MUERE, el motor congela el mundo: a partir de ahí la traza no dice nada
+            // del enemigo (saldría "parado"). Se corta aquí y se avisa, en vez de guardar
+            // frames falsos que parecerían un bug del enemigo.
+            if (engine.player.dead) { diedAt = f; break }
             if (!e.alive) break
             // vx/vy REALES observadas (diferencia de posición): comparable con las del
             // emulador sin depender de cómo guarde cada uno su velocidad interna.
@@ -70,6 +83,13 @@ object EnemyTrace {
             sb.append("$f,0,$id,${e.x},${e.y},$vx,$vy,1\n")
         }
         File(out).writeText(sb.toString())
+        if (diedAt >= 0) {
+            System.err.println(
+                "AVISO: Mario murió en el frame $diedAt y el motor congela el mundo, así que la " +
+                    "traza se cortó ahí. Si no era lo que buscabas, sube el suelo con --floor " +
+                    "(o aleja al enemigo con --ex) y repite: si no, parecería que el enemigo se para.",
+            )
+        }
         println("Traza de NUESTRO motor: id 0x${id.toString(16)} · $frames frames → $out")
         println("Compárala con la del emulador:  python3 scripts/enemy_compare.py --real real.csv --ours $out --id 0x${id.toString(16)}")
     }
