@@ -106,12 +106,44 @@ object SmwAssetStore {
         }.toMap()
     }
 
+    /** Resultado de UN paso del horneado: qué es, si salió, y por qué no si falló. */
+    class BakeStep(val name: String, val written: Int, val ok: Boolean, val detail: String)
+
+    /**
+     * Parte de un horneado, paso a paso. Antes [bake] devolvía un `0` mudo cuando algo fallaba
+     * y cada bloque interno se tragaba su excepción, así que un horneado roto era
+     * indistinguible de una ROM sin datos — y el usuario solo veía cuadros rojos.
+     */
+    class BakeReport(val steps: List<BakeStep>) {
+        val count: Int get() = steps.sumOf { it.written }
+        val failures: List<BakeStep> get() = steps.filter { !it.ok }
+        val ok: Boolean get() = failures.isEmpty()
+
+        /** Resumen legible para enseñárselo al usuario tal cual. */
+        fun summary(): String =
+            if (ok) "✅ Horneado completo: $count ficheros"
+            else "⚠️ Horneado con fallos ($count ficheros). " +
+                failures.joinToString("; ") { "${it.name}: ${it.detail}" }
+    }
+
     /**
      * HORNEA desde [rom] todos los assets de SMW al almacén. Devuelve cuántos ficheros
      * escribió, o 0 si la ROM no es SMW. Es idempotente: sobrescribe.
+     * Para saber QUÉ falló y por qué, usa [bakeDetailed].
      */
-    fun bake(context: Context, rom: ByteArray): Int = runCatching {
-        val header = SnesDecoder.parseHeader(rom)
+    fun bake(context: Context, rom: ByteArray): Int = bakeDetailed(context, rom).count
+
+    /**
+     * Igual que [bake] pero devolviendo el parte completo: qué pasos salieron, cuántos ficheros
+     * escribió cada uno y el MOTIVO del fallo cuando lo hay. Es lo que permite decirle al
+     * usuario "el atlas de enemigos no se pudo generar porque X" en vez de callar.
+     */
+    fun bakeDetailed(context: Context, rom: ByteArray): BakeReport {
+        val steps = ArrayList<BakeStep>()
+        val header = runCatching { SnesDecoder.parseHeader(rom) }.getOrElse {
+            steps.add(BakeStep("cabecera", 0, false, "no se pudo leer la ROM: ${it.message}"))
+            return BakeReport(steps)
+        }
         val root = dir(context)
         var count = 0
 
@@ -124,14 +156,36 @@ object SmwAssetStore {
             count++
         }
 
+        /** Ejecuta un paso capturando su error, en vez de tragárselo en silencio. */
+        fun step(name: String, block: () -> Int) {
+            val before = count
+            runCatching { block() }
+                .onSuccess {
+                    val n = count - before
+                    steps.add(
+                        if (n > 0) BakeStep(name, n, true, "$n ficheros")
+                        // Sin excepción pero sin resultado: la ROM no da ese asset. Se dice.
+                        else BakeStep(name, 0, false, "esta ROM no produjo ningún dato"),
+                    )
+                }
+                .onFailure {
+                    steps.add(BakeStep(name, count - before, false, "${it::class.simpleName}: ${it.message}"))
+                }
+        }
+
         // Mario (4 estados), moneda, powerups y el atlas de enemigos.
-        for ((rel, img) in SmwBakedAssets.images(rom, header)) writePng(rel, img)
+        step("sprites (Mario, moneda, powerups, enemigos)") {
+            for ((rel, img) in SmwBakedAssets.images(rom, header)) writePng(rel, img); count
+        }
         // Sprites grandes (jefes y enemigos altos) uno por fichero, como antes.
-        for ((id, img) in SmwBakedAssets.bigSprites(rom, header)) {
-            writePng("sprites/big/big_%02x.png".format(id), img)
+        step("jefes y enemigos grandes") {
+            for ((id, img) in SmwBakedAssets.bigSprites(rom, header)) {
+                writePng("sprites/big/big_%02x.png".format(id), img)
+            }
+            count
         }
         // Efectos de sonido, desde las muestras BRR de la propia ROM.
-        runCatching {
+        step("efectos de sonido") {
             val clips = SmwSfxCatalog.build(rom, header).orEmpty()
             for ((event, clip) in clips) {
                 val dest = File(root, "sfx/${event.name.lowercase()}.wav")
@@ -139,23 +193,21 @@ object SmwAssetStore {
                 dest.writeBytes(com.rolebuilder.player.PlatformerAudio.wavBytes(clip.pcm, clip.sampleRate))
                 count++
             }
+            count
         }
-        // MÚSICA del banco de NIVEL (imagen ARAM de 64 KiB, ensamblada de la ROM igual que
-        // PlatformerMusic.fromRom). Sin esto, el modo PROYECTO (jugar un mapa importado, sin
-        // ROM) se quedaba MUDO: fromAssets busca este fichero horneado y no existía.
-        runCatching {
+        step("música (banco de nivel)") {
             val delta = header.headerOffset - 0x7FC0
             val aram = SmwMusic.assembleAram(rom, delta, SmwMusic.LEVEL_MUSIC)
-            if (aram != null && aram.size == 0x10000) {
-                val dest = File(root, "music/level.aram")
-                dest.parentFile?.mkdirs()
-                dest.writeBytes(aram)
-                count++
-            }
+                ?: error("la ROM no ensambla el banco de música de nivel")
+            if (aram.size != 0x10000) error("el ARAM salió de ${aram.size} bytes, no 64 KiB")
+            val dest = File(root, "music/level.aram")
+            dest.parentFile?.mkdirs()
+            dest.writeBytes(aram)
+            count++
+            count
         }
-        // Sella la versión del horneado SOLO si algo se escribió: así isBaked reconoce el
-        // almacén como al día y un cambio futuro (BAKE_VERSION mayor) fuerza el re-horneado.
+        // Sella la versión solo si algo se escribió (ver isBaked).
         if (count > 0) runCatching { versionFile(context).writeText(BAKE_VERSION.toString()) }
-        count
-    }.getOrDefault(0)
+        return BakeReport(steps)
+    }
 }

@@ -391,6 +391,8 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         var bakeStatus by remember(romBytes) {
                             mutableStateOf(SmwAssetStore.status(context))
                         }
+                        // Motivo de cada fallo del último horneado (antes se perdía en silencio).
+                        var bakeDetail by remember(romBytes) { mutableStateOf(emptyList<String>()) }
                         Text(
                             "Almacén del editor: " +
                                 bakeStatus.joinToString(" · ") { (n, ok) -> "$n ${if (ok) "✓" else "✗"}" },
@@ -428,17 +430,21 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
                         Button(onClick = {
                             val rom = romBytes ?: return@Button
-                            val n = runCatching { SmwAssetStore.bake(context, rom) }.getOrDefault(0)
-                            runCatching { SmwAssetStore.bakeMusic(context, rom) }
+                            // Parte DETALLADO: dice qué paso falló y por qué, en vez del 0 mudo.
+                            val report = SmwAssetStore.bakeDetailed(context, rom)
                             bakeStatus = SmwAssetStore.status(context)
-                            val faltan = bakeStatus.filter { !it.second }.map { it.first }
-                            Toast.makeText(
-                                context,
-                                if (faltan.isEmpty()) "✅ Almacén completo ($n ficheros): el editor ya tiene sprites y música"
-                                else "⚠️ Horneado ($n), pero esta ROM no da: ${faltan.joinToString(", ")}",
-                                Toast.LENGTH_LONG,
-                            ).show()
+                            bakeDetail = report.failures.map { "${it.name}: ${it.detail}" }
+                            Toast.makeText(context, report.summary(), Toast.LENGTH_LONG).show()
                         }) { Text("🔄 Rehornear assets del editor") }
+                        // El MOTIVO de cada fallo, en pantalla: antes esto se lo tragaba un
+                        // runCatching y el usuario solo veía cuadros rojos sin explicación.
+                        bakeDetail.forEach {
+                            Text(
+                                "⚠ $it",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFE0A030),
+                            )
+                        }
                     }
 
                     if (recipeFindings.isNotEmpty()) {
