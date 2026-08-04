@@ -102,12 +102,23 @@ class PlatformerMusic private constructor(private val renderer: SmwMusicRenderer
          * con la canción [songId] — así cada nivel suena SU música real. Devuelve null
          * si no se puede ensamblar el ARAM (ROM no compatible), para caer al asset.
          */
-        fun fromRom(rom: ByteArray, songId: Int): PlatformerMusic? {
+        fun fromRom(rom: ByteArray, songId: Int): PlatformerMusic? =
+            fromRomBank(rom, com.rolebuilder.core.snes.SmwMusic.LEVEL_MUSIC, songId)
+
+        /**
+         * Igual que [fromRom] pero eligiendo el BANCO de música: el de NIVEL, el del OVERWORLD
+         * (mapa del mundo) o el de CRÉDITOS ([SmwMusic.MUSIC_BANKS]). Así el overworld y otras
+         * pantallas suenan con SU banco real, no solo los niveles. [songId] es 1-based dentro
+         * del banco. null si la ROM no ensambla ese banco.
+         */
+        fun fromRomBank(
+            rom: ByteArray,
+            bank: com.rolebuilder.core.snes.SmwMusic.NspcRegion,
+            songId: Int,
+        ): PlatformerMusic? {
             val header = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
             val delta = header.headerOffset - 0x7FC0
-            val aram = com.rolebuilder.core.snes.SmwMusic.assembleAram(
-                rom, delta, com.rolebuilder.core.snes.SmwMusic.LEVEL_MUSIC,
-            ) ?: return null
+            val aram = com.rolebuilder.core.snes.SmwMusic.assembleAram(rom, delta, bank) ?: return null
             if (aram.size != 0x10000) return null
             val renderer = SmwMusicRenderer(aram)
             renderer.selectSong(songId)

@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -174,6 +175,18 @@ private fun OverworldScreen(
     isGame: Boolean,
     slot: Int,
 ) {
+    // MÚSICA del mapa del mundo: se ensambla el BANCO REAL de overworld de la ROM
+    // (SmwMusic.OVERWORLD_MUSIC) y suena la canción del mapa principal (1). Antes el overworld
+    // estaba MUDO. Solo en modo JUEGO (andar por el mapa); el modo prueba no reproduce.
+    // (La canción por submapa —bosque, cueva, mundo estrella…— es un refinamiento pendiente.)
+    if (isGame) {
+        DisposableEffect(Unit) {
+            val music = PlatformerMusic.fromRomBank(
+                rom, com.rolebuilder.core.snes.SmwMusic.OVERWORLD_MUSIC, 1,
+            )?.also { it.start() }
+            onDispose { music?.stop() }
+        }
+    }
     if (isGame) GameMapScreen(rom, header, romFile, slot)
     else TestMapScreen(rom, header, romFile)
 }
