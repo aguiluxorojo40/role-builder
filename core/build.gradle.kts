@@ -57,3 +57,12 @@ tasks.register<JavaExec>("dumpOverworldDoc") {
     mainClass.set("com.rolebuilder.core.tools.SmwOverworldDocKt")
     systemProperty("java.awt.headless", "true")
 }
+
+// Traza de un enemigo en NUESTRO motor, en el formato CSV del arnés de comparación
+// (ver scripts/enemy_trace.py y scripts/enemy_compare.py).
+tasks.register<JavaExec>("traceEnemy") {
+    group = "verification"
+    description = "Traza el movimiento de un enemigo para compararlo con el emulador."
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.EnemyTrace")
+}
