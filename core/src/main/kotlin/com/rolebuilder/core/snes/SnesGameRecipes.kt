@@ -1550,6 +1550,10 @@ object SnesGameRecipes {
             val page: Int,
             val dataPc: Int,
             val blocks: Int,
+            /** Página según el umbral de PC deducido (hipótesis A), para comparar. */
+            val pageByThreshold: Int = page,
+            /** Página según el bit 0 de isBg (hipótesis B), para comparar. */
+            val pageByBit0: Int = page,
         ) : BgParse
 
         /** El nivel NO tiene fondo tilemap (su Layer 2 son objetos). No es un fallo. */
@@ -1581,9 +1585,17 @@ object SnesGameRecipes {
         if (dataPc < 0 || dataPc >= rom.size) return BgParse.Error("datos fuera del ROM (pc=$dataPc)", isBg)
         val blocks = decompressSmwBackground(rom, dataPc)
         if (blocks.size < 4) return BgParse.Error("descompresión dio ${blocks.size} bloques", isBg)
-        val page = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
+        // DOS hipótesis para la página del Map16 de fondo:
+        //  A) umbral de PC (SMW_BG_PAGE_THRESHOLD_PC): conocimiento DEDUCIDO, sin verificar.
+        //  B) bit 0 del propio byte isBg: los únicos valores de fondo reales medidos en ROM son
+        //     0x06 (17 niveles) y 0x07 (7), que difieren SOLO en el bit 0 — pinta a selector de
+        //     página metido en el propio dato, que es como suele hacerse.
+        // Se calculan las dos y la auditoría las enseña juntas para decidir con datos.
+        val pageByThreshold = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
+        val pageByBit0 = isBg and 1
+        val page = pageByBit0
         val entries = bgEntriesFrom(rom, delta, blocks, page)
-        return BgParse.Success(entries, isBg, page, dataPc, blocks.size)
+        return BgParse.Success(entries, isBg, page, dataPc, blocks.size, pageByThreshold, pageByBit0)
     }
 
     /**
@@ -1618,11 +1630,15 @@ object SnesGameRecipes {
         var ok = 0; var none = 0; var err = 0
         val isBgSeen = sortedMapOf<Int, Int>()
         val pages = sortedMapOf<Int, Int>()
+        val pagesThr = sortedMapOf<Int, Int>()
+        var discrepan = 0
         val reasons = HashMap<String, Int>()
         for (lv in 0x000..0x1FF) {
             when (val r = runCatching { layer2BgParse(rom, delta, lv) }.getOrElse { BgParse.Error("excepción", null) }) {
                 is BgParse.Success -> {
                     ok++; isBgSeen.merge(r.isBg, 1, Int::plus); pages.merge(r.page, 1, Int::plus)
+                    pagesThr.merge(r.pageByThreshold, 1, Int::plus)
+                    if (r.pageByThreshold != r.pageByBit0) discrepan++
                 }
                 is BgParse.NoBackground -> { none++; isBgSeen.merge(r.isBg, 1, Int::plus) }
                 is BgParse.Error -> { err++; reasons.merge(r.reason.take(40), 1, Int::plus) }
@@ -1631,7 +1647,9 @@ object SnesGameRecipes {
         return buildString {
             appendLine("Fondos (Layer 2) de los 512 slots: OK=$ok · sin fondo=$none · ERROR=$err")
             appendLine("Valores de isBg vistos: " + isBgSeen.entries.joinToString { "0x%02X×%d".format(it.key, it.value) })
-            appendLine("Página Map16 elegida: " + pages.entries.joinToString { "pág.${it.key}×${it.value}" })
+            appendLine("Página EN USO (bit0 de isBg): " + pages.entries.joinToString { "pág.${it.key}×${it.value}" })
+            appendLine("Página según umbral PC (hipót. antigua): " + pagesThr.entries.joinToString { "pág.${it.key}×${it.value}" })
+            appendLine("Niveles en que las dos hipótesis DISCREPAN: $discrepan")
             if (reasons.isNotEmpty()) appendLine("Motivos de error: " + reasons.entries.joinToString { "${it.key} ×${it.value}" })
         }
     }
