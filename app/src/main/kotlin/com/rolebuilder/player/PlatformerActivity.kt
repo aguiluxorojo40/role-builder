@@ -263,7 +263,8 @@ class PlatformerActivity : ComponentActivity() {
         val rom = runCatching { File(romPath).readBytes() }.getOrNull() ?: return null
         val header = SnesDecoder.parseHeader(rom)
         val musicIndex = SnesGameRecipes.smwLevelInfo(rom, header, level)?.musicIndex ?: return null
-        return PlatformerMusic.fromRom(rom, musicIndex + 1)
+        // El ajuste 0..7 de la cabecera indexa LevelMusicTable → id de canción real ($1DFB).
+        return PlatformerMusic.fromRom(rom, com.rolebuilder.core.snes.SmwMusic.levelSongId(musicIndex))
     }
 
     /**
@@ -280,7 +281,8 @@ class PlatformerActivity : ComponentActivity() {
             val startId = ProjectIo.loadProject(dir).startMapId
             val mapId = intent.getIntExtra(EXTRA_MAP_ID, startId)
             val idx = ProjectIo.loadMap(dir, mapId).platformMusicIndex
-            if (idx < 0) null else PlatformerMusic.fromAssets(this, songId = idx + 1)
+            if (idx < 0) null
+            else PlatformerMusic.fromAssets(this, songId = com.rolebuilder.core.snes.SmwMusic.levelSongId(idx))
         }.getOrNull()
     }
 

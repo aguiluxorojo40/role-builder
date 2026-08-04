@@ -360,9 +360,10 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             if (cur != null) { cur.stop(); musicTest = null; return@Button }
                             val rom = romBytes ?: return@Button
                             val hdr = header
-                            val song = (hdr?.let {
+                            val setting = (hdr?.let {
                                 runCatching { SnesGameRecipes.smwLevelInfo(rom, it, 0x105)?.musicIndex }.getOrNull()
-                            } ?: 0) + 1
+                            } ?: 2)
+                            val song = com.rolebuilder.core.snes.SmwMusic.levelSongId(setting)
                             val m = runCatching { com.rolebuilder.player.PlatformerMusic.fromRom(rom, song) }.getOrNull()
                             if (m == null) {
                                 Toast.makeText(

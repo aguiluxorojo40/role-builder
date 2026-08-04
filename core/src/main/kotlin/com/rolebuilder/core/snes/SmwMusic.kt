@@ -124,6 +124,19 @@ object SmwMusic {
     /** Los tres bancos de canciones seleccionables. */
     val MUSIC_BANKS = listOf(OVERWORLD_MUSIC, LEVEL_MUSIC, CREDITS_MUSIC)
 
+    /**
+     * `LevelMusicTable` REAL de SMW (del desensamblado, `lv_read.s`): el ajuste de música de la
+     * cabecera del nivel (0..7) NO es la canción directamente — indexa ESTA tabla para dar el
+     * valor que el juego escribe en `$1DFB`, que es el id de canción del banco de nivel. Por eso
+     * "canción = ajuste + 1" era incorrecto: p. ej. ajuste 2 debe sonar la canción $01 (tema de
+     * nivel principal), no la 3. Índices: 0→$02, 1→$06(cueva), 2→$01(nivel/overworld),
+     * 3→$08(castillo), 4→$07(casa fantasma), 5→$03(agua), 6→$05(jefe), 7→$12.
+     */
+    val LEVEL_MUSIC_TABLE = intArrayOf(0x02, 0x06, 0x01, 0x08, 0x07, 0x03, 0x05, 0x12)
+
+    /** Id de canción del banco de NIVEL para el ajuste de música [setting] (0..7) de la cabecera. */
+    fun levelSongId(setting: Int): Int = LEVEL_MUSIC_TABLE[setting and 0x07]
+
     /** Un bloque de subida: [data] bytes a copiar en ARAM desde [destAram]. */
     class UploadBlock(val destAram: Int, val data: ByteArray)
 
