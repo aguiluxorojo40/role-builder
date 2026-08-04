@@ -854,8 +854,18 @@ object SnesGameRecipes {
     internal const val SMW_LAYER2_PTR_PC = 0x2E600
     /** Base PC del banco $0C, donde viven los datos de fondo (SNES $0C8000 → 0x60000). */
     internal const val SMW_BG_BANK_PC = 0x60000
-    /** Byte de banco que marca "este Layer 2 es un FONDO (tilemap), no objetos". */
-    internal const val SMW_BG_IS_BACKGROUND = 0xFF
+    /**
+     * Valor del 3er byte de la entrada que marca SLOT NO USADO (relleno de ROM).
+     *
+     * CORREGIDO CON DATOS: la auditoría sobre una ROM real (--audit-bg / botón del editor) dio
+     * `isBg: 0x06×17, 0x07×7, 0xFF×486` sobre los 512 slots. Es decir, el 95% vale 0xFF — el
+     * relleno típico— y solo 24 niveles traen fondo de verdad (0x06/0x07), cifra coherente con
+     * SMW. Antes esta constante se llamaba SMW_BG_IS_BACKGROUND y valía 0xFF: estaba justo del
+     * REVÉS, y además el parser usaba `isBg and 2`, que dejaba pasar los tres valores (0x06,
+     * 0x07 y 0xFF tienen el bit 1 puesto). Resultado: 486 slots VACÍOS se tomaban por fondos
+     * válidos y se renderizaba basura con ellos, sin que nada avisara.
+     */
+    internal const val SMW_BG_SLOT_UNUSED = 0xFF
     /** Tabla de definiciones Map16 de Layer 2: SNES $0D9100 → PC 0x69100 [PROBABLE]. */
     internal const val SMW_MAP16_L2_PC = 0x69100
     /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000 [PROBABLE]. */
@@ -1559,9 +1569,11 @@ object SnesGameRecipes {
         val p = SMW_LAYER2_PTR_PC + delta + 3 * level
         if (p < 0 || p + 2 >= rom.size) return BgParse.Error("puntero fuera del ROM", null)
         val isBg = byte(rom, p + 2)
-        // OJO: la constante SMW_BG_IS_BACKGROUND vale 0xFF pero aquí se mira el BIT 1. Esa
-        // discrepancia está SIN RESOLVER a propósito: la auditoría vuelca el valor real de
-        // isBg de cada nivel para decidir con datos, no con suposiciones.
+        // Slot NO USADO (relleno 0xFF): no es un fondo. Es el caso mayoritario (486 de 512 en
+        // la ROM auditada) y antes se colaba como fondo válido generando basura.
+        if (isBg == SMW_BG_SLOT_UNUSED) return BgParse.NoBackground(isBg)
+        // El bit 1 distingue "Layer 2 de imagen" de "Layer 2 de objetos" entre los slots que SÍ
+        // se usan. Se mantiene, pero ya no es lo único que filtra.
         if (isBg and 2 == 0) return BgParse.NoBackground(isBg)
         val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
         if (addr < 0x8000) return BgParse.Error("dirección $%04X fuera de banco".format(addr), isBg)

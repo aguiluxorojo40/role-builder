@@ -22,10 +22,13 @@ class SnesLayer2Test {
     fun `layer2BgEntries resuelve puntero, RLE1 y Map16 a entradas de tilemap`() {
         val rom = ByteArray(0x70000)
 
-        // Puntero de Layer 2 del nivel 0: banco 0xFF (=fondo), addr $8100 en banco $0C.
+        // Puntero de Layer 2 del nivel 0: 3er byte 0x06 (fondo real), addr $8100 en banco $0C.
         // dataPc = 0x60000 + (0x8100 - 0x8000) = 0x60100.
         val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
-        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = SnesGameRecipes.SMW_BG_IS_BACKGROUND.toByte()
+        // 0x06 es un valor de fondo REAL (medido en ROM: 0x06×17 y 0x07×7 son los únicos
+        // fondos de verdad). Antes este test ponía 0xFF aquí, que resultó ser el relleno de
+        // slot VACÍO: el test codificaba el bug y pasaba igualmente.
+        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0x06
 
         // Datos de fondo en 0x60100: copia directa de 4 bloques [5,6,5,6] + fin (FF FF).
         val dataPc = SnesGameRecipes.SMW_BG_BANK_PC + (0x8100 - 0x8000)
@@ -54,7 +57,7 @@ class SnesLayer2Test {
     @Test
     fun `layer2BgEntries vacio cuando el nivel no es un fondo`() {
         val rom = ByteArray(0x70000)
-        // Banco != 0xFF → es Layer 2 de objetos, no un fondo tilemap.
+        // Sin el bit 1 → es Layer 2 de OBJETOS, no un fondo tilemap.
         val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
         rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0x0C
         assertTrue(SnesGameRecipes.layer2BgEntries(rom, 0, 0).isEmpty())
@@ -122,5 +125,15 @@ class SnesLayer2Test {
             mapping = SnesMapping.LOROM, headerOffset = 0x7FC0,
         )
         assertTrue(SnesGameRecipes.renderSmwBackground(ByteArray(0x70000), header, 0) == null)
+    }
+
+    @Test
+    fun `un slot de relleno 0xFF NO es un fondo`() {
+        // Medido en ROM real: 486 de los 512 slots valen 0xFF (relleno). Antes el parser los
+        // tomaba por fondos válidos y generaba basura con ellos. Este test lo impide.
+        val rom = ByteArray(0x70000)
+        val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
+        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0xFF.toByte()
+        assertTrue(SnesGameRecipes.layer2BgEntries(rom, 0, 0).isEmpty())
     }
 }
