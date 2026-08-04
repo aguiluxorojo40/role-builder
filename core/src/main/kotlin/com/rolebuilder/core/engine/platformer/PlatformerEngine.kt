@@ -76,7 +76,21 @@ class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
  * [PIPE_PIRANHA] (asoma del tubo por ciclos, no sale si Mario está encima) y
  * [JUMPING_PIRANHA] (salta en arco; la de fuego escupe bolas).
  */
-enum class EnemyBehavior { WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA, BOWLING_BALL, BULLET_BILL }
+enum class EnemyBehavior {
+    WALKER, PIPE_PIRANHA, JUMPING_PIRANHA, BOSS, MECHAKOOPA, BOWLING_BALL, BULLET_BILL,
+
+    /** Boo: TÍMIDO — persigue a Mario solo cuando NO lo está mirando, y se para si lo mira. */
+    BOO,
+
+    /** Eerie: vuela recto atravesándolo todo, ondulando en vertical. Sin gravedad. */
+    EERIE,
+
+    /** Cheep-Cheep: NADA — avanza ondulando, sin gravedad ni suelo. */
+    SWIMMER,
+
+    /** Rip Van Fish: DUERME quieto hasta que Mario pasa cerca; entonces lo persigue. */
+    RIP_VAN_FISH,
+}
 
 /**
  * Ids de los JEFES soportados como enemigos jugables (dibujados con su `big_<id>.png`):
@@ -94,6 +108,10 @@ fun enemyBehaviorOf(id: Int): EnemyBehavior = when {
     id == 0x1A || id == 0x2A -> EnemyBehavior.PIPE_PIRANHA        // recta / cabeza-abajo
     id == 0x4F || id == 0x50 -> EnemyBehavior.JUMPING_PIRANHA     // saltarina / saltarina de fuego
     id == 0x1C -> EnemyBehavior.BULLET_BILL                       // Bala Bill: vuela recto, sin gravedad
+    id == 0x37 -> EnemyBehavior.BOO                               // Boo: tímido, solo avanza si no lo miras
+    id == 0x38 || id == 0x39 -> EnemyBehavior.EERIE               // Eerie: vuela ondulando
+    id == 0x15 || id == 0x16 -> EnemyBehavior.SWIMMER             // Cheep-Cheep: nada
+    id == 0x3D -> EnemyBehavior.RIP_VAN_FISH                      // Rip Van Fish: duerme hasta que pasas
     else -> EnemyBehavior.WALKER
 }
 
@@ -216,6 +234,14 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var attackCount = 0
     /** Fase de Bowser flotante: 0 = tanda de Mechakoopas, 1 = tanda de bolas de bolos. */
     var bossPhase = 0
+    /**
+     * ¿Se da la vuelta al llegar al BORDE de una plataforma, en vez de tirarse? Es la
+     * diferencia clásica del Koopa ROJO (0x01, y sus variantes con alas verticales) frente al
+     * VERDE y los demás andadores, que caminan hasta caerse. Dos enemigos que se dibujan casi
+     * igual pero NO se juegan igual.
+     */
+    val turnsAtLedge = id == 0x01 || id == 0x0A || id == 0x0B
+
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
     val upsideDown = id == 0x2A
@@ -285,6 +311,12 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
             // Bala Bill: vuela recto y sin gravedad; la dirección la fija el motor al sembrarla
             // (hacia el lado de Mario), aquí solo se anula la velocidad de andar por defecto.
             EnemyBehavior.BULLET_BILL -> vx = 0f
+            // Flotantes: arrancan quietos; su update les da velocidad y los mueve sin gravedad.
+            EnemyBehavior.BOO -> vx = 0f
+            EnemyBehavior.EERIE -> vx = 0f
+            EnemyBehavior.SWIMMER -> vx = 0f
+            // Rip Van Fish empieza DORMIDO (pState 0) hasta que Mario se acerca.
+            EnemyBehavior.RIP_VAN_FISH -> { vx = 0f; pState = 0 }
             EnemyBehavior.WALKER -> {}
         }
     }
@@ -1200,6 +1232,10 @@ class PlatformerEngine(
                 EnemyBehavior.BOWLING_BALL -> updateBowlingBall(e)
                 // Bala Bill (0x1C): vuela recto y constante, sin gravedad ni terreno.
                 EnemyBehavior.BULLET_BILL -> updateBulletBill(e)
+                EnemyBehavior.BOO -> updateBoo(e)
+                EnemyBehavior.EERIE -> updateEerie(e)
+                EnemyBehavior.SWIMMER -> updateSwimmer(e)
+                EnemyBehavior.RIP_VAN_FISH -> updateRipVanFish(e)
                 EnemyBehavior.WALKER -> {
                     if (e.winged) updateWingedKoopa(e)
                     else if (e.shell) updateShell(e)
@@ -1414,6 +1450,82 @@ class PlatformerEngine(
         }
         e.x += e.vx // recto: ni gravedad ni paredes lo paran
         if (e.x < -32f || e.x > (cols + 2) * tileSize) e.alive = false
+    }
+
+    /**
+     * BOO (0x37): el fantasma TÍMIDO de SMW. Persigue a Mario **solo cuando no lo está
+     * mirando**; en cuanto Mario le da la cara, se queda quieto (y en el juego se tapa). No
+     * le afecta la gravedad, atraviesa el terreno y NO se puede pisar: es invencible.
+     *
+     * "Mirar" = Mario está encarado HACIA el Boo. Se compara la posición del Boo con la de
+     * Mario y su [PlatformerPlayer.facingRight], igual que la condición del juego.
+     */
+    private fun updateBoo(e: PlatformerEnemy) {
+        val pcx = player.x + tuning.playerWidth / 2f
+        val ecx = e.x + e.width / 2f
+        val booIsToTheRight = ecx > pcx
+        // Mario lo mira si está encarado hacia el lado donde está el Boo.
+        val looking = if (booIsToTheRight) player.facingRight else !player.facingRight
+        if (looking) return // tímido: se queda clavado mientras lo miras
+        val dx = pcx - ecx
+        val dy = (player.y + playerHeight / 2f) - (e.y + e.height / 2f)
+        val len = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
+        e.x += BOO_SPEED * dx / len
+        e.y += BOO_SPEED * dy / len
+    }
+
+    /**
+     * EERIE (0x38/0x39): vuela RECTO en horizontal atravesando el terreno, ondulando en
+     * vertical alrededor de la altura donde apareció. Sin gravedad. Se apaga al salir del mapa.
+     */
+    private fun updateEerie(e: PlatformerEnemy) {
+        if (e.vx == 0f) {
+            e.vx = if (player.x + tuning.playerWidth / 2f < e.x) -EERIE_SPEED else EERIE_SPEED
+        }
+        e.x += e.vx
+        e.pTimer++
+        // Onda vertical suave alrededor de su altura de origen.
+        e.y = e.spawnY + EERIE_WAVE_AMPLITUDE *
+            kotlin.math.sin(e.pTimer * EERIE_WAVE_SPEED.toDouble()).toFloat()
+        if (e.x < -32f || e.x > (cols + 2) * tileSize) e.alive = false
+    }
+
+    /**
+     * CHEEP-CHEEP (0x15/0x16): NADA. Avanza en horizontal ondulando, sin gravedad ni suelo, y
+     * da la vuelta al topar con una pared (el agua lo contiene). Se puede pisar como un andador.
+     */
+    private fun updateSwimmer(e: PlatformerEnemy) {
+        if (e.vx == 0f) e.vx = -SWIM_SPEED
+        val nx = e.x + e.vx
+        // Rebota contra el terreno sólido (bordes de la zona de agua), como el andador.
+        val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
+        val midRow = ((e.y + e.height / 2f) / tileSize).toInt()
+        if (wallsAt(frontCol, midRow)) e.vx = -e.vx else e.x = nx
+        e.pTimer++
+        e.y = e.spawnY + SWIM_WAVE_AMPLITUDE *
+            kotlin.math.sin(e.pTimer * SWIM_WAVE_SPEED.toDouble()).toFloat()
+    }
+
+    /**
+     * RIP VAN FISH (0x3D): DUERME quieto hasta que Mario pasa cerca ([RIPVAN_WAKE_DIST]);
+     * entonces despierta y lo PERSIGUE nadando, sin gravedad. Una vez despierto no se vuelve a
+     * dormir (como en el juego, que te persigue hasta que lo pierdes de vista).
+     */
+    private fun updateRipVanFish(e: PlatformerEnemy) {
+        val pcx = player.x + tuning.playerWidth / 2f
+        val pcy = player.y + playerHeight / 2f
+        val ecx = e.x + e.width / 2f
+        val ecy = e.y + e.height / 2f
+        val dx = pcx - ecx
+        val dy = pcy - ecy
+        if (e.pState == 0) {
+            // Dormido: solo despierta si Mario se acerca lo bastante.
+            if (kotlin.math.abs(dx) > RIPVAN_WAKE_DIST || kotlin.math.abs(dy) > RIPVAN_WAKE_DIST) return
+            e.pState = 1
+        }
+        val len = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
+        e.x += RIPVAN_SPEED * dx / len
+        e.y += RIPVAN_SPEED * dy / len
     }
 
     /**
@@ -1659,9 +1771,11 @@ class PlatformerEngine(
         val frontCol = if (e.vx > 0) ((nx + e.width) / tileSize).toInt() else (nx / tileSize).toInt()
         // Las RAMPAS no son pared para el enemigo: entra y el snap lo pega al suelo.
         val wall = (minRow..maxRow).any { wallsAt(frontCol, it) }
-        // Se da la vuelta en el borde de una plataforma (no se tira al vacío), como en SMW.
+        // BORDES: aquí los andadores NO son todos iguales. En SMW el Koopa ROJO se da la vuelta
+        // al llegar a un precipicio y el VERDE (y el resto de andadores) se tira sin más. Antes
+        // giraban todos, así que el verde se comportaba como el rojo.
         val footRow = ((e.y + e.height + 1f) / tileSize).toInt()
-        val ledge = e.onGround && !blocksFloor(solidity(frontCol, footRow))
+        val ledge = e.turnsAtLedge && e.onGround && !blocksFloor(solidity(frontCol, footRow))
         if (wall || ledge) {
             e.vx = -e.vx
         } else {
@@ -1799,8 +1913,12 @@ class PlatformerEngine(
                 // Resto: los andadores y la Bala Bill se pisan; las Plantas Piraña muerden por
                 // cualquier lado.
                 else -> {
+                    // Los peces SÍ se pisan; el Boo y el Eerie NO (en SMW son invencibles: no
+                    // hay pisotón que valga, solo esquivarlos), así que hieren por cualquier lado.
                     val stompable = e.behavior == EnemyBehavior.WALKER ||
-                        e.behavior == EnemyBehavior.BULLET_BILL
+                        e.behavior == EnemyBehavior.BULLET_BILL ||
+                        e.behavior == EnemyBehavior.SWIMMER ||
+                        e.behavior == EnemyBehavior.RIP_VAN_FISH
                     val stomp = stompable && stompFromAbove
                     if (stomp) {
                         e.alive = false; e.squashTimer = 12; bounceMario(); stompEvents++
@@ -2172,5 +2290,26 @@ class PlatformerEngine(
          * = **2 px/f**. Vuela recto y constante, sin gravedad ni colisión con el terreno.
          */
         const val BULLET_BILL_SPEED = 0x20 / 16f
+
+        // --- Lote de enemigos FLOTANTES (sin gravedad). Velocidades en px/frame; son
+        // aproximaciones calibradas "a ojo de juego", no tablas de la ROM: se marcan como tales.
+        /** Boo: persecución lenta mientras no lo miras. */
+        const val BOO_SPEED = 0.55f
+
+        /** Eerie: avance horizontal constante. */
+        const val EERIE_SPEED = 0.9f
+
+        /** Eerie: amplitud (px) y velocidad de su onda vertical. */
+        const val EERIE_WAVE_AMPLITUDE = 10f
+        const val EERIE_WAVE_SPEED = 0.06f
+
+        /** Cheep-Cheep: avance y onda al nadar. */
+        const val SWIM_SPEED = 0.6f
+        const val SWIM_WAVE_AMPLITUDE = 6f
+        const val SWIM_WAVE_SPEED = 0.08f
+
+        /** Rip Van Fish: distancia (px) a la que despierta y velocidad con la que persigue. */
+        const val RIPVAN_WAKE_DIST = 64f
+        const val RIPVAN_SPEED = 0.7f
     }
 }
