@@ -168,7 +168,11 @@ private data class Fav(val tool: PTool, val tile: Int, val enemyId: Int)
  * (terreno / pinchos). Lo que no encaja es decoración/fondo.
  */
 private enum class TileCat(val label: String) {
-    TERRENO("Terreno"),
+    SUELO("Suelo"),
+    CUESTAS("Cuestas"),
+    PLATAFORMAS("Plataformas"),
+    PINCHOS("Pinchos"),
+    DECORADO("Decorado"),
     ITEMS("Ítems"),
 }
 
@@ -180,10 +184,23 @@ private enum class TileCat(val label: String) {
  * ([Tileset.platformBlockActions]), igual que lo decide la ROM.
  */
 private fun tileCategory(tileset: Tileset, tile: Int): TileCat {
-    return when (tileset.platformBlockActions.getOrNull(tile)) {
+    // 1º lo interactivo (monedas, bloques ?): manda sobre el terreno.
+    when (tileset.platformBlockActions.getOrNull(tile)) {
         SmwBlockAction.COIN.ordinal, SmwBlockAction.DRAGON_COIN.ordinal,
-        SmwBlockAction.QUESTION.ordinal -> TileCat.ITEMS
-        else -> TileCat.TERRENO
+        SmwBlockAction.QUESTION.ordinal -> return TileCat.ITEMS
+    }
+    // 2º el resto se agrupa por su COLISIÓN REAL de la ROM ([SmwSolidity]), que es lo que
+    // hace la paleta usable para pintar: el suelo con el suelo, las cuestas juntas, las
+    // plataformas de un sentido aparte y el decorado (pasable) al final. Antes todo caía en
+    // un único cajón "Terreno" en orden de atlas —el orden en que salen en el nivel—, que es
+    // aleatorio a efectos de dibujar.
+    val ord = tileset.platformSolidity.getOrNull(tile) ?: return TileCat.DECORADO
+    return when (SOLIDITY_VALUES.getOrElse(ord) { SmwSolidity.NONE }) {
+        SmwSolidity.SOLID -> TileCat.SUELO
+        SmwSolidity.SLOPE, SmwSolidity.SLOPE_STEEP -> TileCat.CUESTAS
+        SmwSolidity.LEDGE_TOP -> TileCat.PLATAFORMAS
+        SmwSolidity.SPIKE -> TileCat.PINCHOS
+        SmwSolidity.NONE -> TileCat.DECORADO
     }
 }
 

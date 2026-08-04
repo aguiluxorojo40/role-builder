@@ -384,27 +384,39 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         // horneado (music/level.aram); las rutas ▶/título la ensamblan de la ROM y
                         // no lo necesitan (por eso "suena en lo demás pero no en el editor" = falta
                         // este horneado). El botón la hornea al momento desde la ROM ya cargada.
-                        var musicBaked by remember(romBytes) {
-                            mutableStateOf(SmwAssetStore.isMusicBaked(context))
+                        // ESTADO del almacén horneado, que es de donde el EDITOR saca los sprites
+                        // y la música al jugar un mapa (modo proyecto, sin ROM). Si algo sale ✗,
+                        // eso es justo lo que se ve como CUADRO ROJO en vez del enemigo. Se puede
+                        // rehornear a la fuerza desde aquí, con la ROM ya cargada.
+                        var bakeStatus by remember(romBytes) {
+                            mutableStateOf(SmwAssetStore.status(context))
                         }
                         Text(
-                            "Música del editor (modo proyecto): " +
-                                if (musicBaked) "✓ horneada" else "✗ sin hornear",
+                            "Almacén del editor: " +
+                                bakeStatus.joinToString(" · ") { (n, ok) -> "$n ${if (ok) "✓" else "✗"}" },
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        if (!musicBaked) {
-                            Button(onClick = {
-                                val rom = romBytes ?: return@Button
-                                val ok = SmwAssetStore.bakeMusic(context, rom)
-                                musicBaked = ok
-                                Toast.makeText(
-                                    context,
-                                    if (ok) "🎵 Música horneada: ya sonará al jugar el mapa en el editor"
-                                    else "🔇 Esta ROM no ensambla la música (✗): no trae el banco esperado",
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            }) { Text("🎵 Hornear música para el editor") }
+                        if (bakeStatus.any { !it.second }) {
+                            Text(
+                                "Lo que salga ✗ es lo que el editor NO puede dibujar (de ahí los " +
+                                    "cuadros rojos en vez de enemigos). Pulsa para rehornearlo de tu ROM.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFE0A030),
+                            )
                         }
+                        Button(onClick = {
+                            val rom = romBytes ?: return@Button
+                            val n = runCatching { SmwAssetStore.bake(context, rom) }.getOrDefault(0)
+                            runCatching { SmwAssetStore.bakeMusic(context, rom) }
+                            bakeStatus = SmwAssetStore.status(context)
+                            val faltan = bakeStatus.filter { !it.second }.map { it.first }
+                            Toast.makeText(
+                                context,
+                                if (faltan.isEmpty()) "✅ Almacén completo ($n ficheros): el editor ya tiene sprites y música"
+                                else "⚠️ Horneado ($n), pero esta ROM no da: ${faltan.joinToString(", ")}",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }) { Text("🔄 Rehornear assets del editor") }
                     }
 
                     if (recipeFindings.isNotEmpty()) {

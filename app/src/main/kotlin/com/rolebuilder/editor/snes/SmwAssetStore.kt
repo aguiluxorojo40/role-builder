@@ -54,6 +54,23 @@ object SmwAssetStore {
     fun isMusicBaked(context: Context): Boolean = File(dir(context), "music/level.aram").isFile
 
     /**
+     * ESTADO real del almacén, para poder decir al usuario qué falta en vez de fallar en
+     * silencio (los cuadros rojos en vez de enemigos son exactamente esto: el atlas no está).
+     * Devuelve pares (etiqueta, ¿está?) en el orden en que importan.
+     */
+    fun status(context: Context): List<Pair<String, Boolean>> {
+        val root = dir(context)
+        val bigCount = bigSpriteFiles(context).size
+        return listOf(
+            "enemigos" to File(root, "sprites/enemies.png").isFile,
+            "Mario" to File(root, "sprites/mario.png").isFile,
+            "moneda" to File(root, "sprites/coin.png").isFile,
+            "jefes ($bigCount)" to (bigCount > 0),
+            "música" to isMusicBaked(context),
+        )
+    }
+
+    /**
      * Hornea SOLO la música (imagen ARAM del banco de nivel) desde [rom] al almacén, sin re-hacer
      * el resto de assets. Para el botón "hornear música" del editor: deja el modo proyecto con
      * banda sonora al instante. Devuelve true si la escribió (false si la ROM no la ensambla).
