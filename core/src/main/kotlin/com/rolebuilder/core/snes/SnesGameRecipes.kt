@@ -1535,7 +1535,10 @@ object SnesGameRecipes {
      * DOS 0xFF seguidos en posición de comando. (Mi Rle1 genérico paraba en el primero,
      * lo que truncaba fondos con rachas de 128.)
      */
-    private fun decompressSmwBackground(rom: ByteArray, dataPc: Int, maxOut: Int = 0x4000): ByteArray {
+    /** Tope de bloques del descompresor. Chocar con él = NO se halló el fin de datos. */
+    internal const val BG_DECOMP_CAP = 0x4000
+
+    private fun decompressSmwBackground(rom: ByteArray, dataPc: Int, maxOut: Int = BG_DECOMP_CAP): ByteArray {
         val out = ArrayList<Byte>(1024)
         var p = dataPc
         fun rd(): Int { val v = if (p in rom.indices) rom[p].toInt() and 0xFF else 0xFF; p++; return v }
@@ -1598,6 +1601,17 @@ object SnesGameRecipes {
         if (dataPc < 0 || dataPc >= rom.size) return BgParse.Error("datos fuera del ROM (pc=$dataPc)", isBg)
         val blocks = decompressSmwBackground(rom, dataPc)
         if (blocks.size < 4) return BgParse.Error("descompresión dio ${blocks.size} bloques", isBg)
+        // DESBORDE: si llegamos al tope es que NUNCA se encontró el fin de datos (FF FF), así
+        // que solo los primeros bloques son el fondo real y el resto es ROM adyacente leída
+        // como si fuera datos. Medido en ROM real: 20 de 24 fondos acaban así. Se reporta como
+        // error en vez de darlo por bueno, que es lo que hacía antes.
+        if (blocks.size >= BG_DECOMP_CAP) {
+            return BgParse.Error(
+                "descompresión DESBORDADA (${blocks.size} bloques, tope $BG_DECOMP_CAP): no se " +
+                    "halló el fin de datos, el formato RLE no cuadra",
+                isBg,
+            )
+        }
         // DOS hipótesis para la página del Map16 de fondo:
         //  A) umbral de PC (SMW_BG_PAGE_THRESHOLD_PC): conocimiento DEDUCIDO, sin verificar.
         //  B) bit 0 del propio byte isBg: los únicos valores de fondo reales medidos en ROM son
