@@ -868,7 +868,14 @@ object SnesGameRecipes {
     internal const val SMW_BG_SLOT_UNUSED = 0xFF
     /** Tabla de definiciones Map16 de Layer 2: SNES $0D9100 → PC 0x69100 [PROBABLE]. */
     internal const val SMW_MAP16_L2_PC = 0x69100
-    /** Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000 [PROBABLE]. */
+    /**
+     * Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000.
+     * AUDITADA en ROM real (auditMap16Fg): 136 teselas distintas en 128 bloques y un reparto de
+     * sub-paletas propio de un primer plano de SMW (pal2×120, pal3×28, pal4×33, pal5×83,
+     * pal6×54, pal7×32; la 0 y la 1 casi ausentes, que son las de fondo). Si apuntara a datos
+     * que no son definiciones Map16, saldría plano o con las 8 paletas repartidas por igual.
+     * Ya no se marca [PROBABLE]: pasó la comprobación.
+     */
     internal const val SMW_MAP16_FG_PC = 0x68000
 
     // ---- Validación de los offsets [PROBABLE] contra la ROM del usuario ----
@@ -939,7 +946,13 @@ object SnesGameRecipes {
     internal const val SMW_PLAYER_HEAD_TILE_PC = 0x600C
     internal const val SMW_PLAYER_BODY_TILE_PC = 0x60CC
 
-    /** Umbral PC: los datos de fondo por debajo son página 0; por encima, página 1 [PROBABLE]. */
+    /**
+     * OBSOLETO — sustituido por evidencia. Este umbral de PC pretendía decidir la página del
+     * Map16 de fondo. La auditoría en ROM real lo desmintió: da pág.0×23 / pág.1×1, mientras
+     * que el bit 0 de isBg da 17/7, que cuadra EXACTO con los valores medidos (0x06×17,
+     * 0x07×7). Las dos hipótesis DISCREPABAN en 8 de los 24 fondos: esos 8 se dibujaban con
+     * la página equivocada. Se conserva solo para que la auditoría siga comparando.
+     */
     internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
     internal const val SMW_SLOT_ENTRIES = 16
