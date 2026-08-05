@@ -845,28 +845,44 @@ object SnesGameRecipes {
     // -------------------- Fondos de Layer 2 (color REAL por tesela) --------------------
     //
     // Los fondos de Layer 2 sí llevan un tilemap ESTÁTICO: por eso son la vía asequible
-    // al color por tesela. Cadena: puntero $05E600 → (si banco 0xFF) banco $0C → RLE1 →
-    // índices de bloque Map16 → tabla Map16 de Layer 2 → 4 palabras [tile#][YXPCCCTT]
-    // que SnesTilemap ya sabe leer. OFFSETS [PROBABLE] pendientes de validar en ROM real
-    // (por eso el render va con gate de cordura y es aditivo).
+    // al color por tesela. Cadena: puntero $05E600 → (si banco == 0xFF) banco $0C → RLE1
+    // → índices de bloque Map16 → tabla Map16 de Layer 2 → 4 palabras [tile#][YXPCCCTT]
+    // que SnesTilemap ya sabe leer.
+    //
+    // LA REGLA REAL (portada del desensamblado galaxyhaxz/smw, rutina de extracción
+    // `add_packed_level_bg`, y VERIFICADA contra la ROM del usuario — ver nota en
+    // [layer2BgParse]): el 3er byte de la entrada es el BANCO del puntero. Si vale 0xFF, el
+    // nivel TIENE fondo de imagen y sus datos están en el banco $0C; si vale otra cosa
+    // (0x06/0x07…), el Layer 2 son OBJETOS y no hay tilemap de fondo que leer. Esto es lo
+    // CONTRARIO de lo que suponía el código anterior (tomaba 0xFF por "slot vacío" y
+    // 0x06/0x07 por fondos), de ahí que descomprimiera punteros de objetos como si fueran
+    // RLE y 20 de 24 desbordaran el descompresor.
 
     /** Tabla de punteros de Layer 2: SNES $05E600 → PC 0x2E600 (0x200 × 3 bytes). */
     internal const val SMW_LAYER2_PTR_PC = 0x2E600
-    /** Base PC del banco $0C, donde viven los datos de fondo (SNES $0C8000 → 0x60000). */
+    /**
+     * Base PC del banco $0C, donde viven los datos de fondo (SNES $0C8000 → 0x60000).
+     * Cuando el banco del puntero es 0xFF, el juego SUSTITUYE el banco por $0C
+     * (`ea = (ea & 0xffff) | 0xc0000` en `add_packed_level_bg`): por eso los datos de todos
+     * los fondos reales caen aquí. Verificado en ROM: los 17 fondos distintos viven en
+     * $0C:D900..$0C:F45A.
+     */
     internal const val SMW_BG_BANK_PC = 0x60000
     /**
-     * Valor del 3er byte de la entrada que marca SLOT NO USADO (relleno de ROM).
-     *
-     * CORREGIDO CON DATOS: la auditoría sobre una ROM real (--audit-bg / botón del editor) dio
-     * `isBg: 0x06×17, 0x07×7, 0xFF×486` sobre los 512 slots. Es decir, el 95% vale 0xFF — el
-     * relleno típico— y solo 24 niveles traen fondo de verdad (0x06/0x07), cifra coherente con
-     * SMW. Antes esta constante se llamaba SMW_BG_IS_BACKGROUND y valía 0xFF: estaba justo del
-     * REVÉS, y además el parser usaba `isBg and 2`, que dejaba pasar los tres valores (0x06,
-     * 0x07 y 0xFF tienen el bit 1 puesto). Resultado: 486 slots VACÍOS se tomaban por fondos
-     * válidos y se renderizaba basura con ellos, sin que nada avisara.
+     * Valor del 3er byte (banco del puntero) que marca "este nivel TIENE fondo de imagen".
+     * Cuando el banco es 0xFF, los datos comprimidos del fondo están en el banco $0C.
+     * Cualquier otro banco (0x06/0x07…) significa que el Layer 2 son objetos, no un fondo.
+     * VERIFICADO en la ROM del usuario: 486 slots valen 0xFF y apuntan (con banco $0C) a solo
+     * 17 fondos distintos, TODOS con terminador FF FF y ~864 bloques; los 26 slots 0x06/0x07
+     * son objetos y desbordan si se leen como RLE.
      */
-    internal const val SMW_BG_SLOT_UNUSED = 0xFF
-    /** Tabla de definiciones Map16 de Layer 2: SNES $0D9100 → PC 0x69100 [PROBABLE]. */
+    internal const val SMW_BG_BANK_MARKER = 0xFF
+    /**
+     * Tabla de definiciones Map16 de Layer 2 (fondos): SNES $0D9100 → PC 0x69100.
+     * CONFIRMADO en el desensamblado: `BufferBGTilemap` ($05:8126) rellena los punteros
+     * Map16 del fondo con `R0_W = 0x9100` (`kMap16Data_Backgrounds`, banco $0D). Ya no es
+     * [PROBABLE].
+     */
     internal const val SMW_MAP16_L2_PC = 0x69100
     /**
      * Tabla de definiciones Map16 de FG (Layer 1): SNES $0D8000 → PC 0x68000.
@@ -947,13 +963,18 @@ object SnesGameRecipes {
     internal const val SMW_PLAYER_BODY_TILE_PC = 0x60CC
 
     /**
-     * OBSOLETO — sustituido por evidencia. Este umbral de PC pretendía decidir la página del
-     * Map16 de fondo. La auditoría en ROM real lo desmintió: da pág.0×23 / pág.1×1, mientras
-     * que el bit 0 de isBg da 17/7, que cuadra EXACTO con los valores medidos (0x06×17,
-     * 0x07×7). Las dos hipótesis DISCREPABAN en 8 de los 24 fondos: esos 8 se dibujaban con
-     * la página equivocada. Se conserva solo para que la auditoría siga comparando.
+     * Umbral de DIRECCIÓN que decide la página del Map16 de fondo (byte alto del índice de
+     * bloque). PORTADO del desensamblado, no deducido: en `add_packed_level_bg` la marca del
+     * fondo es `fl = ((ea & 0xffff) >= 0xE8FE) << 4 | 2`, y `LoadSublevel` usa `fl >> 4` como
+     * `blocks_layer2_tiles_hi` (la página). O sea, página 1 si la dirección del fondo es
+     * ≥ $E8FE, página 0 si no. VERIFICADO en ROM: parte los 17 fondos distintos en 12 de
+     * página 0 ($0C:D900..$0C:E8EE) y 5 de página 1 ($0C:E8FE..$0C:F45A).
+     *
+     * (La vieja hipótesis "bit 0 del banco" era imposible: TODOS los fondos reales tienen
+     * banco 0xFF, así que su bit 0 es constante y no puede distinguir páginas. El reparto
+     * 17/7 que parecía confirmarla era solo cuántos slots-objeto usan banco 0x06 vs 0x07.)
      */
-    internal const val SMW_BG_PAGE_THRESHOLD_PC = 0x668FE
+    internal const val SMW_BG_PAGE_THRESHOLD_ADDR = 0xE8FE
     /** Nº de entradas (settings 0..F) de cada tabla de slots. */
     internal const val SMW_SLOT_ENTRIES = 16
     /** Valor "ranura vacía" en las tablas de slots (no carga ningún fichero). */
@@ -1524,8 +1545,9 @@ object SnesGameRecipes {
      *
      * Es la vía al color REAL por tesela de los fondos: cada entrada trae el `CCC`
      * (sub-paleta) de esa tesela. Función pura para poder testearla con datos
-     * sintéticos. Los offsets Map16/umbral son [PROBABLE]; el consumidor aplica un
-     * gate de cordura sobre la concentración de sub-paletas.
+     * sintéticos. La condición de fondo, el banco $0C, la tabla Map16 y el umbral de
+     * página están PORTADOS del desensamblado y verificados en ROM (ver [layer2BgParse]);
+     * el consumidor mantiene además un gate de cordura sobre la concentración de sub-paletas.
      */
     /**
      * Descompresor EXACTO del fondo de Layer 2 (port 1:1 de BufferBGTilemap, $05:8126):
@@ -1559,24 +1581,26 @@ object SnesGameRecipes {
      * tiene Layer 2" y "el parser falló" eran indistinguibles. Ahora se dicen por separado.
      */
     sealed interface BgParse {
-        /** El nivel tiene fondo y se leyó: [entries] teselas, desde [dataPc], página [page]. */
+        /**
+         * El nivel tiene fondo y se leyó: [entries] teselas, desde [dataPc], página [page].
+         * [bank] es el 3er byte del puntero (siempre 0xFF en un fondo real).
+         */
         data class Success(
             val entries: List<SnesTilemap.TilemapEntry>,
-            val isBg: Int,
+            val bank: Int,
             val page: Int,
             val dataPc: Int,
             val blocks: Int,
-            /** Página según el umbral de PC deducido (hipótesis A), para comparar. */
-            val pageByThreshold: Int = page,
-            /** Página según el bit 0 de isBg (hipótesis B), para comparar. */
-            val pageByBit0: Int = page,
         ) : BgParse
 
-        /** El nivel NO tiene fondo tilemap (su Layer 2 son objetos). No es un fallo. */
-        data class NoBackground(val isBg: Int) : BgParse
+        /**
+         * El nivel NO tiene fondo tilemap (su Layer 2 son objetos). No es un fallo.
+         * [bank] es el banco del puntero (0x06/0x07… = datos de objetos, no de fondo).
+         */
+        data class NoBackground(val bank: Int) : BgParse
 
         /** El parser NO pudo leerlo. [reason] dice por qué. Esto SÍ es un fallo. */
-        data class Error(val reason: String, val isBg: Int?) : BgParse
+        data class Error(val reason: String, val bank: Int?) : BgParse
     }
 
     /**
@@ -1588,41 +1612,41 @@ object SnesGameRecipes {
     internal fun layer2BgParse(rom: ByteArray, delta: Int, level: Int): BgParse {
         val p = SMW_LAYER2_PTR_PC + delta + 3 * level
         if (p < 0 || p + 2 >= rom.size) return BgParse.Error("puntero fuera del ROM", null)
-        val isBg = byte(rom, p + 2)
-        // Slot NO USADO (relleno 0xFF): no es un fondo. Es el caso mayoritario (486 de 512 en
-        // la ROM auditada) y antes se colaba como fondo válido generando basura.
-        if (isBg == SMW_BG_SLOT_UNUSED) return BgParse.NoBackground(isBg)
-        // El bit 1 distingue "Layer 2 de imagen" de "Layer 2 de objetos" entre los slots que SÍ
-        // se usan. Se mantiene, pero ya no es lo único que filtra.
-        if (isBg and 2 == 0) return BgParse.NoBackground(isBg)
         val addr = byte(rom, p) or (byte(rom, p + 1) shl 8)
-        if (addr < 0x8000) return BgParse.Error("dirección $%04X fuera de banco".format(addr), isBg)
+        val bank = byte(rom, p + 2)
+        // REGLA REAL (portada de galaxyhaxz/smw `add_packed_level_bg` y VERIFICADA contra la
+        // ROM del usuario): hay fondo de imagen SOLO si el banco del puntero es 0xFF; entonces
+        // los datos viven en el banco $0C y la dirección es la parte baja de 16 bits. Cualquier
+        // otro banco (0x06/0x07…) = Layer 2 de OBJETOS, no un tilemap de fondo.
+        //
+        // Verificación en la ROM del usuario (SHA1 6B47BB75…, auditoría de los 512 slots):
+        //   · 486 slots con banco 0xFF → 17 fondos DISTINTOS en $0C:D900..$0C:F45A,
+        //     TODOS con terminador FF FF y ~864 bloques (0 desbordes).
+        //   · 26 slots con banco 0x06/0x07 → objetos; leerlos como RLE desde $0C desborda.
+        // El código anterior tenía la regla al REVÉS (0xFF = "vacío", 0x06/0x07 = "fondo"),
+        // por eso descomprimía basura y 20 de 24 chocaban con el tope del descompresor.
+        if (bank != SMW_BG_BANK_MARKER) return BgParse.NoBackground(bank)
+        if (addr < 0x8000) return BgParse.Error("dirección $%04X fuera de banco".format(addr), bank)
         val dataPc = SMW_BG_BANK_PC + delta + (addr - 0x8000)
-        if (dataPc < 0 || dataPc >= rom.size) return BgParse.Error("datos fuera del ROM (pc=$dataPc)", isBg)
+        if (dataPc < 0 || dataPc >= rom.size) return BgParse.Error("datos fuera del ROM (pc=$dataPc)", bank)
         val blocks = decompressSmwBackground(rom, dataPc)
-        if (blocks.size < 4) return BgParse.Error("descompresión dio ${blocks.size} bloques", isBg)
-        // DESBORDE: si llegamos al tope es que NUNCA se encontró el fin de datos (FF FF), así
-        // que solo los primeros bloques son el fondo real y el resto es ROM adyacente leída
-        // como si fuera datos. Medido en ROM real: 20 de 24 fondos acaban así. Se reporta como
-        // error en vez de darlo por bueno, que es lo que hacía antes.
+        if (blocks.size < 4) return BgParse.Error("descompresión dio ${blocks.size} bloques", bank)
+        // DESBORDE: si llegamos al tope es que NUNCA se encontró el fin de datos (FF FF). Con la
+        // regla correcta esto ya no pasa en la ROM vanilla, pero se mantiene el guardarraíl: si
+        // aparece, es que algo (banco/dirección) no cuadra, y hay que decirlo, no dar basura.
         if (blocks.size >= BG_DECOMP_CAP) {
             return BgParse.Error(
                 "descompresión DESBORDADA (${blocks.size} bloques, tope $BG_DECOMP_CAP): no se " +
                     "halló el fin de datos, el formato RLE no cuadra",
-                isBg,
+                bank,
             )
         }
-        // DOS hipótesis para la página del Map16 de fondo:
-        //  A) umbral de PC (SMW_BG_PAGE_THRESHOLD_PC): conocimiento DEDUCIDO, sin verificar.
-        //  B) bit 0 del propio byte isBg: los únicos valores de fondo reales medidos en ROM son
-        //     0x06 (17 niveles) y 0x07 (7), que difieren SOLO en el bit 0 — pinta a selector de
-        //     página metido en el propio dato, que es como suele hacerse.
-        // Se calculan las dos y la auditoría las enseña juntas para decidir con datos.
-        val pageByThreshold = if (dataPc - delta < SMW_BG_PAGE_THRESHOLD_PC) 0 else 1
-        val pageByBit0 = isBg and 1
-        val page = pageByBit0
+        // Página del Map16 de fondo = bit 4 de la marca `fl` del juego, que es (addr ≥ $E8FE).
+        // Portado de `fl = ((ea & 0xffff) >= 0xE8FE) << 4 | 2` y usado por LoadSublevel como
+        // `blocks_layer2_tiles_hi = fl >> 4`. Verificado en ROM (ver constante).
+        val page = if (addr >= SMW_BG_PAGE_THRESHOLD_ADDR) 1 else 0
         val entries = bgEntriesFrom(rom, delta, blocks, page)
-        return BgParse.Success(entries, isBg, page, dataPc, blocks.size, pageByThreshold, pageByBit0)
+        return BgParse.Success(entries, bank, page, dataPc, blocks.size)
     }
 
     /**
@@ -1634,17 +1658,17 @@ object SnesGameRecipes {
     fun auditLayer2(rom: ByteArray, header: SnesHeader, levels: IntRange = 0x000..0x1FF): List<String> {
         val delta = smwHeaderDelta(header)
         val out = ArrayList<String>()
-        out.add("nivel\tisBg\tpagina\tdataPc\tteselas\testado")
+        out.add("nivel\tbanco\tpagina\tdataPc\tteselas\testado")
         for (lv in levels) {
             val r = runCatching { layer2BgParse(rom, delta, lv) }.getOrElse {
                 BgParse.Error("excepción: ${it.message}", null)
             }
             val row = when (r) {
                 is BgParse.Success ->
-                    "%03X\t0x%02X\t%d\t0x%X\t%d\tOK".format(lv, r.isBg, r.page, r.dataPc, r.entries.size)
-                is BgParse.NoBackground -> "%03X\t0x%02X\t-\t-\t0\tsin fondo".format(lv, r.isBg)
+                    "%03X\t0x%02X\t%d\t0x%X\t%d\tOK".format(lv, r.bank, r.page, r.dataPc, r.entries.size)
+                is BgParse.NoBackground -> "%03X\t0x%02X\t-\t-\t0\tsin fondo".format(lv, r.bank)
                 is BgParse.Error ->
-                    "%03X\t%s\t-\t-\t0\tERROR: %s".format(lv, r.isBg?.let { "0x%02X".format(it) } ?: "?", r.reason)
+                    "%03X\t%s\t-\t-\t0\tERROR: %s".format(lv, r.bank?.let { "0x%02X".format(it) } ?: "?", r.reason)
             }
             out.add(row)
         }
@@ -1695,28 +1719,28 @@ object SnesGameRecipes {
     fun auditLayer2Summary(rom: ByteArray, header: SnesHeader): String {
         val delta = smwHeaderDelta(header)
         var ok = 0; var none = 0; var err = 0
-        val isBgSeen = sortedMapOf<Int, Int>()
+        val banksSeen = sortedMapOf<Int, Int>()
         val pages = sortedMapOf<Int, Int>()
-        val pagesThr = sortedMapOf<Int, Int>()
-        var discrepan = 0
+        val distinctBg = HashSet<Int>()
         val reasons = HashMap<String, Int>()
         for (lv in 0x000..0x1FF) {
             when (val r = runCatching { layer2BgParse(rom, delta, lv) }.getOrElse { BgParse.Error("excepción", null) }) {
                 is BgParse.Success -> {
-                    ok++; isBgSeen.merge(r.isBg, 1, Int::plus); pages.merge(r.page, 1, Int::plus)
-                    pagesThr.merge(r.pageByThreshold, 1, Int::plus)
-                    if (r.pageByThreshold != r.pageByBit0) discrepan++
+                    ok++; banksSeen.merge(r.bank, 1, Int::plus); pages.merge(r.page, 1, Int::plus)
+                    distinctBg.add(r.dataPc)
                 }
-                is BgParse.NoBackground -> { none++; isBgSeen.merge(r.isBg, 1, Int::plus) }
-                is BgParse.Error -> { err++; reasons.merge(r.reason.take(40), 1, Int::plus) }
+                is BgParse.NoBackground -> { none++; banksSeen.merge(r.bank, 1, Int::plus) }
+                is BgParse.Error -> { err++; r.bank?.let { banksSeen.merge(it, 1, Int::plus) }; reasons.merge(r.reason.take(40), 1, Int::plus) }
             }
         }
         return buildString {
+            // Señal de que la regla acierta: en la ROM vanilla debe salir OK=486 · sin fondo=26
+            // · ERROR=0, con 17 fondos DISTINTOS (muchos slots comparten imagen). Si aparecen
+            // errores de "descompresión DESBORDADA" es que el banco/dirección no cuadra.
             appendLine("Fondos (Layer 2) de los 512 slots: OK=$ok · sin fondo=$none · ERROR=$err")
-            appendLine("Valores de isBg vistos: " + isBgSeen.entries.joinToString { "0x%02X×%d".format(it.key, it.value) })
-            appendLine("Página EN USO (bit0 de isBg): " + pages.entries.joinToString { "pág.${it.key}×${it.value}" })
-            appendLine("Página según umbral PC (hipót. antigua): " + pagesThr.entries.joinToString { "pág.${it.key}×${it.value}" })
-            appendLine("Niveles en que las dos hipótesis DISCREPAN: $discrepan")
+            appendLine("Fondos DISTINTOS (por dataPc): ${distinctBg.size}")
+            appendLine("Banco del puntero visto: " + banksSeen.entries.joinToString { "0x%02X×%d".format(it.key, it.value) })
+            appendLine("Página Map16 (1 si addr≥\$E8FE): " + pages.entries.joinToString { "pág.${it.key}×${it.value}" })
             if (reasons.isNotEmpty()) appendLine("Motivos de error: " + reasons.entries.joinToString { "${it.key} ×${it.value}" })
         }
     }
@@ -1732,8 +1756,8 @@ object SnesGameRecipes {
         page: Int,
     ): List<SnesTilemap.TilemapEntry> {
         // Página del Map16 de fondo (byte alto del índice de bloque). La elige quien llama,
-        // a partir del umbral SMW_BG_PAGE_THRESHOLD_PC, que es conocimiento DEDUCIDO y sin
-        // verificar: la auditoría ([auditLayer2]) existe para medir si acierta.
+        // a partir del umbral de dirección SMW_BG_PAGE_THRESHOLD_ADDR (portado del juego:
+        // `blocks_layer2_tiles_hi = fl >> 4`). Ver [layer2BgParse].
         val hi = page
         val map16Base = SMW_MAP16_L2_PC + delta
         val entries = ArrayList<SnesTilemap.TilemapEntry>(blocks.size * 4)

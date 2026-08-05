@@ -36,11 +36,11 @@ class BgParseDiagnosticTest {
     }
 
     @Test
-    fun `el resumen cuenta los tres casos y los valores de isBg`() {
+    fun `el resumen cuenta los tres casos y los bancos vistos`() {
         val s = SnesGameRecipes.auditLayer2Summary(ByteArray(0x80000), header())
         assertTrue(s.contains("OK="), "debe contar los OK: $s")
         assertTrue(s.contains("sin fondo="), "debe contar los sin fondo: $s")
         assertTrue(s.contains("ERROR="), "debe contar los errores: $s")
-        assertTrue(s.contains("isBg"), "debe volcar los valores de isBg vistos: $s")
+        assertTrue(s.contains("Banco"), "debe volcar los bancos de puntero vistos: $s")
     }
 }

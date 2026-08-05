@@ -22,13 +22,15 @@ class SnesLayer2Test {
     fun `layer2BgEntries resuelve puntero, RLE1 y Map16 a entradas de tilemap`() {
         val rom = ByteArray(0x70000)
 
-        // Puntero de Layer 2 del nivel 0: 3er byte 0x06 (fondo real), addr $8100 en banco $0C.
+        // Puntero de Layer 2 del nivel 0: banco 0xFF (marca de FONDO real), addr $8100.
+        // Cuando el banco es 0xFF los datos viven en el banco $0C, así que
         // dataPc = 0x60000 + (0x8100 - 0x8000) = 0x60100.
         val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
-        // 0x06 es un valor de fondo REAL (medido en ROM: 0x06×17 y 0x07×7 son los únicos
-        // fondos de verdad). Antes este test ponía 0xFF aquí, que resultó ser el relleno de
-        // slot VACÍO: el test codificaba el bug y pasaba igualmente.
-        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0x06
+        // REGLA REAL portada de galaxyhaxz/smw (add_packed_level_bg) y verificada contra la
+        // ROM del usuario: banco==0xFF => hay fondo (en banco $0C). El código antiguo lo tenía
+        // AL REVÉS (tomaba 0xFF por "vacío" y 0x06/0x07 por fondos), y este test blindaba el
+        // bug poniendo 0x06 aquí.
+        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0xFF.toByte()
 
         // Datos de fondo en 0x60100: copia directa de 4 bloques [5,6,5,6] + fin (FF FF).
         val dataPc = SnesGameRecipes.SMW_BG_BANK_PC + (0x8100 - 0x8000)
@@ -52,15 +54,62 @@ class SnesLayer2Test {
         assertEquals(0x123, entries[4].tileIndex)
         assertEquals(5, entries[4].palette)
         assertTrue(entries[4].hFlip)
+
+        // Y como diagnóstico explícito: es Success, banco 0xFF y página 0 (addr $8100 < $E8FE).
+        val r = SnesGameRecipes.layer2BgParse(rom, 0, 0)
+        assertTrue(
+            r is SnesGameRecipes.BgParse.Success && r.bank == 0xFF && r.page == 0,
+            "debe ser Success con banco 0xFF y página 0: $r",
+        )
     }
 
     @Test
-    fun `layer2BgEntries vacio cuando el nivel no es un fondo`() {
+    fun `un banco distinto de 0xFF es Layer 2 de OBJETOS, no un fondo`() {
+        // Banco 0x06/0x07 = el Layer 2 son objetos (datos de nivel en ese banco), no una imagen
+        // de fondo comprimida. VERIFICADO en ROM: los 26 slots 0x06/0x07 desbordan si se leen
+        // como RLE desde $0C, justo el bug anterior. Deben clasificarse como "sin fondo".
         val rom = ByteArray(0x70000)
-        // Sin el bit 1 → es Layer 2 de OBJETOS, no un fondo tilemap.
         val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
-        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0x0C
-        assertTrue(SnesGameRecipes.layer2BgEntries(rom, 0, 0).isEmpty())
+        for (bank in intArrayOf(0x06, 0x07, 0x0C)) {
+            rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = bank.toByte()
+            val r = SnesGameRecipes.layer2BgParse(rom, 0, 0)
+            assertTrue(r is SnesGameRecipes.BgParse.NoBackground, "banco 0x%02X debe ser sin fondo".format(bank))
+            assertTrue(SnesGameRecipes.layer2BgEntries(rom, 0, 0).isEmpty())
+        }
+    }
+
+    @Test
+    fun `la pagina del Map16 de fondo la decide el umbral de direccion 0xE8FE`() {
+        // Portado del juego: page = (addr >= $E8FE). Dos fondos con addr a cada lado del umbral.
+        fun parseAt(addr: Int): SnesGameRecipes.BgParse {
+            val rom = ByteArray(0x70000)
+            val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
+            rom[ptr] = (addr and 0xFF).toByte(); rom[ptr + 1] = ((addr shr 8) and 0xFF).toByte()
+            rom[ptr + 2] = 0xFF.toByte()
+            val dataPc = SnesGameRecipes.SMW_BG_BANK_PC + (addr - 0x8000)
+            rom[dataPc] = 0x03                                   // copia directa de 4 bloques
+            rom[dataPc + 1] = 0; rom[dataPc + 2] = 0; rom[dataPc + 3] = 0; rom[dataPc + 4] = 0
+            rom[dataPc + 5] = 0xFF.toByte(); rom[dataPc + 6] = 0xFF.toByte()
+            return SnesGameRecipes.layer2BgParse(rom, 0, 0)
+        }
+        val below = parseAt(0xE8FD)   // justo por debajo → página 0
+        val atOr = parseAt(0xE8FE)    // en el umbral → página 1
+        assertTrue(below is SnesGameRecipes.BgParse.Success && below.page == 0, "addr \$E8FD → página 0")
+        assertTrue(atOr is SnesGameRecipes.BgParse.Success && atOr.page == 1, "addr \$E8FE → página 1")
+    }
+
+    @Test
+    fun `un fondo sin terminador util no se da por bueno en silencio`() {
+        // No-fallo-silencioso: si el banco dice "fondo" (0xFF) pero los datos no descomprimen a
+        // algo con sentido, debe ser BgParse.Error, no una lista vacía indistinguible de
+        // "sin fondo". Aquí los datos son FF FF inmediato → 0 bloques → Error.
+        val rom = ByteArray(0x70000)
+        val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
+        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0xFF.toByte()
+        val dataPc = SnesGameRecipes.SMW_BG_BANK_PC + (0x8100 - 0x8000)
+        rom[dataPc] = 0xFF.toByte(); rom[dataPc + 1] = 0xFF.toByte()
+        val r = SnesGameRecipes.layer2BgParse(rom, 0, 0)
+        assertTrue(r is SnesGameRecipes.BgParse.Error, "datos vacíos deben ser Error, no vacío mudo")
     }
 
     @Test
@@ -127,13 +176,4 @@ class SnesLayer2Test {
         assertTrue(SnesGameRecipes.renderSmwBackground(ByteArray(0x70000), header, 0) == null)
     }
 
-    @Test
-    fun `un slot de relleno 0xFF NO es un fondo`() {
-        // Medido en ROM real: 486 de los 512 slots valen 0xFF (relleno). Antes el parser los
-        // tomaba por fondos válidos y generaba basura con ellos. Este test lo impide.
-        val rom = ByteArray(0x70000)
-        val ptr = SnesGameRecipes.SMW_LAYER2_PTR_PC
-        rom[ptr] = 0x00; rom[ptr + 1] = 0x81.toByte(); rom[ptr + 2] = 0xFF.toByte()
-        assertTrue(SnesGameRecipes.layer2BgEntries(rom, 0, 0).isEmpty())
-    }
 }

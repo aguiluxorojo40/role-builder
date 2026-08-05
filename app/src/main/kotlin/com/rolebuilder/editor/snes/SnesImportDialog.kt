@@ -429,9 +429,10 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         }
 
                         // AUDITORÍA DE FONDOS en el propio móvil: recorre los 512 slots y dice
-                        // qué valor real tiene el byte isBg de cada nivel, qué página Map16 se
-                        // eligió y cuántos fallan. Es la evidencia para resolver los offsets
-                        // [PROBABLE] SIN sacar la ROM del dispositivo (nada sube a ningún sitio).
+                        // qué banco tiene el puntero de Layer 2 de cada nivel (0xFF = fondo en
+                        // banco $0C; 0x06/0x07 = objetos), qué página Map16 se eligió y cuántos
+                        // fallan. Es la evidencia que valida la regla SIN sacar la ROM del
+                        // dispositivo (nada sube a ningún sitio).
                         var auditResumen by remember(romBytes) { mutableStateOf<String?>(null) }
                         Button(onClick = {
                             val rom = romBytes ?: return@Button
