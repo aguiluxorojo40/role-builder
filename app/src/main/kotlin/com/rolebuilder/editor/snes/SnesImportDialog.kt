@@ -437,7 +437,10 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             val rom = romBytes ?: return@Button
                             val hdr = header ?: return@Button
                             runCatching {
-                                auditResumen = SnesGameRecipes.auditLayer2Summary(rom, hdr)
+                                // Fondos (Layer 2) + tabla de primer plano (Layer 1) en el mismo toque.
+                                auditResumen = SnesGameRecipes.auditLayer2Summary(rom, hdr) +
+                                    "\n— Tabla Map16 de PRIMER PLANO —\n" +
+                                    SnesGameRecipes.auditMap16Fg(rom, hdr)
                                 // Detalle por nivel a Descargas, para poder mirarlo con calma.
                                 val tsv = SnesGameRecipes.auditLayer2(rom, hdr).joinToString("\n")
                                 SnesImport.exportToDownloads(
@@ -447,7 +450,7 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             }.onFailure {
                                 auditResumen = "Falló la auditoría: ${it::class.simpleName}: ${it.message}"
                             }
-                        }) { Text("🔎 Auditar fondos (Layer 2) de esta ROM") }
+                        }) { Text("🔎 Auditar tablas Map16 (fondo y primer plano)") }
                         auditResumen?.let { r ->
                             Text(
                                 r,

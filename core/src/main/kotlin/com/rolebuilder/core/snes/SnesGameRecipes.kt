@@ -1624,6 +1624,46 @@ object SnesGameRecipes {
         return out
     }
 
+    /**
+     * Audita la tabla Map16 de PRIMER PLANO ([SMW_MAP16_FG_PC], marcada [PROBABLE]) contra la
+     * que SÍ usa la importación de niveles ([smwMap16DefTable], cuyos punteros por tileset están
+     * en uso y producen niveles que se ven bien).
+     *
+     * Motivo: son regiones DISTINTAS del ROM. El importador lee los bloques comunes en 0x8000 y
+     * los específicos en 0x8B70..0xE300, mientras la constante [PROBABLE] apunta a 0x68000. Una
+     * de las dos está mal, y la de 0x68000 alimenta el color por tesela del primer plano
+     * ([map16FgPaletteByTile]). Esto lo mide en vez de suponerlo.
+     */
+    fun auditMap16Fg(rom: ByteArray, header: SnesHeader): String {
+        val delta = smwHeaderDelta(header)
+        val fg = checkMap16Table(rom, SMW_MAP16_FG_PC + delta, "FG [PROBABLE] 0x68000")
+        val comun = checkMap16Table(rom, 0x8000 + delta, "comunes (los que usa el importador)")
+
+        // ¿Coinciden los bytes? Si ambas apuntaran a la misma tabla, serían iguales.
+        val n = 512
+        var iguales = 0
+        for (i in 0 until n) {
+            val a = SMW_MAP16_FG_PC + delta + i
+            val b = 0x8000 + delta + i
+            if (a < rom.size && b < rom.size && rom[a] == rom[b]) iguales++
+        }
+
+        // Reparto de sub-paletas que sale de la tabla [PROBABLE]: si apunta a datos que no son
+        // definiciones Map16, saldrá plano o absurdo.
+        val pal = map16FgPaletteByTile(rom, delta)
+        val porPaleta = sortedMapOf<Int, Int>()
+        pal.values.forEach { porPaleta.merge(it, 1, Int::plus) }
+
+        return buildString {
+            appendLine("Map16 FG [PROBABLE] @0x%X: %s — %s".format(SMW_MAP16_FG_PC, if (fg.ok) "✓" else "✗", fg.reason))
+            appendLine("Map16 comunes @0x8000: %s — %s".format(if (comun.ok) "✓" else "✗", comun.reason))
+            appendLine("Bytes iguales entre ambas (de $n): $iguales" +
+                if (iguales > n * 9 / 10) " → parecen la MISMA tabla" else " → son tablas DISTINTAS")
+            appendLine("Teselas con sub-paleta deducida: ${pal.size}")
+            appendLine("Reparto de sub-paletas: " + porPaleta.entries.joinToString { "pal${it.key}×${it.value}" })
+        }
+    }
+
     /** Resumen de la auditoría: cuántos niveles OK / sin fondo / con error, y qué isBg salen. */
     fun auditLayer2Summary(rom: ByteArray, header: SnesHeader): String {
         val delta = smwHeaderDelta(header)
