@@ -58,11 +58,15 @@ import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.engine.platformer.ProjectPlatformer
 import com.rolebuilder.core.io.ProjectIo
+import com.rolebuilder.core.model.EMPTY_TILE
+import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
 import com.rolebuilder.core.snes.SmwBlockBehavior
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SmwPhysicsReader
 import com.rolebuilder.core.snes.SnesDecoder
+import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.player.ui.VirtualJoystick
 import java.io.File
@@ -242,14 +246,62 @@ class PlatformerActivity : ComponentActivity() {
                 }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
             }.toMap()
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
+        // MUNDO de dibujo: el mismo atlas de tiles REAL que la importación al editor, para que
+        // "▶ Jugar" se vea con sus gráficos (y su fondo de Layer 2) en vez de la colisión por
+        // colores. Si el nivel no se reconstruye, queda null y el renderer cae a la vista de
+        // colisión (comportamiento anterior). El MOTOR sigue saliendo de [buildEngine].
+        val world = buildRomWorld(rom, header, level)
         return PlatformerRenderer(
-            engine, null, marioBmp, loadEnemies(), audio,
+            engine, world, marioBmp, loadEnemies(), audio,
             marioBigBmp, marioFireBmp, marioCapeBmp,
             romEnemyFrames = enemyFrames.ifEmpty { null },
             bigSpriteBitmaps = loadBigSprites(),
             coinBitmap = loadCoin(),
             powerupBitmap = loadPowerups(),
         )
+    }
+
+    /**
+     * MUNDO de dibujo para el modo ROM: rasteriza el nivel [level] a su atlas de tiles REAL
+     * ([SnesGameRecipes.extractSmwLevelAsMap], el mismo que usa la importación al editor) y lo
+     * deja como [PlatformerWorld] sobre la caché, para que "▶ Jugar" dibuje sus gráficos (y el
+     * fondo de Layer 2) en vez de la colisión por colores.
+     *
+     * El MOTOR sigue saliendo de la colisión de la ROM ([buildEngine]); esto SOLO añade el
+     * dibujo. Es seguro superponerlos porque [extractSmwLevelAsMap] y [smwLevelCollision]
+     * calculan la rejilla IGUAL (cols = min(lastCol+2, totalCols); 27 filas), así el tile de
+     * cada casilla cae sobre su colisión. `maxCols = 512` (máximo de un nivel = 32 pantallas)
+     * garantiza que el ancho del mundo iguala al del motor.
+     *
+     * Devuelve null si el nivel no se reconstruye → el renderer cae a la vista de colisión
+     * (comportamiento anterior), sin romper nada.
+     */
+    private fun buildRomWorld(rom: ByteArray, header: SnesHeader, level: Int): PlatformerWorld? {
+        val m = runCatching { SnesGameRecipes.extractSmwLevelAsMap(rom, header, level, maxCols = 512) }
+            .getOrNull() ?: return null
+        // Atlas → PNG en la caché (images/), que es donde el renderer busca la imagen del tileset.
+        val dir = File(cacheDir, "smw_play_world")
+        val fileName = "smw_%03X_tiles.png".format(level)
+        val bmp = Bitmap.createBitmap(m.atlas.width, m.atlas.height, Bitmap.Config.ARGB_8888)
+        bmp.setPixels(m.atlas.pixels, 0, m.atlas.width, 0, 0, m.atlas.width, m.atlas.height)
+        val dest = ProjectIo.imageFile(dir, fileName)
+        dest.parentFile?.mkdirs()
+        dest.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val tileset = Tileset(
+            id = 1, name = "SMW", image = fileName, tileSize = 16,
+            columns = m.columns, rows = m.rows,
+            passable = m.passable, platformSolidity = m.solidity,
+            platformSlopeShape = m.slopeShapes, animations = m.animations,
+            platformBlockActions = m.blockActions,
+        )
+        // Capa 0 = fondo (Layer 2) si lo hay; capa 1 = primer plano. Igual que importSmwLevelMap.
+        val layers = if (m.bgTiles.isNotEmpty()) listOf(m.bgTiles, m.tiles)
+            else listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE })
+        val map = GameMap(
+            id = 0, name = "SMW", width = m.mapWidth, height = m.mapHeight,
+            tilesetId = 1, layers = layers,
+        )
+        return PlatformerWorld(dir, map, tileset)
     }
 
     /**
