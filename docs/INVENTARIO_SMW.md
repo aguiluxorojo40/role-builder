@@ -72,6 +72,31 @@ dispositivo, nunca del repositorio.
    app usa el atlas horneado (paleta del nivel de referencia); en vivo cada
    nivel podría teñir a sus enemigos con SU sub-paleta.
 
+## 🎯 Objetivo "100% de los 3 primeros niveles"
+
+Seguimiento con `ZzFirstLevelsReport` (sonda opt-in, se salta sin `SMW_ROM`).
+Estado medido en la ROM US:
+
+| | 105 YI-1 | 106 YI-2 | 103 YI-3 |
+|---|---|---|---|
+| Layer 1 | ✓ 100% (92 obj) | ✓ 100% (127) | ✓ 100% (216) |
+| Colisión | ✓ | ✓ | ✓ |
+| Mapa importable | ✓ | ✓ | ✓ |
+| Meta | ✓ NORMAL | ✓ NORMAL | ✓ NORMAL |
+
+Lo que falta es **gráfico de 16 ids de sprite**. Dos falsos huecos que NO cuentan
+y conviene no volver a contar: los sprites de META (0x7B/0x4A/0x0E) no son
+enemigos —el motor los siembra como ítem de meta— y los ids con rutina de dibujo
+propia ya tienen gráfico aunque no estén en el catálogo curado.
+
+- **Plataformas de YI-3** (el nivel se sostiene sobre ellas): `5F` cadena marrón
+  ×8, `5A` ×5, `59` ×3, `57` tablero vertical ×2, `55` ×2.
+- **Enemigos**: `9F` Banzai Bill ×4, `91` Chargin' Chuck ×2, `95` Clappin' Chuck,
+  `BD` Koopa azul deslizante.
+- **Mecánicas/ítems**: `3E` P-switch, `83` bloque volador, `8E` agujero de warp,
+  `C7` seta invisible, `B9` caja de mensaje (en los tres).
+- **Sin identificar**: `DA`, `DB`.
+
 ## 🔴 Deudas y riesgos conocidos
 
 - ~~**`enemies.png` no es reproducible**: ningún tool lo regenera desde
