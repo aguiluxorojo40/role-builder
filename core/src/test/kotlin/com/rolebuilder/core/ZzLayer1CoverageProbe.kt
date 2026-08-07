@@ -1,6 +1,7 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SmwLayer1
+import com.rolebuilder.core.snes.SmwLevelSet
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
 import java.io.File
@@ -23,7 +24,12 @@ class ZzLayer1CoverageProbe {
         val levelsOf = HashMap<String, MutableSet<Int>>()
         val brokenLevels = sortedSetOf<Int>()
         val tilesetOf = HashMap<Int, Int>()
-        for (lvl in 0 until 0x200) {
+        // El denominador honesto NO son los 512 huecos: son los niveles que el juego
+        // referencia de verdad (casillas del mapa + sus sub-niveles). Ver SmwLevelSet.
+        val universe = SmwLevelSet.reachableLevels(rom, SnesDecoder.parseHeader(rom))
+        val mapOnly = SmwLevelSet.mapLevels(rom, delta).map { it.level }.toSet()
+        println("=== universo: ${universe.size} alcanzables (${mapOnly.size} con casilla en el mapa) ===")
+        for (lvl in universe) {
             val tm = SmwLayer1.parse(rom, delta, lvl) ?: continue
             parsed++
             tilesetOf[lvl] = tm.tileset
@@ -37,7 +43,7 @@ class ZzLayer1CoverageProbe {
                 levelsOf.getOrPut(k) { mutableSetOf() } += lvl
             }
         }
-        println("=== LAYER 1: $full/$parsed niveles al 100% (${parsed - full} con ids sin portar) ===")
+        println("=== LAYER 1: $full/$parsed niveles REALES al 100% (${parsed - full} con ids sin portar) ===")
         hist.entries.sortedByDescending { it.value }.forEach { (k, v) ->
             val lv = levelsOf[k]!!.sorted().joinToString(",") { "%03X".format(it) }
             println("  %-8s %3d ocurrencias en %d niveles: %s".format(k, v, levelsOf[k]!!.size, lv))

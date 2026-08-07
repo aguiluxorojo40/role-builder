@@ -656,17 +656,23 @@ object SnesGameRecipes {
     )
 
     /**
-     * TODOS los niveles del JUEGO importables: recorre los huecos de nivel que el
-     * mundo del juego referencia (0x001..0x024 y 0x101..0x13B — los ~96 niveles de
-     * SMW) y devuelve la ficha de los que el parser reconstruye con fidelidad
-     * (cobertura 100% y contenido real). Los sub-niveles a los que llevan sus
-     * tuberías/puertas entran solos al importar (bundle); no se listan sueltos.
-     * Es barato (solo parsea; no monta atlas): apto para la UI.
+     * TODOS los niveles del JUEGO importables: los que tienen CASILLA en el mapa del
+     * mundo ([SmwLevelSet.mapLevels], 92 en la ROM US) y que además el parser
+     * reconstruye con fidelidad (cobertura 100% y contenido real). Los sub-niveles a
+     * los que llevan sus tuberías/puertas entran solos al importar (bundle); no se
+     * listan sueltos. Es barato (solo parsea; no monta atlas): apto para la UI.
+     *
+     * La lista de huecos sale de la ROM, no de un rango a mano: así no se cuelan slots
+     * que no referencia ninguna casilla (en la US, 0x139-0x13B). Si el overworld no se
+     * puede leer —una ROM muy modificada, donde la tabla va precalculada en vez de
+     * generarse— se cae al rango clásico para no quedarse sin nada que listar.
      */
     fun listImportableSmwLevels(rom: ByteArray, header: SnesHeader): List<SmwLevelListing> {
         val delta = smwHeaderDelta(header)
         val out = ArrayList<SmwLevelListing>()
-        val slots = (0x001..0x024) + (0x101..0x13B)
+        val fromMap = runCatching { SmwLevelSet.mapLevels(rom, delta).map { it.level } }
+            .getOrNull().orEmpty()
+        val slots = fromMap.ifEmpty { (0x001..0x024) + (0x101..0x13B) }
         for (lv in slots) {
             val tm = SmwLayer1.parse(rom, delta, lv) ?: continue
             if (tm.totalObjects == 0) continue

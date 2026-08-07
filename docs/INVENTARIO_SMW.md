@@ -328,8 +328,10 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   **419/477 niveles al 100%**.
 - **Cola de ids sueltos: CERRADA.** Portados los que faltaban, todos medidos contra
   la ROM con `ZzLayer1CoverageProbe` (sonda opt-in, se salta sin `SMW_ROM`):
-  **443 → 451 de 501 slots parseados al 100%** (+8 niveles: 018, 0C9, 0CA, 0F8,
-  104, 12D, 1D7, 1D8). Lo portado:
+  **+8 niveles al 100%** (018, 0C9, 0CA, 0F8, 104, 12D, 1D7, 1D8). Sobre el
+  denominador honesto ([SmwLevelSet], niveles que el juego referencia de verdad)
+  la cobertura queda en **154/204**; medido sobre los 512 huecos salía 451/501,
+  que es el mismo trabajo con un número inflado. Lo portado:
   - ext 0x61-0x63 — reloj de pared de casa fantasma y sus dos telarañas (3×3).
   - ext 0x85 — CASA DE YOSHI (mural fijo de 16×10).
   - ext 0x8A-0x8D — los cuatro interruptores de palacio (2×2).

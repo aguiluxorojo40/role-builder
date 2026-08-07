@@ -93,6 +93,14 @@ Cada dato que se lee de la ROM sigue la misma disciplina:
    cuando hay ROM a mano, verificar visualmente con el modo CLI correspondiente.
 4. Si el offset no está confirmado se marca `[PROBABLE]` y el consumidor lleva
    un gate de cordura (mejor caer a un fallback honesto que pintar basura).
+5. **Contar solo lo que existe.** La ROM tiene 512 huecos de nivel, pero solo son
+   niveles los que el juego referencia: **92** con casilla en el mapa del mundo y
+   **215** alcanzables contando sus sub-niveles ([`SmwLevelSet`], derivado de la
+   ROM, no una lista a mano). Cualquier recuento, medida de cobertura o listado
+   de la UI usa ese conjunto; medir sobre los 512 infla el resultado y llena la
+   UI de entradas muertas. Y ojo: el famoso **96 son las SALIDAS** ("96 EXITS"),
+   no los niveles — hay niveles con dos salidas (normal + secreta) y otros con
+   ninguna (Yoshi's House) o que acaban por jefe/interruptor.
 
 ## 8. Historia corta (para orientarse en el log)
 
