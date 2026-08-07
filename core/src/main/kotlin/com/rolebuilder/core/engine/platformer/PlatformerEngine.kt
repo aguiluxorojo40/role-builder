@@ -145,6 +145,19 @@ class ItemSeed(val xPixel: Int, val yPixel: Int, val kind: ItemKind)
 class PlacedItem(val x: Float, val y: Float, val kind: ItemKind) {
     val size = 16f
     var collected = false
+    /**
+     * Cuánto ha SUBIDO la cinta de meta sobre su sitio, en píxeles. La cinta de SMW no
+     * está quieta: sube y baja, y cuanto más alta la toques, más bonus
+     * ([com.rolebuilder.core.snes.SmwScore]). Solo se usa en las metas; en lo demás
+     * queda a 0 y el ítem no se mueve.
+     */
+    var tapeRise = 0f
+    /** Sentido de la oscilación: +1 sube, -1 baja. */
+    var tapeDir = 1
+    /** Fotogramas que faltan para dar la vuelta. */
+    var tapeFlipIn = com.rolebuilder.core.snes.SmwScore.TAPE_HALF_PERIOD
+    /** Y a la que se DIBUJA ahora mismo (la base menos lo que ha subido). */
+    val drawY: Float get() = y - tapeRise
 }
 
 /**
@@ -509,6 +522,15 @@ class PlatformerEngine(
 
     /** Monedas recogidas (monedas sueltas + premios de bloques `?`). */
     var coins = 0
+
+    /**
+     * PUNTUACIÓN, con los valores reales de SMW ([com.rolebuilder.core.snes.SmwScore]).
+     * Antes el motor no llevaba ninguna: acabar el nivel era solo un booleano.
+     */
+    var score = 0
+
+    /** Estrellas de BONUS conseguidas al tocar la cinta (0 si aún no se ha tocado). */
+    var bonusStars = 0
         private set
 
     /** Contador monótono de "moneda conseguida" para el audio (SFX de moneda). */
@@ -1071,20 +1093,54 @@ class PlatformerEngine(
      */
     private fun collectPlacedItems() {
         if (placedItems.isEmpty()) return
+        tickGoalTapes()
         val p = player
         val pw = tuning.playerWidth
         val ph = playerHeight
         for (item in placedItems) {
             if (item.collected) continue
+            // La meta se toca donde ESTÁ AHORA, no donde la sembraron: la cinta sube y
+            // baja, y de esa altura sale el bonus.
+            val iy = item.drawY
             val overlap = p.x < item.x + item.size && p.x + pw > item.x &&
-                p.y < item.y + item.size && p.y + ph > item.y
+                p.y < iy + item.size && p.y + ph > iy
             if (!overlap) continue
             when (item.kind) {
                 ItemKind.COIN -> { item.collected = true; coins++; coinEvents++ }
-                ItemKind.GOAL -> won = true
+                ItemKind.GOAL -> { won = true; awardGoal(item) }
                 // Cerradura: también gana el nivel, pero POR LA SALIDA SECRETA.
-                ItemKind.GOAL_SECRET -> { won = true; wonSecret = true }
+                ItemKind.GOAL_SECRET -> { won = true; wonSecret = true; awardGoal(item) }
             }
+        }
+    }
+
+    /**
+     * Premio por tocar la META: estrellas de bonus según lo alta que estuviera la cinta,
+     * con la tabla real del juego. Solo se cobra una vez.
+     */
+    private fun awardGoal(item: PlacedItem) {
+        if (item.collected) return
+        item.collected = true
+        bonusStars = com.rolebuilder.core.snes.SmwScore.bonusStars(item.tapeRise.toInt())
+        // Con el máximo, el juego además suelta premio (GivePoints en
+        // Spr07B_GoalTape_GiveBonusStars); aquí se traduce a los 8000 de la tabla.
+        if (bonusStars >= com.rolebuilder.core.snes.SmwScore.MAX_BONUS_STARS) {
+            score += com.rolebuilder.core.snes.SmwScore.pointsOf(12)
+        }
+    }
+
+    /**
+     * Sube y baja la CINTA de meta como en `Spr07B_GoalTape` ($01:C098): ±1 px por
+     * fotograma, dando la vuelta cada 124. Es lo que hace que el bonus dependa de cuándo
+     * la toques, en vez de ser siempre el mismo.
+     */
+    private fun tickGoalTapes() {
+        val sc = com.rolebuilder.core.snes.SmwScore
+        for (item in placedItems) {
+            if (item.collected) continue
+            if (item.kind != ItemKind.GOAL && item.kind != ItemKind.GOAL_SECRET) continue
+            item.tapeRise = (item.tapeRise + item.tapeDir).coerceIn(0f, sc.TAPE_MAX_RISE_PX.toFloat())
+            if (--item.tapeFlipIn <= 0) { item.tapeDir = -item.tapeDir; item.tapeFlipIn = sc.TAPE_HALF_PERIOD }
         }
     }
 
