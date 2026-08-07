@@ -27,6 +27,39 @@ class SmwScoreTest {
     }
 
     @Test
+    fun `el bonus de tiempo es el reloj por 50`() {
+        assertEquals(50, SmwScore.TIME_BONUS_PER_UNIT)
+        assertEquals(0, SmwScore.timeBonus(0))
+        assertEquals(5_000, SmwScore.timeBonus(100))
+        assertEquals(19_950, SmwScore.timeBonus(399), "el reloj típico de SMW")
+        assertEquals(0, SmwScore.timeBonus(-5), "un reloj negativo no regala puntos")
+    }
+
+    @Test
+    fun `el recuento pasa de 100 en 100 y afina al final`() {
+        assertEquals(100, SmwScore.tallyStep(5_000))
+        assertEquals(100, SmwScore.tallyStep(200))
+        // Justo en 0x63 el original restaría 100 de 99 y se le daría la vuelta al
+        // contador. No pasa nunca (el bonus es tiempo × 50, múltiplo de 10), pero aquí
+        // se pasa lo que queda en vez de desbordar.
+        assertEquals(99, SmwScore.tallyStep(0x63), "no se pasa de lo que queda")
+        assertEquals(10, SmwScore.tallyStep(0x62), "por debajo de 0x63 va de 10 en 10")
+        assertEquals(10, SmwScore.tallyStep(10))
+        // Nunca pasa más de lo que queda ni se va por debajo de cero.
+        assertEquals(5, SmwScore.tallyStep(5))
+        assertEquals(0, SmwScore.tallyStep(0))
+        // Y el recuento entero acaba dando EXACTAMENTE el bonus, sin perder ni un punto.
+        var pend = SmwScore.timeBonus(399)
+        var dado = 0
+        var guard = 0
+        while (pend > 0 && guard++ < 10_000) {
+            val paso = SmwScore.tallyStep(pend); pend -= paso; dado += paso
+        }
+        assertEquals(SmwScore.timeBonus(399), dado, "el recuento debe cuadrar")
+        assertEquals(0, pend)
+    }
+
+    @Test
     fun `cuanto mas alta la cinta, mas bonus`() {
         // Tocarla abajo del todo da lo mínimo; arriba del todo, el máximo.
         assertEquals(1, SmwScore.bonusStars(0))

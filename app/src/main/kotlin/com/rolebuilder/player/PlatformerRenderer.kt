@@ -333,8 +333,14 @@ class PlatformerRenderer(
                     }
                 }
                 com.rolebuilder.core.engine.platformer.ItemKind.GOAL -> {
+                    // El POSTE no se mueve: va en la casilla donde está sembrada la meta.
                     batch.draw(white, ix + 0.44f, iy - 1f, 0.12f, 2f, r = 0.85f, g = 0.85f, b = 0.9f, a = 1f)
-                    batch.draw(white, ix + 0.56f, iy - 1f, 0.5f, 0.4f, r = 0.15f, g = 0.8f, b = 0.3f, a = 1f)
+                    // La CINTA sí: sube y baja como en SMW, y de su altura sale el bonus
+                    // (el motor la mueve en tickGoalTapes; aquí solo se dibuja donde esté).
+                    // Por eso se pinta en `drawY` y no en la Y sembrada.
+                    val ty = item.drawY / 16f
+                    batch.draw(white, ix - 0.1f, ty + 0.42f, 1.3f, 0.16f, r = 0.95f, g = 0.95f, b = 0.35f, a = 1f)
+                    batch.draw(white, ix + 0.56f, ty + 0.1f, 0.5f, 0.4f, r = 0.15f, g = 0.8f, b = 0.3f, a = 1f)
                 }
                 // Salida SECRETA (cerradura): ojo de cerradura dorado, para distinguirla a
                 // simple vista de la meta normal — llevan a sitios distintos del mapa.

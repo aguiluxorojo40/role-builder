@@ -74,4 +74,32 @@ object SmwScore {
 
     /** El máximo que se puede sacar (50): con él el juego da premio extra. */
     val MAX_BONUS_STARS: Int = fromBcd(BONUS_STARS_BCD.last())
+
+    // ---------------------- FIN DE NIVEL: el recuento ----------------------
+    // Port de CalculateTimeBonusDigits ($05:CE4C) y GiveTimeBonusAndBonusStars ($05:CECA).
+
+    /**
+     * Puntos por cada unidad de TIEMPO que sobra. Sale de `CalculateTimeBonusDigits`, que
+     * junta los tres dígitos del reloj y los multiplica por `0x32`.
+     */
+    const val TIME_BONUS_PER_UNIT = 50
+
+    /** Bonus de tiempo COMPLETO al acabar el nivel: lo que marca el reloj × 50. */
+    fun timeBonus(timeLeft: Int): Int = timeLeft.coerceAtLeast(0) * TIME_BONUS_PER_UNIT
+
+    /**
+     * Cuánto se pasa del bonus al marcador en UN paso del recuento
+     * (`GiveTimeBonusAndBonusStars`): de 100 en 100 mientras quede bastante, y de 10 en 10
+     * cuando baja de 0x63. Nunca se pasa de lo que queda.
+     *
+     * El original no protege el caso "queda menos de 10" porque no puede darse: el bonus
+     * es tiempo × 50, siempre múltiplo de 10. Aquí se acota igualmente, que sale gratis.
+     */
+    fun tallyStep(pending: Int): Int {
+        if (pending <= 0) return 0
+        return minOf(if (pending >= 0x63) 100 else 10, pending)
+    }
+
+    /** Fotogramas entre estrella y estrella al pasarlas al marcador (`frames & 3`). */
+    const val BONUS_STAR_TRANSFER_PERIOD = 4
 }
