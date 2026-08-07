@@ -453,6 +453,59 @@ class SmwLayer1Test {
     }
 
     @Test
+    fun `borde de lava de cueva remata arriba y rellena debajo`() {
+        // objNum 0x38 = (h1>>4=8) | ((h0&0x60)>>1=0x30). size 0x20: variante 0, alto 2.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x03,   // tileset 3 (cueva)
+            0x61, 0x83, 0x20,
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x15A, tm.block(3, 1), "remate")
+        assertEquals(0x15B, tm.block(3, 2)); assertEquals(0x15B, tm.block(3, 3))
+        assertEquals(0x25, tm.block(3, 4))
+    }
+
+    @Test
+    fun `la columna de cuerda lleva planta, capitel y fuste ciclico`() {
+        // objNum 0x35 = (h1>>4=5) | ((h0&0x60)>>1=0x30). size 0x30: variante 0, alto 3.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x02,   // tileset 2 (cuerda)
+            0x61, 0x53, 0x30,
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Planta arriba (página 0), capitel y luego el fuste, que cicla de pareja.
+        assertEquals(0x9A, tm.block(3, 1)); assertEquals(0x9B, tm.block(4, 1))
+        assertEquals(0x15F, tm.block(3, 2)); assertEquals(0x160, tm.block(4, 2))
+        assertEquals(0x161, tm.block(3, 3)); assertEquals(0x162, tm.block(4, 3))
+        assertEquals(0x163, tm.block(3, 4)); assertEquals(0x164, tm.block(4, 4))
+    }
+
+    @Test
+    fun `la escalera de castillo baja en diagonal con su tierra detras`() {
+        // objNum 0x3D = (h1>>4=0xD) | ((h0&0x60)>>1=0x30). size 0x12: lado DERECHO
+        // (bit 2), cinta 2, alto 1 → dos peldaños.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x01,   // tileset 1 (castillo)
+            0x61, 0xD3, 0x12,
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x1CF, tm.block(3, 1), "cinta del primer peldaño")
+        assertEquals(0x1F4, tm.block(3, 2), "esquina")
+        assertEquals(0x1CF, tm.block(4, 2), "cinta del segundo, una columna a la derecha")
+        assertEquals(0x3F, tm.block(3, 3), "tierra detrás")
+        assertEquals(0x1F4, tm.block(4, 3))
+    }
+
+    @Test
     fun `nivel vertical devuelve null (no soportado aun)`() {
         // Modo 10 (0x0A) es vertical según la VerticalTable.
         val rom = romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xFF)

@@ -399,11 +399,16 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
     cobertura, es ROBUSTEZ: que ni un hueco de basura reviente el parser. Por eso
     se conserva — un ERROR=0 sobre 512 dice más que sobre 215.
 
-  Cola actual (por nº de niveles que arregla), toda en grupos acoplados —cada
-  grupo no arregla nada hasta estar entero:
-  - guías INCLINADAS de cuerda (`std:3A`, 4 subrutinas) → 3 niveles.
-  - escalera de castillo (`std:3D`) → 3 niveles.
-  - cuerda `std:35` → 2; cueva `std:38`/`std:39` → 2.
+- **Quinta tanda: 183 → 188 de 196.** Borde derecho de lava de cueva `std:38`
+  ($0D:DAC8), columna con planta de cuerda `std:35` ($0D:D1D9) —planta, capitel y
+  un fuste que cicla tres parejas— y **escalera mecánica de castillo** `std:3D`
+  ($0D:C341), los dos lados. La izquierda tiene el flujo enrevesado típico del
+  decompilador (bucles anidados con salida compartida); se tradujo literal en vez
+  de "limpiarla", y se verificó **mirando el render** del nivel 0x1FE.
+
+  Cola actual: guías INCLINADAS de cuerda (`std:3A`, 4 subrutinas) → 3 niveles;
+  cuestas de lava de cueva (`std:39`, 4 subrutinas con `goto`) → 2 niveles; y
+  colas de una sola ocurrencia (`ext:7F` en 011, `ext:74-7E` en 1D2).
 
   Al hacerlo, el umbral de "objeto específico del tileset" baja de 0x30 a **0x2E**:
   el 0x2E ya difiere por tileset (pinchos en casa fantasma; en el resto, una rutina

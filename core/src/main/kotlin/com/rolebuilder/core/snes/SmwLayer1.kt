@@ -205,6 +205,7 @@ internal object SmwLayer1 {
                         0x39 -> switchBlocks(0)          // azules
                         0x3A -> switchBlocks(1)          // rojos
                         0x3C -> castleStoneBlock()
+                        0x3D -> castleEscalator()
                         0x3E -> castleSpikeLineH()
                         0x3F -> castleSpikeLineV()
                         else -> unkStd(obj)
@@ -212,6 +213,7 @@ internal object SmwLayer1 {
                     2, 6, 8 -> when (obj) {
                         0x32 -> ropeLogBridge()
                         0x34 -> switchBlocks(1)          // rojos
+                        0x35 -> ropeColumnWithPlant()
 
                         0x38 -> ropeHorizontalLineGuide()
                         0x39 -> ropeVerticalLineGuide()
@@ -222,6 +224,7 @@ internal object SmwLayer1 {
                     3, 9, 0xA, 0xB, 0xE -> when (obj) {
                         0x34 -> switchBlocks(0)          // azules
                         0x35 -> switchBlocks(1)          // rojos
+                        0x38 -> undergroundRightLavaEdge()
                         0x36 -> underground4SidedGround()
                         0x3A -> undergroundCaveLava(withSurface = true)
                         0x3B -> undergroundCaveLava(withSurface = false)
@@ -1087,6 +1090,82 @@ internal object SmwLayer1 {
          * Objeto de CASTILLO 0x3C: BLOQUE DE PIEDRA (CastleObj3C, $0D:C478):
          * superior 5D/5E/5F, medias 60/61/62, inferior 63/64/65. El muro básico.
          */
+        /**
+         * Objeto 0x3D de CASTILLO: ESCALERA MECÁNICA (CastleObj3D_Escalator, $0D:C341).
+         * El bit 2 del tamaño elige lado: 0 = izquierda ($0D:C358), 1 = derecha
+         * ($0D:C3D8); los bits 0-1 eligen cuál de las cuatro cintas.
+         *
+         * Es una escalera diagonal: cada peldaño pone la tesela de CINTA (página 1),
+         * luego la ESQUINA y detrás un tramo de tierra 0x3F (página 0) que crece un
+         * bloque por peldaño, y salta en diagonal al siguiente.
+         */
+        fun castleEscalator() {
+            val conv = intArrayOf(0xCE, 0xD1, 0xCF, 0xD0)
+            val corner = intArrayOf(0xF3, 0xF6, 0xF4, 0xF5)
+            val v1 = size and 3
+            var r0 = (size shr 4) + 1
+            var r2 = 0
+            preserve()
+            if (size and 2 != 0) {
+                // --- lado DERECHO ---
+                var v0 = pos
+                while (r0 != 0) {
+                    setHi01(v0)
+                    horiz(v0, conv[v1])
+                    restore()
+                    var v2 = vert()
+                    r2++
+                    var r3 = r2
+                    r0 = (r0 - 1) and 0xFF
+                    if (r0 and 0x80 != 0) break
+                    while (r3 != 1) {
+                        setHi00(v2); v2 = horiz(v2, 0x3F); r3--
+                    }
+                    setHi01(v2)
+                    v0 = horiz(v2, corner[v1])
+                }
+                return
+            }
+            // --- lado IZQUIERDO ---
+            var v0 = pos
+            var v4: Boolean
+            while (true) {
+                var r3 = r2
+                setHi01(v0)
+                var i = horiz(v0, conv[v1])
+                while (true) {
+                    r3 = (r3 - 1) and 0xFF
+                    if (r3 and 0x80 == 0) {
+                        setHi01(i)
+                        var j = horiz(i, corner[v1])
+                        while (true) {
+                            r3 = (r3 - 1) and 0xFF
+                            if (r3 and 0x80 != 0) break
+                            setHi00(j); j = horiz(j, 0x3F)
+                        }
+                    }
+                    restore()
+                    r2++
+                    r0 = (r0 - 1) and 0xFF
+                    v4 = r0 and 0x80 != 0
+                    if (r0 != 0) break
+                    r3 = r2
+                    i = vert()
+                }
+                if (v4) break
+                // Paso diagonal abajo-izquierda (una fila y una columna).
+                val sum = pos + 15
+                v0 = sum and 0xFF
+                if (sum >= 256) pageCross(1)
+                if (v0 and 0xF == 15) {
+                    if (v0 + 16 >= 256) pageCross(1)
+                    v0 = (v0 + 16) and 0xFF
+                    backOneScreen()
+                }
+                pos = v0
+            }
+        }
+
         fun castleStoneBlock() =
             rect3x3(intArrayOf(0x5D, 0x60, 0x63), intArrayOf(0x5E, 0x61, 0x64), intArrayOf(0x5F, 0x62, 0x65))
 
@@ -1213,6 +1292,51 @@ internal object SmwLayer1 {
          * Objeto 0x32: PUENTE DE TRONCOS (RopeObj32, $0D:D24E): fila superior 0xA3
          * (página 0, la pasarela) y fila inferior 0x0E (página 1, el tronco).
          */
+        /**
+         * Objeto 0x35 de cuerda: COLUMNA CON PLANTA ENCIMA
+         * (RopeObj35_ColumnWithPlantOnTop, $0D:D1D9). De arriba abajo: la PLANTA (dos
+         * teselas de página 0, cuatro variantes según el nibble bajo), luego el capitel
+         * 0x5F/0x60 y después el fuste, que cicla tres parejas de teselas
+         * (0x61..0x66) hasta agotar el alto del nibble alto. Todo de página 1 salvo la
+         * planta.
+         */
+        fun ropeColumnWithPlant() {
+            val left = intArrayOf(0x9A, 0x9C, 0x9E, 0xA0)
+            val right = intArrayOf(0x9B, 0x9D, 0x9F, 0xA1)
+            val col = intArrayOf(0x61, 0x62, 0x63, 0x64, 0x65, 0x66)
+            val v2 = size and 0xF
+            if (v2 >= left.size) { unkStd(0x35); return }
+            var r0 = size shr 4
+            val v1 = pos
+            preserve()
+            setHi00(v1)
+            val v3 = horiz(v1, left[v2])
+            setHi00(v3); setLo(v3, right[v2])
+            r0 = (r0 - 1) and 0xFF
+            if (r0 and 0x80 != 0) return
+            restore()
+            val v4 = vert()
+            setHi01(v4)
+            val v5 = horiz(v4, 0x5F)
+            setHi01(v5); setLo(v5, 0x60)
+            r0 = (r0 - 1) and 0xFF
+            if (r0 and 0x80 != 0) return
+            restore()
+            var v6 = vert()
+            var v7 = 0
+            do {
+                setHi01(v6)
+                val v8 = horiz(v6, col[v7])
+                val v9 = v7 + 1
+                setHi01(v8); setLo(v8, col[v9])
+                v7 = v9 + 1
+                restore()
+                v6 = vert()
+                if (v7 == 6) v7 = 0
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
+
         fun ropeLogBridge() {
             val tiles = intArrayOf(0xA3, 0x0E)
             var v1 = pos
@@ -1324,6 +1448,31 @@ internal object SmwLayer1 {
                 r1 -= 2
                 r0 = (r0 - 1) and 0xFF
             } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto 0x38 de cueva: BORDE DERECHO DE LAVA (UndergroundObj38_RightLavaEdge,
+         * $0D:DAC8). Una tesela de remate arriba y debajo nibble-alto de relleno, todas
+         * de página 1; el nibble BAJO elige variante (solo hay dos en las tablas
+         * $0D:DAC0/$0D:DAC2, y fuera de ellas no hay dato).
+         */
+        fun undergroundRightLavaEdge() {
+            val top = intArrayOf(0x5A, 0x5B)
+            val mid = intArrayOf(0x5B, 0x5B)
+            val v2 = size and 0xF
+            if (v2 >= top.size) { unkStd(0x38); return }
+            var j = pos
+            var r0 = size shr 4
+            var a = top[v2]
+            setHi01(j)
+            while (true) {
+                setLo(j, a)
+                j = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                setHi01(j)
+                a = mid[v2]
+            }
         }
 
         /** Objeto 0x36: SUELO DE 4 LADOS (UndergroundObj36, $0D:E135): la plataforma
