@@ -224,6 +224,17 @@ object SmwEnemyGraphics {
     /** Ids con dibujo propio soportados (para el bake de `big_<id>.png`). */
     val customEnemyIds: List<Int> get() = CUSTOM_ENEMIES.keys.toList()
 
+    /** Plataforma ESTRECHA: 3 teselas 16×16 seguidas ($01:B2DF, rama sin 1602). */
+    private fun flatPlatformNarrow(): List<OamTile> =
+        listOf(OamTile(0x60, 0, 0), OamTile(0x61, 16, 0), OamTile(0x62, 32, 0))
+
+    /** Plataforma ANCHA: 5 teselas 16×16, con el tramo central repetido. */
+    private fun flatPlatformWide(): List<OamTile> =
+        listOf(
+            OamTile(0xEA, 0, 0), OamTile(0xEB, 16, 0), OamTile(0xEB, 32, 0),
+            OamTile(0xEB, 48, 0), OamTile(0xEC, 64, 0),
+        )
+
     private class CustomEnemy(val tiles: List<OamTile>, val palRow: Int? = null,
                               /** Ajuste de GFX de sprites FORZADO (salas de jefe Modo 7); null = el del nivel. */
                               val gfxSetting: Int? = null)
@@ -237,6 +248,22 @@ object SmwEnemyGraphics {
         // Rex (0xAB): 2 teselas 16×16 apiladas (kSpr0AB_Rex_Tiles/XDisp/YDisp, $03), frame 0.
         // Cabeza 0x8a en (−4,−15) + cuerpo 0xaa en (0,0). Paleta 3 (ppp de Prop=0x07:
         // (0x07 >> 1) & 7 = 3) → fila 8+3 de la CGRAM; es la AZUL de Rex, no la rosa.
+        // ---- PLATAFORMAS de guía (las que sostienen YOSHI'S ISLAND 3) ----
+        // Las cinco (0x55, 0x57, 0x59, 0x5A, 0x5F) comparten rutina de dibujo:
+        // NormalSpritePlatformDraw ($01:B2D1) mira la tabla $01:B2C3 —que para todas
+        // ellas vale 0— y cae en NormalSpritePlatformGFXRt_DrawFlatPlatform ($01:B2DF).
+        //
+        // Esa rutina tiene DOS formas según spr_table1602, que se pone en el Init:
+        //   - 0 (por defecto): plataforma ESTRECHA de 3 teselas 16×16 → 0x60, 0x61, 0x62.
+        //   - 1: plataforma ANCHA de 5 teselas → 0xEA, 0xEB, 0xEB, 0xEB, 0xEC.
+        // De 0x57 SÍ consta que su Init hace ++spr_table1602 (Spr057_Vertical
+        // CheckerboardPlatform_Init, $01:B25E), así que va ANCHA; las demás se quedan
+        // con el valor por defecto y van estrechas.
+        0x55 to CustomEnemy(flatPlatformNarrow()),
+        0x59 to CustomEnemy(flatPlatformNarrow()),
+        0x5A to CustomEnemy(flatPlatformNarrow()),
+        0x5F to CustomEnemy(flatPlatformNarrow()),
+        0x57 to CustomEnemy(flatPlatformWide()),
         0xAB to CustomEnemy(
             listOf(OamTile(0x8a, -4, -15), OamTile(0xaa, 0, 0)),
             palRow = (8 + 3) * 16,

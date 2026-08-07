@@ -62,6 +62,19 @@ class SmwBakedAssetsTest {
         }
     }
 
+    @Test
+    fun `los enemigos de DIBUJO PROPIO tambien se hornean`() {
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+        val big = SmwBakedAssets.bigSprites(rom, header)
+        // Estos no están en curatedIds, así que bigSprites es su ÚNICA vía al
+        // dispositivo. Si alguien los deja fuera, en el móvil vuelven a salir como
+        // rectángulo y nadie se entera: por eso el test.
+        val faltan = SmwEnemyGraphics.customEnemyIds.filter { it !in big.keys }
+        assertTrue(faltan.isEmpty(), "sin hornear: " + faltan.joinToString { "%02X".format(it) })
+        assertTrue(big.size >= SmwEnemyGraphics.customEnemyIds.size, "faltan grandes")
+    }
+
     private fun findRom(): ByteArray? {
         val candidates = listOf(
             System.getenv("SMW_ROM"),

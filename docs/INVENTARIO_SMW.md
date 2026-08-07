@@ -84,18 +84,31 @@ Estado medido en la ROM US:
 | Mapa importable | ✓ | ✓ | ✓ |
 | Meta | ✓ NORMAL | ✓ NORMAL | ✓ NORMAL |
 
-Lo que falta es **gráfico de 16 ids de sprite**. Dos falsos huecos que NO cuentan
+Lo que falta es **gráfico de 11 ids de sprite** (eran 16). Dos falsos huecos que NO cuentan
 y conviene no volver a contar: los sprites de META (0x7B/0x4A/0x0E) no son
 enemigos —el motor los siembra como ítem de meta— y los ids con rutina de dibujo
 propia ya tienen gráfico aunque no estén en el catálogo curado.
 
-- **Plataformas de YI-3** (el nivel se sostiene sobre ellas): `5F` cadena marrón
-  ×8, `5A` ×5, `59` ×3, `57` tablero vertical ×2, `55` ×2.
+- ~~**Plataformas de YI-3**~~ → **RESUELTO**: las cinco (`55`, `57`, `59`, `5A`,
+  `5F`) comparten rutina (`NormalSpritePlatformDraw`, $01:B2D1), que para todas
+  ellas cae en `DrawFlatPlatform` ($01:B2DF). Dos formas: ESTRECHA de 3 teselas
+  (0x60/0x61/0x62) y ANCHA de 5 (0xEA/0xEB×3/0xEC), según `spr_table1602`. YI-3
+  pasa de 6 ids sin gráfico a 1.
 - **Enemigos**: `9F` Banzai Bill ×4, `91` Chargin' Chuck ×2, `95` Clappin' Chuck,
   `BD` Koopa azul deslizante.
 - **Mecánicas/ítems**: `3E` P-switch, `83` bloque volador, `8E` agujero de warp,
   `C7` seta invisible, `B9` caja de mensaje (en los tres).
 - **Sin identificar**: `DA`, `DB`.
+
+### Cableado: los sprites de dibujo propio NO llegaban al móvil
+
+`SmwBakedAssets.bigSprites` solo recorría `curatedIds` filtrando por `isTall`, y
+los de DIBUJO PROPIO no están en ese catálogo. Resultado: **ninguno de los 18**
+(Rex, Pokey, Thwomp, Wiggler, Reznor, Boo, PorcuPuffer…) se horneaba en el
+dispositivo; solo existían si alguien los sacaba a mano con
+`extractSnesTileset --custom-enemy`, y en el móvil salían como rectángulo.
+Arreglado: ahora se hornean 23 grandes en vez de 5. Con test de regresión, porque
+es un fallo que no se ve hasta que lo miras en el teléfono.
 
 ## 🔴 Deudas y riesgos conocidos
 

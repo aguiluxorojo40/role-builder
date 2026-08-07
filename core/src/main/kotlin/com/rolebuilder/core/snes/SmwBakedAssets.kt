@@ -89,6 +89,15 @@ object SmwBakedAssets {
             val img = runCatching { SmwEnemyGraphics.spriteImage(rom, header, level, id) }.getOrNull()
             if (img != null) out[id] = img
         }
+        // Los de DIBUJO PROPIO (Rex, Pokey, Thwomp, las plataformas de guía…) NO están en
+        // [SmwEnemyGraphics.curatedIds], así que este bucle es la única vía por la que
+        // llegan al dispositivo. Sin él solo existían si alguien los horneaba a mano con
+        // `extractSnesTileset --custom-enemy`, y en el móvil salían como rectángulo.
+        for (id in SmwEnemyGraphics.customEnemyIds) {
+            if (id in out) continue
+            val img = runCatching { SmwEnemyGraphics.customEnemyImage(rom, header, level, id) }.getOrNull()
+            if (img != null) out[id] = img
+        }
         return out
     }
 
