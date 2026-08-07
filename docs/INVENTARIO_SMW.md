@@ -325,8 +325,23 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   enmarcado/ventana con patrón alternante), 0x32, 0x3B–0x3F (vigas y losas), y
   extendidos 0x57–0x5E (detalles), 0x64/0x65 (bloques 2×2) y 0x49 (mural 6×13 de
   pared). La Casa Fantasma #1 (nivel 0x4) se reconstruye entera. Global Layer 1:
-  **419/477 niveles al 100%**. Cola pendiente (7 niveles): ext 0x97, std 0x2E/0x30,
-  ext 0x8A-0x8D/0x62/0x63/0x85 (1-4× cada uno).
+  **419/477 niveles al 100%**.
+- **Cola de ids sueltos: CERRADA.** Portados los que faltaban, todos medidos contra
+  la ROM con `ZzLayer1CoverageProbe` (sonda opt-in, se salta sin `SMW_ROM`):
+  **443 → 451 de 501 slots parseados al 100%** (+8 niveles: 018, 0C9, 0CA, 0F8,
+  104, 12D, 1D7, 1D8). Lo portado:
+  - ext 0x61-0x63 — reloj de pared de casa fantasma y sus dos telarañas (3×3).
+  - ext 0x85 — CASA DE YOSHI (mural fijo de 16×10).
+  - ext 0x8A-0x8D — los cuatro interruptores de palacio (2×2).
+  - ext 0x97 — tesela de borde del palacio (1 tesela, y de página 1).
+  - casa fantasma 0x2E (línea de pinchos) y 0x30 (repisa de hierba).
+  - pradera 0x30 (tubería helada 2 columnas) y 0x31 (bloque giratorio helado).
+
+  Al hacerlo, el umbral de "objeto específico del tileset" baja de 0x30 a **0x2E**:
+  el 0x2E ya difiere por tileset (pinchos en casa fantasma; en el resto, una rutina
+  sin usar que NO se porta y sigue contando como desconocida, para no pintar basura).
+  Los pinchos solo usan la entrada 0 de su tabla de teselas (0x59); cualquier otro
+  índice se declara desconocido en vez de leer datos que no tenemos.
 - **Nombres reales de nivel/sprite** (`SmwLevelNames`/`SmwSpriteNames`, banco $04):
   el listado y el mapa muestran "YOSHI'S ISLAND 1" en vez de "Nivel 105".
 - **Herramienta `--scene`**: renderiza un nivel importado (Layer 2 + Layer 1) a

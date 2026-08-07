@@ -184,7 +184,9 @@ internal object SmwLayer1 {
             // PRADERA completa (tilesets 0/7/0xC), y de CASTILLO (1) y CASA FANTASMA
             // (4/5/0xD) los objetos que usan los niveles reales; cuerda y subterráneo
             // siguen sin portar.
-            if (obj >= 0x30 && tileset != 0 && tileset != 7 && tileset != 0xC) {
+            // El umbral es 0x2E porque el 0x2E ya difiere por tileset (en casa fantasma
+            // son PINCHOS; en el resto, una rutina sin usar que no portamos).
+            if (obj >= 0x2E && tileset != 0 && tileset != 7 && tileset != 0xC) {
                 when (tileset) {
                     1 -> when (obj) {
                         0x34 -> castleVerticalDoubleEndedPipe()
@@ -211,6 +213,8 @@ internal object SmwLayer1 {
                         else -> unkStd(obj)
                     }
                     4, 5, 0xD -> when (obj) {
+                        0x2E -> ghostSpikeLine()
+                        0x30 -> ghostGrassLedge()
                         0x34 -> ghostWoodLedgeOnColumn()
                         0x35, 0x36 -> ghostBrickOrWood(obj - 0x35)
                         0x37 -> ghostHorizontalLog()
@@ -248,6 +252,11 @@ internal object SmwLayer1 {
                 0x1F -> stdSkinnyVerticalPipe()
                 0x20 -> stdHorizontalPlank()
                 0x21 -> stdLedge(size, 2)                        // wide-scale ground ledge
+                // Específicos de PRADERA (tilesets 0/7/0xC), que no pasan por el bloque
+                // por tileset: tubería helada y bloque giratorio helado (= objeto de 1
+                // tesela repetida con la entrada 0xE de la tabla, tesela 0x65).
+                0x30 -> grassIcyVerticalPipe()
+                0x31 -> stdCoins(0xE)
                 0x39 -> grassDiagonalPipeRight()
                 0x3A -> grassDiagonalLedgeLeft()
                 0x3B -> grassDiagonalLedgeRight()
@@ -278,8 +287,12 @@ internal object SmwLayer1 {
                 0x87 -> extSwitchBlockGreen()
                 0x8E -> extSwitchBlockYellow()
                 in 0x57..0x5E -> extGhostSingleTile(k)
+                in 0x61..0x63 -> extGhostClock(k)
                 0x64, 0x65 -> extGhost2x2(k)
                 0x49 -> extGhostMural()
+                0x85 -> extYoshisHouse()
+                in 0x8A..0x8D -> extSwitchPalaceSwitch(k)
+                0x97 -> extSwitchPalaceEdge()
                 else -> unkExt(k)
             }
         }
@@ -333,6 +346,90 @@ internal object SmwLayer1 {
                 vert()
             }
         }
+
+        /**
+         * Objetos extendidos 0x61-0x63 de casa fantasma (ExtObj61_GhostHouseClock,
+         * $0D:E9AA): bloque 3×3 de página 0 tomado de la tabla $0D:E99B en grupos de 9
+         * según (ext - 0x61) — el RELOJ de pared (0x61) y las dos telarañas diagonales
+         * (0x62/0x63). El 0x25 de la tabla es aire, como en el original.
+         */
+        fun extGhostClock(k: Int) {
+            val data = intArrayOf(
+                0x97, 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F,
+                0x86, 0x87, 0x25, 0x25, 0x86, 0x87, 0x25, 0x25, 0x86,
+                0x25, 0x84, 0x85, 0x84, 0x85, 0x25, 0x85, 0x25, 0x25,
+            )
+            var x = (k - 0x61) * 9
+            preserve()
+            var rows = 2
+            do {
+                var v1 = pos; var cnt = 2
+                do { setHi00(v1); v1 = horiz(v1, data[x]); x++ } while (cnt-- != 0)
+                restore(); vert()
+                rows = (rows - 1) and 0xFF
+            } while (rows != 0xFF)
+        }
+
+        /**
+         * Objeto extendido 0x85: CASA DE YOSHI (ExtObj85_YoshisHouse, $0D:EC33). Mural
+         * fijo de 16×10 teselas de página 0 tomado de la tabla $0D:EBF3. Como el
+         * original, cada fila escribe 15 teselas avanzando y la 16ª SIN avanzar (solo
+         * `SetMap16LowByte`) antes de bajar de fila. El 0x25 es aire.
+         */
+        fun extYoshisHouse() {
+            val data = intArrayOf(
+                0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0xCB, 0xCC, 0x25, 0x25, 0x25,
+                0x25, 0xCD, 0xCE, 0xCF, 0xCF, 0xCF, 0xCF, 0xCF, 0xCF, 0xCF, 0xCF, 0xCF, 0xCF, 0xD0, 0xD1, 0x25,
+                0x25, 0xD2, 0xEB, 0xD3, 0xD3, 0xD3, 0xEB, 0xD3, 0xD3, 0xD3, 0xD3, 0xEB, 0xD3, 0xD3, 0xD4, 0x25,
+                0x25, 0xD5, 0xD3, 0xEB, 0xD3, 0xD3, 0xD3, 0xD3, 0xD3, 0xEB, 0xD3, 0xD3, 0xD3, 0xEB, 0xD6, 0x25,
+                0x25, 0xD5, 0xD3, 0xD3, 0xD3, 0xD3, 0xD3, 0xEB, 0xD3, 0xD3, 0xD3, 0xD3, 0xD3, 0xD3, 0xD6, 0x25,
+                0x25, 0xD7, 0xD8, 0xD9, 0xD8, 0xD8, 0xD9, 0xD8, 0xD8, 0xD9, 0xD8, 0xDA, 0xDB, 0xD8, 0xDC, 0x25,
+                0x25, 0x25, 0x25, 0xDD, 0x25, 0x25, 0xDD, 0x25, 0x25, 0xDD, 0x25, 0xCB, 0xCC, 0x25, 0x25, 0x25,
+                0x25, 0x25, 0xDE, 0xDD, 0x25, 0x25, 0xDD, 0x25, 0x25, 0xDD, 0x25, 0xCB, 0xCC, 0x25, 0x25, 0x25,
+                0x25, 0xDF, 0xE0, 0xE1, 0x25, 0x25, 0xDD, 0x25, 0x25, 0xDD, 0x25, 0xE2, 0xE3, 0xE4, 0x25, 0x25,
+                0xE5, 0xE5, 0xE6, 0xDD, 0xE5, 0xE5, 0xDD, 0xE5, 0xE5, 0xDD, 0xE5, 0xE7, 0xE8, 0xE9, 0xE5, 0xE5,
+            )
+            var i = 0
+            while (i != 0xA0) {
+                var v1 = pos; var c = 15
+                do { setHi00(v1); v1 = horiz(v1, data[i]); i++ } while (--c != 0)
+                setHi00(v1); setLo(v1, data[i]); i++
+                vert()
+            }
+        }
+
+        /**
+         * Objetos extendidos 0x8A-0x8D: los cuatro INTERRUPTORES de palacio
+         * (ExtObj8D_SwitchPalaceSwitch, $0D:EC8E). Bloque 2×2 de página 0 tomado de la
+         * tabla $0D:EC7E en grupos de 4 según (ext + 118) mod 256 → 0..3 (verde,
+         * amarillo, azul, rojo).
+         *
+         * El original omite el dibujo si el interruptor YA está pulsado
+         * (`flag_activated_switches`); en un parse EN FRÍO nada está pulsado, así que
+         * siempre se dibuja (misma convención que el objeto de 1 tesela). A diferencia
+         * del resto de murales, la rutina NO hace preserve/restore: se replica igual.
+         */
+        fun extSwitchPalaceSwitch(k: Int) {
+            val data = intArrayOf(
+                0xEC, 0xED, 0xEE, 0xEF, 0xF0, 0xF1, 0xF2, 0xF3,
+                0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB,
+            )
+            var x = ((k + 118) and 0xFF) * 4
+            var rows = 1
+            do {
+                var v1 = pos; var cnt = 1
+                do { setHi00(v1); v1 = horiz(v1, data[x]); x++ } while (cnt-- != 0)
+                vert()
+                rows = (rows - 1) and 0xFF
+            } while (rows != 0xFF)
+        }
+
+        /**
+         * Objeto extendido 0x97: tesela de BORDE derecho/inferior del palacio del
+         * interruptor (ExtObj97_SwitchPalaceRightAndBottomEdgeTile, $0D:EC5C). Una sola
+         * tesela 0x10, y es de PÁGINA 1 (no 0, como casi todos los extendidos).
+         */
+        fun extSwitchPalaceEdge() { val v1 = pos; setHi01(v1); setLo(v1, 0x10) }
 
         // --------------------------- objetos extendidos ---------------------------
 
@@ -499,6 +596,45 @@ internal object SmwLayer1 {
 
         // ------------------------- objetos de CASA FANTASMA -------------------------
         // Ports 1:1 de las rutinas GhostHouseObjXX del banco $0D (tilesets 4/5/0xD).
+
+        /**
+         * Objeto 0x2E de casa fantasma: LÍNEA HORIZONTAL DE PINCHOS
+         * (GhostHouseObj2E_HorizontalLineOfSpikes, $0D:F06C). Repite una misma tesela
+         * de página 1 a lo ancho (nibble bajo + 1); el nibble ALTO elige la tesela en
+         * la tabla $0D:F065, de la que el juego solo usa la entrada 0 (0x59). Para
+         * cualquier otro índice no tenemos el dato: se declara desconocido en vez de
+         * pintar basura.
+         */
+        fun ghostSpikeLine() {
+            val variant = size shr 4
+            if (variant != 0) { unkStd(0x2E); return }
+            var v1 = pos
+            var r0 = size and 0xF
+            do { setHi01(v1); v1 = horiz(v1, 0x59); r0 = (r0 - 1) and 0xFF } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto 0x30 de casa fantasma: REPISA DE HIERBA
+         * (GhostHouseObj30_GrassLedge1, $0D:F02B). Fila superior de hierba (tesela 0x0F,
+         * página 1) de ancho nibble-bajo + 1, y debajo nibble-alto filas de relleno
+         * (tesela 0xEA, página 0).
+         */
+        fun ghostGrassLedge() {
+            val w = size and 0xF
+            var r1 = size shr 4
+            var v1 = pos
+            preserve()
+            var c = w
+            do { setHi01(v1); v1 = horiz(v1, 0x0F); c-- } while (c >= 0)
+            while (true) {
+                restore()
+                var v4 = vert()
+                r1 = (r1 - 1) and 0xFF
+                if (r1 and 0x80 != 0) break
+                var c2 = w
+                do { setHi00(v4); v4 = horiz(v4, 0xEA); c2-- } while (c2 >= 0)
+            }
+        }
 
         /**
          * Tramo de SALIENTE DE MADERA (GhostHouseObj38 y la repisa de Obj34,
@@ -1934,6 +2070,30 @@ internal object SmwLayer1 {
             val v2 = rdLo(j)
             if (v2 != 37) { if (v2 != 63) a++; a++ }
             return horiz(j, a)
+        }
+
+        /**
+         * Objeto 0x30 de pradera: TUBERÍA VERTICAL HELADA (GrassObj30_IcyVerticalPipe,
+         * $0D:BB2C). Tubería de 2 columnas y página 1: boca 0x61/0x62 arriba y, debajo,
+         * nibble-alto filas de cuerpo 0x63/0x64. La 2ª columna de cada fila se escribe
+         * SIN avanzar (solo `SetMap16LowByte`), como en el original.
+         */
+        fun grassIcyVerticalPipe() {
+            var v2 = size shr 4
+            val v1 = pos
+            preserve()
+            setHi01(v1)
+            val v3 = horiz(v1, 0x61)
+            setHi01(v3); setLo(v3, 0x62)
+            while (true) {
+                restore()
+                val v5 = vert()
+                v2--
+                if (v2 < 0) break
+                setHi01(v5)
+                val v4 = horiz(v5, 0x63)
+                setHi01(v4); setLo(v4, 0x64)
+            }
         }
 
         fun grassArchLedge() {

@@ -91,6 +91,148 @@ class SmwLayer1Test {
         assertEquals(0x1C7, tm.block(5, 5))
     }
 
+    // ---- Cola de objetos sin portar (medida con la ROM: 443 → 451 niveles al 100%) ----
+    // Encoding: objNum = (h1>>4) | ((h0&0x60)>>1); pos = (h0&0xF)<<4 | (h1&0xF).
+    // Un objeto EXTENDIDO es objNum==0, y entonces el 3er byte es su id.
+
+    @Test
+    fun `ext 0x97 pinta la tesela de borde del palacio en pagina 1`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x03, 0x05, 0x97,               // ext 0x97 en fila 3, col 5
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x110, tm.block(5, 3), "tesela 0x10 de PÁGINA 1")
+        assertEquals(0x25, tm.block(6, 3), "no desborda a la derecha")
+    }
+
+    @Test
+    fun `ext 0x8A pinta el interruptor verde 2x2`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x02, 0x04, 0x8A,               // ext 0x8A en fila 2, col 4
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0xEC, tm.block(4, 2)); assertEquals(0xED, tm.block(5, 2))
+        assertEquals(0xEE, tm.block(4, 3)); assertEquals(0xEF, tm.block(5, 3))
+        // Los otros tres interruptores salen del mismo grupo de 4 teselas.
+        val rojo = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x00, 0x02, 0x04, 0x8D, 0xFF), 0, 0,
+        )
+        assertNotNull(rojo)
+        assertEquals(0xF8, rojo.block(4, 2)); assertEquals(0xFB, rojo.block(5, 3))
+    }
+
+    @Test
+    fun `ext 0x62 pinta una telarana 3x3 del grupo del reloj`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x04,   // tileset 4 (casa fantasma)
+            0x01, 0x02, 0x62,               // ext 0x62 en fila 1, col 2
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x86, tm.block(2, 1)); assertEquals(0x87, tm.block(3, 1))
+        assertEquals(0x86, tm.block(3, 2)); assertEquals(0x87, tm.block(4, 2))
+        assertEquals(0x86, tm.block(4, 3))
+        assertEquals(0x25, tm.block(4, 1), "el 0x25 de la tabla es aire")
+    }
+
+    @Test
+    fun `ext 0x85 pinta la casa de Yoshi de 16x10`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x85,               // ext 0x85 en fila 0, col 0
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Fila 0: el tejadillo empieza en la col 11.
+        assertEquals(0x25, tm.block(0, 0)); assertEquals(0xCB, tm.block(11, 0))
+        assertEquals(0xCC, tm.block(12, 0))
+        // Fila 1: alero 0xCD/0xCE, cuerpo 0xCF y remates 0xD0/0xD1.
+        assertEquals(0xCD, tm.block(1, 1)); assertEquals(0xCF, tm.block(5, 1))
+        assertEquals(0xD0, tm.block(13, 1)); assertEquals(0xD1, tm.block(14, 1))
+        // Fila 9 (la última): la 16ª tesela se escribe SIN avanzar, así que existe.
+        assertEquals(0xE6, tm.block(2, 9)); assertEquals(0xE9, tm.block(13, 9))
+        assertEquals(0xE5, tm.block(15, 9), "la columna 15 de la última fila")
+        assertEquals(0x25, tm.block(0, 10), "10 filas, ni una más")
+    }
+
+    @Test
+    fun `casa fantasma 0x2E pinta una linea de pinchos de pagina 1`() {
+        // objNum 0x2E = (h1>>4=0xE) | ((h0&0x60)>>1=0x20) → h0 bit6, h1 hi=0xE.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x05,   // tileset 5 (casa fantasma)
+            0x42, 0xE3, 0x03,               // obj 0x2E en fila 2, col 3, ancho 3+1
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        for (c in 3..6) assertEquals(0x159, tm.block(c, 2), "pincho en col $c")
+        assertEquals(0x25, tm.block(7, 2))
+    }
+
+    @Test
+    fun `casa fantasma 0x30 pinta repisa de hierba con relleno debajo`() {
+        // objNum 0x30 = (h1>>4=0) | ((h0&0x60)>>1=0x30) → h0 bits 5+6.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x05,
+            0x61, 0x02, 0x21,               // obj 0x30 en fila 1, col 2; ancho 2, alto 2
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x10F, tm.block(2, 1)); assertEquals(0x10F, tm.block(3, 1))
+        for (r in 2..3) {
+            assertEquals(0xEA, tm.block(2, r), "relleno fila $r")
+            assertEquals(0xEA, tm.block(3, r), "relleno fila $r")
+        }
+        assertEquals(0x25, tm.block(2, 4), "no baja más de lo pedido")
+    }
+
+    @Test
+    fun `pradera 0x30 pinta la tuberia helada de dos columnas`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,   // tileset 0 (pradera)
+            0x61, 0x03, 0x20,               // obj 0x30 en fila 1, col 3; alto 2
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x161, tm.block(3, 1)); assertEquals(0x162, tm.block(4, 1))
+        for (r in 2..3) {
+            assertEquals(0x163, tm.block(3, r)); assertEquals(0x164, tm.block(4, r))
+        }
+        assertEquals(0x25, tm.block(3, 4))
+    }
+
+    @Test
+    fun `pradera 0x31 pinta bloques giratorios helados`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x61, 0x12, 0x01,               // obj 0x31 en fila 1, col 2; ancho 2, alto 1
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x165, tm.block(2, 1), "tesela 0x65 de PÁGINA 1")
+        assertEquals(0x165, tm.block(3, 1))
+        assertEquals(0x25, tm.block(4, 1))
+    }
+
     @Test
     fun `nivel vertical devuelve null (no soportado aun)`() {
         // Modo 10 (0x0A) es vertical según la VerticalTable.
