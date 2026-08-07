@@ -1721,9 +1721,20 @@ object SnesGameRecipes {
         }
     }
 
-    /** Resumen de la auditoría: cuántos niveles OK / sin fondo / con error, y qué isBg salen. */
+    /**
+     * Resumen de la auditoría: cuántos niveles OK / sin fondo / con error, y qué isBg salen.
+     *
+     * Da DOS cuentas y no hay que confundirlas:
+     * - **Niveles reales** ([SmwLevelSet]): lo que de verdad mide cuánto del juego sale
+     *   bien. Es la cifra que cuenta.
+     * - **Barrido de los 512 huecos**: no es cobertura —la mayoría no son niveles— sino
+     *   una prueba de ROBUSTEZ: que ni un hueco de basura haga reventar al parser. Por eso
+     *   se conserva: un ERROR=0 sobre 512 dice más que sobre 215.
+     */
     fun auditLayer2Summary(rom: ByteArray, header: SnesHeader): String {
         val delta = smwHeaderDelta(header)
+        val reales = runCatching { SmwLevelSet.reachableLevels(rom, header) }.getOrNull().orEmpty()
+        val realTally = if (reales.isEmpty()) null else tallyLayer2(rom, delta, reales)
         var ok = 0; var none = 0; var err = 0
         val banksSeen = sortedMapOf<Int, Int>()
         val pages = sortedMapOf<Int, Int>()
@@ -1743,12 +1754,33 @@ object SnesGameRecipes {
             // Señal de que la regla acierta: en la ROM vanilla debe salir OK=486 · sin fondo=26
             // · ERROR=0, con 17 fondos DISTINTOS (muchos slots comparten imagen). Si aparecen
             // errores de "descompresión DESBORDADA" es que el banco/dirección no cuadra.
-            appendLine("Fondos (Layer 2) de los 512 slots: OK=$ok · sin fondo=$none · ERROR=$err")
+            if (realTally != null) {
+                appendLine("Fondos (Layer 2) — NIVELES REALES (${reales.size}): " +
+                    "OK=${realTally.ok} · sin fondo=${realTally.none} · ERROR=${realTally.err}")
+            }
+            appendLine("Barrido de los 512 huecos (robustez, NO cobertura): " +
+                "OK=$ok · sin fondo=$none · ERROR=$err")
             appendLine("Fondos DISTINTOS (por dataPc): ${distinctBg.size}")
             appendLine("Banco del puntero visto: " + banksSeen.entries.joinToString { "0x%02X×%d".format(it.key, it.value) })
             appendLine("Página Map16 (1 si addr≥\$E8FE): " + pages.entries.joinToString { "pág.${it.key}×${it.value}" })
             if (reasons.isNotEmpty()) appendLine("Motivos de error: " + reasons.entries.joinToString { "${it.key} ×${it.value}" })
         }
+    }
+
+    /** Recuento de fondos OK/sin-fondo/ERROR sobre un conjunto concreto de niveles. */
+    private class Layer2Tally(val ok: Int, val none: Int, val err: Int)
+
+    private fun tallyLayer2(rom: ByteArray, delta: Int, levels: Collection<Int>): Layer2Tally {
+        var ok = 0; var none = 0; var err = 0
+        for (lv in levels) {
+            when (runCatching { layer2BgParse(rom, delta, lv) }
+                .getOrElse { BgParse.Error("excepción", null) }) {
+                is BgParse.Success -> ok++
+                is BgParse.NoBackground -> none++
+                is BgParse.Error -> err++
+            }
+        }
+        return Layer2Tally(ok, none, err)
     }
 
     internal fun layer2BgEntries(rom: ByteArray, delta: Int, level: Int): List<SnesTilemap.TilemapEntry> =

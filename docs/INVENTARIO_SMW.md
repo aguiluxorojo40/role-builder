@@ -390,6 +390,15 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   contando dónde cae cada tesela: copa 704+439 celdas, tronco en parejas
   emparejadas (63/63 y 72/72), ramas 7 y 5, suelo 132+220.
 
+- **La auditoría del móvil, con el denominador honesto.** `auditLayer2Summary`
+  contaba "de los 512 slots". Ahora da DOS cuentas separadas, porque miden cosas
+  distintas y confundirlas es justo el error de siempre:
+  - **Niveles reales (215): OK=190 · sin fondo=25 · ERROR=0.** Es la cifra que
+    dice cuánto del juego sale bien.
+  - **Barrido de los 512 huecos: OK=486 · sin fondo=26 · ERROR=0.** Esto NO es
+    cobertura, es ROBUSTEZ: que ni un hueco de basura reviente el parser. Por eso
+    se conserva — un ERROR=0 sobre 512 dice más que sobre 215.
+
   Cola actual (por nº de niveles que arregla), toda en grupos acoplados —cada
   grupo no arregla nada hasta estar entero:
   - guías INCLINADAS de cuerda (`std:3A`, 4 subrutinas) → 3 niveles.
