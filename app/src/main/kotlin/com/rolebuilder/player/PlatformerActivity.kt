@@ -390,14 +390,20 @@ class PlatformerActivity : ComponentActivity() {
     private fun loadCoin(): android.graphics.Bitmap? = loadSprite("sprites/coin.png")
 
     /**
-     * Carga los sprites GRANDES empaquetados (assets/sprites/big/big_<id>.png): id de
-     * sprite → bitmap. El id se lee del nombre del fichero (hex). Vacío si no hay carpeta.
+     * Carga los sprites GRANDES (id de sprite → bitmap): jefes, Rex, Wiggler, las
+     * plataformas de guía… todo lo que no cabe en el atlas cuadrado `enemies.png`.
+     *
+     * Salen del ALMACÉN horneado en el dispositivo desde la ROM del usuario, no de los
+     * assets del APK: en el repositorio no va ni un PNG de estos porque son de Nintendo.
+     * Antes esta función ENUMERABA con `assets.list("sprites/big")` —una carpeta que no
+     * existe en el APK, justamente por eso— aunque luego leyera del almacén, así que
+     * devolvía SIEMPRE un mapa vacío y al jugar no salía ni un sprite grande. El editor
+     * ya lo hacía bien ([com.rolebuilder.editor.loadBigSprites]); ahora los dos usan la
+     * misma vía. Vacío si aún no se ha horneado.
      */
     private fun loadBigSprites(): Map<Int, android.graphics.Bitmap> = runCatching {
-        (assets.list("sprites/big") ?: emptyArray()).mapNotNull { name ->
-            val id = Regex("big_([0-9a-fA-F]+)\\.png").matchEntire(name)?.groupValues?.get(1)
-                ?.toInt(16) ?: return@mapNotNull null
-            loadSprite("sprites/big/$name")?.let { id to it }
+        com.rolebuilder.editor.snes.SmwAssetStore.bigSpriteFiles(this).mapNotNull { (id, file) ->
+            android.graphics.BitmapFactory.decodeFile(file.absolutePath)?.let { id to it }
         }.toMap()
     }.getOrDefault(emptyMap())
 
