@@ -1,6 +1,7 @@
 package com.rolebuilder.core
 
 import com.rolebuilder.core.snes.SmwLevelExits
+import com.rolebuilder.core.snes.SmwLayer1
 import com.rolebuilder.core.snes.SmwLevelGoal
 import com.rolebuilder.core.snes.SmwOverworldLevels
 import com.rolebuilder.core.snes.SnesDecoder
@@ -89,6 +90,60 @@ class ZzValidLevelsProbe {
             if (kinds.isEmpty()) sinMeta.add("%02X %s".format(t.levelNumber, t.name?.trim()))
             if (kinds.size == 2) conDos++
         }
+        // 6b) ¿POR QUÉ salen 215? ¿Están conectados entre sí, o el cierre se escapa?
+        run {
+            val parents = HashMap<Int, MutableSet<Int>>()   // nivel -> quién lleva a él
+            val depth = HashMap<Int, Int>()
+            for (l in mapLevels) depth[l] = 0
+            val q2 = ArrayDeque(mapLevels)
+            val vis = sortedSetOf<Int>().also { it += mapLevels }
+            while (q2.isNotEmpty()) {
+                val lv = q2.removeFirst()
+                val c = SmwLevelExits.read(rom, header, lv) ?: continue
+                for (e in c.exits) {
+                    val d = e.destinationLevel
+                    if (d !in 0 until 0x200) continue
+                    parents.getOrPut(d) { mutableSetOf() } += lv
+                    if (vis.add(d)) { depth[d] = (depth[lv] ?: 0) + 1; q2.addLast(d) }
+                }
+            }
+            val subs = vis - mapLevels
+            println("\n=== ¿ESTÁN CONECTADOS ENTRE SÍ? ===")
+            println("  sub-niveles: ${subs.size}")
+            println("  compartidos por 2+ niveles padre: ${subs.count { (parents[it]?.size ?: 0) > 1 }}")
+            val byDepth = vis.groupBy { depth[it] ?: -1 }.toSortedMap()
+            println("  por profundidad desde una casilla del mapa: " +
+                byDepth.entries.joinToString(", ") { "d${it.key}=${it.value.size}" })
+            // Niveles de MAPA a los que además se llega por una tubería/puerta de otro.
+            val mapAsSub = mapLevels.filter { (parents[it]?.size ?: 0) > 0 }
+            println("  niveles de MAPA a los que también se llega desde otro nivel: ${mapAsSub.size}")
+            // ¿Se cuela basura? Un hueco sin objetos no es un nivel.
+            var vacios = 0; var nulos = 0; var conObjetos = 0
+            for (lv in vis) {
+                val tm = SmwLayer1.parse(rom, delta, lv)
+                if (tm == null) nulos++ else if (tm.totalObjects == 0) vacios++ else conObjetos++
+            }
+            println("  con objetos=$conObjetos  VACÍOS(sospechosos)=$vacios  no parseables(verticales)=$nulos")
+            val huerfanosVacios = vis.filter { lv ->
+                val tm = SmwLayer1.parse(rom, delta, lv); tm != null && tm.totalObjects == 0
+            }
+            if (huerfanosVacios.isNotEmpty()) {
+                println("  vacíos: " + huerfanosVacios.joinToString(",") { "%03X".format(it) })
+                println("  --- ficha de cada vacío ---")
+                for (lv in huerfanosVacios) {
+                    val tm = SmwLayer1.parse(rom, delta, lv)!!
+                    val spr = runCatching { SnesGameRecipes.smwLevelEnemies(rom, header, lv).size }.getOrElse { -1 }
+                    val padres = parents[lv]?.sorted()?.joinToString(",") { "%03X".format(it) } ?: "-"
+                    val sec = parents[lv]?.any { p ->
+                        SmwLevelExits.read(rom, header, p)?.exits
+                            ?.any { it.destinationLevel == lv && it.isSecondary } == true
+                    } ?: false
+                    println("    %03X modo=%d pantallas=%d sprites=%d porSalidaSecundaria=%s padres=%s"
+                        .format(lv, tm.mode, tm.screens, spr, sec, padres))
+                }
+            }
+        }
+
         println("\n=== SALIDAS contadas por sprite de meta: $totalExits")
         println("  translevels con DOS salidas (normal+secreta): $conDos")
         println("  translevels SIN sprite de meta: ${sinMeta.size}")

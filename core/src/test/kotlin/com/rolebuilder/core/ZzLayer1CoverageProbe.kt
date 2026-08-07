@@ -29,8 +29,14 @@ class ZzLayer1CoverageProbe {
         val universe = SmwLevelSet.reachableLevels(rom, SnesDecoder.parseHeader(rom))
         val mapOnly = SmwLevelSet.mapLevels(rom, delta).map { it.level }.toSet()
         println("=== universo: ${universe.size} alcanzables (${mapOnly.size} con casilla en el mapa) ===")
+        var verticales = 0
+        var sinLayer1 = 0
         for (lvl in universe) {
-            val tm = SmwLayer1.parse(rom, delta, lvl) ?: continue
+            val tm = SmwLayer1.parse(rom, delta, lvl)
+            if (tm == null) { verticales++; continue }   // verticales: aún no soportados
+            // Modos 9/11/16 no tienen Layer 1 POR DISEÑO (salas de jefe, Mode 7): no hay
+            // nada que reconstruir, así que contarlos como "100%" sería regalarse puntos.
+            if (tm.totalObjects == 0) { sinLayer1++; continue }
             parsed++
             tilesetOf[lvl] = tm.tileset
             if (tm.unknownObjects == 0) {
@@ -43,7 +49,8 @@ class ZzLayer1CoverageProbe {
                 levelsOf.getOrPut(k) { mutableSetOf() } += lvl
             }
         }
-        println("=== LAYER 1: $full/$parsed niveles REALES al 100% (${parsed - full} con ids sin portar) ===")
+        println("=== LAYER 1: $full/$parsed niveles CON LAYER 1 al 100% (${parsed - full} con ids sin portar) ===")
+        println("    (aparte: $sinLayer1 sin Layer 1 por diseño -jefes/Mode 7- y $verticales verticales aún no soportados)")
         hist.entries.sortedByDescending { it.value }.forEach { (k, v) ->
             val lv = levelsOf[k]!!.sorted().joinToString(",") { "%03X".format(it) }
             println("  %-8s %3d ocurrencias en %d niveles: %s".format(k, v, levelsOf[k]!!.size, lv))

@@ -330,7 +330,7 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   la ROM con `ZzLayer1CoverageProbe` (sonda opt-in, se salta sin `SMW_ROM`):
   **+8 niveles al 100%** (018, 0C9, 0CA, 0F8, 104, 12D, 1D7, 1D8). Sobre el
   denominador honesto ([SmwLevelSet], niveles que el juego referencia de verdad)
-  la cobertura queda en **154/204**; medido sobre los 512 huecos salía 451/501,
+  la cobertura queda en **146/196**; medido sobre los 512 huecos salía 451/501,
   que es el mismo trabajo con un número inflado. Lo portado:
   - ext 0x61-0x63 — reloj de pared de casa fantasma y sus dos telarañas (3×3).
   - ext 0x85 — CASA DE YOSHI (mural fijo de 16×10).
@@ -339,7 +339,7 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   - casa fantasma 0x2E (línea de pinchos) y 0x30 (repisa de hierba).
   - pradera 0x30 (tubería helada 2 columnas) y 0x31 (bloque giratorio helado).
 
-- **Segunda tanda, atacando lo que más niveles bloqueaba: 154 → 183 de 204.**
+- **Segunda tanda, atacando lo que más niveles bloqueaba: 146 → 175 de 196.**
   Todo medido con la sonda, que ahora agrupa los ids por FAMILIA de tileset (un
   `std:35` no dice nada sin saber si es pradera, cueva o cuerda):
   - **Bloques de interruptor** ($0D:B920), azules y rojos. Una sola rutina que
@@ -352,6 +352,18 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
     `stdVerticalPipes` ya la dibujaba (teselas 0x68/0x69) pero el gate `< 5` la
     mandaba a "desconocida". Del tipo 6 en adelante sí falta el dato y sigue
     declarándose desconocido.
+
+  El denominador afina una vez más: de los 215 alcanzables, **11 son verticales**
+  (aún no soportados) y **8 no tienen Layer 1 POR DISEÑO** (modos 9/11/16: salas
+  de jefe y Mode 7). Esos 8 salían como "100%" gratis, porque no hay nada que
+  reconstruir; ahora se cuentan aparte. Quedan **196** con Layer 1 de verdad.
+
+  Y sí, los niveles están CONECTADOS entre sí, que es de dónde salen los 215:
+  28 sub-niveles los comparten dos o más niveles padre, a 27 niveles con casilla
+  propia se llega además por la tubería o puerta de otro, y hay cadenas de hasta
+  4 saltos (d0=92, d1=83, d2=30, d3=9, d4=1). No es que el cierre se escape: de
+  los 215, 196 tienen objetos, 11 son verticales y los 8 restantes son las salas
+  sin Layer 1 — ninguno es basura.
 
   Cola actual (por nº de niveles que arregla): cuestas muy inclinadas de cueva
   (`std:3C`, 5 niveles) — piden una primitiva de cruce de página que NO toque el
