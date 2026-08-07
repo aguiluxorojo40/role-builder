@@ -65,12 +65,13 @@ dispositivo, nunca del repositorio.
    mapa al entrar. Con el parser al nivel actual hay **35 niveles** que
    producen bundle multi-mapa con warps jugables (castillos y casas fantasma
    incluidos). Solo faltan las tuberías HORIZONTALES (0x3F, ver Hallazgos).
-3. **Música derivada de la ROM cargada** (`SmwMusic.assembleAram`): hoy la app
-   suena una pista fija; el ensamblador puede derivar la del nivel
-   desde la ROM del usuario en runtime.
-4. **Color de enemigo por nivel en vivo** (`SmwEnemyGraphics.spriteImage`): la
-   app usa el atlas horneado (paleta del nivel de referencia); en vivo cada
-   nivel podría teñir a sus enemigos con SU sub-paleta.
+3. ~~**Música derivada de la ROM cargada**~~ → ya está: la ruta ▶ suena la música
+   REAL del nivel (`buildRomMusic` lee su `musicIndex` de la cabecera).
+4. ~~**Color de enemigo por nivel en vivo**~~ → ya está en la ruta ▶, y ahora
+   también para los sprites GRANDES: se recalculan con la paleta del nivel que
+   juegas y se superponen a los horneados. Importa de verdad —medido: de 58
+   combinaciones id×nivel, **40 salen distintas** del horneado de referencia
+   (0x106) y solo 18 coinciden.
 
 ## 🎯 Objetivo "100% de los 3 primeros niveles"
 

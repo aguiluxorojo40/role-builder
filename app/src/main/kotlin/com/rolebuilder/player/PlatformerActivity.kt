@@ -245,6 +245,21 @@ class PlatformerActivity : ComponentActivity() {
                     frames?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
                 }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
             }.toMap()
+        // Sprites GRANDES con la paleta de ESTE nivel. Los horneados salen todos del nivel
+        // de referencia (0x106), así que al jugar otro nivel las plataformas de guía o Rex
+        // saldrían con colores de Yoshi's Island 2. Aquí ya estamos leyendo la ROM en vivo,
+        // así que no hay motivo para conformarse: se recalculan los ids que USA el nivel y
+        // se superponen a los horneados, que quedan de reserva para el resto.
+        val liveBig: Map<Int, Bitmap> = com.rolebuilder.core.snes.SnesGameRecipes
+            .smwLevelEnemies(rom, header, level)
+            .map { (id, _, _) -> id }.distinct()
+            .mapNotNull { id ->
+                runCatching {
+                    com.rolebuilder.core.snes.SmwEnemyGraphics
+                        .customEnemyImage(rom, header, level, id)
+                        ?.let { img -> id to Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888) }
+                }.getOrNull()
+            }.toMap()
         val audio = PlatformerAudio.fromRom(this, rom) ?: PlatformerAudio.fromAssets(this)
         // MUNDO de dibujo: el mismo atlas de tiles REAL que la importación al editor, para que
         // "▶ Jugar" se vea con sus gráficos (y su fondo de Layer 2) en vez de la colisión por
@@ -255,7 +270,7 @@ class PlatformerActivity : ComponentActivity() {
             engine, world, marioBmp, loadEnemies(), audio,
             marioBigBmp, marioFireBmp, marioCapeBmp,
             romEnemyFrames = enemyFrames.ifEmpty { null },
-            bigSpriteBitmaps = loadBigSprites(),
+            bigSpriteBitmaps = loadBigSprites() + liveBig,
             coinBitmap = loadCoin(),
             powerupBitmap = loadPowerups(),
         )
