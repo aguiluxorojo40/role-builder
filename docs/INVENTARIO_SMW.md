@@ -377,12 +377,24 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
     remate de la guía HORIZONTAL apila en vertical y el de la VERTICAL en
     horizontal, tal cual el original.
 
+- **Cuarta tanda: el BOSQUE, completo. 180 → 183 de 196.** Copa `std:33`
+  ($0D:BADC), tronco grande `std:36` ($0D:B9C0) y ramas `ext:88/89` ($0D:B6E3).
+  Dos rarezas del original que hubo que respetar:
+  - La copa **no toca el byte alto** en ningún momento, y entre repetición y
+    repetición avanza el puntero `0xB0` a pelo. Sumado al `0x100` del cruce de la
+    fila 16 da los `0x1B0` de UNA PANTALLA: por eso la copa se repite a lo ancho.
+    Comprobado en la ROM: en el nivel 0x11E la copa ocupa 230 columnas.
+  - El tronco (grande y pequeño) es **sensible al contexto**: si cae sobre la copa
+    (0x0E) cambia a la pareja de página 1 para atravesarla en vez de taparla.
+  Verificado no solo por recuento sino **mirando el render** (`--scene` a PNG) y
+  contando dónde cae cada tesela: copa 704+439 celdas, tronco en parejas
+  emparejadas (63/63 y 72/72), ramas 7 y 5, suelo 132+220.
+
   Cola actual (por nº de niveles que arregla), toda en grupos acoplados —cada
   grupo no arregla nada hasta estar entero:
-  - resto del BOSQUE de pradera: `ext:88/89` (ramas), `std:33` (copa) y
-    `std:36` (tronco grande) → 3 niveles (11E, 123, 126).
   - guías INCLINADAS de cuerda (`std:3A`, 4 subrutinas) → 3 niveles.
   - escalera de castillo (`std:3D`) → 3 niveles.
+  - cuerda `std:35` → 2; cueva `std:38`/`std:39` → 2.
 
   Al hacerlo, el umbral de "objeto específico del tileset" baja de 0x30 a **0x2E**:
   el 0x2E ya difiere por tileset (pinchos en casa fantasma; en el resto, una rutina

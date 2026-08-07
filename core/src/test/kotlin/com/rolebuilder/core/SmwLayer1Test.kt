@@ -391,6 +391,68 @@ class SmwLayer1Test {
     }
 
     @Test
+    fun `la copa del arbol de bosque es un mural de 16x6`() {
+        // objNum 0x33 = (h1>>4=3) | ((h0&0x60)>>1=0x30). size 0 → una sola copa.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x60, 0x30, 0x00,               // obj 0x33 en fila 0, col 0
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Filas 0-1: relleno macizo de copa.
+        for (c in 0..15) assertEquals(0xB4, tm.block(c, 0), "relleno en col $c")
+        // Fila 2: el relleno acaba en la col 12 y empiezan los bordes.
+        assertEquals(0xB4, tm.block(11, 2))
+        assertEquals(0xB5, tm.block(12, 2)); assertEquals(0xB3, tm.block(13, 2))
+        // Fila 5: el borde inferior, con huecos de aire entre las hojas.
+        assertEquals(0x25, tm.block(0, 5))
+        assertEquals(0xB1, tm.block(1, 5)); assertEquals(0xB6, tm.block(2, 5))
+        assertEquals(0x25, tm.block(0, 6), "6 filas, ni una más")
+    }
+
+    @Test
+    fun `el tronco grande atraviesa la copa en vez de taparla`() {
+        // Primero suelo de bosque (0x35) de 2 de ancho, que deja teselas 0x0E de
+        // página 1; encima, el tronco grande (0x36) en la misma casilla.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x61, 0x53, 0x01,               // obj 0x35 en fila 1, col 3, 2 de ancho
+            0x61, 0x63, 0x10,               // obj 0x36 en la MISMA casilla
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Sobre la copa (0x0E) el tronco usa la pareja de PÁGINA 1, no la normal.
+        assertEquals(0x10B, tm.block(3, 1)); assertEquals(0x10C, tm.block(4, 1))
+        // La fila siguiente ya es la pareja corriente del tronco.
+        assertEquals(0xBB, tm.block(3, 2)); assertEquals(0xBC, tm.block(4, 2))
+        // Y sin copa debajo, el tronco sale con su pareja normal.
+        val solo = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x00, 0x61, 0x63, 0x10, 0xFF), 0, 0,
+        )
+        assertNotNull(solo)
+        assertEquals(0xB9, solo.block(3, 1)); assertEquals(0xBA, solo.block(4, 1))
+    }
+
+    @Test
+    fun `las ramas del arbol son una tesela por lado`() {
+        val d = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x00, 0x02, 0x05, 0x88, 0xFF), 0, 0,
+        )
+        assertNotNull(d)
+        assertEquals(0, d.unknownObjects)
+        assertEquals(0xC1, d.block(5, 2))
+        val i = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x00, 0x02, 0x05, 0x89, 0xFF), 0, 0,
+        )
+        assertNotNull(i)
+        assertEquals(0xC2, i.block(5, 2))
+    }
+
+    @Test
     fun `nivel vertical devuelve null (no soportado aun)`() {
         // Modo 10 (0x0A) es vertical según la VerticalTable.
         val rom = romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xFF)

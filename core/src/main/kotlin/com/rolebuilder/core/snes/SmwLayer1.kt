@@ -280,8 +280,10 @@ internal object SmwLayer1 {
                 0x30 -> grassIcyVerticalPipe()
                 0x31 -> stdCoins(0xE)
                 0x32 -> switchBlocks(0)                  // azules
+                0x33 -> grassForestTreeTop()
                 0x34 -> grassForestGroundEdges()
                 0x35 -> grassForestGround()
+                0x36 -> grassLargeTreeTrunk()
                 0x37 -> grassSmallTreeTrunk()
                 0x38 -> switchBlocks(1)                  // rojos
                 0x39 -> grassDiagonalPipeRight()
@@ -326,6 +328,7 @@ internal object SmwLayer1 {
                 0x55 -> extLineGuideEnd(horizontalGuide = true)
                 0x56 -> extLineGuideEnd(horizontalGuide = false)
                 0x60 -> extCaveLavaInnerCorner()
+                0x88, 0x89 -> extTreeBranch(k)
                 else -> unkExt(k)
             }
         }
@@ -524,6 +527,16 @@ internal object SmwLayer1 {
         /** Extendido 0x60: ESQUINA INTERIOR de la lava de cueva ($0D:DA57), tesela 0xFE
          *  de página 1. */
         fun extCaveLavaInnerCorner() { val v1 = pos; setHi01(v1); setLo(v1, 0xFE) }
+
+        /**
+         * Extendidos 0x88/0x89: RAMAS del árbol de bosque, derecha e izquierda
+         * ($0D:B6E3). Una tesela de página 0; el original indexa la tabla con
+         * `ext + 120` aprovechando que da la vuelta el byte (0x88 → 0, 0x89 → 1).
+         */
+        fun extTreeBranch(k: Int) {
+            val tiles = intArrayOf(0xC1, 0xC2)
+            val v1 = pos; setHi00(v1); setLo(v1, tiles[(k + 120) and 0xFF])
+        }
 
         // --------------------------- objetos extendidos ---------------------------
 
@@ -2396,6 +2409,86 @@ internal object SmwLayer1 {
                 r0 = (r0 - 1) and 0xFF
                 if (r0 and 0x80 != 0) break
                 setHi00(v3); setLo(v3, bot[v2])
+                v1 = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+            }
+        }
+
+        /**
+         * Objeto 0x33 de pradera: COPA DEL ÁRBOL DE BOSQUE (GrassObj33_ForestTreeTop,
+         * $0D:BADC). Mural fijo de 16×6 de la tabla $0D:BA7C, repetido (tamaño + 1)
+         * veces.
+         *
+         * Dos rarezas del original que se replican tal cual:
+         * - NO toca el byte alto en ningún momento: la copa se dibuja en la página que
+         *   ya hubiera, no fuerza la 0 ni la 1.
+         * - Entre repetición y repetición avanza el puntero `0xB0` a pelo. Sumado al
+         *   `0x100` que mete el cruce de la fila 16, da los `0x1B0` de UNA PANTALLA:
+         *   por eso la copa se repite a lo ancho del bosque.
+         */
+        fun grassForestTreeTop() {
+            val data = intArrayOf(
+                0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4,
+                0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4,
+                0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB4, 0xB5, 0xB3, 0xB5, 0xB3,
+                0xB3, 0xB4, 0xB4, 0xB5, 0xB3, 0xB4, 0xB4, 0xB4, 0xB4, 0xB5, 0xB3, 0xB5, 0xB6, 0xB1, 0xB6, 0xB1,
+                0xB1, 0xB3, 0xB5, 0xB6, 0xB1, 0xB3, 0xB5, 0xB3, 0xB5, 0xB6, 0xB1, 0xB6, 0x25, 0x25, 0x25, 0x25,
+                0x25, 0xB1, 0xB6, 0x25, 0x25, 0xB1, 0xB6, 0xB1, 0xB6, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25,
+            )
+            var r15 = size
+            do {
+                var r14 = pos
+                var v1 = pos
+                var v2 = 0
+                var r1 = 5
+                preserve()
+                do {
+                    var r2 = 15
+                    do { v1 = horiz(v1, data[v2]); v2++; r2 = (r2 - 1) and 0xFF } while (r2 and 0x80 == 0)
+                    restore()
+                    if (r14 + 16 >= 256) pageCross(1)
+                    r14 = (r14 + 16) and 0xFF
+                    v1 = r14
+                    r1 = (r1 - 1) and 0xFF
+                } while (r1 and 0x80 == 0)
+                ptr += 0xB0
+                r15 = (r15 - 1) and 0xFF
+            } while (r15 and 0x80 == 0)
+        }
+
+        /**
+         * Una fila del TRONCO GRANDE ($0D:B9F6): escribe la tesela [kIn] y su pareja
+         * [kIn]+1. Si debajo está la copa del bosque (0x0E), cambia a la pareja de
+         * página 1 (0x0B/0x0C) para que el tronco atraviese la copa en vez de taparla —
+         * el mismo truco que el tronco pequeño.
+         */
+        fun largeTrunkPair(kIn: Int, j: Int) {
+            var k = kIn
+            if (rdLo(j) == 0x0E) { setHi01(j); k = 0x0B }
+            val v2 = horiz(j, k)
+            setLo(v2, k + 1)
+        }
+
+        /**
+         * Objeto 0x36 de pradera: TRONCO GRANDE (GrassObj36_LargeTreeTrunk, $0D:B9C0).
+         * Baja de dos en dos columnas alternando la pareja 0xB9/0xBA y la 0xBB/0xBC
+         * hasta agotar el alto del nibble alto.
+         */
+        fun grassLargeTreeTrunk() {
+            var v1 = pos
+            var r0 = size shr 4
+            while (true) {
+                preserve()
+                largeTrunkPair(0xB9, v1)
+                restore()
+                val v2 = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                setHi00(v2)
+                val v3 = horiz(v2, 0xBB)
+                setHi00(v3); setLo(v3, 0xBC)
+                restore()
                 v1 = vert()
                 r0 = (r0 - 1) and 0xFF
                 if (r0 and 0x80 != 0) break
