@@ -51,6 +51,35 @@ class ZzLayer1CoverageProbe {
         println("=== niveles incompletos (nivel:tileset): ${
             brokenLevels.joinToString(",") { "%03X:%d".format(it, tilesetOf[it] ?: -1) }
         }")
+
+        // Lo que de verdad hace falta portar: id + TILESET (los >=0x2E son específicos del
+        // tileset, así que "std:35" no dice nada sin saber en qué familia sale).
+        val byIdTileset = HashMap<String, Int>()
+        val lvlsOf = HashMap<String, MutableSet<Int>>()
+        for (lvl in universe) {
+            val tm = SmwLayer1.parse(rom, delta, lvl) ?: continue
+            for ((k, v) in tm.unknownIds) {
+                val fam = when (tm.tileset) {
+                    0, 7, 0xC -> "pradera"
+                    1 -> "castillo"
+                    2, 6, 8 -> "cuerda"
+                    3, 9, 0xA, 0xB, 0xE -> "cueva"
+                    4, 5, 0xD -> "fantasma"
+                    else -> "ts${tm.tileset}"
+                }
+                val key = "%s@%s".format(k, fam)
+                byIdTileset[key] = (byIdTileset[key] ?: 0) + v
+                lvlsOf.getOrPut(key) { mutableSetOf() } += lvl
+            }
+        }
+        println("\n=== QUÉ PORTAR (id @ familia de tileset), por nº de niveles que arregla ===")
+        byIdTileset.entries
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { lvlsOf[it.key]!!.size }.thenByDescending { it.value })
+            .forEach { (k, v) ->
+                println("  %-18s %3d ocurr. en %2d niveles: %s".format(
+                    k, v, lvlsOf[k]!!.size, lvlsOf[k]!!.sorted().joinToString(",") { "%03X".format(it) },
+                ))
+            }
     }
 
     private fun findRom(): ByteArray? {

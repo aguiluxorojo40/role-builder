@@ -339,6 +339,25 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   - casa fantasma 0x2E (línea de pinchos) y 0x30 (repisa de hierba).
   - pradera 0x30 (tubería helada 2 columnas) y 0x31 (bloque giratorio helado).
 
+- **Segunda tanda, atacando lo que más niveles bloqueaba: 154 → 183 de 204.**
+  Todo medido con la sonda, que ahora agrupa los ids por FAMILIA de tileset (un
+  `std:35` no dice nada sin saber si es pradera, cueva o cuerda):
+  - **Bloques de interruptor** ($0D:B920), azules y rojos. Una sola rutina que
+    ocupa cinco casillas de las tablas por tileset (castillo 0x39/0x3A, pradera
+    0x32/0x38, cueva 0x34/0x35, cuerda 0x34): +19 niveles de golpe.
+  - **Pinchos de castillo** 0x3E (horizontales) y 0x3F (verticales).
+  - **Bosque** (pradera): suelo 0x35, sus bordes 0x34 y el tronco pequeño 0x37,
+    que se encadena con lo que ya hay debajo.
+  - **Tubería vertical INVISIBLE** (std 0x0F tipo 5): era un BUG, no una falta.
+    `stdVerticalPipes` ya la dibujaba (teselas 0x68/0x69) pero el gate `< 5` la
+    mandaba a "desconocida". Del tipo 6 en adelante sí falta el dato y sigue
+    declarándose desconocido.
+
+  Cola actual (por nº de niveles que arregla): cuestas muy inclinadas de cueva
+  (`std:3C`, 5 niveles) — piden una primitiva de cruce de página que NO toque el
+  backup del puntero, distinta de la que hay; y el grupo de guías de CUERDA
+  (`ext:51-56` + `std:3A`, 3-4 niveles), que van juntas.
+
   Al hacerlo, el umbral de "objeto específico del tileset" baja de 0x30 a **0x2E**:
   el 0x2E ya difiere por tileset (pinchos en casa fantasma; en el resto, una rutina
   sin usar que NO se porta y sigue contando como desconocida, para no pintar basura).

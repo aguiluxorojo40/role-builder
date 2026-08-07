@@ -192,11 +192,17 @@ internal object SmwLayer1 {
                         0x34 -> castleVerticalDoubleEndedPipe()
                         0x37 -> ropeHorizontalLineGuide()
                         0x38 -> ropeVerticalLineGuide()
+                        0x39 -> switchBlocks(0)          // azules
+                        0x3A -> switchBlocks(1)          // rojos
                         0x3C -> castleStoneBlock()
+                        0x3E -> castleSpikeLineH()
+                        0x3F -> castleSpikeLineV()
                         else -> unkStd(obj)
                     }
                     2, 6, 8 -> when (obj) {
                         0x32 -> ropeLogBridge()
+                        0x34 -> switchBlocks(1)          // rojos
+
                         0x38 -> ropeHorizontalLineGuide()
                         0x39 -> ropeVerticalLineGuide()
                         0x3C -> ropeMushroomTop()
@@ -204,6 +210,8 @@ internal object SmwLayer1 {
                         else -> unkStd(obj)
                     }
                     3, 9, 0xA, 0xB, 0xE -> when (obj) {
+                        0x34 -> switchBlocks(0)          // azules
+                        0x35 -> switchBlocks(1)          // rojos
                         0x36 -> underground4SidedGround()
                         0x3A -> undergroundCaveLava(withSurface = true)
                         0x3B -> undergroundCaveLava(withSurface = false)
@@ -236,7 +244,10 @@ internal object SmwLayer1 {
             }
             when (obj) {
                 in 0x01..0x0E -> stdCoins(obj - 1)
-                0x0F -> if ((size and 0xF) < 5) stdVerticalPipes() else unkStd(obj)
+                // El tipo 5 es la tubería INVISIBLE y [stdVerticalPipes] ya la dibuja
+                // (teselas 0x68/0x69); el gate lo excluía por error. Del 6 en adelante no
+                // hay dato: las tablas de tapas solo llegan al 4.
+                0x0F -> if ((size and 0xF) <= 5) stdVerticalPipes() else unkStd(obj)
                 0x10 -> if (((size and 0xF0) shr 3) < 7) stdHorizontalPipes() else unkStd(obj)
                 0x11 -> stdBulletShooter()
                 0x12 -> stdSlopes()
@@ -257,6 +268,11 @@ internal object SmwLayer1 {
                 // tesela repetida con la entrada 0xE de la tabla, tesela 0x65).
                 0x30 -> grassIcyVerticalPipe()
                 0x31 -> stdCoins(0xE)
+                0x32 -> switchBlocks(0)                  // azules
+                0x34 -> grassForestGroundEdges()
+                0x35 -> grassForestGround()
+                0x37 -> grassSmallTreeTrunk()
+                0x38 -> switchBlocks(1)                  // rojos
                 0x39 -> grassDiagonalPipeRight()
                 0x3A -> grassDiagonalLedgeLeft()
                 0x3B -> grassDiagonalLedgeRight()
@@ -982,6 +998,70 @@ internal object SmwLayer1 {
          */
         fun castleStoneBlock() =
             rect3x3(intArrayOf(0x5D, 0x60, 0x63), intArrayOf(0x5E, 0x61, 0x64), intArrayOf(0x5F, 0x62, 0x65))
+
+        /**
+         * BLOQUES DE INTERRUPTOR (GrassObj32_BlueSwitchBlocks, $0D:B920): rectángulo de
+         * ancho nibble-bajo + 1 por alto nibble-alto + 1. [kind] 0 = AZUL, 1 = ROJO.
+         *
+         * Los usan cuatro casillas de las tablas por tileset (castillo 0x39/0x3A y
+         * pradera 0x32/0x38), por eso está aquí una sola vez. El juego pinta la tesela
+         * de PÁGINA 1 (bloque sólido) si su interruptor ya está pulsado y la de página 0
+         * (translúcido) si no; en un parse EN FRÍO no hay ninguno pulsado, que es el
+         * estado con el que empieza una partida.
+         */
+        fun switchBlocks(kind: Int) {
+            val tiles = intArrayOf(0x6C, 0x6D)
+            var v1 = pos
+            val r0 = size and 0xF
+            var r1 = size shr 4
+            do {
+                var r2 = r0
+                preserve()
+                do {
+                    setHi00(v1); v1 = horiz(v1, tiles[kind])
+                    r2 = (r2 - 1) and 0xFF
+                } while (r2 and 0x80 == 0)
+                restore(); v1 = vert()
+                r1 = (r1 - 1) and 0xFF
+            } while (r1 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto de CASTILLO 0x3E: LÍNEA HORIZONTAL DE PINCHOS
+         * (CastleObj3E_HorizontalLineOfSpikes, $0D:C42E). Repite a lo ancho (nibble bajo
+         * + 1) una tesela de página 1 que elige el nibble ALTO en la tabla $0D:C427, de
+         * la que el juego solo define dos entradas. Fuera de ellas no hay dato: se
+         * declara desconocido en vez de pintar basura.
+         */
+        fun castleSpikeLineH() {
+            val tiles = intArrayOf(0x5A, 0x59)
+            val variant = size shr 4
+            if (variant >= tiles.size) { unkStd(0x3E); return }
+            var v1 = pos
+            var r0 = size and 0xF
+            do {
+                setHi01(v1); v1 = horiz(v1, tiles[variant])
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto de CASTILLO 0x3F: LÍNEA VERTICAL DE PINCHOS
+         * (CastleObj3F_VerticalLineOfSpikes, $0D:C44F). Baja (nibble alto + 1) teselas de
+         * página 1; aquí es el nibble BAJO el que elige entre las tres de $0D:C446.
+         */
+        fun castleSpikeLineV() {
+            val tiles = intArrayOf(0x5B, 0x5C, 0x53)
+            val variant = size and 0xF
+            if (variant >= tiles.size) { unkStd(0x3F); return }
+            var v1 = pos
+            var r0 = size shr 4
+            do {
+                setHi01(v1); setLo(v1, tiles[variant])
+                v1 = vert()
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
 
         // ---------------------------- objetos de CUERDA ----------------------------
         // Ports 1:1 de RopeObjXX del banco $0D (tilesets 2/6/8; algunos compartidos
@@ -2093,6 +2173,98 @@ internal object SmwLayer1 {
                 setHi01(v5)
                 val v4 = horiz(v5, 0x63)
                 setHi01(v4); setLo(v4, 0x64)
+            }
+        }
+
+        // ----------------------------- BOSQUE (pradera) -----------------------------
+
+        /**
+         * Objeto 0x35 de pradera: SUELO DE BOSQUE (GrassObj35_ForestGround, $0D:BA0A).
+         * Fila superior de copa (tesela 0x0E, página 1) de ancho nibble-bajo + 1, y
+         * debajo nibble-alto filas de relleno (tesela 0xB8, página 0).
+         */
+        fun grassForestGround() {
+            var v1 = pos
+            val r0 = size and 0xF
+            var v2 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            do { setHi01(v1); v1 = horiz(v1, 0x0E); v2-- } while (v2 >= 0)
+            while (true) {
+                restore()
+                var v3 = vert()
+                var v4 = r0
+                r1 = (r1 - 1) and 0xFF
+                if (r1 and 0x80 != 0) break
+                do { setHi00(v3); v3 = horiz(v3, 0xB8); v4-- } while (v4 >= 0)
+            }
+        }
+
+        /**
+         * Objeto 0x34 de pradera: BORDES DEL SUELO DE BOSQUE
+         * (GrassObj34_ForestGroundEdges, $0D:BA4C). Columna de alto nibble-alto: una
+         * tesela de remate arriba y el resto de relleno, ambas elegidas por el nibble
+         * BAJO (4 variantes: los dos lados del suelo y sus dos esquinas).
+         *
+         * Sutileza del original que se replica tal cual: el relleno solo fuerza PÁGINA 1
+         * en las variantes 0 y 1; en las otras deja el byte alto como esté (página 0).
+         */
+        fun grassForestGroundEdges() {
+            val top = intArrayOf(0x5F, 0x5E, 0x10, 0x0F)
+            val bot = intArrayOf(0x60, 0x5D, 0xC5, 0xC4)
+            val v2 = size and 0xF
+            if (v2 >= top.size) { unkStd(0x34); return }
+            val v1 = pos
+            var r0 = size shr 4
+            setHi01(v1); setLo(v1, top[v2])
+            while (true) {
+                val v3 = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                if (v2 < 2) setHi01(v3)
+                setLo(v3, bot[v2])
+            }
+        }
+
+        /**
+         * La tesela de un tramo de TRONCO PEQUEÑO ($0D:B997), que depende de lo que YA
+         * haya debajo: la variante 1 se encadena con el tronco de al lado (0xB1/0xB6 →
+         * la siguiente) y la 0, si cae sobre la copa del bosque (0x0E), se cambia por la
+         * de página 1 (0x0D) para que el tronco atraviese la copa en vez de taparla.
+         */
+        fun smallTrunkTile(k: Int, j: Int, aIn: Int) {
+            var a = aIn
+            val cur = rdLo(j)
+            if (k == 1) {
+                if (cur == 0xB1 || cur == 0xB6) a = cur + 1
+            } else if (cur == 0x0E) {
+                setHi01(j); a = 0x0D
+            }
+            setLo(j, a)
+        }
+
+        /**
+         * Objeto 0x37 de pradera: TRONCO PEQUEÑO (GrassObj37_SmallTreeTrunk, $0D:B966).
+         * Baja alternando tesela superior e inferior (dos variantes según el nibble
+         * bajo) hasta agotar el alto del nibble alto.
+         */
+        fun grassSmallTreeTrunk() {
+            val top = intArrayOf(0xBD, 0xBF)
+            val bot = intArrayOf(0xBE, 0xC0)
+            val v2 = size and 0xF
+            if (v2 >= top.size) { unkStd(0x37); return }
+            var v1 = pos
+            var r0 = size shr 4
+            while (true) {
+                setHi00(v1)
+                smallTrunkTile(v2, v1, top[v2])
+                val v3 = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                setHi00(v3); setLo(v3, bot[v2])
+                v1 = vert()
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
             }
         }
 

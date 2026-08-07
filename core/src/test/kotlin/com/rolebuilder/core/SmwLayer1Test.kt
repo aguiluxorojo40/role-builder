@@ -233,6 +233,110 @@ class SmwLayer1Test {
         assertEquals(0x25, tm.block(4, 1))
     }
 
+    // ---- Segunda tanda: lo que más niveles bloqueaba (154 → 183 al 100%) ----
+
+    @Test
+    fun `bloques de interruptor sin pulsar salen en pagina 0`() {
+        // objNum 0x32 = (h1>>4=2) | ((h0&0x60)>>1=0x30). size 0x11 → 2x2.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,   // pradera
+            0x61, 0x22, 0x11,
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        for (c in 2..3) for (r in 1..2) assertEquals(0x6C, tm.block(c, r), "azul en ($c,$r)")
+        // Los ROJOS son la misma rutina con la otra tesela (castillo 0x3A).
+        val rojo = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x01, 0x61, 0xA2, 0x00, 0xFF), 0, 0,
+        )
+        assertNotNull(rojo)
+        assertEquals(0, rojo.unknownObjects)
+        assertEquals(0x6D, rojo.block(2, 1))
+    }
+
+    @Test
+    fun `pinchos de castillo horizontales y verticales`() {
+        // 0x3E: nibble alto elige tesela (0 → 0x5A), nibble bajo el ancho.
+        val h = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x01, 0x62, 0xE3, 0x03, 0xFF), 0, 0,
+        )
+        assertNotNull(h)
+        assertEquals(0, h.unknownObjects)
+        for (c in 3..6) assertEquals(0x15A, h.block(c, 2), "pincho H en col $c")
+        assertEquals(0x25, h.block(7, 2))
+        // Variante 1 → la otra tesela.
+        val h1 = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x01, 0x62, 0xE3, 0x13, 0xFF), 0, 0,
+        )
+        assertNotNull(h1)
+        assertEquals(0x159, h1.block(3, 2))
+        // 0x3F: aquí es al revés, el nibble BAJO elige tesela y el alto el largo.
+        val v = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x01, 0x61, 0xF3, 0x20, 0xFF), 0, 0,
+        )
+        assertNotNull(v)
+        assertEquals(0, v.unknownObjects)
+        for (r in 1..3) assertEquals(0x15B, v.block(3, r), "pincho V en fila $r")
+        assertEquals(0x25, v.block(3, 4))
+    }
+
+    @Test
+    fun `suelo de bosque copa en pagina 1 y relleno debajo`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x61, 0x52, 0x11,               // obj 0x35, ancho 2, alto 1
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        for (c in 2..3) {
+            assertEquals(0x10E, tm.block(c, 1), "copa en col $c")
+            assertEquals(0xB8, tm.block(c, 2), "relleno en col $c")
+        }
+        assertEquals(0x25, tm.block(2, 3))
+    }
+
+    @Test
+    fun `bordes del suelo de bosque bajan una columna`() {
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x61, 0x43, 0x20,               // obj 0x34, variante 0, alto 2
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0x15F, tm.block(3, 1), "remate")
+        assertEquals(0x160, tm.block(3, 2)); assertEquals(0x160, tm.block(3, 3))
+        assertEquals(0x25, tm.block(3, 4))
+    }
+
+    @Test
+    fun `la tuberia vertical INVISIBLE (tipo 5) ya no cuenta como desconocida`() {
+        // objNum 0x0F = (h1>>4=0xF) | ((h0&0x60)>>1=0). size 0x15: alto 1, tipo 5.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0xF2, 0x15,
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects, "el tipo 5 SÍ se sabe dibujar")
+        for (r in 1..2) {
+            assertEquals(0x168, tm.block(2, r), "izquierda fila $r")
+            assertEquals(0x169, tm.block(3, r), "derecha fila $r")
+        }
+        // Del 6 en adelante no hay dato: sigue siendo desconocido, no basura.
+        val seis = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x00, 0x01, 0xF2, 0x16, 0xFF), 0, 0,
+        )
+        assertNotNull(seis)
+        assertEquals(1, seis.unknownObjects)
+    }
+
     @Test
     fun `nivel vertical devuelve null (no soportado aun)`() {
         // Modo 10 (0x0A) es vertical según la VerticalTable.
