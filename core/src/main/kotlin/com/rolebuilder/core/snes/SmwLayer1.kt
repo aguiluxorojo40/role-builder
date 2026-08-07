@@ -144,6 +144,16 @@ internal object SmwLayer1 {
 
         fun pageCross(cr: Int) { ptr += cr shl 8; ptrBak = ptr }
 
+        /**
+         * Cruce de página CRUDO: el `ptr_lo_map16_data += 256` que hacen a pelo las
+         * cuestas muy inclinadas mientras bajan por una columna. A diferencia de
+         * [pageCross] —que es `HandleVerticalSubScreenCrossing…_Entry2` y SÍ actualiza el
+         * backup— este no lo toca, porque la columna se recorre entre preserve/restore y
+         * el restore tiene que devolver el puntero al arranque de la columna. Confundir
+         * los dos corrompe el tilemap de forma silenciosa.
+         */
+        fun pageCrossRaw() { ptr += 0x100 }
+
         fun goDownLeft(): Int {
             var r = pos + 15
             if (r >= 256) pageCross(1)
@@ -215,6 +225,7 @@ internal object SmwLayer1 {
                         0x36 -> underground4SidedGround()
                         0x3A -> undergroundCaveLava(withSurface = true)
                         0x3B -> undergroundCaveLava(withSurface = false)
+                        0x3C -> undergroundVerySteepSlope()
                         0x3D -> undergroundCeilingLedge()
                         0x3E -> undergroundCeilingEdges()
                         0x3F -> undergroundSolidDirt()
@@ -309,6 +320,12 @@ internal object SmwLayer1 {
                 0x85 -> extYoshisHouse()
                 in 0x8A..0x8D -> extSwitchPalaceSwitch(k)
                 0x97 -> extSwitchPalaceEdge()
+                0x4B, 0x4C -> extConveyorEnd(k)
+                in 0x4D..0x50 -> extLineGuideLargeCircle(k)
+                in 0x51..0x54 -> extLineGuideSmallCircle(k)
+                0x55 -> extLineGuideEnd(horizontalGuide = true)
+                0x56 -> extLineGuideEnd(horizontalGuide = false)
+                0x60 -> extCaveLavaInnerCorner()
                 else -> unkExt(k)
             }
         }
@@ -446,6 +463,67 @@ internal object SmwLayer1 {
          * tesela 0x10, y es de PÁGINA 1 (no 0, como casi todos los extendidos).
          */
         fun extSwitchPalaceEdge() { val v1 = pos; setHi01(v1); setLo(v1, 0x10) }
+
+        // ---- GUÍAS DE LÍNEA (las vías por las que corren plataformas y sierras) ----
+
+        /**
+         * Extendidos 0x4B/0x4C: REMATE DE CINTA TRANSPORTADORA ($0D:C259). Una tesela de
+         * página 1 según (ext - 0x4B).
+         */
+        fun extConveyorEnd(k: Int) {
+            val tiles = intArrayOf(0x07, 0x08)
+            val v1 = pos; setHi01(v1); setLo(v1, tiles[k - 0x4B])
+        }
+
+        /**
+         * Extendidos 0x4D-0x50: CUARTO DE CÍRCULO GRANDE de guía ($0D:CE67). Bloque 2×2
+         * de página 0 tomado de la tabla $0D:CE57 en grupos de 4 según (ext - 0x4D); el
+         * original recorre la tabla con los bits 0 y 1 del índice, que es justo un 2×2.
+         * El 0x25 de la tabla es aire.
+         */
+        fun extLineGuideLargeCircle(k: Int) {
+            val tiles = intArrayOf(
+                0x7A, 0x7B, 0x7C, 0x25, 0x7E, 0x7F, 0x25, 0x7D,
+                0x82, 0x25, 0x80, 0x81, 0x25, 0x83, 0x84, 0x85,
+            )
+            var v1 = 4 * (k - 0x4D)
+            var v0 = pos
+            preserve()
+            do {
+                do { setHi00(v0); v0 = horiz(v0, tiles[v1]); v1++ } while (v1 and 1 != 0)
+                restore(); v0 = vert()
+            } while (v1 and 3 != 0)
+        }
+
+        /**
+         * Extendidos 0x51-0x54: CUARTO DE CÍRCULO PEQUEÑO ($0D:CE94). Una sola tesela de
+         * página 0 según (ext - 0x51).
+         */
+        fun extLineGuideSmallCircle(k: Int) {
+            val tiles = intArrayOf(0x76, 0x77, 0x78, 0x79)
+            val v1 = pos; setHi00(v1); setLo(v1, tiles[k - 0x51])
+        }
+
+        /**
+         * Extendido 0x55 ($0D:CEC0) y 0x56 ($0D:CEDA): los REMATES de una guía. El nombre
+         * del original despista: el remate de la guía HORIZONTAL (0x55) apila sus dos
+         * teselas en VERTICAL, y el de la VERTICAL (0x56) las pone en horizontal.
+         */
+        fun extLineGuideEnd(horizontalGuide: Boolean) {
+            if (horizontalGuide) {
+                val tiles = intArrayOf(0x96, 0x97)
+                var v0 = pos
+                for (t in tiles) { setHi00(v0); setLo(v0, t); v0 = vert() }
+            } else {
+                val tiles = intArrayOf(0x98, 0x99)
+                var v0 = pos
+                for (t in tiles) { setHi00(v0); v0 = horiz(v0, t) }
+            }
+        }
+
+        /** Extendido 0x60: ESQUINA INTERIOR de la lava de cueva ($0D:DA57), tesela 0xFE
+         *  de página 1. */
+        fun extCaveLavaInnerCorner() { val v1 = pos; setHi01(v1); setLo(v1, 0xFE) }
 
         // --------------------------- objetos extendidos ---------------------------
 
@@ -1178,6 +1256,62 @@ internal object SmwLayer1 {
 
         // -------------------------- objetos de SUBTERRÁNEO --------------------------
         // Ports 1:1 de UndergroundObjXX del banco $0D (tilesets 3/9/0xA/0xB/0xE).
+
+        /**
+         * Objeto 0x3C: CUESTA MUY INCLINADA (UndergroundObj3C_VerySteepSlope,
+         * $0D:DD87). El bit 0x10 del tamaño elige lado: 0 = izquierda ($0D:DD99),
+         * 1 = derecha ($0D:DE3C).
+         *
+         * Cada paso dibuja una COLUMNA: tres teselas de cuesta (página 1) y debajo el
+         * relleno de tierra 0x3F (página 0), que mengua de dos en dos columnas — por eso
+         * la pendiente es de 2 filas por columna. La columna se recorre con [pageCrossRaw]
+         * (el `+= 256` a pelo del original, que NO toca el backup) entre preserve y
+         * restore; al acabar, el salto a la columna siguiente sí usa las primitivas
+         * normales, e incluye el retroceso/avance de pantalla cuando el paso diagonal se
+         * sale por el borde.
+         */
+        fun undergroundVerySteepSlope() {
+            val right = size and 0x10 != 0
+            val topTiles = if (right) intArrayOf(0xCC, 0xCD, 0xF2) else intArrayOf(0xCA, 0xCB, 0xF1)
+            var v0 = pos
+            var r0 = size and 0xF
+            var r1 = 2 * (size and 0xF) + 2
+
+            fun down(at: Int): Int {
+                if (at + 16 >= 256) pageCrossRaw()
+                return (at + 16) and 0xFF
+            }
+
+            do {
+                preserve()
+                val v1 = r1
+                for (t in topTiles) { setHi01(v0); setLo(v0, t); v0 = down(v0) }
+                var v8 = v1 - 2
+                while (--v8 >= 0) { setHi00(v0); setLo(v0, 0x3F); v0 = down(v0) }
+                restore()
+                if (right) {
+                    // Paso diagonal a la derecha: dos filas abajo y una columna a la
+                    // derecha; si se sale de la pantalla, avanza de pantalla.
+                    val s = pos + 32
+                    if (s >= 256) pageCross(1)
+                    v0 = (s + 1) and 0xFF
+                    if (v0 and 0xF == 0) { forwardOneScreen(); v0 = (v0 - 1) and 0xF0 }
+                } else {
+                    // A la izquierda: dos filas abajo y una columna a la izquierda.
+                    val s = pos + 31
+                    v0 = s and 0xFF
+                    if (s >= 256) pageCross(1)
+                    if (v0 and 0xF == 15) {
+                        if (v0 + 16 >= 256) pageCross(1)
+                        v0 = (v0 + 16) and 0xFF
+                        backOneScreen()
+                    }
+                }
+                pos = v0
+                r1 -= 2
+                r0 = (r0 - 1) and 0xFF
+            } while (r0 and 0x80 == 0)
+        }
 
         /** Objeto 0x36: SUELO DE 4 LADOS (UndergroundObj36, $0D:E135): la plataforma
          *  de cueva, mismo patrón 3×3 que el bloque de piedra con sus tablas. */

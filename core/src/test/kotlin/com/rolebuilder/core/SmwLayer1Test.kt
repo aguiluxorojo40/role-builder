@@ -338,6 +338,59 @@ class SmwLayer1Test {
     }
 
     @Test
+    fun `la cuesta muy inclinada de cueva baja dos filas por columna`() {
+        // objNum 0x3C = (h1>>4=0xC) | ((h0&0x60)>>1=0x30). size 0x01: lado IZQUIERDO
+        // (bit 0x10 a 0), ancho 1 → dos columnas.
+        val rom = romWithLevel(
+            0x03, 0x00, 0x00, 0x00, 0x03,   // tileset 3 (cueva)
+            0x60, 0xC5, 0x01,               // obj 0x3C en fila 0, col 5
+            0xFF,
+        )
+        val tm = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Columna 1: las tres teselas de cuesta (página 1) y 2 filas de tierra.
+        assertEquals(0x1CA, tm.block(5, 0)); assertEquals(0x1CB, tm.block(5, 1))
+        assertEquals(0x1F1, tm.block(5, 2))
+        assertEquals(0x3F, tm.block(5, 3)); assertEquals(0x3F, tm.block(5, 4))
+        // Columna 2: DOS filas más abajo y UNA a la izquierda; ya sin tierra.
+        assertEquals(0x1CA, tm.block(4, 2)); assertEquals(0x1CB, tm.block(4, 3))
+        assertEquals(0x1F1, tm.block(4, 4))
+        assertEquals(0x25, tm.block(4, 5), "la última columna ya no lleva tierra")
+    }
+
+    @Test
+    fun `remates y circulos de guia de linea`() {
+        // 0x55: el remate de la guía HORIZONTAL apila sus dos teselas en VERTICAL.
+        val h = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x02, 0x02, 0x04, 0x55, 0xFF), 0, 0,
+        )
+        assertNotNull(h)
+        assertEquals(0, h.unknownObjects)
+        assertEquals(0x96, h.block(4, 2)); assertEquals(0x97, h.block(4, 3))
+        // 0x56: y el de la VERTICAL las pone en horizontal.
+        val v = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x02, 0x02, 0x04, 0x56, 0xFF), 0, 0,
+        )
+        assertNotNull(v)
+        assertEquals(0x98, v.block(4, 2)); assertEquals(0x99, v.block(5, 2))
+        // 0x4D: cuarto de círculo grande, 2×2.
+        val c = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x02, 0x01, 0x03, 0x4D, 0xFF), 0, 0,
+        )
+        assertNotNull(c)
+        assertEquals(0, c.unknownObjects)
+        assertEquals(0x7A, c.block(3, 1)); assertEquals(0x7B, c.block(4, 1))
+        assertEquals(0x7C, c.block(3, 2)); assertEquals(0x25, c.block(4, 2), "el 0x25 es aire")
+        // 0x51: cuarto de círculo pequeño, una sola tesela.
+        val p = SmwLayer1.parse(
+            romWithLevel(0x03, 0x00, 0x00, 0x00, 0x02, 0x01, 0x03, 0x51, 0xFF), 0, 0,
+        )
+        assertNotNull(p)
+        assertEquals(0x76, p.block(3, 1))
+    }
+
+    @Test
     fun `nivel vertical devuelve null (no soportado aun)`() {
         // Modo 10 (0x0A) es vertical según la VerticalTable.
         val rom = romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xFF)

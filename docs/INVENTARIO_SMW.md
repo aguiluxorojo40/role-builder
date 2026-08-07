@@ -365,10 +365,24 @@ vertical y **0x0B** horizontal con la **velocidad OSCILANTE** real (`CODE_018CFD
   los 215, 196 tienen objetos, 11 son verticales y los 8 restantes son las salas
   sin Layer 1 — ninguno es basura.
 
-  Cola actual (por nº de niveles que arregla): cuestas muy inclinadas de cueva
-  (`std:3C`, 5 niveles) — piden una primitiva de cruce de página que NO toque el
-  backup del puntero, distinta de la que hay; y el grupo de guías de CUERDA
-  (`ext:51-56` + `std:3A`, 3-4 niveles), que van juntas.
+- **Tercera tanda: 175 → 180 de 196.**
+  - **Cuestas muy inclinadas de cueva** (0x3C, $0D:DD87), los dos lados. Pedían la
+    primitiva que faltaba: [pageCrossRaw], el `ptr += 0x100` a pelo que usa el
+    original mientras baja por una columna y que —a diferencia de `pageCross`—
+    NO actualiza el backup, porque la columna va entre preserve/restore.
+    Confundirlas corrompe el tilemap en silencio.
+  - **Guías de línea** (las vías de plataformas y sierras): remates de cinta
+    0x4B/0x4C, cuartos de círculo grande 0x4D-0x50 y pequeño 0x51-0x54, remates
+    0x55/0x56 y la esquina interior de lava 0x60. Aviso de nomenclatura: el
+    remate de la guía HORIZONTAL apila en vertical y el de la VERTICAL en
+    horizontal, tal cual el original.
+
+  Cola actual (por nº de niveles que arregla), toda en grupos acoplados —cada
+  grupo no arregla nada hasta estar entero:
+  - resto del BOSQUE de pradera: `ext:88/89` (ramas), `std:33` (copa) y
+    `std:36` (tronco grande) → 3 niveles (11E, 123, 126).
+  - guías INCLINADAS de cuerda (`std:3A`, 4 subrutinas) → 3 niveles.
+  - escalera de castillo (`std:3D`) → 3 niveles.
 
   Al hacerlo, el umbral de "objeto específico del tileset" baja de 0x30 a **0x2E**:
   el 0x2E ya difiere por tileset (pinchos en casa fantasma; en el resto, una rutina
