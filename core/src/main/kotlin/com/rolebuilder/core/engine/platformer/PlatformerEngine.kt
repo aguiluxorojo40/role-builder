@@ -522,6 +522,7 @@ class PlatformerEngine(
 
     /** Monedas recogidas (monedas sueltas + premios de bloques `?`). */
     var coins = 0
+        private set
 
     /**
      * PUNTUACIÓN, con los valores reales de SMW ([com.rolebuilder.core.snes.SmwScore]).
@@ -531,7 +532,44 @@ class PlatformerEngine(
 
     /** Estrellas de BONUS conseguidas al tocar la cinta (0 si aún no se ha tocado). */
     var bonusStars = 0
+
+    /**
+     * RELOJ del nivel, en unidades de SMW (las del marcador). Se pone con [startTimer];
+     * 0 = este nivel no lleva tiempo y no corre.
+     */
+    var timeLeft = 0
         private set
+
+    /** Fotogramas que faltan para que baje una unidad del reloj. */
+    private var timerFrames = 0
+
+    /** true en cuanto el reloj se agota (en SMW eso mata). */
+    var timeUp = false
+        private set
+
+    /** true cuando el reloj cruza el aviso de "queda poco" (100). Se lee una vez. */
+    var hurryUp = false
+
+    /** Arranca el reloj del nivel con las unidades de su cabecera. */
+    fun startTimer(units: Int) {
+        timeLeft = units.coerceAtLeast(0)
+        timerFrames = com.rolebuilder.core.snes.SmwScore.TIMER_PERIOD_FRAMES
+        timeUp = false
+    }
+
+    /**
+     * Baja el reloj como `UpdateStatusBarCounters` ($00:8E1A): una unidad cada 40
+     * fotogramas, ni uno menos. Se para al ganar, que es lo que hace el juego
+     * (`timer_end_level` bloquea el contador).
+     */
+    private fun tickTimer() {
+        if (timeLeft <= 0 || won) return
+        if (--timerFrames > 0) return
+        timerFrames = com.rolebuilder.core.snes.SmwScore.TIMER_PERIOD_FRAMES
+        timeLeft--
+        if (timeLeft == com.rolebuilder.core.snes.SmwScore.HURRY_UP_AT) hurryUp = true
+        if (timeLeft <= 0) timeUp = true
+    }
 
     /** Contador monótono de "moneda conseguida" para el audio (SFX de moneda). */
     var coinEvents = 0
@@ -1018,6 +1056,7 @@ class PlatformerEngine(
         handlePlayerEnemyContact()
         collectCoins()
         collectPlacedItems()
+        tickTimer()
         checkWarps()
 
         checkDeadly()

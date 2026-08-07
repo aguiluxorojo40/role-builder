@@ -102,4 +102,17 @@ object SmwScore {
 
     /** Fotogramas entre estrella y estrella al pasarlas al marcador (`frames & 3`). */
     const val BONUS_STAR_TRANSFER_PERIOD = 4
+
+    // ------------------------------ EL RELOJ ------------------------------
+    // Port de UpdateStatusBarCounters ($00:8E1A).
+
+    /**
+     * Fotogramas de juego que dura cada unidad del reloj. El juego recarga un contador a
+     * 40 (`misc_status_bar_tilemap[55] = 40`), así que a 60 fps una "unidad" de SMW dura
+     * unos 0,67 s reales — por eso el reloj corre más rápido que un cronómetro.
+     */
+    const val TIMER_PERIOD_FRAMES = 40
+
+    /** Cuando el reloj llega aquí suena el aviso de que queda poco (`io_sound_ch1`). */
+    const val HURRY_UP_AT = 100
 }

@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -245,6 +247,12 @@ class PlatformerActivity : ComponentActivity() {
                     frames?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
                 }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
             }.toMap()
+        // RELOJ del nivel: el tiempo sale de su cabecera (200/300/400; 0 = sin tiempo,
+        // como Yoshi's House). Sin esto el HUD no tendría qué contar y el bonus de
+        // tiempo al acabar sería siempre 0.
+        runCatching { SnesGameRecipes.smwLevelInfo(rom, header, level)?.startTime }
+            .getOrNull()?.let { if (it > 0) engine.startTimer(it) }
+
         // Sprites GRANDES con la paleta de ESTE nivel. Los horneados salen todos del nivel
         // de referencia (0x106), así que al jugar otro nivel las plataformas de guía o Rex
         // saldrían con colores de Yoshi's Island 2. Aquí ya estamos leyendo la ROM en vivo,
@@ -590,11 +598,19 @@ private fun PlatformerScreen(
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
             // Marcador de monedas (HUD) y warp pendiente: sondea el renderer.
             var coinCount by remember { mutableStateOf(0) }
+            var scoreNow by remember { mutableStateOf(0) }
+            var timeNow by remember { mutableStateOf(0) }
+            var starsNow by remember { mutableStateOf(0) }
+            var wonNow by remember { mutableStateOf(false) }
             var warped by remember { mutableStateOf(false) }
             var died by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 while (true) {
                     coinCount = renderer.coins
+                    scoreNow = renderer.score
+                    timeNow = renderer.timeLeft
+                    starsNow = renderer.bonusStars
+                    wonNow = renderer.won
                     val warp = renderer.pendingWarp
                     if (warp != null && !warped) { warped = true; onWarp(warp) }
                     if (renderer.dead && !died) { died = true; onDeath() }
@@ -624,8 +640,79 @@ private fun PlatformerScreen(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                 )
+                // MARCADOR. En SMW el número se muestra con un 0 de más (el marcador va
+                // en decenas), así que aquí se enseña tal cual lo cuenta el motor.
+                Text(
+                    "★ $scoreNow",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                // RELOJ. Solo si el nivel lleva tiempo (Yoshi's House no). Se pone ROJO
+                // al cruzar el aviso de SMW, que es a 100.
+                if (timeNow > 0) {
+                    Text(
+                        "⏱ $timeNow",
+                        color = if (timeNow <= com.rolebuilder.core.snes.SmwScore.HURRY_UP_AT)
+                            Color(0xFFFF5D5D) else Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
                 if (musicIcon.isNotEmpty()) {
                     Text(musicIcon, fontSize = 18.sp)
+                }
+            }
+
+            // ---------------------------- COURSE CLEAR ----------------------------
+            // Al tocar la meta, el juego no corta: hace el RECUENTO. Pasa el bonus de
+            // tiempo al marcador de 100 en 100 (de 10 en 10 al final) y las estrellas de
+            // una en una, con la cadencia real de GiveTimeBonusAndBonusStars.
+            if (wonNow) {
+                val sc = com.rolebuilder.core.snes.SmwScore
+                var pendiente by remember { mutableStateOf(-1) }
+                var marcador by remember { mutableStateOf(0) }
+                var estrellas by remember { mutableStateOf(0) }
+                LaunchedEffect(wonNow) {
+                    // El bonus se congela al ganar: es el reloj que quedaba en ese momento.
+                    pendiente = sc.timeBonus(timeNow)
+                    marcador = scoreNow
+                    estrellas = 0
+                    while (pendiente > 0) {
+                        val paso = sc.tallyStep(pendiente)
+                        pendiente -= paso
+                        marcador += paso
+                        kotlinx.coroutines.delay(16)
+                    }
+                    // Las estrellas van después, una cada 4 fotogramas (~66 ms).
+                    while (estrellas < starsNow) {
+                        estrellas++
+                        kotlinx.coroutines.delay(
+                            (sc.BONUS_STAR_TRANSFER_PERIOD * 1000L / 60L).coerceAtLeast(1L),
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier.fillMaxSize().background(Color(0xCC101018)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "COURSE CLEAR!",
+                            color = Color(0xFFFFE066),
+                            fontSize = 34.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.height(18.dp))
+                        Text("⏱ BONUS  ${pendiente.coerceAtLeast(0)}", color = Color.White, fontSize = 20.sp)
+                        Text("★ $marcador", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "ESTRELLAS  $estrellas / $starsNow",
+                            color = Color(0xFF9AE6B4),
+                            fontSize = 18.sp,
+                        )
+                    }
                 }
             }
 

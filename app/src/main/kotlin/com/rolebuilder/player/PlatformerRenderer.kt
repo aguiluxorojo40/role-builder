@@ -113,6 +113,26 @@ class PlatformerRenderer(
     @Volatile var coins = 0
         private set
 
+    /** Puntuación acumulada; la lee el HUD. */
+    @Volatile var score = 0
+        private set
+
+    /** Estrellas de bonus ganadas en la meta; las lee el HUD y COURSE CLEAR. */
+    @Volatile var bonusStars = 0
+        private set
+
+    /** Reloj del nivel en unidades de SMW; lo lee el HUD. */
+    @Volatile var timeLeft = 0
+        private set
+
+    /** true al tocar la meta: dispara la pantalla de COURSE CLEAR. */
+    @Volatile var won = false
+        private set
+
+    /** true si se agotó el reloj. */
+    @Volatile var timeUp = false
+        private set
+
     /** Físicas ACTUALES del motor: el panel de físicas las lee y las ajusta EN VIVO. */
     var tuning: com.rolebuilder.core.engine.platformer.PlatformerTuning
         get() = engine.tuning
@@ -211,6 +231,11 @@ class PlatformerRenderer(
         }
         dead = engine.player.dead
         coins = engine.coins
+        score = engine.score
+        bonusStars = engine.bonusStars
+        timeLeft = engine.timeLeft
+        won = engine.won
+        timeUp = engine.timeUp
         engine.pendingWarp?.let { pendingWarp = it }
 
         // Audio: suena cada evento del motor (salto, pisotón, moneda, muerte) una vez
