@@ -126,3 +126,11 @@ tasks.register<JavaExec>("scanKoopaLevels") {
     mainClass.set("com.rolebuilder.core.tools.KoopaLevelScan")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("dumpKoopaAppPath") {
+    group = "verification"
+    description = "Vuelca los Koopas por la MISMA via que usa la app (spriteFrames)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.KoopaAppPathDump")
+    systemProperty("java.awt.headless", "true")
+}

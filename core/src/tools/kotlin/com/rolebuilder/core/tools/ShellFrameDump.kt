@@ -325,3 +325,62 @@ object KoopaLevelScan {
         }
     }
 }
+
+/**
+ * DEPURACIÓN: vuelca los Koopas EXACTAMENTE por la vía que usa la app en el modo ROM
+ * (`SmwEnemyGraphics.spriteFrames`, que es lo que PlatformerActivity mete en romEnemyFrames).
+ * Si aquí el caparazón sale bien, el fallo está en el renderer; si sale mal, está en core.
+ *
+ *   ./gradlew :core:dumpKoopaAppPath --args="--rom smw.sfc --level 0x106 --out out/"
+ */
+object KoopaAppPathDump {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x106; var out = "koopa_app"; var scale = 6
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x106" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+                "--out" -> out = args.getOrElse(++i) { "koopa_app" }
+                "--scale" -> scale = args.getOrElse(++i) { "6" }.toInt()
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val dir = java.io.File(out).apply { mkdirs() }
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        val filas = ArrayList<Pair<String, List<ArgbImage>>>()
+        for (id in 0x00..0x0B) {
+            val fr = runCatching { gfx.spriteFrames(rom, hdr, lvl, id) }.getOrNull().orEmpty()
+            if (fr.isEmpty()) { println("0x%02X: nada".format(id)); continue }
+            println("0x%02X %-28s alto=%s  %dx%d x%d fotogramas".format(
+                id, gfx.nameOf(id) ?: "?", gfx.isTall(id), fr[0].width, fr[0].height, fr.size))
+            filas.add("0x%02X".format(id) to fr)
+        }
+        if (filas.isEmpty()) return
+        val cw = 16 * scale; val ch = 32 * scale; val p = 4
+        val maxF = filas.maxOf { it.second.size }
+        val sheet = ArgbImage(p + maxF * (cw + p), p + filas.size * (ch + p))
+        for (x in 0 until sheet.width) for (y in 0 until sheet.height) sheet.set(x, y, 0xFF202024.toInt())
+        filas.forEachIndexed { r, (_, imgs) ->
+            imgs.forEachIndexed { f, img ->
+                val ox = p + f * (cw + p); val oy = p + r * (ch + p)
+                for (y in 0 until img.height) for (x in 0 until img.width) {
+                    val c = img.get(x, y); if (c ushr 24 == 0) continue
+                    for (dy in 0 until scale) for (dx in 0 until scale) {
+                        val px = ox + x * scale + dx; val py = oy + y * scale + dy
+                        if (px in 0 until sheet.width && py in 0 until sheet.height) sheet.set(px, py, c)
+                    }
+                }
+            }
+        }
+        val f = java.io.File(dir, "koopas_via_app.png")
+        val bi = java.awt.image.BufferedImage(sheet.width, sheet.height, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        bi.setRGB(0, 0, sheet.width, sheet.height, sheet.pixels, 0, sheet.width)
+        javax.imageio.ImageIO.write(bi, "png", f)
+        println("Hoja (filas 0x00..0x0B): ${f.absolutePath}")
+    }
+}
