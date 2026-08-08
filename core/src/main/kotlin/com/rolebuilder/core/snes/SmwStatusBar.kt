@@ -176,40 +176,46 @@ object SmwStatusBar {
         val img = ArgbImage(SCREEN_COLS * 8, ROWS * 8)
         var pintadoAlgo = false
         // Las dos filas del juego, cada una con su celda de arranque en la pantalla.
-        for ((fila, tramo) in ROW_SPANS.withIndex()) {
-            val (primeraCelda, celdas, colInicial) = tramo
-            // Se recorta de antemano lo que no cabe (celdas fuera de la plantilla o de la
-            // pantalla), para que el bucle solo pinte.
-            val ultima = minOf(celdas, CELL_COUNT - primeraCelda, SCREEN_COLS - colInicial)
-            for (i in 0 until ultima) {
-                val cell = primeraCelda + i
-                // El contador manda sobre la plantilla: si algún campo escribe en esta celda,
-                // se pinta su dígito; si no, la tesela fija de la barra.
-                val tile = tilemap.getOrNull(cell)?.takeIf { it != BLANK || cell in contadorCells }
-                    ?: tileAt(cell)
-                val ox = (colInicial + i) * 8
-                if (paintTile(font, cgram, tile, attrAt(cell), img, ox, fila * 8)) pintadoAlgo = true
-            }
-        }
+        if (paintBar(font, cgram, tilemap, img)) pintadoAlgo = true
         return if (pintadoAlgo) img else null
     }
 
     /** Ancho de la pantalla de SNES en teselas de 8 px (256 px / 8). */
     const val SCREEN_COLS = 32
 
-    /** Filas que ocupa la barra de contadores. */
-    const val ROWS = 2
+    /**
+     * Filas que ocupa la barra. Son CUATRO, no dos: además de las dos de contadores, el juego
+     * dibuja arriba y abajo el marco de la CAJA DE OBJETO (el ítem de reserva).
+     *
+     * Pintando solo las dos de en medio, los laterales de esa caja —que sí viven en la fila de
+     * contadores (celdas 12 y 15, tesela 0x4A, la segunda volteada)— quedan como dos barras
+     * verticales sueltas, sin tapa ni suelo. Es exactamente lo que se veía en pantalla.
+     */
+    const val ROWS = 4
 
     /**
-     * Cómo reparte el juego las 59 celdas en la PANTALLA (`InitializeStatusBarTilemap`):
-     * `SmwCopyToVram(0x5042, …, 0x38)` son 28 celdas y `SmwCopyToVram(0x5063, …+0x38, 0x36)`
-     * otras 27, en dos filas consecutivas del tilemap (paso de 32) que arrancan en las
-     * columnas 2 y 3. Cada tramo es (primera celda, nº de celdas, columna de pantalla).
+     * Dónde va cada tramo en la PANTALLA, sacado de las direcciones de VRAM que usa
+     * `InitializeStatusBarTilemap` (el tilemap empieza en 0x5000 y cada fila son 32 celdas):
+     *
+     *   0x502e → fila 1, col 14 · tapa de la caja de objeto (TOP_ROW, 4 celdas)
+     *   0x5042 → fila 2, col  2 · primeras 28 celdas de contadores
+     *   0x5063 → fila 3, col  3 · las 27 restantes
+     *   0x508e → fila 4, col 14 · suelo de la caja de objeto (BOTTOM_ROW, 4 celdas)
+     *
+     * Aquí las filas van de 0 a 3 (la 1 del juego es la 0 nuestra).
      */
     val ROW_SPANS = listOf(
         Triple(0, 28, 2),
         Triple(28, 27, 3),
     )
+
+    /** Fila de pantalla (0-3) de cada tramo de contadores. */
+    val COUNTER_ROWS = intArrayOf(1, 2)
+
+    /** Fila y columna del marco de la caja de objeto: tapa arriba, suelo abajo. */
+    const val ITEM_BOX_COL = 14
+    const val ITEM_BOX_TOP_ROW = 0
+    const val ITEM_BOX_BOTTOM_ROW = 3
 
     /** Celdas que algún contador escribe (para que [render] les haga caso aunque valgan BLANK). */
     private val contadorCells: Set<Int> by lazy {
@@ -241,16 +247,7 @@ object SmwStatusBar {
         /** Dibuja la barra para el estado [tilemap] (ver [buildTilemap]). */
         fun render(tilemap: IntArray): ArgbImage {
             val img = ArgbImage(SCREEN_COLS * 8, ROWS * 8)
-            for ((fila, tramo) in ROW_SPANS.withIndex()) {
-                val (primeraCelda, celdas, colInicial) = tramo
-                val ultima = minOf(celdas, CELL_COUNT - primeraCelda, SCREEN_COLS - colInicial)
-                for (i in 0 until ultima) {
-                    val cell = primeraCelda + i
-                    val tile = tilemap.getOrNull(cell)?.takeIf { it != BLANK || cell in contadorCells }
-                        ?: tileAt(cell)
-                    paintTile(font, cgram, tile, attrAt(cell), img, (colInicial + i) * 8, fila * 8)
-                }
-            }
+            paintBar(font, cgram, tilemap, img)
             return img
         }
 
@@ -293,6 +290,38 @@ object SmwStatusBar {
             }
         }
         return img
+    }
+
+    /**
+     * Pinta la barra ENTERA en [img]: las dos filas de contadores y, arriba y abajo, el marco
+     * de la caja de objeto. Sin ese marco, sus laterales quedan como dos barras sueltas.
+     */
+    private fun paintBar(font: ByteArray, cgram: IntArray, tilemap: IntArray, img: ArgbImage): Boolean {
+        var algo = false
+        // Filas de contadores.
+        for ((tramo, filaPantalla) in ROW_SPANS.zip(COUNTER_ROWS.toList())) {
+            val (primeraCelda, celdas, colInicial) = tramo
+            val ultima = minOf(celdas, CELL_COUNT - primeraCelda, SCREEN_COLS - colInicial)
+            for (i in 0 until ultima) {
+                val cell = primeraCelda + i
+                // El contador manda sobre la plantilla: si algún campo escribe en esta celda,
+                // se pinta su dígito; si no, la tesela fija de la barra.
+                val tile = tilemap.getOrNull(cell)?.takeIf { it != BLANK || cell in contadorCells }
+                    ?: tileAt(cell)
+                if (paintTile(font, cgram, tile, attrAt(cell), img,
+                        (colInicial + i) * 8, filaPantalla * 8)) algo = true
+            }
+        }
+        // Tapa y suelo de la caja de objeto (4 celdas cada una, en la columna 14).
+        for ((marco, fila) in listOf(TOP_ROW to ITEM_BOX_TOP_ROW, BOTTOM_ROW to ITEM_BOX_BOTTOM_ROW)) {
+            for (c in 0 until marco.size / 2) {
+                val col = ITEM_BOX_COL + c
+                if (col >= SCREEN_COLS) break
+                if (paintTile(font, cgram, marco[c * 2], marco[c * 2 + 1], img,
+                        col * 8, fila * 8)) algo = true
+            }
+        }
+        return algo
     }
 
     /** Pinta la tesela 2bpp [tile] con la paleta de [attr] en [img] a partir de la columna [ox]. */

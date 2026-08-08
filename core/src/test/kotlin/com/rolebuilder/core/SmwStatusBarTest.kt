@@ -96,6 +96,7 @@ class SmwStatusBarTest {
         // celdas son 472 px y la pantalla de SNES tiene 256.
         val tramos = SmwStatusBar.ROW_SPANS
         assertEquals(2, tramos.size)
+        assertEquals(4, SmwStatusBar.ROWS, "la barra son CUATRO filas: contadores + marco de la caja")
         assertEquals(Triple(0, 28, 2), tramos[0])
         assertEquals(Triple(28, 27, 3), tramos[1])
         // Ningun tramo se sale de la pantalla.
