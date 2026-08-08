@@ -26,7 +26,16 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Ejecutar tests de core (con cobertura)
-        run: ./gradlew :core:test :core:koverXmlReport :core:koverHtmlReport --console=plain
+        run: |
+          # Maven Central devuelve 429 (Too Many Requests) de vez en cuando y tumba la
+          # resolucion de dependencias. No es un fallo del codigo, asi que se reintenta
+          # con espera creciente en vez de dejar el CI en rojo por la infraestructura.
+          for intento in 1 2 3; do
+            ./gradlew :core:test :core:koverXmlReport :core:koverHtmlReport --console=plain && exit 0
+            echo "Intento $intento fallido; reintento en $((intento * 20))s"
+            sleep $((intento * 20))
+          done
+          exit 1
 
       - name: Publicar informe de tests
         if: always()
@@ -78,7 +87,16 @@ jobs:
       # La baseline (config/detekt/baseline.xml) tiene la deuda YA existente, así que
       # esto solo se pone rojo con problemas NUEVOS.
       - name: Ejecutar detekt
-        run: ./gradlew :core:detekt --console=plain
+        run: |
+          # Maven Central devuelve 429 (Too Many Requests) de vez en cuando y tumba la
+          # resolucion de dependencias. No es un fallo del codigo, asi que se reintenta
+          # con espera creciente en vez de dejar el CI en rojo por la infraestructura.
+          for intento in 1 2 3; do
+            ./gradlew :core:detekt --console=plain && exit 0
+            echo "Intento $intento fallido; reintento en $((intento * 20))s"
+            sleep $((intento * 20))
+          done
+          exit 1
 
       - name: Subir SARIF a Code Scanning
         if: always()
@@ -112,10 +130,28 @@ jobs:
       # ubuntu-latest trae el Android SDK preinstalado (ANDROID_HOME),
       # así que settings.gradle.kts activa el módulo :app automáticamente.
       - name: Tests del módulo :app (JVM, sin emulador)
-        run: ./gradlew :app:testDebugUnitTest --console=plain
+        run: |
+          # Maven Central devuelve 429 (Too Many Requests) de vez en cuando y tumba la
+          # resolucion de dependencias. No es un fallo del codigo, asi que se reintenta
+          # con espera creciente en vez de dejar el CI en rojo por la infraestructura.
+          for intento in 1 2 3; do
+            ./gradlew :app:testDebugUnitTest --console=plain && exit 0
+            echo "Intento $intento fallido; reintento en $((intento * 20))s"
+            sleep $((intento * 20))
+          done
+          exit 1
 
       - name: Compilar APK de depuración
-        run: ./gradlew :app:assembleDebug --console=plain
+        run: |
+          # Maven Central devuelve 429 (Too Many Requests) de vez en cuando y tumba la
+          # resolucion de dependencias. No es un fallo del codigo, asi que se reintenta
+          # con espera creciente en vez de dejar el CI en rojo por la infraestructura.
+          for intento in 1 2 3; do
+            ./gradlew :app:assembleDebug --console=plain && exit 0
+            echo "Intento $intento fallido; reintento en $((intento * 20))s"
+            sleep $((intento * 20))
+          done
+          exit 1
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
