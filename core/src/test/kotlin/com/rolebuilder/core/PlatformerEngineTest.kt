@@ -13,6 +13,7 @@ import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -517,7 +518,7 @@ class PlatformerEngineTest {
     }
 
     @Test
-    fun `pisar un Koopa lo mete en su caparazon sin matarlo`() {
+    fun `pisar un Koopa deja el caparazon y saca al Koopa desnudo`() {
         val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
         }
@@ -526,6 +527,11 @@ class PlatformerEngineTest {
         assertTrue(k.alive, "el Koopa no muere al pisarlo")
         assertTrue(k.shell, "se mete en su caparazón")
         assertFalse(k.shellMoving, "el caparazón queda quieto")
+        // Y el Koopa SALE del caparazón: en SMW no se esconde dentro, huye desnudo.
+        val desnudo = e.enemies.firstOrNull { it.isNakedKoopa }
+        assertNotNull(desnudo, "pisar un Koopa deja el caparazón Y saca al Koopa desnudo")
+        assertEquals(0x04, desnudo!!.id, "el verde (0x00) deja al GreenKoopaNoShell (0x04)")
+        assertTrue(kotlin.math.abs(desnudo.vx) > 0f, "el Koopa desnudo huye, no se queda quieto")
         assertFalse(e.player.dead)
     }
 

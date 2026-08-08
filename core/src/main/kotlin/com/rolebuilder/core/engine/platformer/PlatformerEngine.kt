@@ -285,7 +285,17 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
      * las Koopas ALADAS (0x08-0x0B), que al pisarlas pierden las alas y quedan de andador
      * con caparazón.
      */
-    val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x05, 0x08, 0x09, 0x0A, 0x0B)
+    val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x08, 0x09, 0x0A, 0x0B)
+
+    /**
+     * Koopa SIN CAPARAZÓN (0x04-0x07, uno por color). No es un caparazón: es el bicho que
+     * sale corriendo cuando pisas a un Koopa. Va más rápido y muere de un pisotón, porque
+     * ya no tiene con qué protegerse.
+     *
+     * Antes el 0x05 estaba en [canShell] y al pisarlo salía un caparazón fantasma de un
+     * Koopa que ya no lo tenía.
+     */
+    val isNakedKoopa = id in 0x04..0x07
     /** El Koopa está en su CAPARAZÓN (estado 9 quieto / A pateado de SMW). */
     var shell = false
     /** El caparazón se DESLIZA (pateado). Si false y [shell], está quieto en el suelo. */
@@ -1497,6 +1507,23 @@ class PlatformerEngine(
         piranhaFireEvents++
     }
 
+    /**
+     * Saca corriendo al KOOPA DESNUDO cuando pisas a uno con caparazón. Su id es el del
+     * Koopa + 4 (0x00-0x03 → 0x04-0x07, un color cada uno), tal y como los nombra el
+     * juego: GreenKoopa → GreenKoopaNoShell.
+     *
+     * Huye en sentido contrario a Mario, que es lo que hace en SMW en vez de quedarse
+     * quieto. Las Koopas aladas usan su color de suelo ([koopaColorId]), porque al
+     * perder las alas quedan de Koopa normal.
+     */
+    private fun spawnNakedKoopa(shell: PlatformerEnemy) {
+        val color = shell.koopaColorId.coerceIn(0x00, 0x03)
+        val n = PlatformerEnemy(shell.x, shell.y, 0x04 + color)
+        val marioCx = player.x + tuning.playerWidth / 2f
+        n.vx = if (shell.x + shell.width / 2f >= marioCx) NAKED_KOOPA_SPEED else -NAKED_KOOPA_SPEED
+        pendingSpawns.add(n)
+    }
+
     /** Bowser deja caer una bola de bolos (0xA1) desde su posición; rebota y rueda al aterrizar. */
     private fun dropBowlingBall(e: PlatformerEnemy) {
         val cx = e.x + e.width / 2f
@@ -1982,12 +2009,21 @@ class PlatformerEngine(
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Koopa con caparazón: pisarlo lo mete en el CAPARAZÓN (no muere).
+                // Koopa con caparazón: pisarlo NO lo mete dentro. En SMW el Koopa SALE
+                // disparado del caparazón y huye corriendo (el "Koopa desnudo", sprite
+                // 0x04-0x07 según el color); lo que queda en el suelo es el caparazón.
                 e.canShell -> {
                     if (stompFromAbove) {
                         e.shell = true; e.shellMoving = false; e.vx = 0f
+                        spawnNakedKoopa(e)
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
+                }
+                // Koopa DESNUDO: ya no tiene caparazón que lo proteja, así que un pisotón
+                // lo mata como a cualquier otro bicho (y de lado hiere).
+                e.isNakedKoopa -> {
+                    if (stompFromAbove) { damageEnemy(e); bounceMario(); stompEvents++ }
+                    else { hurtPlayer(); return }
                 }
                 // Bola de bolos de Bowser: no se puede pisar, hiere por cualquier lado.
                 e.behavior == EnemyBehavior.BOWLING_BALL -> { hurtPlayer(); return }
@@ -2377,6 +2413,12 @@ class PlatformerEngine(
          * patada: `kSprStatus0B_Carried_ShellXSpeed` = `{0xD2, 0x2E, 0xCC, 0x34}` → ±46
          * andando y ±52 corriendo.
          */
+        /**
+         * Velocidad del KOOPA DESNUDO al huir (px/f). En SMW corre MÁS que el Koopa con
+         * caparazón —por eso se escapa— pero menos que un caparazón pateado.
+         */
+        const val NAKED_KOOPA_SPEED = 24f / 16f
+
         const val SHELL_THROW_SPEED = 46f / 16f
         const val SHELL_THROW_SPEED_RUNNING = 52f / 16f
 
