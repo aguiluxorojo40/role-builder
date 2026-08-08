@@ -88,4 +88,39 @@ class SmwStatusBarTest {
         assertEquals(todas.size, todas.toSet().size, "hay posiciones repetidas entre contadores")
         assertTrue(f.TIMER_TICK !in todas, "el contador de frames no debe pisar un dígito")
     }
+
+    @Test
+    fun `la barra se reparte en las dos filas del juego`() {
+        // InitializeStatusBarTilemap sube 28 celdas a 0x5042 y 27 a 0x5063: dos filas
+        // consecutivas que arrancan en las columnas 2 y 3. En una sola fila no cabria: 59
+        // celdas son 472 px y la pantalla de SNES tiene 256.
+        val tramos = SmwStatusBar.ROW_SPANS
+        assertEquals(2, tramos.size)
+        assertEquals(Triple(0, 28, 2), tramos[0])
+        assertEquals(Triple(28, 27, 3), tramos[1])
+        // Ningun tramo se sale de la pantalla.
+        for ((primera, celdas, col) in tramos) {
+            assertTrue(col + celdas <= SmwStatusBar.SCREEN_COLS,
+                "el tramo que empieza en $primera se sale de la pantalla")
+        }
+    }
+
+    @Test
+    fun `la fuente del HUD son los GFX de Layer 3`() {
+        // UploadGraphicsFiles_Layer3 descomprime los ficheros 40..43 (0x28-0x2B).
+        assertEquals(listOf(0x28, 0x29, 0x2A, 0x2B), SmwStatusBar.LAYER3_GFX_FILES.toList())
+        // Layer 3 es 2bpp: 4 colores por paleta, no 16.
+        assertEquals(4, SmwStatusBar.COLORS_PER_PALETTE)
+    }
+
+    @Test
+    fun `la paleta y los volteos salen del byte de atributos`() {
+        // vhoppp cc: paleta en los bits 2-4, volteos en 0x40 y 0x80.
+        assertEquals(6, SmwStatusBar.paletteOf(0x38))
+        assertEquals(7, SmwStatusBar.paletteOf(0x3C))
+        assertEquals(2, SmwStatusBar.paletteOf(0x28))
+        assertTrue(SmwStatusBar.flipXOf(0x78))
+        assertTrue(SmwStatusBar.flipYOf(0xB8))
+        assertTrue(SmwStatusBar.flipXOf(0xF8) && SmwStatusBar.flipYOf(0xF8))
+    }
 }

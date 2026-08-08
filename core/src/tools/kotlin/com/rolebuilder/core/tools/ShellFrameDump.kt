@@ -394,3 +394,59 @@ object KoopaAppPathDump {
         println("Hoja (filas 0x00..0x0B): ${f.absolutePath}")
     }
 }
+
+/**
+ * DEPURACIÓN: dibuja el HUD REAL de SMW desde la ROM, para MIRARLO en vez de dar por bueno
+ * el port. Es la contrapartida del HUD inventado de emoji que trae la app.
+ *
+ *   ./gradlew :core:dumpHud --args="--rom smw.sfc --level 0x105 --out out/"
+ */
+object HudDump {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x105; var out = "hud"; var scale = 6
+        var time = 394; var coins = 0; var lives = 4; var score = 0
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x105" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+                "--out" -> out = args.getOrElse(++i) { "hud" }
+                "--scale" -> scale = args.getOrElse(++i) { "6" }.toInt()
+                "--time" -> time = args.getOrElse(++i) { "394" }.toInt()
+                "--coins" -> coins = args.getOrElse(++i) { "0" }.toInt()
+                "--lives" -> lives = args.getOrElse(++i) { "4" }.toInt()
+                "--score" -> score = args.getOrElse(++i) { "0" }.toInt()
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val sb = com.rolebuilder.core.snes.SmwStatusBar
+        val fuente = sb.fontTiles(rom)
+        println("Fuente de Layer 3 (GFX 0x28-0x2B): ${fuente?.size ?: 0} bytes = ${(fuente?.size ?: 0) / 16} teselas")
+        val map = sb.buildTilemap(time, coins, lives, score)
+        val img = sb.render(rom, hdr, lvl, map)
+        if (img == null) { println("No se pudo dibujar el HUD."); return }
+        val dir = java.io.File(out).apply { mkdirs() }
+        val f = java.io.File(dir, "hud.png")
+        val w = img.width * scale; val h = img.height * scale
+        val bi = java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until h) for (x in 0 until w) bi.setRGB(x, y, img.get(x / scale, y / scale))
+        javax.imageio.ImageIO.write(bi, "png", f)
+        println("HUD (tiempo=$time monedas=$coins vidas=$lives puntos=$score): ${f.absolutePath}")
+
+        // La FUENTE entera, para ver qué tesela es cada cosa (los dígitos van en 0x00-0x09).
+        val hoja = sb.fontSheet(rom, hdr, lvl)
+        if (hoja != null) {
+            val f2 = java.io.File(dir, "hud_fuente.png")
+            val bi2 = java.awt.image.BufferedImage(hoja.width * scale, hoja.height * scale,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            for (y in 0 until hoja.height * scale) for (x in 0 until hoja.width * scale)
+                bi2.setRGB(x, y, hoja.get(x / scale, y / scale))
+            javax.imageio.ImageIO.write(bi2, "png", f2)
+            println("Fuente (16x16 teselas, nº = fila*16+col): ${f2.absolutePath}")
+        }
+    }
+}

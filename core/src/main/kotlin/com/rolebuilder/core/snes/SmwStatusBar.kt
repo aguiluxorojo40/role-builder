@@ -119,6 +119,30 @@ object SmwStatusBar {
     }
 
     /**
+     * Ficheros GFX de la FUENTE de Layer 3, o sea la tipografía del HUD:
+     * `UploadGraphicsFiles_Layer3` ($00:A993) descomprime los ficheros **40..43 (0x28-0x2B)**
+     * y los sube a VRAM 0x4000 + i·0x400. Layer 3 es 2bpp (16 bytes por tesela = 128 teselas
+     * por fichero), así que las teselas 0x00-0x7F salen del 0x28 y las 0x80-0xFF del 0x29.
+     */
+    val LAYER3_GFX_FILES = intArrayOf(0x28, 0x29, 0x2A, 0x2B)
+
+    /** Teselas de 8×8 que entran en un fichero GFX de Layer 3 (0x800 bytes / 16). */
+    const val TILES_PER_GFX_FILE = 128
+
+    /**
+     * Colores por paleta en Layer 3: es 2bpp, así que cada paleta son **4** colores. El byte
+     * de atributos de cada celda lleva la paleta en los bits 2-4 (`vhoppp cc`).
+     */
+    const val COLORS_PER_PALETTE = 4
+
+    /** Paleta (0-7) que pide el byte de atributos [attr] de una celda. */
+    fun paletteOf(attr: Int): Int = (attr shr 2) and 0x07
+
+    /** ¿La celda [attr] va volteada en horizontal / vertical? */
+    fun flipXOf(attr: Int): Boolean = (attr and 0x40) != 0
+    fun flipYOf(attr: Int): Boolean = (attr and 0x80) != 0
+
+    /**
      * Construye el estado de la barra para los contadores dados, igual que
      * `UpdateStatusBarCounters`: reloj de 3 dígitos (con los ceros de la izquierda en blanco),
      * monedas de 2, vidas de 2 sobre `vidas + 1`, y puntuación de 6.
@@ -135,5 +159,127 @@ object SmwStatusBar {
         writeNumber(map, Field.SCORE, score.coerceIn(0, MAX_SCORE))
         map[Field.TIMER_TICK] = TIMER_FRAMES_PER_UNIT
         return map
+    }
+
+    /**
+     * Dibuja la barra de estado REAL desde la ROM: teselas de la fuente de Layer 3 con la
+     * paleta del nivel. Devuelve una imagen de `CELL_COUNT × 8` px (la fila de contadores),
+     * o null si faltan datos.
+     *
+     * [tilemap] es el estado de los contadores ([buildTilemap]); las celdas cuyo índice NO
+     * pisa ningún contador se pintan con la plantilla fija [SECOND_ROW].
+     */
+    fun render(rom: ByteArray, header: SnesHeader, level: Int, tilemap: IntArray): ArgbImage? {
+        val font = fontTiles(rom) ?: return null
+        val delta = header.headerOffset - 0x7FC0
+        val cgram = SnesGameRecipes.assembleSmwCgram(rom, delta, level)
+        val img = ArgbImage(SCREEN_COLS * 8, ROWS * 8)
+        var pintadoAlgo = false
+        // Las dos filas del juego, cada una con su celda de arranque en la pantalla.
+        for ((fila, tramo) in ROW_SPANS.withIndex()) {
+            val (primeraCelda, celdas, colInicial) = tramo
+            // Se recorta de antemano lo que no cabe (celdas fuera de la plantilla o de la
+            // pantalla), para que el bucle solo pinte.
+            val ultima = minOf(celdas, CELL_COUNT - primeraCelda, SCREEN_COLS - colInicial)
+            for (i in 0 until ultima) {
+                val cell = primeraCelda + i
+                // El contador manda sobre la plantilla: si algún campo escribe en esta celda,
+                // se pinta su dígito; si no, la tesela fija de la barra.
+                val tile = tilemap.getOrNull(cell)?.takeIf { it != BLANK || cell in contadorCells }
+                    ?: tileAt(cell)
+                val ox = (colInicial + i) * 8
+                if (paintTile(font, cgram, tile, attrAt(cell), img, ox, fila * 8)) pintadoAlgo = true
+            }
+        }
+        return if (pintadoAlgo) img else null
+    }
+
+    /** Ancho de la pantalla de SNES en teselas de 8 px (256 px / 8). */
+    const val SCREEN_COLS = 32
+
+    /** Filas que ocupa la barra de contadores. */
+    const val ROWS = 2
+
+    /**
+     * Cómo reparte el juego las 59 celdas en la PANTALLA (`InitializeStatusBarTilemap`):
+     * `SmwCopyToVram(0x5042, …, 0x38)` son 28 celdas y `SmwCopyToVram(0x5063, …+0x38, 0x36)`
+     * otras 27, en dos filas consecutivas del tilemap (paso de 32) que arrancan en las
+     * columnas 2 y 3. Cada tramo es (primera celda, nº de celdas, columna de pantalla).
+     */
+    val ROW_SPANS = listOf(
+        Triple(0, 28, 2),
+        Triple(28, 27, 3),
+    )
+
+    /** Celdas que algún contador escribe (para que [render] les haga caso aunque valgan BLANK). */
+    private val contadorCells: Set<Int> by lazy {
+        (Field.COINS + Field.LIVES + Field.TIME + Field.SCORE +
+            Field.BONUS_STARS_TOP + Field.BONUS_STARS_BOTTOM).toSet()
+    }
+
+    private fun IntArray.getOrNull(i: Int): Int? = if (i in indices) this[i] else null
+
+    /**
+     * La fuente del HUD como bytes crudos: los ficheros [LAYER3_GFX_FILES] descomprimidos y
+     * concatenados, que es como quedan en VRAM (0x28 → teselas 0x00-0x7F, 0x29 → 0x80-0xFF…).
+     */
+    fun fontTiles(rom: ByteArray): ByteArray? {
+        val partes = LAYER3_GFX_FILES.map { SnesGameRecipes.smwGfxFileDataPublic(rom, it) ?: return null }
+        val total = partes.sumOf { it.size }
+        val out = ByteArray(total)
+        var p = 0
+        for (parte in partes) { parte.copyInto(out, p); p += parte.size }
+        return out
+    }
+
+    /**
+     * Hoja con TODA la fuente del HUD (16×16 teselas de 8×8 = 256), pintada con la [palette]
+     * indicada y la CGRAM del [level]. El nº de tesela de cada celda es `fila*16 + columna`,
+     * así que sirve para localizar a ojo qué tesela es cada dígito, letra o pieza del marco.
+     */
+    fun fontSheet(rom: ByteArray, header: SnesHeader, level: Int, palette: Int = 6): ArgbImage? {
+        val font = fontTiles(rom) ?: return null
+        val delta = header.headerOffset - 0x7FC0
+        val cgram = SnesGameRecipes.assembleSmwCgram(rom, delta, level)
+        val cols = 16
+        val img = ArgbImage(cols * 8, cols * 8)
+        val palBase = palette * COLORS_PER_PALETTE
+        val bpt = SnesGraphicFormat.SNES_2BPP.bytesPerTile
+        val teselas = minOf(cols * cols, font.size / bpt)
+        for (t in 0 until teselas) {
+            val dec = SnesDecoder.decodeTile(font, t * bpt, SnesGraphicFormat.SNES_2BPP)
+            for (y in 0 until 8) for (x in 0 until 8) {
+                val ci = dec.pixelIndices[y * 8 + x]
+                if (ci != 0) {
+                    img.set((t % cols) * 8 + x, (t / cols) * 8 + y, cgram.getOrElse(palBase + ci) { 0 })
+                }
+            }
+        }
+        return img
+    }
+
+    /** Pinta la tesela 2bpp [tile] con la paleta de [attr] en [img] a partir de la columna [ox]. */
+    private fun paintTile(font: ByteArray, cgram: IntArray, tile: Int, attr: Int,
+                          img: ArgbImage, ox: Int, oy: Int = 0): Boolean {
+        val fmt = SnesGraphicFormat.SNES_2BPP
+        val off = tile * fmt.bytesPerTile
+        if (off + fmt.bytesPerTile > font.size) return false
+        val dec = SnesDecoder.decodeTile(font, off, fmt)
+        val palBase = paletteOf(attr) * COLORS_PER_PALETTE
+        val fx = flipXOf(attr)
+        val fy = flipYOf(attr)
+        var algo = false
+        for (y in 0 until 8) for (x in 0 until 8) {
+            val sx = if (fx) 7 - x else x
+            val sy = if (fy) 7 - y else y
+            val ci = dec.pixelIndices[sy * 8 + sx]
+            // Índice 0 = transparente, como en el juego; y un color sin alfa tampoco se pinta.
+            val argb = if (ci == 0) 0 else cgram.getOrElse(palBase + ci) { 0 }
+            if (argb ushr 24 != 0) {
+                img.set(ox + x, oy + y, argb)
+                algo = true
+            }
+        }
+        return algo
     }
 }

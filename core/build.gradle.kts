@@ -134,3 +134,11 @@ tasks.register<JavaExec>("dumpKoopaAppPath") {
     mainClass.set("com.rolebuilder.core.tools.KoopaAppPathDump")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("dumpHud") {
+    group = "verification"
+    description = "Dibuja el HUD REAL de SMW desde la ROM (y su fuente de Layer 3)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.HudDump")
+    systemProperty("java.awt.headless", "true")
+}
