@@ -606,13 +606,6 @@ class PlatformerActivity : ComponentActivity() {
          */
         private const val EXTRA_LIVES = "lives"
 
-        /**
-         * Fraccion del ancho que ocupa el HUD real. A pantalla completa (1f) la barra sale
-         * enorme en apaisado y tapa los botones de "Salir" y recargar, que viven en las
-         * esquinas de arriba. Con 0.62 queda holgada a los lados y la barra conserva una
-         * altura parecida a la del juego.
-         */
-        private const val HUD_ANCHO_MAXIMO = 0.62f
 
         /** Extra del resultado: true si el jugador SUPERO el nivel (toco la meta). */
         const val RESULT_WON = "won"
@@ -636,6 +629,16 @@ class PlatformerActivity : ComponentActivity() {
                 .apply { if (mapId != null) putExtra(EXTRA_MAP_ID, mapId) }
     }
 }
+
+/**
+ * Fraccion del ancho que ocupa el HUD real de SMW. A pantalla completa (1f) la barra sale
+ * enorme en apaisado y tapa los botones de "Salir" y recargar, que viven en las esquinas de
+ * arriba. Con 0.62 queda holgada a los lados y conserva una altura parecida a la del juego.
+ *
+ * Vive a nivel de FICHERO, no en el companion de la actividad: [PlatformerScreen] es una
+ * funcion top-level y no ve los miembros privados de la clase.
+ */
+private const val HUD_ANCHO_MAXIMO = 0.62f
 
 @Composable
 private fun PlatformerScreen(
