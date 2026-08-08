@@ -2423,12 +2423,17 @@ class PlatformerEngine(
         const val SHELL_THROW_SPEED_RUNNING = 52f / 16f
 
         /**
-         * ANIMACIÓN del caparazón que se desliza: gira ciclando 4 fotogramas
-         * (`kKickedShellGFXRt_ShellAniTiles` = `{6, 7, 8, 7}`), y el ÚLTIMO va volteado en
-         * horizontal (`kKickedShellGFXRt_Prop` = `{0, 0, 0, 0x40}`; el 0x40 es el bit de
-         * volteo X del OAM). Por eso el giro se ve continuo con solo tres dibujos.
+         * ANIMACIÓN del caparazón que se desliza: cicla 4 fotogramas
+         * (`kKickedShellGFXRt_ShellAniTiles` = `{6, 7, 8, 7}`) y el ÚLTIMO va volteado en
+         * horizontal (`kKickedShellGFXRt_Prop` = `{0, 0, 0, 0x40}`, el bit de volteo X del
+         * OAM). Con solo tres dibujos el giro se ve continuo.
+         *
+         * OJO: esos 6/7/8 **no son números de tesela**, son ÍNDICES DE FOTOGRAMA. La
+         * rutina real (`StunnedShellGFXRt_01980F`, $01:980F) los mete en `spr_table1602` y
+         * llama a `GenericGFXRtDraw1Tile16x16`, que resuelve la tesela por la tabla OAM
+         * genérica del sprite. Tomarlos por teselas sale en blanco — comprobado.
          */
-        val SHELL_SPIN_TILES = intArrayOf(6, 7, 8, 7)
+        val SHELL_SPIN_FRAMES = intArrayOf(6, 7, 8, 7)
         val SHELL_SPIN_XFLIP = booleanArrayOf(false, false, false, true)
         /** Gracia tras patear: el `KickingTimer = 0x0C` de SMW = 12 frames (valor exacto). */
         const val SHELL_KICK_GRACE = 12
