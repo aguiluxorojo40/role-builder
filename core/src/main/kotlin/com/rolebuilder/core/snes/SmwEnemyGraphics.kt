@@ -261,6 +261,18 @@ object SmwEnemyGraphics {
                 size16 = true, xflip = false)) img else null
     }
 
+    /**
+     * Los fotogramas del CAPARAZÓN de [spriteId] (un Koopa CON caparazón, 0x04-0x07) en el
+     * orden del ciclo de giro [SHELL_SPIN_FRAMES]: el primero es el caparazón QUIETO, y los
+     * cuatro juntos son la animación del caparazón deslizándose. null si el id no lleva
+     * caparazón o no se pudo pintar ninguno.
+     */
+    fun shellFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): List<ArgbImage>? {
+        if (spriteId !in 0x04..0x07) return null
+        val out = SHELL_SPIN_FRAMES.toList().mapNotNull { shellImage(rom, header, level, spriteId, it) }
+        return out.ifEmpty { null }
+    }
+
     /** DEPURACIÓN: vuelca los primeros [count] fotogramas de la tabla OAM de [spriteId],
      *  para ver a ojo cuál es cuál (andar, caparazón, aplastado…). */
     fun dumpOamFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int, count: Int): List<ArgbImage>? {

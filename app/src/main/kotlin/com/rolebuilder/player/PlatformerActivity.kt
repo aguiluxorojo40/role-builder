@@ -247,6 +247,15 @@ class PlatformerActivity : ComponentActivity() {
                     frames?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
                 }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
             }.toMap()
+        // Caparazones REALES de la ROM, por color. Se piden para los cuatro Koopa CON
+        // caparazón (0x04-0x07) y no solo para los que hay en el nivel: un caparazón puede
+        // llegar rodando desde otra pantalla, y son cuatro imágenes de 16×16.
+        val shellFrames: Map<Int, List<Bitmap>> = (0x04..0x07).mapNotNull { id ->
+            runCatching {
+                com.rolebuilder.core.snes.SmwEnemyGraphics.shellFrames(rom, header, level, id)
+                    ?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }
+            }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { id to it }
+        }.toMap()
         // RELOJ del nivel: el tiempo sale de su cabecera (200/300/400; 0 = sin tiempo,
         // como Yoshi's House). Sin esto el HUD no tendría qué contar y el bonus de
         // tiempo al acabar sería siempre 0.
@@ -278,6 +287,7 @@ class PlatformerActivity : ComponentActivity() {
             engine, world, marioBmp, loadEnemies(), audio,
             marioBigBmp, marioFireBmp, marioCapeBmp,
             romEnemyFrames = enemyFrames.ifEmpty { null },
+            romShellFrames = shellFrames.ifEmpty { null },
             bigSpriteBitmaps = loadBigSprites() + liveBig,
             coinBitmap = loadCoin(),
             powerupBitmap = loadPowerups(),

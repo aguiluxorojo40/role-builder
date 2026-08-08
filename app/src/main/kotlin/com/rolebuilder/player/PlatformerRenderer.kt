@@ -59,6 +59,12 @@ class PlatformerRenderer(
      */
     private val romEnemyFrames: Map<Int, List<Bitmap>>? = null,
     /**
+     * Fotogramas del CAPARAZÓN por id de Koopa CON caparazón (0x04-0x07), en el orden del
+     * ciclo de giro de SMW: el 0 es el caparazón quieto y los cuatro juntos, el que se
+     * desliza. Es el gráfico REAL de la ROM; sin él se cae al domo de color de siempre.
+     */
+    private val romShellFrames: Map<Int, List<Bitmap>>? = null,
+    /**
      * Sprites GRANDES por id (assets/sprites/big/big_<id>.png): enemigos mayores de
      * 16×16 (Thwomp de piedra, fuego grande…). Se dibujan a su tamaño real anclados
      * por los pies y tienen PRIORIDAD sobre el resto; si falta el id, cae al render
@@ -163,6 +169,7 @@ class PlatformerRenderer(
     private var marioAnim = 0f
     private var enemyTex: Texture? = null
     private var romEnemyTex: Map<Int, List<Texture>> = emptyMap()
+    private var romShellTex: Map<Int, List<Texture>> = emptyMap()
     private var bigTex: Map<Int, Pair<Texture, Bitmap>> = emptyMap()
     private var coinFrames: List<Texture> = emptyList()
     /** Texturas de powerup por tipo (0=seta, 1=flor, 2=pluma), de [powerupBitmap]. */
@@ -182,6 +189,7 @@ class PlatformerRenderer(
         marioCapeTex = marioCapeBitmap?.let { Texture(it) }
         enemyTex = enemyBitmap?.let { Texture(it) }
         romEnemyTex = romEnemyFrames?.mapValues { (_, frames) -> frames.map { Texture(it) } } ?: emptyMap()
+        romShellTex = romShellFrames?.mapValues { (_, frames) -> frames.map { Texture(it) } } ?: emptyMap()
         bigTex = bigSpriteBitmaps.mapValues { (_, bmp) -> Texture(bmp) to bmp }
         coinFrames = coinBitmap?.let { bmp ->
             val n = (bmp.width / 16).coerceAtLeast(1)
@@ -383,8 +391,22 @@ class PlatformerRenderer(
         for (e in engine.enemies) {
             if (!e.alive && e.squashTimer <= 0) continue
             if (e.hidden) continue // Planta Piraña metida en el tubo: no se dibuja
-            // Koopa en su CAPARAZÓN (quieto o deslizándose): domo del color del Koopa.
+            // Koopa en su CAPARAZÓN (quieto o deslizándose).
             if (e.alive && e.shell) {
+                // Gráfico REAL de la ROM: quieto = fotograma 0; deslizándose = ciclo de giro
+                // {6,7,8,7} a la misma cadencia que el resto de animaciones.
+                val shellFr = romShellTex[e.koopaColorId]
+                if (shellFr != null && shellFr.isNotEmpty()) {
+                    val tex = if (e.shellMoving) shellFr[((now / ENEMY_STEP_NS) % shellFr.size).toInt()]
+                              else shellFr[0]
+                    // Anclado por los pies y centrado, como el resto de enemigos.
+                    val wCells = tex.width / 16f
+                    val hCells = tex.height / 16f
+                    val cx = (e.x + e.width / 2f) / 16f - wCells / 2f
+                    batch.draw(tex, cx, (e.y + e.height) / 16f - hCells, wCells, hCells)
+                    continue
+                }
+                // Respaldo: el domo de color de siempre (sin ROM, o si no se pudo pintar).
                 val sx = e.x / 16f; val sw = e.width / 16f
                 val sy = (e.y + e.height * 0.35f) / 16f; val sh = e.height * 0.65f / 16f
                 val (r, g, b) = shellColor(e.koopaColorId)
@@ -626,12 +648,17 @@ class PlatformerRenderer(
     /** Libera los recursos de audio (SoundPool). Llamar al salir del nivel. */
     fun releaseAudio() = audio?.release()
 
-    /** Color del caparazón según el Koopa (verde/rojo/azul/amarillo). */
+    /**
+     * Color del caparazón según el Koopa, para el respaldo sin ROM. Los ids son los de los
+     * Koopa CON caparazón (0x04 verde, 0x05 rojo, 0x06 azul, 0x07 amarillo); antes esta
+     * tabla usaba 0x01/0x02/0x03, que son los Koopa SIN caparazón, así que el respaldo
+     * salía del color equivocado.
+     */
     private fun shellColor(id: Int): Triple<Float, Float, Float> = when (id) {
-        0x01 -> Triple(0.86f, 0.18f, 0.16f) // rojo
-        0x02 -> Triple(0.20f, 0.42f, 0.90f) // azul
-        0x03 -> Triple(0.95f, 0.82f, 0.12f) // amarillo
-        else -> Triple(0.22f, 0.72f, 0.24f) // verde (0x00 / 0x05)
+        0x05 -> Triple(0.86f, 0.18f, 0.16f) // rojo
+        0x06 -> Triple(0.20f, 0.42f, 0.90f) // azul
+        0x07 -> Triple(0.95f, 0.82f, 0.12f) // amarillo
+        else -> Triple(0.22f, 0.72f, 0.24f) // verde (0x04)
     }
 
     private fun colorOf(s: SmwSolidity): FloatArray = when (s) {
