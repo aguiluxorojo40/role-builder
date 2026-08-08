@@ -221,6 +221,22 @@ object SmwEnemyGraphics {
         return customSprite(rom, header, level, spriteId, c.tiles, c.palRow, c.gfxSetting)
     }
 
+    /** DEPURACIÓN: vuelca los primeros [count] fotogramas de la tabla OAM de [spriteId],
+     *  para ver a ojo cuál es cuál (andar, caparazón, aplastado…). */
+    fun dumpOamFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int, count: Int): List<ArgbImage>? {
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        val off = OAM_OFFSET.getOrElse(spriteId) { return null }
+        val out = ArrayList<ArgbImage>()
+        for (f in 0 until count) {
+            val idx = off + f
+            if (idx >= TILE_BYTES.size) break
+            val img = ArgbImage(16, 16)
+            art.paintTile(TILE_BYTES[idx] + art.page * 0x100, img, 0, 0, size16 = true, xflip = false)
+            out.add(img)
+        }
+        return out
+    }
+
     /** Ids con dibujo propio soportados (para el bake de `big_<id>.png`). */
     val customEnemyIds: List<Int> get() = CUSTOM_ENEMIES.keys.toList()
 
