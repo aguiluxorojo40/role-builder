@@ -122,4 +122,24 @@ class SmwAssetStoreTest {
         assertEquals(7, report.count)
         assertTrue(report.summary().contains("7"))
     }
+
+    @Test
+    fun `la version de horneado sube cuando cambia la geometria del atlas`() {
+        // El atlas de enemigos tiene UNA COLUMNA por id de curatedIds, y el renderer calcula
+        // el ancho de columna como 1/curatedIds.size. Si se anaden ids sin subir BAKE_VERSION,
+        // el almacen viejo no se re-hornea y el atlas cacheado tiene menos columnas de las que
+        // el renderer da por hechas: se desplazan TODAS y todos los enemigos salen cortados.
+        //
+        // Este test ata las dos cosas: al cambiar el numero de ids curados hay que subir la
+        // version. Si falla, sube BAKE_VERSION y actualiza el numero de aqui.
+        val idsEsperados = 33
+        val versionEsperada = 3
+        // JUnit4: el mensaje va PRIMERO.
+        assertEquals(
+            "cambio el numero de enemigos curados: sube BAKE_VERSION y este numero",
+            idsEsperados,
+            com.rolebuilder.core.snes.SmwEnemyGraphics.curatedIds.size,
+        )
+        assertEquals(versionEsperada, SmwAssetStore.bakeVersion())
+    }
 }

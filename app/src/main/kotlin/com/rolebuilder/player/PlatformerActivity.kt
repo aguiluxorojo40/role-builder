@@ -201,6 +201,9 @@ class PlatformerActivity : ComponentActivity() {
                 marioCapeBitmap = loadMarioCape(),
                 bigSpriteBitmaps = loadBigSprites(), coinBitmap = loadCoin(),
                 powerupBitmap = loadPowerups(),
+                // Caparazones HORNEADOS: sin ROM, esta es la unica via para que el modo
+                // proyecto enseñe el caparazon real en vez del domo de color.
+                romShellFrames = loadShellFrames(),
             )
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
@@ -452,6 +455,29 @@ class PlatformerActivity : ComponentActivity() {
     /** Carga el atlas de enemigos empaquetado (assets/sprites/enemies.png), o null si falta. */
     private fun loadEnemies(): android.graphics.Bitmap? = loadSprite("sprites/enemies.png")
 
+    /**
+     * Caparazones horneados (sprites/shells.png): una FILA por Koopa con caparazón (0x04-0x07)
+     * y una COLUMNA por fotograma del ciclo de giro, en celdas de 16×16. Se trocea a la misma
+     * forma que devuelve `SmwEnemyGraphics.shellFrames`, para que el renderer no distinga de
+     * dónde vienen. Es lo que hace que el modo PROYECTO —que no tiene ROM— enseñe el
+     * caparazón de verdad y no el domo de color.
+     */
+    private fun loadShellFrames(): Map<Int, List<Bitmap>>? {
+        val hoja = loadSprite("sprites/shells.png") ?: return null
+        val cell = com.rolebuilder.core.snes.SmwBakedAssets.SHELL_CELL
+        val columnas = hoja.width / cell
+        val filas = hoja.height / cell
+        if (columnas <= 0 || filas <= 0) return null
+        val out = LinkedHashMap<Int, List<Bitmap>>()
+        for (fila in 0 until minOf(filas, 4)) {
+            val frames = (0 until columnas).mapNotNull { c ->
+                runCatching { Bitmap.createBitmap(hoja, c * cell, fila * cell, cell, cell) }.getOrNull()
+            }
+            if (frames.isNotEmpty()) out[0x04 + fila] = frames
+        }
+        return out.ifEmpty { null }
+    }
+
     /** Hoja de POWERUPS real horneada (assets/sprites/powerups.png: seta|flor|pluma), o null. */
     private fun loadPowerups(): android.graphics.Bitmap? = loadSprite("sprites/powerups.png")
 
@@ -580,6 +606,14 @@ class PlatformerActivity : ComponentActivity() {
          */
         private const val EXTRA_LIVES = "lives"
 
+        /**
+         * Fraccion del ancho que ocupa el HUD real. A pantalla completa (1f) la barra sale
+         * enorme en apaisado y tapa los botones de "Salir" y recargar, que viven en las
+         * esquinas de arriba. Con 0.62 queda holgada a los lados y la barra conserva una
+         * altura parecida a la del juego.
+         */
+        private const val HUD_ANCHO_MAXIMO = 0.62f
+
         /** Extra del resultado: true si el jugador SUPERO el nivel (toco la meta). */
         const val RESULT_WON = "won"
 
@@ -701,10 +735,17 @@ private fun PlatformerScreen(
                 }
             }
             if (hudBmp != null) {
+                // Escalado al ancho, pero con TOPE: a pantalla completa la barra sale
+                // gigante y se come el botón "Salir" y el de recargar. El HUD original
+                // ocupa ~1/12 del alto de la pantalla de SNES, así que se le deja como
+                // mucho ese sitio y se centra.
                 Image(
                     bitmap = hudBmp,
                     contentDescription = null,
-                    modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth(HUD_ANCHO_MAXIMO)
+                        .padding(top = 2.dp),
                     // Pixel art: sin interpolación, o los bordes salen borrosos al ampliar.
                     filterQuality = FilterQuality.None,
                     contentScale = ContentScale.FillWidth,

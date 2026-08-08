@@ -47,8 +47,38 @@ object SmwBakedAssets {
         SnesGameRecipes.smwCoinSheet(rom, header, level)?.let { out["sprites/coin.png"] = it }
         SmwEnemyGraphics.powerupSheet(rom, header, level)?.let { out["sprites/powerups.png"] = it }
         enemyAtlas(rom, header, level)?.let { out["sprites/enemies.png"] = it }
+        shellSheet(rom, header, level)?.let { out["sprites/shells.png"] = it }
         return out
     }
+
+    /**
+     * Hoja de CAPARAZONES: una fila por Koopa con caparazón (0x04-0x07) y una columna por
+     * fotograma del ciclo de giro, en celdas de 16×16.
+     *
+     * El caparazón NO cabe en el atlas de enemigos —ese tiene 2 fotogramas por id, y aquí
+     * hacen falta 4— y hasta ahora solo existía en la ruta ROM en vivo: en modo PROYECTO, que
+     * tira de los assets horneados, el caparazón seguía siendo el domo de color pintado a
+     * mano. Con esta hoja, las dos rutas enseñan el caparazón de verdad.
+     */
+    fun shellSheet(rom: ByteArray, header: SnesHeader, level: Int = REF_LEVEL): ArgbImage? {
+        val ids = (0x04..0x07).toList()
+        val frames = SmwEnemyGraphics.SHELL_SPIN_FRAMES.size
+        val img = ArgbImage(frames * SHELL_CELL, ids.size * SHELL_CELL)
+        var any = false
+        ids.forEachIndexed { fila, id ->
+            val fr = runCatching { SmwEnemyGraphics.shellFrames(rom, header, level, id) }
+                .getOrNull().orEmpty()
+            if (fr.isEmpty()) return@forEachIndexed
+            for (c in 0 until frames) {
+                blit(fr.getOrNull(c) ?: fr.last(), img, c * SHELL_CELL, fila * SHELL_CELL)
+                any = true
+            }
+        }
+        return if (any) img else null
+    }
+
+    /** Lado de la celda de [shellSheet]: el caparazón es UNA tesela 16×16. */
+    const val SHELL_CELL = 16
 
     /**
      * Atlas de enemigos con la geometría EXACTA que espera el renderer: una columna por cada

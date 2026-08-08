@@ -31,8 +31,17 @@ object SmwAssetStore {
      * versión anterior, se considera OBSOLETO y se re-hornea, para que quien horneó antes de un
      * cambio reciba los assets nuevos sin borrar datos a mano.
      *   v1: sprites + SFX.   v2: + música de nivel (music/level.aram).
+     *   v3: los Koopa CON caparazón 0x04/0x06/0x07 entran en el catálogo curado, y se hornea
+     *       la hoja de CAPARAZONES (sprites/shells.png).
+     *
+     * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
+     * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
+     * columna como `1 / curatedIds.size`. Si se añaden ids sin subir esta versión, el almacén
+     * viejo NO se re-hornea (su versión seguiría valiendo) y el atlas cacheado tendría MENOS
+     * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
+     * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 2
+    private const val BAKE_VERSION = 3
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
