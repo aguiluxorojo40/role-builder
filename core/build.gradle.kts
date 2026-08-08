@@ -91,6 +91,15 @@ tasks.register<JavaExec>("dumpShellFrames") {
     systemProperty("java.awt.headless", "true")
 }
 
+// Lista los sprites que un nivel coloca de verdad (id, nombre, si lleva caparazón).
+tasks.register<JavaExec>("listLevelEnemies") {
+    group = "verification"
+    description = "Lista los sprites que coloca un nivel de la ROM"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.LevelEnemyList")
+    systemProperty("java.awt.headless", "true")
+}
+
 // Traza de un enemigo en NUESTRO motor, en el formato CSV del arnés de comparación
 // (ver scripts/enemy_trace.py y scripts/enemy_compare.py).
 tasks.register<JavaExec>("traceEnemy") {
@@ -98,4 +107,22 @@ tasks.register<JavaExec>("traceEnemy") {
     description = "Traza el movimiento de un enemigo para compararlo con el emulador."
     classpath = sourceSets["tools"].runtimeClasspath
     mainClass.set("com.rolebuilder.core.tools.EnemyTrace")
+}
+
+// Vuelca el sprite de ids concretos tal y como los devuelve core, para separar
+// "el grafico de core esta mal" de "el renderer lo dibuja mal".
+tasks.register<JavaExec>("dumpEnemy") {
+    group = "verification"
+    description = "Vuelca el sprite de los ids que se pidan desde la ROM"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.EnemyDump")
+    systemProperty("java.awt.headless", "true")
+}
+
+tasks.register<JavaExec>("scanKoopaLevels") {
+    group = "verification"
+    description = "Busca que niveles colocan Koopas y cuantos"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.KoopaLevelScan")
+    systemProperty("java.awt.headless", "true")
 }

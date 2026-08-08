@@ -242,6 +242,13 @@ class PlatformerActivity : ComponentActivity() {
                     val frames = when {
                         gfx.isWinged(id) -> gfx.wingedKoopaFrames(rom, header, level, id)
                         gfx.isJumpingPiranha(id) -> gfx.jumpingPiranhaFrames(rom, header, level, id)
+                        // Enemigos con DIBUJO PROPIO (Rex, Blurp, Super Koopa…): su aspecto NO
+                        // sale de la tabla OAM genérica. Sin esta rama caían al `else` y se
+                        // pintaban con la entrada genérica de su id, que para ellos es basura
+                        // (Rex salía como un manchón naranja en vez del dinosaurio). Y como esta
+                        // vía tiene prioridad sobre el atlas horneado en el renderer, el gráfico
+                        // bueno no llegaba a usarse nunca.
+                        id in gfx.customEnemyIds -> gfx.customEnemyImage(rom, header, level, id)?.let { listOf(it) }
                         else -> gfx.spriteFrames(rom, header, level, id)
                     }
                     frames?.map { Bitmap.createBitmap(it.pixels, it.width, it.height, Bitmap.Config.ARGB_8888) }

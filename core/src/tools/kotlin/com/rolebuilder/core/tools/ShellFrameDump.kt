@@ -220,3 +220,108 @@ object ShellFrameDump {
         return m
     }
 }
+
+/**
+ * DEPURACIÓN: lista los sprites que un nivel coloca de verdad, con su id, su nombre y si
+ * lleva caparazón. Sirve para contrastar lo que se ve en pantalla con lo que el nivel pide.
+ *
+ *   ./gradlew :core:listLevelEnemies --args="--rom smw.sfc --level 0x105"
+ */
+object LevelEnemyList {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var rom = ""; var lvl = 0x105
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> rom = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x105" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+            }
+            i++
+        }
+        val bytes = java.io.File(rom).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(bytes)
+        val list = com.rolebuilder.core.snes.SnesGameRecipes.smwLevelEnemies(bytes, hdr, lvl)
+        println("Nivel 0x${lvl.toString(16)}: ${list.size} sprites colocados")
+        list.groupBy { it.first }.toSortedMap().forEach { (id, apariciones) ->
+            val nombre = com.rolebuilder.core.snes.SmwSpriteNames.nameOf(id) ?: "?"
+            val cap = when (id) {
+                in 0x04..0x07 -> "CON caparazon"
+                in 0x00..0x03 -> "SIN caparazon"
+                in 0x08..0x0B -> "alada"
+                else -> ""
+            }
+            println("  0x%02X x%-3d %-28s %s".format(id, apariciones.size, nombre, cap))
+        }
+    }
+}
+
+/**
+ * DEPURACIÓN: vuelca el sprite de los ids que se pidan, tal y como los devuelve core
+ * (dibujo propio si lo tiene, si no la tabla OAM genérica). Sirve para separar "el gráfico
+ * de core está mal" de "el renderer lo dibuja mal".
+ *
+ *   ./gradlew :core:dumpEnemy --args="--rom smw.sfc --level 0x105 --ids AB,9F,4F --out out/"
+ */
+object EnemyDump {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x105; var ids = "AB"; var out = "enemy_dump"; var scale = 6
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x105" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+                "--ids" -> ids = args.getOrElse(++i) { "AB" }
+                "--scale" -> scale = args.getOrElse(++i) { "6" }.toInt()
+                "--out" -> out = args.getOrElse(++i) { "enemy_dump" }
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val dir = java.io.File(out).apply { mkdirs() }
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        for (tok in ids.split(",")) {
+            val id = tok.trim().toInt(16)
+            val custom = runCatching { gfx.customEnemyImage(rom, hdr, lvl, id) }.getOrNull()
+            val generic = runCatching { gfx.spriteImage(rom, hdr, lvl, id) }.getOrNull()
+            val img = custom ?: generic
+            val via = if (custom != null) "dibujo propio" else if (generic != null) "tabla generica" else "NADA"
+            println("0x%02X %-24s %s  %s".format(id, gfx.nameOf(id) ?: "(no curado)", via,
+                img?.let { "${it.width}x${it.height}" } ?: ""))
+            if (img == null) continue
+            val f = java.io.File(dir, "enemy_%02X.png".format(id))
+            val w = img.width * scale; val h = img.height * scale
+            val bi = java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            for (y in 0 until h) for (x in 0 until w) bi.setRGB(x, y, img.get(x / scale, y / scale))
+            javax.imageio.ImageIO.write(bi, "png", f)
+        }
+        println("En: ${dir.absolutePath}")
+    }
+}
+
+/** DEPURACIÓN: busca en TODOS los niveles cuáles colocan Koopas (0x00-0x0B) y cuántos. */
+object KoopaLevelScan {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""
+        var i = 0
+        while (i < args.size) { if (args[i] == "--rom") romPath = args.getOrElse(++i) { "" }; i++ }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        println("nivel | koopas (id x veces)")
+        for (lvl in 0x000..0x1FF) {
+            val list = runCatching {
+                com.rolebuilder.core.snes.SnesGameRecipes.smwLevelEnemies(rom, hdr, lvl)
+            }.getOrNull() ?: continue
+            val koopas = list.filter { it.first in 0x00..0x0B }
+            if (koopas.isEmpty()) continue
+            val det = koopas.groupBy { it.first }.toSortedMap()
+                .map { (id, l) -> "0x%02X x%d".format(id, l.size) }.joinToString(", ")
+            println("0x%03X | %s".format(lvl, det))
+        }
+    }
+}
