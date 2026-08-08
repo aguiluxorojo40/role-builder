@@ -2360,9 +2360,34 @@ class PlatformerEngine(
         )
         const val PIRANHA_FIRE_G = 0.125f
 
-        // ---- Caparazón de Koopa (HandleSprKicked/Stunned $01, tabla ShellSpeedX) ----
-        /** Velocidad del caparazón PATEADO (px/f): ShellSpeedX = 0x37 = 55 unidades = 3.4375 px/f. */
-        const val SHELL_SPEED = 55f / 16f
+        // ---- Caparazón de Koopa (estados 09 quieto / 0A pateado / 0B en brazos, $01) ----
+        /**
+         * Velocidad del caparazón PATEADO (px/f). Es `kSprStatus0A_Kicked_XSpeed`
+         * = `{0xE0, 0x20}`, o sea ±0x20 = ±32 unidades = 2 px/f.
+         *
+         * Antes aquí ponía 55 citando una tabla "ShellSpeedX = 0x37" que NO existe en el
+         * banco $01: el caparazón iba un 72% más rápido de la cuenta. Los 46/52 de
+         * [SHELL_THROW_SPEED] sí se parecen a ese 55, así que probablemente se confundió
+         * la patada con el LANZAMIENTO, que son cosas distintas.
+         */
+        const val SHELL_SPEED = 32f / 16f
+
+        /**
+         * Velocidad del caparazón LANZADO desde los brazos (px/f), que NO es la de la
+         * patada: `kSprStatus0B_Carried_ShellXSpeed` = `{0xD2, 0x2E, 0xCC, 0x34}` → ±46
+         * andando y ±52 corriendo.
+         */
+        const val SHELL_THROW_SPEED = 46f / 16f
+        const val SHELL_THROW_SPEED_RUNNING = 52f / 16f
+
+        /**
+         * ANIMACIÓN del caparazón que se desliza: gira ciclando 4 fotogramas
+         * (`kKickedShellGFXRt_ShellAniTiles` = `{6, 7, 8, 7}`), y el ÚLTIMO va volteado en
+         * horizontal (`kKickedShellGFXRt_Prop` = `{0, 0, 0, 0x40}`; el 0x40 es el bit de
+         * volteo X del OAM). Por eso el giro se ve continuo con solo tres dibujos.
+         */
+        val SHELL_SPIN_TILES = intArrayOf(6, 7, 8, 7)
+        val SHELL_SPIN_XFLIP = booleanArrayOf(false, false, false, true)
         /** Gracia tras patear: el `KickingTimer = 0x0C` de SMW = 12 frames (valor exacto). */
         const val SHELL_KICK_GRACE = 12
 
