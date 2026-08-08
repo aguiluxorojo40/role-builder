@@ -233,6 +233,43 @@ object SmwStatusBar {
     }
 
     /**
+     * La barra PREPARADA: la fuente descomprimida y la CGRAM del nivel, ya listas. Existe
+     * porque [render] descomprime cuatro ficheros GFX cada vez, y el HUD se redibuja cada vez
+     * que cambia un contador: preparándolo una vez, repintar es solo pegar teselas.
+     */
+    class Prepared internal constructor(private val font: ByteArray, private val cgram: IntArray) {
+        /** Dibuja la barra para el estado [tilemap] (ver [buildTilemap]). */
+        fun render(tilemap: IntArray): ArgbImage {
+            val img = ArgbImage(SCREEN_COLS * 8, ROWS * 8)
+            for ((fila, tramo) in ROW_SPANS.withIndex()) {
+                val (primeraCelda, celdas, colInicial) = tramo
+                val ultima = minOf(celdas, CELL_COUNT - primeraCelda, SCREEN_COLS - colInicial)
+                for (i in 0 until ultima) {
+                    val cell = primeraCelda + i
+                    val tile = tilemap.getOrNull(cell)?.takeIf { it != BLANK || cell in contadorCells }
+                        ?: tileAt(cell)
+                    paintTile(font, cgram, tile, attrAt(cell), img, (colInicial + i) * 8, fila * 8)
+                }
+            }
+            return img
+        }
+
+        /** Atajo: construye el estado y lo dibuja de una vez. */
+        fun render(time: Int, coins: Int, lives: Int, score: Int): ArgbImage =
+            render(buildTilemap(time, coins, lives, score))
+    }
+
+    /**
+     * Prepara la barra para [level]: descomprime la fuente y arma la paleta UNA vez. Devuelve
+     * null si la ROM no trae los GFX de Layer 3 (no parece SMW).
+     */
+    fun prepare(rom: ByteArray, header: SnesHeader, level: Int): Prepared? {
+        val font = fontTiles(rom) ?: return null
+        val cgram = SnesGameRecipes.assembleSmwCgram(rom, header.headerOffset - 0x7FC0, level)
+        return Prepared(font, cgram)
+    }
+
+    /**
      * Hoja con TODA la fuente del HUD (16×16 teselas de 8×8 = 256), pintada con la [palette]
      * indicada y la CGRAM del [level]. El nº de tesela de cada celda es `fila*16 + columna`,
      * así que sirve para localizar a ojo qué tesela es cada dígito, letra o pieza del marco.

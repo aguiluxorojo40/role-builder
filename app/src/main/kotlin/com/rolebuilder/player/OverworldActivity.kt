@@ -460,7 +460,10 @@ private fun GameMapScreen(rom: ByteArray, header: SnesHeader, romFile: File, slo
             Button(
                 onClick = {
                     runCatching {
-                        playLauncher.launch(PlatformerActivity.intent(context, romFile, playable))
+                        // Las vidas viajan al nivel para que el HUD real de SMW las muestre.
+                        playLauncher.launch(
+                            PlatformerActivity.intent(context, romFile, playable, save.lives),
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -596,6 +599,8 @@ private fun TestMapScreen(rom: ByteArray, header: SnesHeader, romFile: File) {
                     onClick = {
                         runCatching {
                             context.startActivity(
+                                // Modo prueba: no hay partida guardada, así que tampoco vidas
+                                // que enseñar en el HUD (se queda con el valor por defecto).
                                 PlatformerActivity.intent(context, romFile, level),
                             )
                         }

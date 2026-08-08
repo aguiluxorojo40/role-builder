@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -43,6 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +87,13 @@ class PlatformerActivity : ComponentActivity() {
 
     private var music: PlatformerMusic? = null
 
+    /**
+     * Dibuja el HUD REAL de SMW (tiempo, monedas, vidas, puntos) → bitmap de 256×16, o null
+     * si no hay ROM (modo proyecto) o no trae los GFX de Layer 3. Lo prepara
+     * [buildRomRenderer]; el HUD de texto queda como respaldo.
+     */
+    private var hudArt: ((Int, Int, Int, Int) -> Bitmap?)? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemBars()
@@ -119,6 +131,8 @@ class PlatformerActivity : ComponentActivity() {
                 // Al morir, la música PARA (como SMW) y queda solo el jingle de muerte;
                 // reiniciar (recreate) vuelve a arrancarla.
                 onDeath = { music?.stop() },
+                hudArt = hudArt,
+                lives = intent.getIntExtra(EXTRA_LIVES, -1).coerceAtLeast(0),
                 // Diagnóstico del HUD: 0 = no cargó (recarga la ROM), 1 = cargada muda, 2 = sonando.
                 musicState = {
                     val m = music
@@ -257,6 +271,21 @@ class PlatformerActivity : ComponentActivity() {
         // Caparazones REALES de la ROM, por color. Se piden para los cuatro Koopa CON
         // caparazón (0x04-0x07) y no solo para los que hay en el nivel: un caparazón puede
         // llegar rodando desde otra pantalla, y son cuatro imágenes de 16×16.
+        // HUD REAL de SMW: se PREPARA aquí (descomprimir la fuente de Layer 3 y armar la
+        // paleta es caro y se hace una sola vez); repintarlo al cambiar un contador es solo
+        // pegar teselas. Si la ROM no trae los GFX, se queda null y el HUD cae al de texto.
+        val barra = runCatching {
+            com.rolebuilder.core.snes.SmwStatusBar.prepare(rom, header, level)
+        }.getOrNull()
+        if (barra != null) {
+            hudArt = { time, coins, lives, score ->
+                runCatching {
+                    val img = barra.render(time, coins, lives, score)
+                    Bitmap.createBitmap(img.pixels, img.width, img.height, Bitmap.Config.ARGB_8888)
+                }.getOrNull()
+            }
+        }
+
         val shellFrames: Map<Int, List<Bitmap>> = (0x04..0x07).mapNotNull { id ->
             runCatching {
                 com.rolebuilder.core.snes.SmwEnemyGraphics.shellFrames(rom, header, level, id)
@@ -544,6 +573,13 @@ class PlatformerActivity : ComponentActivity() {
         private const val EXTRA_START_X = "startX"
         private const val EXTRA_START_Y = "startY"
 
+        /**
+         * Vidas que le quedan al jugador, para el HUD. Las lleva el mapa del mundo
+         * (`SmwGameSave.lives`), no el motor de plataformas, asi que viajan por el intent.
+         * Si no viene, el HUD las omite en vez de inventarse un numero.
+         */
+        private const val EXTRA_LIVES = "lives"
+
         /** Extra del resultado: true si el jugador SUPERO el nivel (toco la meta). */
         const val RESULT_WON = "won"
 
@@ -553,8 +589,9 @@ class PlatformerActivity : ComponentActivity() {
         /** Extra del resultado: true si el jugador MURIO en el nivel (cuesta una vida). */
         const val RESULT_DIED = "died"
 
-        fun intent(context: Context, romFile: File, level: Int): Intent =
+        fun intent(context: Context, romFile: File, level: Int, lives: Int = -1): Intent =
             Intent(context, PlatformerActivity::class.java)
+                .putExtra(EXTRA_LIVES, lives)
                 .putExtra(EXTRA_ROM_PATH, romFile.absolutePath)
                 .putExtra(EXTRA_LEVEL, level)
 
@@ -580,6 +617,13 @@ private fun PlatformerScreen(
      * 2 = sonando. Ayuda a saber POR QUÉ no se oye sin tener el dispositivo delante.
      */
     musicState: () -> Int = { 2 },
+    /**
+     * Dibuja el HUD REAL de SMW (tiempo, monedas, vidas, puntos) a un bitmap de 256×16 px.
+     * Si es null —modo proyecto, o ROM sin los GFX de Layer 3— se usa el HUD de texto.
+     */
+    hudArt: ((Int, Int, Int, Int) -> Bitmap?)? = null,
+    /** Vidas restantes para el HUD (las sabe el mapa del mundo, no el motor). */
+    lives: Int = 0,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     var glView by remember { mutableStateOf<GLSurfaceView?>(null) }
@@ -617,6 +661,8 @@ private fun PlatformerScreen(
             var coinCount by remember { mutableStateOf(0) }
             var scoreNow by remember { mutableStateOf(0) }
             var timeNow by remember { mutableStateOf(0) }
+            // Las vidas las lleva el mapa del mundo, no el motor: llegan por el intent.
+            val livesNow = remember { lives }
             var starsNow by remember { mutableStateOf(0) }
             var wonNow by remember { mutableStateOf(false) }
             var warped by remember { mutableStateOf(false) }
@@ -646,7 +692,33 @@ private fun PlatformerScreen(
                     else -> "🎵"
                 }
             }
-            Row(
+            // HUD REAL de SMW: la barra de estado del juego (fuente de Layer 3, dos filas),
+            // ESCALADA al ancho de la pantalla. Se redibuja solo cuando cambia un contador,
+            // no cada frame. Sin ROM se cae al HUD de texto de más abajo.
+            val hudBmp = hudArt?.let { pintar ->
+                remember(coinCount, scoreNow, timeNow, livesNow) {
+                    pintar(timeNow, coinCount, livesNow, scoreNow)?.asImageBitmap()
+                }
+            }
+            if (hudBmp != null) {
+                Image(
+                    bitmap = hudBmp,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+                    // Pixel art: sin interpolación, o los bordes salen borrosos al ampliar.
+                    filterQuality = FilterQuality.None,
+                    contentScale = ContentScale.FillWidth,
+                )
+                // El diagnóstico de música vive en el HUD de texto; con el HUD real hay que
+                // sacarlo aparte o se perdería (y es lo que dice POR QUÉ no suena).
+                if (musicIcon.isNotEmpty()) {
+                    Text(
+                        musicIcon,
+                        fontSize = 16.sp,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 8.dp),
+                    )
+                }
+            } else Row(
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
