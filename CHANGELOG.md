@@ -33,6 +33,10 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 - **El gráfico REAL del caparazón**, en vez del domo de color plano: `SmwEnemyGraphics.
   shellImage()` lo saca de la ROM con la paleta del nivel (port de `StunnedShellGFXRt_01980F`
   + `GenericGFXRtDraw1Tile16x16`), con el fotograma quieto (6) y el ciclo de giro `{6,7,8,7}`.
+  **Cableado hasta la pantalla**: `PlatformerActivity` lo hornea para los cuatro colores y
+  `PlatformerRenderer` lo dibuja anclado por los pies —quieto o girando al deslizarse—, con
+  el domo de siempre como respaldo si no hay ROM. (El color de ese respaldo también estaba
+  indexado por los ids equivocados.)
 - **Los Koopa `0x04`, `0x06` y `0x07` al catálogo curado** (solo estaba el `0x05`, que por eso
   era el único cuyo caparazón se podía volcar). Se añaden AL FINAL: el orden de `curatedIds`
   fija los fotogramas del atlas horneado.
