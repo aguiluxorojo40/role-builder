@@ -287,7 +287,17 @@ object EnemyDump {
         for (tok in ids.split(",")) {
             val id = tok.trim().toInt(16)
             val custom = runCatching { gfx.customEnemyImage(rom, hdr, lvl, id) }.getOrNull()
-            val generic = runCatching { gfx.spriteImage(rom, hdr, lvl, id) }.getOrNull()
+            val generic = runCatching { gfx.spriteFrames(rom, hdr, lvl, id) }.getOrNull()?.firstOrNull()
+                ?: runCatching { gfx.spriteImage(rom, hdr, lvl, id) }.getOrNull()
+            // Se vuelcan LAS DOS vias por separado: la generica es la que usaba la app por
+            // error para los enemigos con dibujo propio, y la propia es la buena.
+            generic?.let { g ->
+                val fg = java.io.File(dir, "enemy_%02X_GENERICA_mala.png".format(id))
+                val w2 = g.width * scale; val h2 = g.height * scale
+                val bi2 = java.awt.image.BufferedImage(w2, h2, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                for (y in 0 until h2) for (x in 0 until w2) bi2.setRGB(x, y, g.get(x / scale, y / scale))
+                javax.imageio.ImageIO.write(bi2, "png", fg)
+            }
             val img = custom ?: generic
             val via = if (custom != null) "dibujo propio" else if (generic != null) "tabla generica" else "NADA"
             println("0x%02X %-24s %s  %s".format(id, gfx.nameOf(id) ?: "(no curado)", via,
