@@ -80,6 +80,17 @@ tasks.register<JavaExec>("dumpOverworldDoc") {
     systemProperty("java.awt.headless", "true")
 }
 
+// Vuelca los fotogramas de la tabla OAM de los Koopas para MIRAR cuál es el caparazón
+// (los 6/7/8), en vez de deducirlo. Necesita la ROM del usuario, que nunca se versiona:
+//   ./gradlew :core:dumpShellFrames --args="--rom smw.sfc --level 0x105 --out out/"
+tasks.register<JavaExec>("dumpShellFrames") {
+    group = "verification"
+    description = "Vuelca los fotogramas OAM de los Koopas (el caparazón son los 6/7/8)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.ShellFrameDump")
+    systemProperty("java.awt.headless", "true")
+}
+
 // Traza de un enemigo en NUESTRO motor, en el formato CSV del arnés de comparación
 // (ver scripts/enemy_trace.py y scripts/enemy_compare.py).
 tasks.register<JavaExec>("traceEnemy") {
