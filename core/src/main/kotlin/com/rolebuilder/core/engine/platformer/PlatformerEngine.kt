@@ -1512,6 +1512,14 @@ class PlatformerEngine(
      * Koopa + 4 (0x00-0x03 → 0x04-0x07, un color cada uno), tal y como los nombra el
      * juego: GreenKoopa → GreenKoopaNoShell.
      *
+     * ⚠ DEDUCIDO, NO VERIFICADO CONTRA EL CÓDIGO DEL JUEGO. Se apoya en dos hechos que sí
+     * lo están —los ids 0x04-0x07 se llaman ...NoShell, y `kSprStatus09_Stunned_
+     * SpriteKoopasSpawn` = {0,0,0,0,0,1,2,3} hace 0x04→0x00, 0x05→0x01…— pero NO se ha
+     * encontrado la rutina que convierte un Koopa CON caparazón en caparazón + desnudo.
+     * Es más: esa tabla, indexada por un Koopa 0x00-0x03, devuelve siempre 0, así que
+     * está pensada para el camino contrario (pisar al desnudo). Mientras no aparezca la
+     * rutina, esto es una reconstrucción razonable de lo que se ve al jugar, no un port.
+     *
      * Huye en sentido contrario a Mario, que es lo que hace en SMW en vez de quedarse
      * quieto. Las Koopas aladas usan su color de suelo ([koopaColorId]), porque al
      * perder las alas quedan de Koopa normal.
