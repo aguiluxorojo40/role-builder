@@ -288,9 +288,11 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x08, 0x09, 0x0A, 0x0B)
 
     /**
-     * Koopa SIN CAPARAZÓN (0x04-0x07, uno por color). No es un caparazón: es el bicho que
-     * sale corriendo cuando pisas a un Koopa. Va más rápido y muere de un pisotón, porque
-     * ya no tiene con qué protegerse.
+     * Koopa SIN CAPARAZÓN (0x04-0x07, uno por color). Es un enemigo COLOCABLE en el nivel
+     * (el "beach koopa" que corre fuera de su caparazón), NO algo que salga al pisar a otro
+     * Koopa (eso se verificó falso contra el código del juego). Va más rápido
+     * ([PlatformerEngine.NAKED_KOOPA_SPEED]) y muere de un pisotón, porque ya no tiene con
+     * qué protegerse.
      *
      * Antes el 0x05 estaba en [canShell] y al pisarlo salía un caparazón fantasma de un
      * Koopa que ya no lo tenía.
@@ -317,6 +319,8 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
 
     init {
         if (behavior != EnemyBehavior.WALKER && behavior != EnemyBehavior.BOSS) vx = 0f
+        // El Koopa desnudo (0x04-0x07) corre más rápido que un andador normal.
+        if (isNakedKoopa) vx = -PlatformerEngine.NAKED_KOOPA_SPEED
         // Los jefes son grandes: caja de colisión mayor (editable en caliente). Patrullan
         // despacio como un andador robusto.
         if (isBoss) {
@@ -1507,30 +1511,15 @@ class PlatformerEngine(
         piranhaFireEvents++
     }
 
-    /**
-     * Saca corriendo al KOOPA DESNUDO cuando pisas a uno con caparazón. Su id es el del
-     * Koopa + 4 (0x00-0x03 → 0x04-0x07, un color cada uno), tal y como los nombra el
-     * juego: GreenKoopa → GreenKoopaNoShell.
-     *
-     * ⚠ DEDUCIDO, NO VERIFICADO CONTRA EL CÓDIGO DEL JUEGO. Se apoya en dos hechos que sí
-     * lo están —los ids 0x04-0x07 se llaman ...NoShell, y `kSprStatus09_Stunned_
-     * SpriteKoopasSpawn` = {0,0,0,0,0,1,2,3} hace 0x04→0x00, 0x05→0x01…— pero NO se ha
-     * encontrado la rutina que convierte un Koopa CON caparazón en caparazón + desnudo.
-     * Es más: esa tabla, indexada por un Koopa 0x00-0x03, devuelve siempre 0, así que
-     * está pensada para el camino contrario (pisar al desnudo). Mientras no aparezca la
-     * rutina, esto es una reconstrucción razonable de lo que se ve al jugar, no un port.
-     *
-     * Huye en sentido contrario a Mario, que es lo que hace en SMW en vez de quedarse
-     * quieto. Las Koopas aladas usan su color de suelo ([koopaColorId]), porque al
-     * perder las alas quedan de Koopa normal.
-     */
-    private fun spawnNakedKoopa(shell: PlatformerEnemy) {
-        val color = shell.koopaColorId.coerceIn(0x00, 0x03)
-        val n = PlatformerEnemy(shell.x, shell.y, 0x04 + color)
-        val marioCx = player.x + tuning.playerWidth / 2f
-        n.vx = if (shell.x + shell.width / 2f >= marioCx) NAKED_KOOPA_SPEED else -NAKED_KOOPA_SPEED
-        pendingSpawns.add(n)
-    }
+    // NOTA (verificado con el código del juego, smw_01.c): pisar un Koopa CON caparazón
+    // (0x00-0x03) NO expulsa ningún "Koopa desnudo" que huya. En SMW la ruta es
+    // CheckPlayerToNormalSpriteColl_01AA0B → { 1540 = 0; status = 9 }: el mismo sprite pasa
+    // a caparazón quieto (estado 9) con temporizador 0, y SprStatus09_Stunned_019624 sale
+    // de inmediato cuando ese temporizador vale 0 (no genera nada). La tabla
+    // kSprStatus09_Stunned_SpriteKoopasSpawn = {0,0,0,0,0,1,2,3} es el camino CONTRARIO
+    // (un Koopa desnudo 0x04-0x07 aturdido con temporizador ≠ 0 se recompone en Koopa con
+    // caparazón 0x00-0x03), no el del pisotón. Por eso se eliminó el antiguo spawnNakedKoopa.
+    // Los Koopa desnudos (0x04-0x07) siguen existiendo como enemigo COLOCABLE en el nivel.
 
     /** Bowser deja caer una bola de bolos (0xA1) desde su posición; rebota y rueda al aterrizar. */
     private fun dropBowlingBall(e: PlatformerEnemy) {
@@ -2017,18 +2006,20 @@ class PlatformerEngine(
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Koopa con caparazón: pisarlo NO lo mete dentro. En SMW el Koopa SALE
-                // disparado del caparazón y huye corriendo (el "Koopa desnudo", sprite
-                // 0x04-0x07 según el color); lo que queda en el suelo es el caparazón.
+                // Koopa con caparazón (0x00-0x03): pisarlo lo mete en su caparazón y lo deja
+                // QUIETO en el suelo (estado 9 de SMW), MISMO sprite, sin expulsar a nadie.
+                // Verificado en smw_01.c: CheckPlayerToNormalSpriteColl_01AA0B pone temporizador
+                // 1540 = 0 y status = 9; con ese temporizador a 0, la rutina del caparazón
+                // (SprStatus09_Stunned_019624) retorna sin generar ningún Koopa desnudo.
                 e.canShell -> {
                     if (stompFromAbove) {
                         e.shell = true; e.shellMoving = false; e.vx = 0f
-                        spawnNakedKoopa(e)
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Koopa DESNUDO: ya no tiene caparazón que lo proteja, así que un pisotón
-                // lo mata como a cualquier otro bicho (y de lado hiere).
+                // Koopa DESNUDO (0x04-0x07): enemigo colocable que corre sin caparazón. Un
+                // pisotón lo mata (simplificación; en SMW se recompondría en Koopa con
+                // caparazón), y de lado hiere.
                 e.isNakedKoopa -> {
                     if (stompFromAbove) { damageEnemy(e); bounceMario(); stompEvents++ }
                     else { hurtPlayer(); return }

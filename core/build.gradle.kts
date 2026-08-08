@@ -1,6 +1,28 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
+}
+
+// Análisis estático (detekt): audita el código sin necesidad de la ROM. Se apoya en la
+// config por defecto + reglas propias en config/detekt/detekt.yml, y usa una baseline para
+// "grandfather" la deuda existente: así CI falla solo con problemas NUEVOS.
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    baseline = rootProject.file("config/detekt/baseline.xml")
+    parallel = true
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        sarif.required.set(true) // se sube a GitHub Code Scanning
+        xml.required.set(false)
+        md.required.set(false)
+    }
+    jvmTarget = "17"
 }
 
 java {

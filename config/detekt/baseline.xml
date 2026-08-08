@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$!p.dead &amp;&amp; p.invulnFrames == 0 &amp;&amp; p.x &lt; f.x + f.width &amp;&amp; p.x + pw &gt; f.x &amp;&amp; p.y &lt; f.y + f.height &amp;&amp; p.y + ph &gt; f.y</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$--f.life &lt;= 0 || f.x &lt; -16f || f.x &gt; (cols + 1) * tileSize || f.y &lt; -16f || f.y &gt; (rows + 1) * tileSize</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$b.x &lt; e.x + e.width &amp;&amp; b.x + b.width &gt; e.x &amp;&amp; b.y &lt; e.y + e.height &amp;&amp; b.y + b.height &gt; e.y</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$col &lt; 0 || col &gt;= cols || row &lt; 0 || row &gt;= rows</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$e.behavior != EnemyBehavior.MECHAKOOPA || !e.alive || !e.stunned || e.carried || e.thrown</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$e.x &lt; o.x + o.width &amp;&amp; e.x + e.width &gt; o.x &amp;&amp; e.y &lt; o.y + o.height &amp;&amp; e.y + e.height &gt; o.y</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$fb.x &lt; e.x + e.width &amp;&amp; fb.x + fb.width &gt; e.x &amp;&amp; fb.y &lt; e.y + e.height &amp;&amp; fb.y + fb.height &gt; e.y</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$o === e || !o.alive || o.behavior == EnemyBehavior.MECHAKOOPA &amp;&amp; (o.carried || o.thrown)</ID>
+    <ID>ComplexCondition:PlatformerEngine.kt$PlatformerEngine$p.cape &amp;&amp; !p.onGround &amp;&amp; jumpHeld &amp;&amp; p.vy &gt; CAPE_GLIDE_SPEED</ID>
+    <ID>ComplexCondition:SmwDsp.kt$SmwDsp$c.adsrState == 4 || (!doingDirectGain &amp;&amp; c.rateCounter &gt;= rate &amp;&amp; rate != 0)</ID>
+    <ID>ComplexCondition:SmwEnemyGraphics.kt$SmwEnemyGraphics.LevelSpriteArt$dx &lt; 0 || dy &lt; 0 || dx &gt;= img.width || dy &gt;= img.height</ID>
+    <ID>ComplexCondition:SmwLayer1.kt$SmwLayer1.P$(!ge8(k, 3) || !ge8(k, 9) || ge8(k, 11)) &amp;&amp; k != 2</ID>
+    <ID>ComplexCondition:SmwLayer1.kt$SmwLayer1.P$(!ge8(k, 3) || (ge8(k, 7) &amp;&amp; !ge8(k, 9))) &amp;&amp; k != 2</ID>
+    <ID>ComplexCondition:SmwLayer1.kt$SmwLayer1.P$obj &gt;= 0x2E &amp;&amp; tileset != 0 &amp;&amp; tileset != 7 &amp;&amp; tileset != 0xC</ID>
+    <ID>ComplexCondition:SmwLayer1.kt$SmwLayer1.P$v4 != 37 &amp;&amp; (a == 1 || a == 3 || a == 69 || a == 72)</ID>
+    <ID>ComplexCondition:SmwMusicRenderer.kt$SmwMusicRenderer$cmd == 0x16 || cmd == 0x10 || cmd == 0xf || cmd in 9..12</ID>
+    <ID>ComplexCondition:SnesGameRecipes.kt$SnesGameRecipes$j &lt; i + 60 &amp;&amp; j &lt; rom.size &amp;&amp; (byte(rom, j) and 0x7F) in 0x06..0x10 &amp;&amp; (byte(rom, j) and 0x7F) &gt;= (byte(rom, j - 1) and 0x7F)</ID>
+    <ID>ComplexCondition:SnesGameRecipes.kt$SnesGameRecipes.SmwLevelPalettes.Companion$fgBase &lt; 0 || spBase &lt; 0 || ptrBase &lt; 0 || fgBase + 4 * SMW_SLOT_ENTRIES &gt; rom.size || spBase + 4 * SMW_SLOT_ENTRIES &gt; rom.size || ptrBase + 3 * SMW_LEVEL_COUNT &gt; rom.size</ID>
+    <ID>ComplexCondition:SnesGameRecipes.kt$SnesGameRecipes.SmwSlotTables.Companion$fgBase &lt; 0 || spBase &lt; 0 || fgBase + 4 * SMW_SLOT_ENTRIES &gt; rom.size || spBase + 4 * SMW_SLOT_ENTRIES &gt; rom.size</ID>
+    <ID>CyclomaticComplexMethod:SmwLayer1.kt$SmwLayer1.P$fun std(obj: Int)</ID>
+    <ID>EmptyElseBlock:SmwLayer1.kt$SmwLayer1.P$if (v2 != 63) a++</ID>
+    <ID>EmptyElseBlock:SmwLayer1.kt$SmwLayer1.P$if (v2 != 73) a++</ID>
+    <ID>LargeClass:PlatformerEngine.kt$PlatformerEngine</ID>
+    <ID>LargeClass:SmwLayer1.kt$SmwLayer1$P</ID>
+    <ID>LargeClass:SnesGameRecipes.kt$SnesGameRecipes</ID>
+    <ID>LongParameterList:PlatformerEngine.kt$PlatformerEngine$( val cols: Int, val rows: Int, private val solidityAt: (col: Int, row: Int) -&gt; SmwSolidity, startPixelX: Int, startPixelY: Int, tuning: PlatformerTuning, enemySeeds: List&lt;EnemySeed&gt; = emptyList(), blockActions: IntArray? = null, warps: List&lt;EngineWarp&gt; = emptyList(), itemSeeds: List&lt;ItemSeed&gt; = emptyList(), /** * PERFIL de rampa de cada celda: las 16 alturas del suelo (offset desde arriba, * 0..16; 16 = sin suelo en esa columna) o null. Solo se consulta en celdas cuya * solidez es cuesta: con perfil, la celda es una RAMPA REAL (el suelo sigue la * altura por columna de píxel, no bloquea de lado y se puede uno deslizar); sin * él, bloque macizo (el comportamiento de siempre). Las fuentes son GENERALES: * formas de la ROM/editor ([SmwSlopes.floorOffsets]) o el perfil deducido del * dibujo del tile ([SmwSlopes.profileFromTilePixels]). */ private val slopeOffsetsAt: (col: Int, row: Int) -&gt; IntArray? = { _, _ -&gt; null }, /** * Físicas REALES de SMW leídas de la ROM ([SmwPhysics]). Si viene (modo ROM), el * movimiento HORIZONTAL de Mario usa el port 1:1 de `HandlePlayerPhysics` * ([SmwPlayerXMovement]) en vez del modelo simple de [tuning]; los proyectos * genéricos (sin ROM) la dejan a null y conservan el tacto de siempre. */ private val smwPhysics: SmwPhysics? = null, /** Entorno del nivel: en el modo 1:1 elige rozamiento de agua y aceleración de hielo. */ private val environment: PlatformerEnvironment = PlatformerEnvironment.LAND, )</ID>
+    <ID>LongParameterList:PlatformerEngineTest.kt$PlatformerEngineTest$( cols: Int, rows: Int, startCol: Int, startRow: Int, grabCol: Int, grabRow: Int, floorRow: Int, seeds: List&lt;EnemySeed&gt; = emptyList(), )</ID>
+    <ID>LongParameterList:ProjectPlatformer.kt$ProjectPlatformer$( map: GameMap, tileset: Tileset, startCol: Int, startRow: Int, tuning: PlatformerTuning = PlatformerTuning.default(), /** * Perfiles de rampa AUTOMÁTICOS por tile (deducidos del dibujo con * [SmwSlopes.profileFromTilePixels]); la app los calcula del bitmap del * tileset. Vacío = solo formas explícitas. */ autoSlopeProfiles: Map&lt;Int, IntArray&gt; = emptyMap(), /** * Físicas REALES de SMW ([SmwPhysics]) leídas de la ROM. Si vienen, el movimiento * horizontal de Mario usa el port 1:1; si es null (proyecto genérico), el tacto * simple de [tuning]. */ smwPhysics: SmwPhysics? = null, /** Entorno del nivel (agua/hielo) para el modo 1:1. */ environment: PlatformerEnvironment = PlatformerEnvironment.LAND, )</ID>
+    <ID>LongParameterList:SmwEnemyGraphics.kt$SmwEnemyGraphics.LevelSpriteArt$(base: Int, img: ArgbImage, ox: Int, oy: Int, size16: Boolean, xflip: Boolean, rowOverride: Int? = null, vflip: Boolean = false)</ID>
+    <ID>LongParameterList:SnesAssetExtractor.kt$SnesAssetExtractor$( rom: ByteArray, offset: Int, format: SnesGraphicFormat, palette: IntArray, spriteCount: Int, spriteTilesW: Int = 2, spriteTilesH: Int = 2, columns: Int = 8, transparentIndex0: Boolean = true, )</ID>
+    <ID>LongParameterList:SnesGameRecipes.kt$SnesGameRecipes$( rom: ByteArray, defs: IntArray, block: Int, vram: Array&lt;IntArray?&gt;, cgram: IntArray, img: ArgbImage, ox: Int, oy: Int, )</ID>
+    <ID>LongParameterList:SnesGameRecipes.kt$SnesGameRecipes$( rom: ByteArray, delta: Int, screen: Int, vram: Array&lt;IntArray?&gt;, cgram: IntArray, img: ArgbImage, ox: Int, oy: Int, )</ID>
+    <ID>LongParameterList:SnesGameRecipes.kt$SnesGameRecipes$( tile: Int, x: Int, y: Int, palette: Int, vram: Array&lt;IntArray?&gt;, cgram: IntArray, img: ArgbImage, hFlip: Boolean = false, )</ID>
+    <ID>LongParameterList:SnesGameRecipes.kt$SnesGameRecipes.SmwLevelMap$( val atlas: ArgbImage, val columns: Int, val rows: Int, val passable: List&lt;Boolean&gt;, val mapWidth: Int, val mapHeight: Int, val tiles: List&lt;Int&gt;, // mapWidth*mapHeight, índice en el atlas o -1 (aire) /** Solidez REAL por tesela del atlas (ordinal de [SmwSolidity]); para el motor de plataformas. */ val solidity: List&lt;Int&gt; = emptyList(), /** * FORMA de cuesta por tesela del atlas ([SmwSlopes], 0..31 o NO_SLOPE): con * ella las teselas de cuesta se juegan como RAMPAS reales (altura por columna * de píxel), no como bloques macizos. */ val slopeShapes: List&lt;Int&gt; = emptyList(), /** Enemigos del nivel: (id de sprite, x, y) en celdas de 16px, ya recortados al mapa. */ val enemies: List&lt;Triple&lt;Int, Int, Int&gt;&gt; = emptyList(), /** Teselas animadas del atlas (monedas, bloques ?, agua). */ val animations: List&lt;com.rolebuilder.core.model.TileAnimation&gt; = emptyList(), /** Acción interactiva por tesela del atlas (ordinal de [SmwBlockAction]): moneda… */ val blockActions: List&lt;Int&gt; = emptyList(), /** * FONDO (Layer 2) por casilla del mapa (mapWidth*mapHeight): índice en el atlas * o -1 (sin fondo). Vacío si el nivel no tiene fondo renderizable. Es la capa que * se dibuja DEBAJO del primer plano al importar. */ val bgTiles: List&lt;Int&gt; = emptyList(), )</ID>
+    <ID>LoopWithTooManyJumpStatements:CompressionCodecs.kt$CompressionCodecs$for</ID>
+    <ID>LoopWithTooManyJumpStatements:LcLz2.kt$LcLz2$while</ID>
+    <ID>LoopWithTooManyJumpStatements:MapStamp.kt$MapStamp$for</ID>
+    <ID>LoopWithTooManyJumpStatements:PlatformerEngine.kt$PlatformerEngine$for</ID>
+    <ID>LoopWithTooManyJumpStatements:PlatformerEngine.kt$PlatformerEngine$while</ID>
+    <ID>LoopWithTooManyJumpStatements:ProjectPlatformer.kt$ProjectPlatformer$for</ID>
+    <ID>LoopWithTooManyJumpStatements:Rle1.kt$Rle1$while</ID>
+    <ID>LoopWithTooManyJumpStatements:RpgEngine.kt$RpgEngine$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwEnemyGraphics.kt$SmwEnemyGraphics$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwEnemyGraphics.kt$SmwEnemyGraphics.LevelSpriteArt$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwLayer1.kt$SmwLayer1.P$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwLevelExits.kt$SmwLevelExits$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwMusic.kt$SmwMusic$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwMusicRenderer.kt$SmwMusicRenderer$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwMusicRenderer.kt$SmwMusicRenderer$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwOverworldLayer3.kt$SmwOverworldLayer3$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwOverworldWalk.kt$SmwOverworldWalk$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwTitleScreen.kt$SmwTitleScreen$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SmwWarpTiles.kt$SmwWarpTiles$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SnesAutoExtractor.kt$SnesAutoExtractor$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SnesDecoder.kt$SnesDecoder$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SnesGameRecipes.kt$SnesGameRecipes$for</ID>
+    <ID>LoopWithTooManyJumpStatements:SnesGameRecipes.kt$SnesGameRecipes$while</ID>
+    <ID>LoopWithTooManyJumpStatements:TileMapDoc.kt$TileMapDoc.Companion$for</ID>
+    <ID>LoopWithTooManyJumpStatements:ZzFirstLevelsReport.kt$ZzFirstLevelsReport$for</ID>
+    <ID>LoopWithTooManyJumpStatements:ZzLayer1CoverageProbe.kt$ZzLayer1CoverageProbe$for</ID>
+    <ID>MatchingDeclarationName:Presentation.kt$Weather</ID>
+    <ID>MaxLineLength:DefaultProjectFactory.kt$DefaultProjectFactory$Actor(id = 1, name = "Héroe", sprite = "hero.png", maxHp = 20, attack = 5, defense = 1, moveSpeed = 4.5f, attackSkillId = 1, secondarySkillId = 2)</ID>
+    <ID>MaxLineLength:DefaultProjectFactory.kt$DefaultProjectFactory$Enemy(id = 1, name = "Slime", sprite = "slime.png", maxHp = 6, attack = 2, defense = 0, moveSpeed = 1.8f, behavior = EnemyBehavior.CHASE, sightRange = 5, dropItemId = 1, dropChance = 0.3f, expReward = 3, goldReward = 2)</ID>
+    <ID>MaxLineLength:DefaultProjectFactory.kt$DefaultProjectFactory$Enemy(id = 2, name = "Murciélago", sprite = "bat.png", maxHp = 4, attack = 3, defense = 0, moveSpeed = 3f, behavior = EnemyBehavior.WANDER, sightRange = 6, expReward = 4, goldReward = 3)</ID>
+    <ID>MaxLineLength:DefaultProjectFactory.kt$DefaultProjectFactory$Item(id = 3, name = "Espada de hierro", description = "Un arma sencilla pero fiable. +2 al ataque.", consumable = false, price = 30, equipSlot = EquipSlot.WEAPON, attackBonus = 2)</ID>
+    <ID>MaxLineLength:DefaultProjectFactory.kt$DefaultProjectFactory$Item(id = 4, name = "Escudo de cuero", description = "Protección ligera. +1 a la defensa.", consumable = false, price = 20, equipSlot = EquipSlot.ARMOR, defenseBonus = 1)</ID>
+    <ID>MaxLineLength:DefaultProjectFactory.kt$DefaultProjectFactory$Skill(id = 2, name = "Disparo", kind = SkillKind.PROJECTILE, power = 2, range = 6f, cooldownSeconds = 0.8f, projectileSpeed = 9f)</ID>
+    <ID>MaxLineLength:EngineTestSupport.kt$EngineTestSupport$fun</ID>
+    <ID>MaxLineLength:SmwAssetCatalogTest.kt$SmwAssetCatalogTest$val cheeps = paths.filter { it.startsWith("enemigos/cheep_cheep") }.map { it.substringAfter("enemigos/").substringBefore('/') }.toSet()</ID>
+    <ID>MaxLineLength:SmwLayer1.kt$SmwLayer1$private val EDGE_D0F0 = intArrayOf(0x7d, 0x7e, 0x82, 0x83, 0x9b, 0x9c, 0xa0, 0xa1, 0xaa, 0xab, 0xaf, 0xb0, 0xd8, 0xdc, 0xde, 0xe0, 0xe2, 0xe4)</ID>
+    <ID>MaxLineLength:SmwLayer1.kt$SmwLayer1$private val EDGE_D102 = intArrayOf(0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf, 0xc0, 0xc1, 0xc2, 0xc3, 0xd9, 0xdd, 0xdf, 0xe1, 0xe3, 0xe5)</ID>
+    <ID>MaxLineLength:SnesGameRecipes.kt$SnesGameRecipes$internal</ID>
+    <ID>MaxLineLength:SnesGameRecipes.kt$SnesGameRecipes$is BgParse.Error -&gt; { err++; r.bank?.let { banksSeen.merge(it, 1, Int::plus) }; reasons.merge(r.reason.take(40), 1, Int::plus) }</ID>
+    <ID>SwallowedException:SnesRle1Test.kt$SnesRle1Test$e: Exception</ID>
+    <ID>UnusedParameter:SnesGameRecipes.kt$SnesGameRecipes$rom: ByteArray</ID>
+    <ID>UnusedPrivateMember:PlatformerEngine.kt$PlatformerEngine$private fun blocksSide(s: SmwSolidity)</ID>
+    <ID>UnusedPrivateProperty:PlatformerEngineTest.kt$PlatformerEngineTest$i</ID>
+    <ID>UnusedPrivateProperty:SmwEnemyGraphics.kt$SmwEnemyGraphics$/** Último id de la familia "genérica andadora" (0x00-0x13): la que ANIMA el andar. */ private const val LAST_GENERIC_WALKER = 0x13</ID>
+    <ID>UnusedPrivateProperty:SmwMusicRenderer.kt$SmwMusicRenderer$s</ID>
+    <ID>UseRequire:ZipIo.kt$ZipIo$throw IllegalArgumentException("Entrada de zip no permitida: ${entry.name}")</ID>
+  </CurrentIssues>
+</SmellBaseline>

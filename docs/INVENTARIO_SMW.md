@@ -72,6 +72,19 @@ dispositivo, nunca del repositorio.
    juegas y se superponen a los horneados. Importa de verdad —medido: de 58
    combinaciones id×nivel, **40 salen distintas** del horneado de referencia
    (0x106) y solo 18 coinciden.
+5. **Overworld: se LEE entero, pero NO se EDITA.** Es el hueco más grande de cara
+   al objetivo de "editar el overworld". Medido sobre el código actual:
+   - En `:core` hay **6 lectores** completos: `SmwOverworld` (mapa y capas),
+     `SmwOverworldLevels` (qué nivel hay en cada tesela), `SmwOverworldSprites`,
+     `SmwOverworldWalk` (direcciones de paso y eventos), `SmwOverworldAnim`,
+     `SmwOverworldLayer3`.
+   - En `:app` **solo hay consumo de lectura**: `SnesImportDialog` renderiza la
+     previsualización y exporta PNG/GIF/hojas de sprites, y `OverworldActivity` deja
+     RECORRERLO. No existe ninguna pantalla de edición ni ningún camino de ESCRITURA.
+   - Lo que falta para editarlo: un modelo mutable del overworld (tesela → nivel,
+     direcciones de paso, eventos), una pantalla de edición análoga a la de niveles, y
+     la persistencia en el proyecto. **Nada de esto necesita escribir en la ROM**: el
+     overworld editable sería del PROYECTO, igual que los mapas importados.
 
 ## 🎯 Objetivo "100% de los 3 primeros niveles"
 
@@ -321,6 +334,27 @@ Los Koopas con caparazón (0x00-0x03, 0x05) portan la mecánica de SMW (estados
 - v1: el caparazón es persistente (no revive solo; el Koopa-sin-caparazón que corre a por
   el suyo es un refinamiento pendiente). Render: domo del color del Koopa. Tests en
   `PlatformerEngineTest`.
+
+**RESUELTO con el código del juego — pisar un Koopa NO saca un "Koopa desnudo".** Era la
+única pieza marcada como *DEDUCIDA, no verificada*. Con el fuente C de SMW (snesrev/smw,
+`src/smw_01.c`) se siguió la ruta REAL del pisotón y queda zanjada:
+
+1. `CheckPlayerToNormalSpriteColl_01AA0B` (`01aa0b`) — para un Koopa andando:
+   `spr_decrementing_table1540[k] = 0; spr_current_status[k] = 9;`. Es decir, el **mismo
+   sprite** pasa a caparazón quieto (estado 9) con el temporizador `1540` a **0**.
+2. `SprStatus09_Stunned_019624` (`019624`) — la rutina del caparazón hace
+   `v3 = spr_decrementing_table1540[k]; if (!v3) return;` → con ese temporizador a 0
+   **retorna de inmediato y no genera NADA**. El bloque que crea otro sprite
+   (`FindFreeNormalSpriteSlot_HighPriority` + `kSprStatus09_Stunned_SpriteKoopasSpawn`)
+   solo se alcanza con el temporizador a 1 o 3, que no es el caso del pisotón.
+3. La tabla `kSprStatus09_Stunned_SpriteKoopasSpawn = {0,0,0,0,0,1,2,3}` es el camino
+   **CONTRARIO**: indexada por un Koopa DESNUDO (0x04-0x07) da 0x00-0x03, o sea, un
+   desnudo aturdido se **recompone** en Koopa con caparazón. Nunca al revés.
+
+Conclusión: los **Koopa desnudos (0x04-0x07) son un enemigo COLOCABLE** del nivel (el
+"beach koopa" que corre), no algo que salga al pisar. Se eliminó `spawnNakedKoopa` del
+motor y el test que afirmaba lo contrario. Los 0x04-0x07 arrancan con
+`NAKED_KOOPA_SPEED` y mueren de un pisotón.
 
 **Koopas ALADAS (Parakoopa 0x08-0x0B):** vuelan con los valores EXACTOS de las rutinas
 `GreenParaKoopa`/`RedVertParaKoopa`/`RedHorzParaKoopa` (movidas por `smwStepX`/`smwStepY`

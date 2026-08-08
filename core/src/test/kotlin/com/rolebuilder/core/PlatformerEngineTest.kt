@@ -14,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -518,7 +519,11 @@ class PlatformerEngineTest {
     }
 
     @Test
-    fun `pisar un Koopa deja el caparazon y saca al Koopa desnudo`() {
+    fun `pisar un Koopa lo mete en su caparazon quieto sin sacar Koopa desnudo`() {
+        // Verificado contra el código del juego (smw_01.c): pisar un Koopa (0x00-0x03) lo
+        // deja como caparazón QUIETO (estado 9, temporizador 0), MISMO sprite, sin expulsar
+        // ningún "Koopa desnudo" corriendo. La antigua conducta (sacar un 0x04-0x07 al pisar)
+        // no existe en SMW.
         val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
         }
@@ -527,11 +532,25 @@ class PlatformerEngineTest {
         assertTrue(k.alive, "el Koopa no muere al pisarlo")
         assertTrue(k.shell, "se mete en su caparazón")
         assertFalse(k.shellMoving, "el caparazón queda quieto")
-        // Y el Koopa SALE del caparazón: en SMW no se esconde dentro, huye desnudo.
-        val desnudo = e.enemies.firstOrNull { it.isNakedKoopa }
-        assertNotNull(desnudo, "pisar un Koopa deja el caparazón Y saca al Koopa desnudo")
-        assertEquals(0x04, desnudo!!.id, "el verde (0x00) deja al GreenKoopaNoShell (0x04)")
-        assertTrue(kotlin.math.abs(desnudo.vx) > 0f, "el Koopa desnudo huye, no se queda quieto")
+        // NO aparece ningún Koopa desnudo: pisar no expulsa a nadie.
+        assertNull(e.enemies.firstOrNull { it.isNakedKoopa }, "pisar un Koopa NO saca un Koopa desnudo")
+        assertEquals(1, e.enemies.count { it.alive }, "sigue habiendo un solo enemigo: el caparazón")
+        assertFalse(e.player.dead)
+    }
+
+    @Test
+    fun `el Koopa desnudo colocado corre y muere de un pisoton`() {
+        // El 0x04-0x07 es un enemigo colocable que corre rápido; un pisotón lo mata (no tiene
+        // caparazón que lo proteja).
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x04))) { g ->
+            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        assertTrue(k.isNakedKoopa, "0x04 es un Koopa desnudo")
+        assertTrue(kotlin.math.abs(k.vx) > 0.5f, "corre más rápido que un andador normal")
+        k.vx = 0f // lo fijamos bajo Mario para probar el pisotón de forma determinista
+        e.run(60)
+        assertFalse(k.alive, "el pisotón lo mata: no tiene caparazón")
         assertFalse(e.player.dead)
     }
 

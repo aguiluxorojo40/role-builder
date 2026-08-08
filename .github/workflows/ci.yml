@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  security-events: write # subir el SARIF de detekt a Code Scanning
 
 jobs:
   core-tests:
@@ -24,8 +25,8 @@ jobs:
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Ejecutar tests de core
-        run: ./gradlew :core:test --console=plain
+      - name: Ejecutar tests de core (con cobertura)
+        run: ./gradlew :core:test :core:koverXmlReport :core:koverHtmlReport --console=plain
 
       - name: Publicar informe de tests
         if: always()
@@ -33,6 +34,65 @@ jobs:
         with:
           name: informe-tests-core
           path: core/build/reports/tests/test
+
+      - name: Publicar informe de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-cobertura-core
+          path: core/build/reports/kover/html
+
+      - name: Resumen de cobertura
+        if: always()
+        run: |
+          REPORT=core/build/reports/kover/report.xml
+          [ -f "$REPORT" ] || { echo "Sin informe de cobertura." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          python3 - "$REPORT" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          print("## Cobertura de :core\n")
+          print("| Métrica | Cubierto | Total | % |")
+          print("|---|---:|---:|---:|")
+          for c in root.findall("counter"):
+              cov, mis = int(c.get("covered", 0)), int(c.get("missed", 0))
+              tot = cov + mis
+              pct = f"{100*cov/tot:.1f}%" if tot else "-"
+              print(f"| {c.get('type').title()} | {cov} | {tot} | {pct} |")
+          PY
+
+  analisis-estatico:
+    name: Análisis estático (detekt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # La baseline (config/detekt/baseline.xml) tiene la deuda YA existente, así que
+      # esto solo se pone rojo con problemas NUEVOS.
+      - name: Ejecutar detekt
+        run: ./gradlew :core:detekt --console=plain
+
+      - name: Subir SARIF a Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: core/build/reports/detekt/detekt.sarif
+          category: detekt
+
+      - name: Publicar informe de detekt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-detekt
+          path: core/build/reports/detekt
 
   app-build:
     name: Compilar APK (:app)

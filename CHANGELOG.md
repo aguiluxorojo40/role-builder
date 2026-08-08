@@ -11,6 +11,36 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 
 ---
 
+## [Sin publicar] — Koopa verificado contra el juego, y auditoría en CI
+
+### Corregido
+- **Pisar un Koopa NO saca un "Koopa desnudo" corriendo.** Era la última pieza del
+  motor marcada como *deducida, no verificada*, y estaba mal. Con el fuente C de SMW
+  (`smw_01.c`) se siguió la ruta real del pisotón: `CheckPlayerToNormalSpriteColl_01AA0B`
+  deja `1540 = 0` y `status = 9` sobre el MISMO sprite (caparazón quieto), y
+  `SprStatus09_Stunned_019624` retorna de inmediato con ese temporizador a 0, sin generar
+  ningún sprite. La tabla `kSprStatus09_Stunned_SpriteKoopasSpawn` es el camino contrario
+  (un desnudo aturdido se recompone en Koopa con caparazón). Se eliminó `spawnNakedKoopa`
+  y el test que afirmaba la conducta inventada. Detalle completo en
+  [`docs/INVENTARIO_SMW.md`](docs/INVENTARIO_SMW.md#mecánica-de-caparazón-de-koopa-motor).
+- **Los Koopa desnudos (0x04-0x07) son un enemigo colocable**, no un subproducto del
+  pisotón: arrancan con `NAKED_KOOPA_SPEED` y mueren de un pisotón.
+
+### Añadido
+- **Análisis estático (detekt)** sobre `:core`, con config propia
+  (`config/detekt/detekt.yml`, tolerante con las funciones largas de un port 1:1) y
+  **baseline** de la deuda existente: CI solo se pone rojo con problemas NUEVOS. El
+  informe sube a **GitHub Code Scanning** en formato SARIF.
+- **Cobertura de tests (kover)** en CI, con resumen en el propio job y HTML como
+  artefacto. Punto de partida medido: **52.9% de líneas** de `:core`.
+- **CodeQL** (`java-kotlin`) y **Dependabot** (Gradle + acciones, agrupado y mensual
+  para no generar ruido).
+
+### Notas de investigación
+- Se documenta que el **overworld se lee entero pero no se edita**: 6 lectores en `:core`
+  y solo consumo de lectura en la app (previsualizar, exportar, recorrer). Es el hueco
+  principal para el objetivo de editar el overworld.
+
 ## [0.12.0] — 2026-07-15 — Audio fiel, casa fantasma y nombres reales
 
 ### Corregido

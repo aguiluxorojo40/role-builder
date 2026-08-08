@@ -1,0 +1,75 @@
+# Config de detekt para Role Builder. Se combina con la config por defecto
+# (buildUponDefaultConfig = true): aquí solo van los AJUSTES propios.
+#
+# Un motor de juego portado 1:1 desde ensamblador tiene, a propósito, funciones
+# largas y ficheros grandes (cada rutina del original es un bloque). Por eso se
+# relajan las métricas de tamaño, pero se mantiene lo que sí importa: bugs
+# potenciales, código muerto, y estilo peligroso.
+
+build:
+  maxIssues: 0 # con baseline, esto solo cuenta problemas NUEVOS
+  excludeCorrectable: false
+
+complexity:
+  active: true
+  LongMethod:
+    active: true
+    threshold: 250
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 12
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 60
+  LargeClass:
+    active: true
+    threshold: 1200
+  NestedBlockDepth:
+    active: true
+    threshold: 8
+  TooManyFunctions:
+    active: false
+
+style:
+  active: true
+  MagicNumber:
+    active: false # un port de SMW está lleno de constantes de la ROM a propósito
+  ReturnCount:
+    active: true
+    max: 12
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+    excludeCommentStatements: true
+  WildcardImport:
+    active: false
+  UnusedPrivateMember:
+    active: true
+  ForbiddenComment:
+    active: false
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    # Los tests usan nombres con espacios entre backticks; y el código permite
+    # nombres con dígitos hex de rutinas del original (p. ej. sub_1891F).
+    functionPattern: '[a-zA-Z_][a-zA-Z0-9_]*'
+  VariableNaming:
+    active: false
+
+exceptions:
+  active: true
+  TooGenericExceptionCaught:
+    active: false
+  SwallowedException:
+    active: true
+  TooGenericExceptionThrown:
+    active: true
+
+performance:
+  active: true
+
+potential-bugs:
+  active: true
