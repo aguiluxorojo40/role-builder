@@ -11,34 +11,43 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 
 ---
 
-## [Sin publicar] — Koopa verificado contra el juego, y auditoría en CI
+## [Sin publicar] — Los ids del Koopa estaban invertidos, y auditoría en CI
 
 ### Corregido
-- **Pisar un Koopa NO saca un "Koopa desnudo" corriendo.** Era la última pieza del
-  motor marcada como *deducida, no verificada*, y estaba mal. Con el fuente C de SMW
-  (`smw_01.c`) se siguió la ruta real del pisotón: `CheckPlayerToNormalSpriteColl_01AA0B`
-  deja `1540 = 0` y `status = 9` sobre el MISMO sprite (caparazón quieto), y
-  `SprStatus09_Stunned_019624` retorna de inmediato con ese temporizador a 0, sin generar
-  ningún sprite. La tabla `kSprStatus09_Stunned_SpriteKoopasSpawn` es el camino contrario
-  (un desnudo aturdido se recompone en Koopa con caparazón). Se eliminó `spawnNakedKoopa`
-  y el test que afirmaba la conducta inventada. Detalle completo en
-  [`docs/INVENTARIO_SMW.md`](docs/INVENTARIO_SMW.md#mecánica-de-caparazón-de-koopa-motor).
-- **Los Koopa desnudos (0x04-0x07) son un enemigo colocable**, no un subproducto del
-  pisotón: arrancan con `NAKED_KOOPA_SPEED` y mueren de un pisotón.
+- **Los ids del Koopa estaban INVERTIDOS**, y era la causa raíz de que el caparazón no
+  apareciera por ninguna parte. Los Koopa **con** caparazón son `0x04-0x07`; los `0x00-0x03`
+  son los que van **sin** él (el "beach koopa" naranja con los pies de color). Verificado
+  por tres vías independientes: el bit `0x40` de `kSprXXX_Generic_Spr0to13Prop` (dibujo de
+  dos teselas apiladas = el Koopa alto que lleva caparazón) está en `0x04-0x0B` y no en
+  `0x00-0x03`; el bloque de teselas del id `0x00` está documentado como *"Shell-less Koopa"*;
+  y el volcado de la propia ROM, donde en `0x00-0x03` no hay caparazón y en `0x05` sí.
+- **El giro en el borde** (`turnsAtLedge`) ya no es una lista a mano: sale del bit `0x02` de
+  `Spr0to13Prop`, como en el juego. Da `0x01`, `0x02`, `0x05` y `0x06` — el rojo y el azul,
+  con y sin caparazón — y **no** las aladas, que era donde estaba puesto antes.
+- **Velocidad del Koopa desnudo**: ±4 px/f exactos (`kSprStatus09_Stunned_DATA_0197AD` =
+  `{0xC0, 0x40}`), en sentido contrario a Mario. Antes eran 1.5 px/f a ojo.
+- **Gracia de contacto al salir del caparazón** (`spr_decrementing_table154c` = 16): el Koopa
+  desnudo nace bajo los pies de Mario y sin ella lo mataba en el mismo fotograma del pisotón.
 
 ### Añadido
-- **Análisis estático (detekt)** sobre `:core`, con config propia
-  (`config/detekt/detekt.yml`, tolerante con las funciones largas de un port 1:1) y
-  **baseline** de la deuda existente: CI solo se pone rojo con problemas NUEVOS. El
-  informe sube a **GitHub Code Scanning** en formato SARIF.
-- **Cobertura de tests (kover)** en CI, con resumen en el propio job y HTML como
-  artefacto. Punto de partida medido: **52.9% de líneas** de `:core`.
-- **CodeQL** (`java-kotlin`) y **Dependabot** (Gradle + acciones, agrupado y mensual
-  para no generar ruido).
+- **El gráfico REAL del caparazón**, en vez del domo de color plano: `SmwEnemyGraphics.
+  shellImage()` lo saca de la ROM con la paleta del nivel (port de `StunnedShellGFXRt_01980F`
+  + `GenericGFXRtDraw1Tile16x16`), con el fotograma quieto (6) y el ciclo de giro `{6,7,8,7}`.
+- **Los Koopa `0x04`, `0x06` y `0x07` al catálogo curado** (solo estaba el `0x05`, que por eso
+  era el único cuyo caparazón se podía volcar). Se añaden AL FINAL: el orden de `curatedIds`
+  fija los fotogramas del atlas horneado.
+- **Herramienta `:core:dumpShellFrames`**: vuelca los fotogramas OAM de los Koopas y los
+  caparazones desde la ROM, para MIRARLOS en vez de deducirlos. Es la que destapó todo esto.
+- **Análisis estático (detekt)** sobre `:core`, con config propia y **baseline** de la deuda
+  existente: CI solo se pone rojo con problemas NUEVOS. El informe sube a **GitHub Code
+  Scanning** en SARIF.
+- **Cobertura de tests (kover)** en CI, con resumen en el job y HTML como artefacto. Punto de
+  partida medido: **52.9% de líneas** de `:core`.
+- **CodeQL** (`java-kotlin`) y **Dependabot** (Gradle + acciones, agrupado y mensual).
 
 ### Notas de investigación
-- Se documenta que el **overworld se lee entero pero no se edita**: 6 lectores en `:core`
-  y solo consumo de lectura en la app (previsualizar, exportar, recorrer). Es el hueco
+- Se documenta que el **overworld se lee entero pero no se edita**: 6 lectores en `:core` y
+  solo consumo de lectura en la app (previsualizar, exportar, recorrer). Es el hueco
   principal para el objetivo de editar el overworld.
 
 ## [0.12.0] — 2026-07-15 — Audio fiel, casa fantasma y nombres reales

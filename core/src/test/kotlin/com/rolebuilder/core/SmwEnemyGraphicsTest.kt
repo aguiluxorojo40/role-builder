@@ -25,13 +25,44 @@ class SmwEnemyGraphicsTest {
 
     @Test
     fun `nombres de los enemigos curados`() {
-        assertEquals("Koopa verde", SmwEnemyGraphics.nameOf(0x00))
-        assertEquals("Koopa rojo", SmwEnemyGraphics.nameOf(0x01))
-        assertEquals("Koopa azul", SmwEnemyGraphics.nameOf(0x02))
-        assertEquals("Koopa amarillo", SmwEnemyGraphics.nameOf(0x03))
+        // 0x00-0x03 son los Koopa SIN caparazón; los que lo llevan son 0x04-0x07.
+        assertEquals("Koopa sin caparazon verde", SmwEnemyGraphics.nameOf(0x00))
+        assertEquals("Koopa sin caparazon rojo", SmwEnemyGraphics.nameOf(0x01))
+        assertEquals("Koopa sin caparazon azul", SmwEnemyGraphics.nameOf(0x02))
+        assertEquals("Koopa sin caparazon amarillo", SmwEnemyGraphics.nameOf(0x03))
+        assertEquals("Koopa verde", SmwEnemyGraphics.nameOf(0x04))
+        assertEquals("Koopa rojo", SmwEnemyGraphics.nameOf(0x05))
         assertEquals("Goomba volador", SmwEnemyGraphics.nameOf(0x10))
         assertEquals("Bullet Bill", SmwEnemyGraphics.nameOf(0x1C))
         assertEquals("Boo", SmwEnemyGraphics.nameOf(0x37))
+    }
+
+    @Test
+    fun `los cuatro Koopa CON caparazon estan cubiertos`() {
+        // Faltaban 0x04, 0x06 y 0x07: solo estaba el 0x05, que por eso era el único cuyo
+        // caparazón se podía volcar de la ROM.
+        for (id in 0x04..0x07) {
+            assertTrue(SmwEnemyGraphics.handles(id), "debería cubrir 0x${id.toString(16)}")
+        }
+    }
+
+    @Test
+    fun `shellImage solo acepta los Koopa que llevan caparazon`() {
+        // Sin ROM no se puede pintar, pero el contrato de ids sí se comprueba: los Koopa
+        // SIN caparazón (0x00-0x03) y cualquier otro id no tienen caparazón que dibujar.
+        val romFalsa = ByteArray(0x8000)
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(romFalsa)
+        for (id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x0F, 0x37)) {
+            assertNull(SmwEnemyGraphics.shellImage(romFalsa, hdr, 0x105, id),
+                "0x${id.toString(16)} no lleva caparazón")
+        }
+    }
+
+    @Test
+    fun `los fotogramas del caparazon son los del juego`() {
+        // StunnedShellDraw pinta el 6 (quieto); kKickedShellGFXRt_ShellAniTiles = {6,7,8,7}.
+        assertEquals(6, SmwEnemyGraphics.SHELL_FRAME_STILL)
+        assertEquals(listOf(6, 7, 8, 7), SmwEnemyGraphics.SHELL_SPIN_FRAMES.toList())
     }
 
     @Test

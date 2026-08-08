@@ -118,6 +118,29 @@ object ShellFrameDump {
             println("  Cada celda es una tesela 8×8. Nº de tesela = fila*16 + columna.")
         }
 
+        // EL CAPARAZÓN, por [SmwEnemyGraphics.shellImage]: los cuatro colores × el ciclo de
+        // giro {6,7,8,7}. Es la prueba de que el gráfico real ya se puede pedir por API.
+        val shellRows = (0x04..0x07).mapNotNull { id ->
+            val fr = SmwEnemyGraphics.SHELL_SPIN_FRAMES.toList().mapNotNull { f ->
+                SmwEnemyGraphics.shellImage(rom, header, level, id, f)
+            }
+            if (fr.isEmpty()) null else "caparazon 0x%02X".format(id) to fr
+        }
+        if (shellRows.isNotEmpty()) {
+            val c = 16 * scale
+            val p = 4
+            val sh = ArgbImage(p + shellRows[0].second.size * (c + p), p + shellRows.size * (c + p))
+            for (x in 0 until sh.width) for (y in 0 until sh.height) sh.set(x, y, FONDO)
+            shellRows.forEachIndexed { r, (_, imgs) ->
+                imgs.forEachIndexed { f, img -> blit(img, scale, sh, p + f * (c + p), p + r * (c + p)) }
+            }
+            val sf = File(outDir, "caparazones.png")
+            write(sh, 1, sf)
+            println("CAPARAZONES (0x04-0x07 × ciclo de giro): ${sf.absolutePath}")
+        } else {
+            println("No se pudo pintar ningún caparazón (¿ROM no vanilla?).")
+        }
+
         // Hoja de contacto: una fila por Koopa, una columna por fotograma. Los fotogramas
         // del caparazón van marcados con un borde para localizarlos de un vistazo.
         val cell = 16 * scale

@@ -4,6 +4,7 @@ import com.rolebuilder.core.engine.platformer.BlockAction
 import com.rolebuilder.core.engine.platformer.EnemyBehavior
 import com.rolebuilder.core.engine.platformer.EnemySeed
 import com.rolebuilder.core.engine.platformer.EngineWarp
+import com.rolebuilder.core.engine.platformer.PlatformerEnemy
 import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PowerupKind
 import com.rolebuilder.core.engine.platformer.WarpInput
@@ -174,7 +175,7 @@ class PlatformerEngineTest {
     @Test
     fun `throw-block - lanzar el bloque arrolla a un enemigo`() {
         val e = engineGrab(16, 10, startCol = 2, startRow = 6, grabCol = 3, grabRow = 6, floorRow = 7,
-            seeds = listOf(EnemySeed(9 * 16, 6 * 16, 0x00)))
+            seeds = listOf(EnemySeed(9 * 16, 6 * 16, 0x0F)))
         e.run(20)
         e.running = true; e.tick()          // coge
         assertTrue(e.carriedBlock != null)
@@ -493,8 +494,9 @@ class PlatformerEngineTest {
 
     @Test
     fun `el enemigo cae al suelo y patrulla dandose la vuelta en el borde`() {
-        // Suelo corto (columnas 3..6) en la fila 8; el enemigo empieza sobre él.
-        val e = engineEnemies(12, 10, startCol = 0, startRow = 0, seeds = listOf(EnemySeed(5 * 16, 6 * 16, 0))) { g ->
+        // Suelo corto (columnas 3..6) en la fila 8; el enemigo empieza sobre él. Se usa el
+        // Koopa ROJO con caparazón (0x05), que es de los que giran en el borde (bit 0x02).
+        val e = engineEnemies(12, 10, startCol = 0, startRow = 0, seeds = listOf(EnemySeed(5 * 16, 6 * 16, 0x05))) { g ->
             for (c in 3..6) g[8][c] = SmwSolidity.SOLID
         }
         val enemy = e.enemies.single()
@@ -519,35 +521,39 @@ class PlatformerEngineTest {
     }
 
     @Test
-    fun `pisar un Koopa lo mete en su caparazon quieto sin sacar Koopa desnudo`() {
-        // Verificado contra el código del juego (smw_01.c): pisar un Koopa (0x00-0x03) lo
-        // deja como caparazón QUIETO (estado 9, temporizador 0), MISMO sprite, sin expulsar
-        // ningún "Koopa desnudo" corriendo. La antigua conducta (sacar un 0x04-0x07 al pisar)
-        // no existe en SMW.
-        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
-            for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
+    fun `pisar un Koopa deja el caparazon y saca al Koopa desnudo`() {
+        // Los Koopa CON caparazón son 0x04-0x07 (no 0x00-0x03: ver canShell). Al pisarlos, el
+        // bicho SALE del caparazón y huye; lo que queda en el suelo es el caparazón.
+        // El mapa es ANCHO y el pisotón ocurre lejos de las paredes a propósito: el desnudo
+        // huye a 4 px/f y, en una caja estrecha, rebotaría en la pared y volvería a por Mario
+        // dentro de los 60 fotogramas (que es lo que hace en el juego, pero aquí estorba).
+        val e = engineEnemies(40, 10, startCol = 20, startRow = 5, seeds = listOf(EnemySeed(20 * 16, 8 * 16 - 14, 0x04))) { g ->
+            for (c in 0 until 40) g[9][c] = SmwSolidity.SOLID
         }
         val k = e.enemies.single()
+        assertTrue(k.canShell, "0x04 es un Koopa CON caparazón")
         e.run(60)
         assertTrue(k.alive, "el Koopa no muere al pisarlo")
-        assertTrue(k.shell, "se mete en su caparazón")
+        assertTrue(k.shell, "queda el caparazón")
         assertFalse(k.shellMoving, "el caparazón queda quieto")
-        // NO aparece ningún Koopa desnudo: pisar no expulsa a nadie.
-        assertNull(e.enemies.firstOrNull { it.isNakedKoopa }, "pisar un Koopa NO saca un Koopa desnudo")
-        assertEquals(1, e.enemies.count { it.alive }, "sigue habiendo un solo enemigo: el caparazón")
+        // Y sale el desnudo del MISMO color: 0x04 → 0x00 (kSprStatus09_Stunned_SpriteKoopasSpawn).
+        val desnudo = e.enemies.firstOrNull { it.isNakedKoopa }
+        assertNotNull(desnudo, "pisar un Koopa deja el caparazón Y saca al Koopa desnudo")
+        assertEquals(0x00, desnudo!!.id, "el verde con caparazón (0x04) deja al desnudo verde (0x00)")
+        assertTrue(kotlin.math.abs(desnudo.vx) > 0f, "el Koopa desnudo huye, no se queda quieto")
         assertFalse(e.player.dead)
     }
 
     @Test
     fun `el Koopa desnudo colocado corre y muere de un pisoton`() {
-        // El 0x04-0x07 es un enemigo colocable que corre rápido; un pisotón lo mata (no tiene
-        // caparazón que lo proteja).
-        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x04))) { g ->
+        // El 0x00-0x03 es el "beach koopa": corre rápido y un pisotón lo mata, porque ya no
+        // tiene caparazón que lo proteja.
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
         }
         val k = e.enemies.single()
-        assertTrue(k.isNakedKoopa, "0x04 es un Koopa desnudo")
-        assertTrue(kotlin.math.abs(k.vx) > 0.5f, "corre más rápido que un andador normal")
+        assertTrue(k.isNakedKoopa, "0x00 es un Koopa desnudo")
+        assertEquals(PlatformerEngine.NAKED_KOOPA_SPEED, kotlin.math.abs(k.vx), "corre a 4 px/f")
         k.vx = 0f // lo fijamos bajo Mario para probar el pisotón de forma determinista
         e.run(60)
         assertFalse(k.alive, "el pisotón lo mata: no tiene caparazón")
@@ -555,8 +561,20 @@ class PlatformerEngineTest {
     }
 
     @Test
+    fun `el Koopa rojo y el azul giran en el borde, el verde se tira`() {
+        // Bit 0x02 de kSprXXX_Generic_Spr0to13Prop: giran 0x01/0x02 (desnudos rojo y azul) y
+        // 0x05/0x06 (con caparazón rojo y azul). El verde y el amarillo, no.
+        for (id in intArrayOf(0x01, 0x02, 0x05, 0x06)) {
+            assertTrue(PlatformerEnemy(0f, 0f, id).turnsAtLedge, "0x%02X gira en el borde".format(id))
+        }
+        for (id in intArrayOf(0x00, 0x03, 0x04, 0x07, 0x0A, 0x0B)) {
+            assertFalse(PlatformerEnemy(0f, 0f, id).turnsAtLedge, "0x%02X NO gira en el borde".format(id))
+        }
+    }
+
+    @Test
     fun `tocar de lado un caparazon quieto lo patea`() {
-        val e = engineEnemies(20, 10, startCol = 2, startRow = 7, seeds = listOf(EnemySeed(6 * 16, 8 * 16 - 14, 0x00))) { g ->
+        val e = engineEnemies(20, 10, startCol = 2, startRow = 7, seeds = listOf(EnemySeed(6 * 16, 8 * 16 - 14, 0x04))) { g ->
             for (c in 0 until 20) g[9][c] = SmwSolidity.SOLID
         }
         val k = e.enemies.single()
@@ -570,7 +588,7 @@ class PlatformerEngineTest {
     @Test
     fun `el caparazon deslizandose arrolla a otro enemigo`() {
         val e = engineEnemies(20, 10, startCol = 0, startRow = 0,
-            seeds = listOf(EnemySeed(3 * 16, 8 * 16 - 14, 0x00), EnemySeed(9 * 16, 8 * 16 - 14, 0x0F))) { g ->
+            seeds = listOf(EnemySeed(3 * 16, 8 * 16 - 14, 0x04), EnemySeed(9 * 16, 8 * 16 - 14, 0x0F))) { g ->
             for (c in 0 until 20) g[9][c] = SmwSolidity.SOLID
         }
         val shell = e.enemies[0]; val victim = e.enemies[1]
@@ -620,7 +638,7 @@ class PlatformerEngineTest {
 
     @Test
     fun `pisar un caparazon que se desliza lo para`() {
-        val e = engineEnemies(12, 10, startCol = 5, startRow = 3, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x00))) { g ->
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 3, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x04))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
         }
         val k = e.enemies.single()
@@ -714,7 +732,8 @@ class PlatformerEngineTest {
 
     @Test
     fun `pisar a un enemigo incrementa stompEvents`() {
-        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0))) { g ->
+        // Goomba (0x0F): se pisa y muere sin dejar caparazón, que es lo que mide este test.
+        val e = engineEnemies(12, 10, startCol = 5, startRow = 5, seeds = listOf(EnemySeed(5 * 16, 8 * 16 - 14, 0x0F))) { g ->
             for (c in 0 until 12) g[9][c] = SmwSolidity.SOLID
         }
         e.run(60)
@@ -949,7 +968,7 @@ class PlatformerEngineTest {
             cols, rows, solidityAt = { c, r -> grid[r][c] },
             startPixelX = 2 * 16, startPixelY = 6 * 16 - PlatformerEngine.BIG_HEIGHT.toInt(),
             tuning = tuning.copy(playerHeight = PlatformerEngine.BIG_HEIGHT),
-            enemySeeds = listOf(EnemySeed(6 * 16, 6 * 16 - 14, 0)),
+            enemySeeds = listOf(EnemySeed(6 * 16, 6 * 16 - 14, 0x0F)),
         )
         e.player.fire = true
         e.run(10) // se posa
@@ -1151,7 +1170,7 @@ class PlatformerEngineTest {
             cols, rows, solidityAt = { c, r -> grid[r][c] },
             startPixelX = 5 * 16 - 4, startPixelY = 9 * 16 - 15,
             tuning = tuning,
-            enemySeeds = listOf(EnemySeed(8 * 16, 10 * 16 - 14, 0)), // enemigo cuesta abajo
+            enemySeeds = listOf(EnemySeed(8 * 16, 10 * 16 - 14, 0x0F)), // enemigo cuesta abajo
             slopeOffsetsAt = { c, r ->
                 if (c == 5 && r == 9) {
                     com.rolebuilder.core.snes.SmwSlopes.floorOffsets(com.rolebuilder.core.snes.SmwSlopes.SHAPE_45_DOWN_RIGHT)

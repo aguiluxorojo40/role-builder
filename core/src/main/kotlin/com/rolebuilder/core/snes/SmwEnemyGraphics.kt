@@ -104,8 +104,11 @@ object SmwEnemyGraphics {
      */
     private val NAMES: Map<Int, String> = linkedMapOf(
         // Tanda 0 (el orden fija los fotogramas 0..14 del atlas horneado).
-        0x00 to "Koopa verde", 0x01 to "Koopa rojo", 0x02 to "Koopa azul", 0x03 to "Koopa amarillo",
-        0x05 to "Koopa", 0x0F to "Goomba", 0x10 to "Goomba volador", 0x11 to "Buzzy Beetle",
+        // OJO: 0x00-0x03 son los Koopa SIN caparazón (el "beach koopa"), no los normales.
+        // Los que llevan caparazón son 0x04-0x07 (ver la tanda 6 al final).
+        0x00 to "Koopa sin caparazon verde", 0x01 to "Koopa sin caparazon rojo",
+        0x02 to "Koopa sin caparazon azul", 0x03 to "Koopa sin caparazon amarillo",
+        0x05 to "Koopa rojo", 0x0F to "Goomba", 0x10 to "Goomba volador", 0x11 to "Buzzy Beetle",
         0x1C to "Bullet Bill", 0x29 to "Koopa Kid", 0x2A to "Planta Pirana techo",
         0x2C to "Huevo de Yoshi", 0x4B to "Lakitu de tuberia", 0x4D to "Topo", 0x4E to "Topo",
         // Tanda 1: los ids mas frecuentes de la ROM US aun sin cubrir, verificados
@@ -132,6 +135,11 @@ object SmwEnemyGraphics {
         // 0x4F ya estaba (se recataloga como saltarina); 0x50 es la que escupe fuego (mismo
         // sprite, el disparo es un extended sprite aparte que el motor no simula).
         0x50 to "Planta Pirana de fuego",
+        // Tanda 6: los Koopa CON caparazón que FALTABAN. El 0x05 ya estaba (por eso era el
+        // único que se podía volcar); sus hermanos de color no. Se añaden AL FINAL a
+        // propósito: el orden de [curatedIds] fija los fotogramas del atlas horneado, así que
+        // meterlos en medio desincronizaría el atlas de quien ya lo tenga generado.
+        0x04 to "Koopa verde", 0x06 to "Koopa azul", 0x07 to "Koopa amarillo",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -219,6 +227,38 @@ object SmwEnemyGraphics {
     fun customEnemyImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
         val c = CUSTOM_ENEMIES[spriteId] ?: return null
         return customSprite(rom, header, level, spriteId, c.tiles, c.palRow, c.gfxSetting)
+    }
+
+    /**
+     * Fotogramas del CAPARAZÓN dentro de la tabla OAM genérica, tal y como los elige el
+     * juego: `StunnedShellDraw` ($01:9806) pinta el **6** (quieto) y
+     * `kKickedShellGFXRt_ShellAniTiles` = `{6,7,8,7}` es el ciclo del caparazón GIRANDO.
+     */
+    const val SHELL_FRAME_STILL = 6
+    val SHELL_SPIN_FRAMES = intArrayOf(6, 7, 8, 7)
+
+    /**
+     * Imagen ARGB (16×16) del CAPARAZÓN de un Koopa, con la paleta REAL del [level].
+     * [spriteId] debe ser un Koopa CON caparazón (**0x04-0x07**); [frame] es uno de
+     * [SHELL_SPIN_FRAMES] (por defecto el quieto).
+     *
+     * Port de `StunnedShellGFXRt_01980F` ($01:980F) + `GenericGFXRtDraw1Tile16x16` ($01:9F0D):
+     * el caparazón es UNA sola tesela 16×16 cuyo número sale de
+     * `Tiles[TilesOffset[spriteId] + frame]`, o sea el mismo mecanismo que cualquier otro
+     * fotograma del sprite. La razón de que costara tanto encontrarlo es que se buscaba en
+     * los ids 0x00-0x03, que son los Koopa SIN caparazón y por tanto no lo tienen.
+     *
+     * Devuelve null si el id no lleva caparazón o faltan datos del nivel.
+     */
+    fun shellImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int,
+                   frame: Int = SHELL_FRAME_STILL): ArgbImage? {
+        if (spriteId !in 0x04..0x07) return null
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        val idx = OAM_OFFSET.getOrElse(spriteId) { return null } + frame
+        if (idx !in TILE_BYTES.indices) return null
+        val img = ArgbImage(16, 16)
+        return if (art.paintTile(TILE_BYTES[idx] + art.page * 0x100, img, 0, 0,
+                size16 = true, xflip = false)) img else null
     }
 
     /** DEPURACIÓN: vuelca los primeros [count] fotogramas de la tabla OAM de [spriteId],

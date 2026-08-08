@@ -335,26 +335,34 @@ Los Koopas con caparazón (0x00-0x03, 0x05) portan la mecánica de SMW (estados
   el suyo es un refinamiento pendiente). Render: domo del color del Koopa. Tests en
   `PlatformerEngineTest`.
 
-**RESUELTO con el código del juego — pisar un Koopa NO saca un "Koopa desnudo".** Era la
-única pieza marcada como *DEDUCIDA, no verificada*. Con el fuente C de SMW (snesrev/smw,
-`src/smw_01.c`) se siguió la ruta REAL del pisotón y queda zanjada:
+**RESUELTO, y la conclusión intermedia era FALSA. Los ids estaban INVERTIDOS.**
 
-1. `CheckPlayerToNormalSpriteColl_01AA0B` (`01aa0b`) — para un Koopa andando:
-   `spr_decrementing_table1540[k] = 0; spr_current_status[k] = 9;`. Es decir, el **mismo
-   sprite** pasa a caparazón quieto (estado 9) con el temporizador `1540` a **0**.
-2. `SprStatus09_Stunned_019624` (`019624`) — la rutina del caparazón hace
-   `v3 = spr_decrementing_table1540[k]; if (!v3) return;` → con ese temporizador a 0
-   **retorna de inmediato y no genera NADA**. El bloque que crea otro sprite
-   (`FindFreeNormalSpriteSlot_HighPriority` + `kSprStatus09_Stunned_SpriteKoopasSpawn`)
-   solo se alcanza con el temporizador a 1 o 3, que no es el caso del pisotón.
-3. La tabla `kSprStatus09_Stunned_SpriteKoopasSpawn = {0,0,0,0,0,1,2,3}` es el camino
-   **CONTRARIO**: indexada por un Koopa DESNUDO (0x04-0x07) da 0x00-0x03, o sea, un
-   desnudo aturdido se **recompone** en Koopa con caparazón. Nunca al revés.
+Hubo un paso en falso que conviene dejar escrito para no repetirlo: se leyó
+`CheckPlayerToNormalSpriteColl_01AA0B` (que pone el temporizador a 0 y no genera nada) y se
+concluyó que pisar un Koopa no saca ningún desnudo. Es la rama EQUIVOCADA. Un pisotón sobre
+un Koopa VIVO (`status == 8`) pasa por `CheckPlayerToNormalSpriteColl_SetStunnedTimer`, que
+pone `1540 = 2`; al decrementar hasta 1, `SprStatus09_Stunned_019624` sí entra en el bloque
+que busca ranura libre y **crea el Koopa desnudo**. O sea: el Koopa SÍ sale del caparazón y
+huye, a ±4 px/f (`DATA_0197AD` = `{0xC0, 0x40}`) y con 16 fotogramas de gracia sin tocar a
+Mario (`spr_decrementing_table154c`), porque nace bajo sus pies.
 
-Conclusión: los **Koopa desnudos (0x04-0x07) son un enemigo COLOCABLE** del nivel (el
-"beach koopa" que corre), no algo que salga al pisar. Se eliminó `spawnNakedKoopa` del
-motor y el test que afirmaba lo contrario. Los 0x04-0x07 arrancan con
-`NAKED_KOOPA_SPEED` y mueren de un pisotón.
+La causa raíz de tres intentos fallidos de sacar el gráfico del caparazón era otra: **los
+ids estaban al revés**. Los Koopa CON caparazón son **0x04-0x07** y los que van SIN él son
+**0x00-0x03** (el "beach koopa" naranja con los pies de color). Tres vías independientes:
+
+1. `kSprXXX_Generic_Spr0to13Prop` ($01): el bit `0x40` = "se dibuja como DOS teselas 16×16
+   apiladas" (el Koopa ALTO, el que lleva caparazón) está en 0x04-0x0B, y NO en 0x00-0x03,
+   que van de UNA sola tesela.
+2. El bloque de teselas del id 0x00 (`C8,CA,CA,CE,CC,86,4E`, $019B8C) está documentado en la
+   comunidad como *"Shell-less Koopa"*.
+3. El volcado de la propia ROM con `:core:dumpShellFrames`: en 0x00-0x03 no hay caparazón por
+   ninguna parte, y en 0x04-0x07 los fotogramas 6/7/8 son el caparazón de su color.
+
+Con el id correcto, la fórmula de siempre funciona: el caparazón es UNA tesela 16×16 cuyo
+número es `Tiles[TilesOffset[id] + 1602]`, con `1602` = 6 (quieto) y `{6,7,8,7}` (girando).
+Expuesto como `SmwEnemyGraphics.shellImage()`. También se corrigió el giro en el borde
+(`turnsAtLedge`), que ahora sale del bit `0x02` de esa misma tabla: rojo y azul, con y sin
+caparazón, y no las aladas.
 
 **Koopas ALADAS (Parakoopa 0x08-0x0B):** vuelan con los valores EXACTOS de las rutinas
 `GreenParaKoopa`/`RedVertParaKoopa`/`RedHorzParaKoopa` (movidas por `smwStepX`/`smwStepY`

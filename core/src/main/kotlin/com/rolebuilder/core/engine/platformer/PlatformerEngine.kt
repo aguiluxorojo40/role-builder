@@ -249,11 +249,16 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var bossPhase = 0
     /**
      * ¿Se da la vuelta al llegar al BORDE de una plataforma, en vez de tirarse? Es la
-     * diferencia clásica del Koopa ROJO (0x01, y sus variantes con alas verticales) frente al
-     * VERDE y los demás andadores, que caminan hasta caerse. Dos enemigos que se dibujan casi
-     * igual pero NO se juegan igual.
+     * diferencia clásica del Koopa ROJO frente al VERDE, que camina hasta caerse: dos
+     * enemigos que se dibujan casi igual pero NO se juegan igual.
+     *
+     * Sale del BIT 0x02 de [PlatformerEngine.SPR_0TO13_PROP], que es lo que usa el juego
+     * (`SprXXX_Generic_018B43`, $01:8B43): en la rama de "no hay suelo debajo", si ese bit
+     * está puesto llama a `ChangeNormalSpriteDirection`. Da 0x01, 0x02, 0x05 y 0x06 — o sea
+     * el ROJO y el AZUL, con y sin caparazón, y NO las aladas. Antes era una lista a mano
+     * (`0x01, 0x0A, 0x0B`) que se equivocaba en las dos direcciones.
      */
-    val turnsAtLedge = id == 0x01 || id == 0x0A || id == 0x0B
+    val turnsAtLedge = (PlatformerEngine.SPR_0TO13_PROP.getOrElse(id) { 0 } and 0x02) != 0
 
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
@@ -281,23 +286,30 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var spat = false
 
     /**
-     * ¿Este Koopa deja CAPARAZÓN al pisarlo? Los de caparazón (0x00-0x03, 0x05) y también
-     * las Koopas ALADAS (0x08-0x0B), que al pisarlas pierden las alas y quedan de andador
+     * ¿Este Koopa deja CAPARAZÓN al pisarlo? Los Koopa Troopa **0x04-0x07** (uno por color)
+     * y las Koopas ALADAS (0x08-0x0B), que al pisarlas pierden las alas y quedan de andador
      * con caparazón.
+     *
+     * ⚠ OJO, esto estuvo INVERTIDO mucho tiempo (se creía que los de caparazón eran
+     * 0x00-0x03). Verificado por tres vías independientes:
+     *  1. `kSprXXX_Generic_Spr0to13Prop` ($01): el bit 0x40 = "se dibuja como DOS teselas
+     *     16×16 APILADAS" (el Koopa ALTO, que lleva caparazón) está en 0x04-0x0B, y NO en
+     *     0x00-0x03, que van de UNA sola tesela (bajos, sin caparazón).
+     *  2. El bloque de teselas del id 0x00 (`C8,CA,CA,CE,CC,86,4E`, $019B8C) está
+     *     documentado como "Shell-less Koopa".
+     *  3. Volcando los fotogramas de la ROM (`:core:dumpShellFrames`): en 0x00-0x03 no hay
+     *     caparazón por ninguna parte, y en 0x05 los fotogramas 6/7/8 son el caparazón.
      */
-    val canShell = id in intArrayOf(0x00, 0x01, 0x02, 0x03, 0x08, 0x09, 0x0A, 0x0B)
+    val canShell = id in 0x04..0x0B
 
     /**
-     * Koopa SIN CAPARAZÓN (0x04-0x07, uno por color). Es un enemigo COLOCABLE en el nivel
-     * (el "beach koopa" que corre fuera de su caparazón), NO algo que salga al pisar a otro
-     * Koopa (eso se verificó falso contra el código del juego). Va más rápido
+     * Koopa SIN CAPARAZÓN (**0x00-0x03**, uno por color): el "beach koopa" naranja con los
+     * pies de color. Es a la vez un enemigo COLOCABLE y lo que sale corriendo cuando pisas
+     * a un Koopa con caparazón (ver [PlatformerEngine.spawnNakedKoopa]). Va más rápido
      * ([PlatformerEngine.NAKED_KOOPA_SPEED]) y muere de un pisotón, porque ya no tiene con
      * qué protegerse.
-     *
-     * Antes el 0x05 estaba en [canShell] y al pisarlo salía un caparazón fantasma de un
-     * Koopa que ya no lo tenía.
      */
-    val isNakedKoopa = id in 0x04..0x07
+    val isNakedKoopa = id in 0x00..0x03
     /** El Koopa está en su CAPARAZÓN (estado 9 quieto / A pateado de SMW). */
     var shell = false
     /** El caparazón se DESLIZA (pateado). Si false y [shell], está quieto en el suelo. */
@@ -305,10 +317,23 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     /** Gracia tras patear: fotogramas en que el caparazón que sale disparado no hiere a Mario. */
     var shellKickGrace = 0
 
+    /**
+     * Fotogramas en que este enemigo NO interactúa con Mario (port de
+     * `spr_decrementing_table154c`, que el juego consulta al principio de
+     * `CheckPlayerToNormalSpriteColl_01A80F` y, si vale ≠ 0, se salta la colisión).
+     * Se usa al sacar al Koopa desnudo, que nace justo debajo de Mario: sin esta gracia
+     * lo mataría en el mismo fotograma del pisotón. El juego le pone 16.
+     */
+    var contactGrace = 0
+
     /** Koopa ALADA (Parakoopa 0x08-0x0B): vuela hasta que la pisan y pierde las alas. */
     var winged = id in 0x08..0x0B
-    /** Id del Koopa de suelo equivalente (para color de caparazón / dibujo sin alas). */
-    val koopaColorId = when (id) { 0x08, 0x09 -> 0x00; 0x0A, 0x0B -> 0x01; else -> id }
+    /**
+     * Id del Koopa de suelo equivalente (para color de caparazón / dibujo sin alas): las
+     * aladas VERDES (0x08/0x09) quedan de Koopa verde con caparazón (0x04) y las ROJAS
+     * (0x0A/0x0B) de Koopa rojo con caparazón (0x05).
+     */
+    val koopaColorId = when (id) { 0x08, 0x09 -> 0x04; 0x0A, 0x0B -> 0x05; else -> id }
     /** Estado del vuelo (port EXACTO de las rutinas ParaKoopa $01), con sus nombres de RAM. */
     var flyPhase = 0    // SpriteMisc1570: temporizador del bob del aleteo (bit 0x20)
     var pSubX = 0       // acumulador de subpíxeles en X (como pSubY en Y)
@@ -319,7 +344,7 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
 
     init {
         if (behavior != EnemyBehavior.WALKER && behavior != EnemyBehavior.BOSS) vx = 0f
-        // El Koopa desnudo (0x04-0x07) corre más rápido que un andador normal.
+        // El Koopa desnudo (0x00-0x03) corre más rápido que un andador normal.
         if (isNakedKoopa) vx = -PlatformerEngine.NAKED_KOOPA_SPEED
         // Los jefes son grandes: caja de colisión mayor (editable en caliente). Patrullan
         // despacio como un andador robusto.
@@ -1330,6 +1355,8 @@ class PlatformerEngine(
                 if (e.squashTimer > 0) e.squashTimer--
                 continue
             }
+            // Gracia de contacto con Mario (spr_decrementing_table154c): cuenta atrás.
+            if (e.contactGrace > 0) e.contactGrace--
             when (e.behavior) {
                 EnemyBehavior.PIPE_PIRANHA -> updatePipePiranha(e)
                 EnemyBehavior.JUMPING_PIRANHA -> updateJumpingPiranha(e)
@@ -1511,15 +1538,40 @@ class PlatformerEngine(
         piranhaFireEvents++
     }
 
-    // NOTA (verificado con el código del juego, smw_01.c): pisar un Koopa CON caparazón
-    // (0x00-0x03) NO expulsa ningún "Koopa desnudo" que huya. En SMW la ruta es
-    // CheckPlayerToNormalSpriteColl_01AA0B → { 1540 = 0; status = 9 }: el mismo sprite pasa
-    // a caparazón quieto (estado 9) con temporizador 0, y SprStatus09_Stunned_019624 sale
-    // de inmediato cuando ese temporizador vale 0 (no genera nada). La tabla
-    // kSprStatus09_Stunned_SpriteKoopasSpawn = {0,0,0,0,0,1,2,3} es el camino CONTRARIO
-    // (un Koopa desnudo 0x04-0x07 aturdido con temporizador ≠ 0 se recompone en Koopa con
-    // caparazón 0x00-0x03), no el del pisotón. Por eso se eliminó el antiguo spawnNakedKoopa.
-    // Los Koopa desnudos (0x04-0x07) siguen existiendo como enemigo COLOCABLE en el nivel.
+    /**
+     * Saca corriendo al KOOPA DESNUDO cuando pisas a un Koopa CON caparazón: el caparazón se
+     * queda en el suelo y el bicho huye. Port de `SprStatus09_Stunned_019624` ($01:9624).
+     *
+     * Ruta REAL del pisotón, que conviene dejar escrita porque es fácil leer la rama
+     * equivocada: `CheckPlayerToNormalSpriteColl_01A80F` mira el estado del sprite y, si
+     * está VIVO (`status == 8`, que es el caso de un Koopa andando), llama a
+     * `CheckPlayerToNormalSpriteColl_SetStunnedTimer` → `1540 = 2; status = 9`. Con ese
+     * temporizador a 2, `SprStatus09_Stunned_019624` lo decrementa y al valer 1 entra en el
+     * bloque que BUSCA UNA RANURA LIBRE y crea el Koopa desnudo. (La otra rama,
+     * `_01AA0B`, es la que pone el temporizador a 0 y no genera nada, pero solo se toma
+     * cuando el sprite NO está en estado normal.)
+     *
+     * El id sale de `kSprStatus09_Stunned_SpriteKoopasSpawn` = {0,0,0,0,0,1,2,3}, indexada
+     * por el id del Koopa: 0x04→0x00, 0x05→0x01, 0x06→0x02, 0x07→0x03. O sea, el desnudo
+     * del MISMO color, que es justo `id - 4`.
+     *
+     * Huye ALEJÁNDOSE de Mario a ±[NAKED_KOOPA_SPEED] (`kSprStatus09_Stunned_DATA_0197AD`
+     * = {0xC0, 0x40} = ∓4 px/f, elegido con `CheckPlayerPositionRelativeToSprite_X`).
+     * Las Koopas aladas usan su color de suelo ([PlatformerEnemy.koopaColorId]), porque al
+     * perder las alas quedan de Koopa normal.
+     */
+    private fun spawnNakedKoopa(shell: PlatformerEnemy) {
+        // 0x04-0x07 → 0x00-0x03 (mismo color). Las aladas pasan antes por koopaColorId.
+        val nakedId = (shell.koopaColorId - 4).coerceIn(0x00, 0x03)
+        val n = PlatformerEnemy(shell.x, shell.y, nakedId)
+        val marioCx = player.x + tuning.playerWidth / 2f
+        // Mario a la izquierda → huye a la derecha, y al revés (DATA_0197AD).
+        n.vx = if (marioCx < shell.x + shell.width / 2f) NAKED_KOOPA_SPEED else -NAKED_KOOPA_SPEED
+        // Nace justo bajo los pies de Mario: sin gracia lo mataría en el mismo fotograma
+        // del pisotón. El juego le pone `spr_decrementing_table154c[j] = 16`.
+        n.contactGrace = NAKED_KOOPA_SPAWN_GRACE
+        pendingSpawns.add(n)
+    }
 
     /** Bowser deja caer una bola de bolos (0xA1) desde su posición; rebota y rueda al aterrizar. */
     private fun dropBowlingBall(e: PlatformerEnemy) {
@@ -1970,6 +2022,8 @@ class PlatformerEngine(
             if (!e.alive) continue
             // La Piraña METIDA en el tubo no hiere ni colisiona (está a resguardo).
             if (e.hidden) continue
+            // Gracia de contacto (spr_decrementing_table154c): el enemigo aún no interactúa.
+            if (e.contactGrace > 0) continue
             val overlap = p.x < e.x + e.width && p.x + pw > e.x &&
                 p.y < e.y + e.height && p.y + ph > e.y
             if (!overlap) continue
@@ -2006,20 +2060,18 @@ class PlatformerEngine(
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Koopa con caparazón (0x00-0x03): pisarlo lo mete en su caparazón y lo deja
-                // QUIETO en el suelo (estado 9 de SMW), MISMO sprite, sin expulsar a nadie.
-                // Verificado en smw_01.c: CheckPlayerToNormalSpriteColl_01AA0B pone temporizador
-                // 1540 = 0 y status = 9; con ese temporizador a 0, la rutina del caparazón
-                // (SprStatus09_Stunned_019624) retorna sin generar ningún Koopa desnudo.
+                // Koopa con caparazón (0x04-0x07): pisarlo NO lo mete dentro. En SMW el Koopa
+                // SALE del caparazón y huye corriendo (el "Koopa desnudo", 0x00-0x03 según el
+                // color); lo que queda en el suelo es el caparazón. Ver [spawnNakedKoopa].
                 e.canShell -> {
                     if (stompFromAbove) {
                         e.shell = true; e.shellMoving = false; e.vx = 0f
+                        spawnNakedKoopa(e)
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
-                // Koopa DESNUDO (0x04-0x07): enemigo colocable que corre sin caparazón. Un
-                // pisotón lo mata (simplificación; en SMW se recompondría en Koopa con
-                // caparazón), y de lado hiere.
+                // Koopa DESNUDO (0x00-0x03): ya no tiene caparazón que lo proteja, así que un
+                // pisotón lo mata como a cualquier otro bicho (y de lado hiere).
                 e.isNakedKoopa -> {
                     if (stompFromAbove) { damageEnemy(e); bounceMario(); stompEvents++ }
                     else { hurtPlayer(); return }
@@ -2408,18 +2460,39 @@ class PlatformerEngine(
         const val SHELL_SPEED = 32f / 16f
 
         /**
+         * Velocidad del KOOPA DESNUDO al huir (px/f), valor EXACTO del juego:
+         * `kSprStatus09_Stunned_DATA_0197AD` = `{0xC0, 0x40}` = ∓0x40 = ∓64 unidades =
+         * **4 px/f**, en sentido contrario a Mario. Corre de verdad —más rápido que un
+         * caparazón pateado— que es justo por lo que se escapa si no te das prisa.
+         */
+        const val NAKED_KOOPA_SPEED = 64f / 16f
+
+        /**
+         * Fotogramas de gracia sin tocar a Mario del Koopa desnudo recién salido del
+         * caparazón: `spr_decrementing_table154c[j] = 16` en `SprStatus09_Stunned_019624`.
+         */
+        const val NAKED_KOOPA_SPAWN_GRACE = 16
+
+        /**
          * Velocidad del caparazón LANZADO desde los brazos (px/f), que NO es la de la
          * patada: `kSprStatus0B_Carried_ShellXSpeed` = `{0xD2, 0x2E, 0xCC, 0x34}` → ±46
          * andando y ±52 corriendo.
          */
-        /**
-         * Velocidad del KOOPA DESNUDO al huir (px/f). En SMW corre MÁS que el Koopa con
-         * caparazón —por eso se escapa— pero menos que un caparazón pateado.
-         */
-        const val NAKED_KOOPA_SPEED = 24f / 16f
-
         const val SHELL_THROW_SPEED = 46f / 16f
         const val SHELL_THROW_SPEED_RUNNING = 52f / 16f
+
+        /**
+         * `kSprXXX_Generic_Spr0to13Prop` ($01:8AF6): propiedades de dibujo/conducta de los
+         * ids 0x00-0x13. Los bits que usamos:
+         *  - `0x02` = se DA LA VUELTA cuando no hay suelo delante (el giro en el borde del
+         *    Koopa rojo y azul) → [PlatformerEnemy.turnsAtLedge].
+         *  - `0x40` = se dibuja como DOS teselas 16×16 APILADAS: es el Koopa ALTO, el que
+         *    LLEVA CAPARAZÓN (0x04-0x0B). Es la prueba de que 0x00-0x03 van SIN caparazón.
+         */
+        val SPR_0TO13_PROP = intArrayOf(
+            0x00, 0x02, 0x03, 0x0d, 0x40, 0x42, 0x43, 0x45, 0x50, 0x50,
+            0x50, 0x5c, 0xdd, 0x05, 0x00, 0x20, 0x20, 0x00, 0x00, 0x00,
+        )
 
         /**
          * ANIMACIÓN del caparazón que se desliza: cicla 4 fotogramas
