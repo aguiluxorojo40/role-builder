@@ -142,3 +142,11 @@ tasks.register<JavaExec>("dumpHud") {
     mainClass.set("com.rolebuilder.core.tools.HudDump")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("dumpKoopaStacked") {
+    group = "verification"
+    description = "Pinta 0x00-0x07 forzando DOS teselas apiladas (quien lleva caparazon)"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.KoopaStackedDump")
+    systemProperty("java.awt.headless", "true")
+}

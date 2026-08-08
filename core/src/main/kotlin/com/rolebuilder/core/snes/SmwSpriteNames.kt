@@ -10,9 +10,22 @@ package com.rolebuilder.core.snes
 object SmwSpriteNames {
 
     val names: Map<Int, String> = mapOf(
-        0x00 to "GreenKoopa", 0x01 to "RedKoopa", 0x02 to "BlueKoopa", 0x03 to "YellowKoopa",
-        0x04 to "GreenKoopaNoShell", 0x05 to "RedKoopaNoShell", 0x06 to "BlueKoopaNoShell",
-        0x07 to "YellowKoopaNoShell", 0x08 to "GreenParakoopa", 0x09 to "RedParakoopa",
+        // ⚠ Estos ocho estaban INVERTIDOS: 0x00-0x03 figuraban como los Koopa normales y
+        // 0x04-0x07 como los "NoShell". Es al revés, y se sostiene en tres cosas:
+        //  · La tabla de despacho del juego (`kSprStatus08SpriteNormalPtrs`, banco $01) manda
+        //    los ids 0x00-0x03 a `SprXXX_Generic_NakedKoopaEntry`, cuya rutina persigue y
+        //    patea caparazones (`spr_current_status == 9/10`) — la conducta del beach koopa.
+        //  · `kSprXXX_Generic_Spr0to13Prop`: el bit 0x40 (dibujar DOS teselas apiladas) NO
+        //    está en 0x00-0x03, así que el juego los pinta con UNA sola tesela — y esa tesela,
+        //    sacada de la ROM, es un bicho naranja SIN caparazón. Ese es el sprite entero.
+        //  · `kSprStatus09_Stunned_SpriteKoopasSpawn` = {0,0,0,0,0,1,2,3} mapea 0x05→0x01,
+        //    0x06→0x02, 0x07→0x03: de CON caparazón a SIN caparazón, mismo color.
+        // El nombre equivocado no era inofensivo: al listar los sprites de un nivel decía
+        // "RedKoopaNoShell" de los 8 Koopa rojos CON caparazón de YI-2 (0x106).
+        0x00 to "GreenKoopaNoShell", 0x01 to "RedKoopaNoShell", 0x02 to "BlueKoopaNoShell",
+        0x03 to "YellowKoopaNoShell",
+        0x04 to "GreenKoopa", 0x05 to "RedKoopa", 0x06 to "BlueKoopa",
+        0x07 to "YellowKoopa", 0x08 to "GreenParakoopa", 0x09 to "RedParakoopa",
         0x0A to "GreenFlyingParakoopa", 0x0B to "BobOmb", 0x0C to "BulletBillGenerator",
         0x0E to "Keyhole", 0x0F to "Goomba", 0x10 to "ParaGoomba",
         0x11 to "BuzzyBeetle", 0x13 to "KoopaKidBossFight", 0x14 to "SpinyEgg",

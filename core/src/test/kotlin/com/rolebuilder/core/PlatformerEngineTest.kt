@@ -1254,4 +1254,39 @@ class PlatformerEngineTest {
         assertEquals(2, warp.destX)
         assertEquals(3, warp.destY)
     }
+
+    @Test
+    fun `el caparazon de YI-2 - pisar el Koopa rojo 0x05 deja caparazon y desnudo rojo`() {
+        // YI-2 (0x106) coloca OCHO Koopa rojos CON caparazon (0x05). Este test reproduce ese
+        // caso concreto, que es el que se ve al jugar ese nivel: al pisarlo queda el caparazon
+        // y sale corriendo el desnudo ROJO (0x05 - 4 = 0x01), no el verde.
+        val e = engineEnemies(40, 10, startCol = 20, startRow = 5,
+            seeds = listOf(EnemySeed(20 * 16, 8 * 16 - 14, 0x05))) { g ->
+            for (c in 0 until 40) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        assertTrue(k.canShell, "0x05 es el Koopa rojo CON caparazon")
+        assertTrue(k.turnsAtLedge, "el rojo gira en el borde (bit 0x02 de Spr0to13Prop)")
+        e.run(60)
+        assertTrue(k.shell, "queda el caparazon")
+        val desnudo = e.enemies.firstOrNull { it.isNakedKoopa }
+        assertNotNull(desnudo, "sale el Koopa desnudo")
+        assertEquals(0x01, desnudo!!.id, "del rojo con caparazon (0x05) sale el desnudo ROJO (0x01)")
+    }
+
+    @Test
+    fun `patear el caparazon de YI-2 lo lanza a la velocidad del juego`() {
+        val e = engineEnemies(40, 10, startCol = 5, startRow = 7,
+            seeds = listOf(EnemySeed(10 * 16, 8 * 16 - 14, 0x05))) { g ->
+            for (c in 0 until 40) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        e.run(15)
+        k.shell = true; k.shellMoving = false; k.vx = 0f
+        e.moveX = 1f // Mario camina hacia el caparazon
+        e.run(160)
+        assertTrue(k.shellMoving, "tocarlo de lado lo patea")
+        assertEquals(PlatformerEngine.SHELL_SPEED, kotlin.math.abs(k.vx),
+            "el caparazon pateado va a la velocidad del juego (0x20 = 2 px/f)")
+    }
 }

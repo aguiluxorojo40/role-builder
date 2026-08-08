@@ -450,3 +450,57 @@ object HudDump {
         }
     }
 }
+
+/**
+ * DEPURACIÓN DECISIVA: pinta los ids 0x00-0x07 FORZANDO el dibujo de DOS teselas apiladas,
+ * se llamen altos o no.
+ *
+ * Existe porque la prueba visual anterior no era independiente: a 0x00-0x03 se les pintaba
+ * UNA sola tesela (por el bit 0x40 de Spr0to13Prop), asi que si su caparazon estuviera en la
+ * tesela de ARRIBA, no se veria — y se concluiria que no tienen. Forzando las dos, la
+ * pregunta "¿quien lleva caparazon?" se responde mirando, sin suponer nada.
+ */
+object KoopaStackedDump {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x106; var out = "koopa_stacked"; var scale = 6
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x106" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+                "--out" -> out = args.getOrElse(++i) { "koopa_stacked" }
+                "--scale" -> scale = args.getOrElse(++i) { "6" }.toInt()
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        val filas = (0x00..0x07).mapNotNull { id ->
+            val img = gfx.stackedPairImage(rom, hdr, lvl, id) ?: return@mapNotNull null
+            println("0x%02X %-24s alto(bit 0x40)=%s".format(id, gfx.nameOf(id) ?: "?", gfx.isTall(id)))
+            img
+        }
+        if (filas.isEmpty()) { println("nada"); return }
+        val cw = 16 * scale; val ch = 32 * scale; val p = 4
+        val hoja = ArgbImage(p + cw + p, p + filas.size * (ch + p))
+        for (x in 0 until hoja.width) for (y in 0 until hoja.height) hoja.set(x, y, 0xFF202024.toInt())
+        filas.forEachIndexed { r, img ->
+            for (y in 0 until img.height) for (x in 0 until img.width) {
+                val c = img.get(x, y); if (c ushr 24 == 0) continue
+                for (dy in 0 until scale) for (dx in 0 until scale) {
+                    val px = p + x * scale + dx; val py = p + r * (ch + p) + y * scale + dy
+                    if (px in 0 until hoja.width && py in 0 until hoja.height) hoja.set(px, py, c)
+                }
+            }
+        }
+        val dir = java.io.File(out).apply { mkdirs() }
+        val f = java.io.File(dir, "koopas_apilados.png")
+        val bi = java.awt.image.BufferedImage(hoja.width, hoja.height, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        bi.setRGB(0, 0, hoja.width, hoja.height, hoja.pixels, 0, hoja.width)
+        javax.imageio.ImageIO.write(bi, "png", f)
+        println("Filas de arriba abajo: 0x00..0x07 -> ${f.absolutePath}")
+    }
+}

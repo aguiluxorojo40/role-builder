@@ -273,6 +273,25 @@ object SmwEnemyGraphics {
         return out.ifEmpty { null }
     }
 
+    /**
+     * DEPURACIÓN: pinta [spriteId] con las DOS teselas de su entrada apiladas (arriba
+     * `TILE_BYTES[off]`, abajo `TILE_BYTES[off+1]`), se considere alto o no.
+     *
+     * Existe para poder responder MIRANDO a "¿quién lleva caparazón?": los ids que el juego
+     * dibuja con una sola tesela se pintan normalmente a media altura, así que si su
+     * caparazón viviera en la tesela de arriba no se vería, y se concluiría en falso que no
+     * tienen. Forzando el par, la comparación entre ids es justa.
+     */
+    fun stackedPairImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
+        val art = artFor(rom, header, level, spriteId) ?: return null
+        val off = OAM_OFFSET.getOrElse(spriteId) { return null }
+        if (off + 1 >= TILE_BYTES.size) return null
+        val img = ArgbImage(16, 32)
+        val arriba = art.paintBlock(TILE_BYTES[off] + art.page * 0x100, img, 0, 0)
+        val abajo = art.paintBlock(TILE_BYTES[off + 1] + art.page * 0x100, img, 0, 16)
+        return if (arriba || abajo) img else null
+    }
+
     /** DEPURACIÓN: vuelca los primeros [count] fotogramas de la tabla OAM de [spriteId],
      *  para ver a ojo cuál es cuál (andar, caparazón, aplastado…). */
     fun dumpOamFrames(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int, count: Int): List<ArgbImage>? {
