@@ -36,6 +36,12 @@ object SmwAssetStore {
      *   v4: el P-Switch (0x3E) entra en el catálogo curado (una columna más en el atlas).
      *   v5: el trampolín (0x2F), que se dibuja como cuadrado de cuatro teselas de 8×8.
      *   v6: la bola de pinchos (0x14) y el Thwimp (0x27), del mismo tipo de dibujo.
+     *   v7: los seis de DIBUJO PROPIO que faltaban para el 100% de los tres primeros
+     *       niveles (Banzai Bill, los dos Chuck, caja de mensaje, Koopa deslizándose y
+     *       bloque volador). Estos NO tocan el atlas: se hornean como sprites grandes
+     *       sueltos, y por eso hizo falta atarlo con un segundo test — el que vigilaba
+     *       `curatedIds` no veía este caso.
+     *   v8: la ESTRELLA (0x76) y el 1-UP (0x78), también de dibujo propio.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -44,7 +50,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 7
+    private const val BAKE_VERSION = 8
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

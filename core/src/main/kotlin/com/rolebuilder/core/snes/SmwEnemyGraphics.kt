@@ -613,6 +613,23 @@ object SmwEnemyGraphics {
         // vuelta, no la pose normal.
         0xBD to CustomEnemy(listOf(OamTile(0x86, 0, 0))),
 
+        // ESTRELLA (0x76) y 1-UP (0x78), PowerUpAndItemDraw ($01:C61A). No estaban porque
+        // la vía de powerups del proyecto solo cubría seta/flor/pluma, que son los tres
+        // que salen en la hoja del HUD; estos dos se colocan en el nivel como cualquier
+        // otro sprite y nadie los dibujaba.
+        //
+        // La rutina indexa su tabla con `spriteId - 116` (0x74), o sea: 0x74 seta → 0x24,
+        // 0x75 flor → 0x26, 0x76 estrella → 0x48, 0x77 pluma → 0x0E, 0x78 1-Up → 0x24.
+        // El 1-Up comparte tesela con la seta normal y se distingue solo por la PALETA
+        // (la verde), que sale del $166E del propio sprite — por eso aquí no se fuerza
+        // ninguna: `palRow` a null y que mande el nivel.
+        //
+        // La estrella además parpadea: el juego le cicla la paleta con
+        // `kPowerUpAndItemGFXRt_StarPalValues` fotograma a fotograma. Aquí se deja su
+        // color base, que es la pose que se ve al colocarla.
+        0x76 to CustomEnemy(listOf(OamTile(0x48, 0, 0))),
+        0x78 to CustomEnemy(listOf(OamTile(0x24, 0, 0))),
+
         // BLOQUE VOLADOR (0x83), Spr083_LeftFlyingBlock ($01:AD6E): otra vez el mismo
         // patrón, `charnum = spr_table00c2[k] ? 46 : 42` → 0x2A en reposo. Y encima
         // DrawWingTiles ($01:9E95) le pone las dos ALAS, que es lo que lo hace volar.
@@ -688,6 +705,43 @@ object SmwEnemyGraphics {
 
     /** true si [spriteId] es invisible A PROPÓSITO (ver [INVISIBLE_SPRITES]). */
     fun isIntentionallyInvisible(spriteId: Int): Boolean = spriteId in INVISIBLE_SPRITES
+
+    /**
+     * Sprites cuyas teselas NO están en los GFX del nivel: el juego se las mete por DMA en
+     * cada fotograma. Dibujarlos desde el tileset estático da SIEMPRE basura, y no es un
+     * fallo que se pueda arreglar afinando la tabla — es que la fuente no está ahí.
+     *
+     * ## Cómo se reconocen
+     *
+     * `UploadPlayerGFX` ($00:A300) copia a la VRAM de sprites, cada fotograma, desde los
+     * punteros `graphics_dynamic_sprite_pointers_top/bottom`:
+     *
+     * ```c
+     * SmwCopyToVram(0x6000 + v0 * 0x10, g_ram + t, 0x40);   // arriba
+     * SmwCopyToVram(0x6100 + v1 * 0x10, g_ram + t, 0x40);   // abajo
+     * ```
+     *
+     * Eso ocupa las teselas **0x00-0x09** (arriba) y **0x10-0x19** (abajo) de la página de
+     * sprites. Cualquier sprite cuyas teselas caigan ahí lleva gráficos dinámicos.
+     *
+     * ## El caso comprobado: el Podoboo (0x33)
+     *
+     * Su entrada de la tabla genérica son las teselas `06 06 16 16` —las cuatro dentro de
+     * esa zona— y su rutina ($01:E093) deja escrito de dónde salen de verdad:
+     * `graphics_dynamic_sprite_pointers_top_lo[6] = 0x8600`. Al dibujarlo desde el tileset
+     * del nivel salen **letras**, porque ahí es donde vive la fuente.
+     *
+     * Esto explica un descarte que ya estaba hecho por observación ("salían tiles de fuente
+     * o basura de forma unánime"): ahora hay un criterio en vez de prueba y error. **Ojo**:
+     * el 0x30 y el 0x32, descartados a la vez, NO son de este tipo — sus teselas
+     * (`AC BC AC A6` y `DC EC DE EE`) están fuera de la zona dinámica y su problema es
+     * otro: comparten rutina con el Bony Beetle (0x31), así que su entrada de la tabla
+     * genérica no es su aspecto real.
+     */
+    val DYNAMIC_GFX_SPRITES: Set<Int> = setOf(0x33)
+
+    /** true si [spriteId] recibe sus gráficos por DMA y no se puede sacar del nivel. */
+    fun hasDynamicGraphics(spriteId: Int): Boolean = spriteId in DYNAMIC_GFX_SPRITES
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */
     private fun superKoopaFrame0(capePal: Int): List<OamTile> = listOf(

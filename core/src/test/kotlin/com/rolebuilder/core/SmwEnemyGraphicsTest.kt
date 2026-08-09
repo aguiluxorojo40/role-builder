@@ -158,4 +158,26 @@ class SmwEnemyGraphicsTest {
             assertFalse(SmwEnemyGraphics.isIntentionallyInvisible(id), "0x%02X si se ve".format(id))
         }
     }
+
+    @Test
+    fun `la estrella y el 1-Up son sprites colocables, no solo del HUD`() {
+        // La via de powerups del proyecto solo cubria seta/flor/pluma (los tres de la hoja
+        // del HUD). La estrella y el 1-Up se colocan en el nivel como cualquier otro
+        // sprite y nadie los dibujaba.
+        assertTrue(0x76 in SmwEnemyGraphics.customEnemyIds, "falta la estrella (0x76)")
+        assertTrue(0x78 in SmwEnemyGraphics.customEnemyIds, "falta el 1-Up (0x78)")
+    }
+
+    @Test
+    fun `el Podoboo recibe sus graficos por DMA y no se puede sacar del nivel`() {
+        // Sus teselas (06/06/16/16) caen en la zona que UploadPlayerGFX reescribe cada
+        // fotograma, asi que dibujarlo desde el tileset estatico da letras. Marcarlo evita
+        // que alguien "arregle" la tabla a base de prueba y error.
+        assertTrue(SmwEnemyGraphics.hasDynamicGraphics(0x33), "el Podoboo es de graficos dinamicos")
+        // Y NO vale meter ahi a los que se descartaron por otra razon: el 0x30 y el 0x32
+        // fallan porque comparten rutina con el Bony Beetle, no por el DMA.
+        for (id in intArrayOf(0x30, 0x32, 0x31, 0x00, 0x76)) {
+            assertFalse(SmwEnemyGraphics.hasDynamicGraphics(id), "0x%02X no es dinamico".format(id))
+        }
+    }
 }

@@ -603,6 +603,15 @@ object MissingGfxAudit {
         val sinGrafico = HashMap<Int, Int>()
         val conGrafico = HashMap<Int, Int>()
         val nivelesDe = HashMap<Int, MutableSet<Int>>()
+        // Tres clases de id que NO son un hueco por portar, y que hasta ahora inflaban la
+        // cuenta hasta hacerla inútil para priorizar:
+        //  - los de META (cinta, esfera, cerradura): el motor ya los siembra como ítem de
+        //    meta, no como enemigos. Solo el 0x7B y el 0x0E eran 88 colocaciones.
+        //  - los INVISIBLES a propósito (agujero de warp, seta invisible).
+        //  - los de gráficos DINÁMICOS (por DMA): no se pueden sacar del tileset del nivel.
+        val excluidos = com.rolebuilder.core.snes.SmwLevelGoal.GOAL_SPRITES +
+            gfx.INVISIBLE_SPRITES + gfx.DYNAMIC_GFX_SPRITES
+        val aparte = HashMap<Int, Int>()
         var niveles = 0
         for (lvl in 0x000..0x1FF) {
             val lista = runCatching {
@@ -611,6 +620,7 @@ object MissingGfxAudit {
             if (lista.isEmpty()) continue
             niveles++
             for ((id, _, _) in lista) {
+                if (id in excluidos) { aparte[id] = (aparte[id] ?: 0) + 1; continue }
                 val tiene = runCatching { gfx.customEnemyImage(rom, hdr, lvl, id) }.getOrNull() != null ||
                     runCatching { gfx.spriteFrames(rom, hdr, lvl, id) }.getOrNull()?.isNotEmpty() == true
                 if (tiene) conGrafico[id] = (conGrafico[id] ?: 0) + 1
@@ -625,6 +635,12 @@ object MissingGfxAudit {
         println("Niveles con sprites: $niveles")
         println("Colocaciones CON grafico: $totalCon · SIN grafico: $totalSin " +
             "(${if (totalCon + totalSin > 0) 100 * totalSin / (totalCon + totalSin) else 0}% sin)")
+        println(
+            "Fuera de la cuenta (${aparte.values.sum()}): metas, invisibles a proposito y " +
+                "graficos dinamicos -> " +
+                aparte.entries.sortedByDescending { it.value }
+                    .joinToString(", ") { "0x%02X x%d".format(it.key, it.value) },
+        )
         println()
         println("veces  niveles  id    nombre")
         for ((id, n) in sinGrafico.entries.sortedByDescending { it.value }.take(25)) {
