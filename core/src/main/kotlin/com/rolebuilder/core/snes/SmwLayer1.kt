@@ -144,6 +144,38 @@ internal object SmwLayer1 {
      * null es "este modo no tiene Layer 1" (el 0 de la tabla del juego), que es de donde
      * salen de verdad los modos sin geometría, sin necesidad de listarlos a mano.
      */
+    /**
+     * `kLevelDataLayoutTables_Layer2LoPtrs` ($05): modo → disposición de **Layer 2**.
+     *
+     * Layer 1 y Layer 2 comparten el MISMO buffer de $7EC800: cada modo reparte las
+     * pantallas entre los dos. Por eso las entradas de Layer 2 son las mismas tablas pero
+     * empezadas más adelante (`+16` en las horizontales, `+14` en las verticales): ahí es
+     * donde acaba lo de Layer 1 y empieza lo de Layer 2.
+     */
+    private val LAYER2_LAYOUT: Array<IntArray?> = arrayOf(
+        LAYOUT_STD_HORIZ.drop16(), LAYOUT_STD_HORIZ.drop16(), LAYOUT_STD_HORIZ.drop16(),
+        LAYOUT_VERT_L1.dropN(14), LAYOUT_VERT_L1.dropN(14),                     // 03-04
+        LAYOUT_HORIZ_L1.drop16(), LAYOUT_HORIZ_L1.drop16(),                     // 05-06
+        LAYOUT_STD_VERT.dropN(14), LAYOUT_STD_VERT.dropN(14),                   // 07-08
+        null, LAYOUT_STD_VERT.dropN(14), null,                                  // 09-0B
+        LAYOUT_STD_HORIZ.drop16(), LAYOUT_STD_VERT.dropN(14),                   // 0C-0D
+        LAYOUT_STD_HORIZ.drop16(), LAYOUT_STD_HORIZ.drop16(),                   // 0E-0F
+        null, LAYOUT_STD_HORIZ.drop16(), null, null, null, null, null, null,    // 10-17
+        null, null, null, null, null, null,                                     // 18-1D
+        LAYOUT_STD_HORIZ.drop16(), LAYOUT_STD_HORIZ.drop16(),                   // 1E-1F
+    )
+
+    private fun IntArray.drop16(): IntArray = dropN(16)
+    private fun IntArray.dropN(n: Int): IntArray =
+        if (size <= n) IntArray(1) else IntArray(size - n) { this[n + it] }
+
+    /**
+     * Modos que NO procesan objetos de Layer 2: `BeginLoadingLevelData` ($05:83AC) corta
+     * el bucle después de la capa 1 para estos. El 10 (0x0A) está aquí, y por eso los
+     * niveles verticales de ese modo llevan fondo de IMAGEN y no de objetos.
+     */
+    private val MODES_NO_LAYER2 = intArrayOf(0, 10, 12, 13, 14, 17, 30)
+
     private val LAYER1_LAYOUT: Array<IntArray?> = arrayOf(
         LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, LAYOUT_VERT_L1,   // 00-03
         LAYOUT_VERT_L1, LAYOUT_HORIZ_L1, LAYOUT_HORIZ_L1, LAYOUT_STD_VERT,      // 04-07
@@ -153,21 +185,56 @@ internal object SmwLayer1 {
         null, null, null, null, null, null, LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, // 18-1F
     )
 
-    /** VerticalTable de LoadLevelHeader: bit0 = nivel vertical. */
+    /**
+     * `misc_level_layout_flags` (VerticalTable de LoadLevelHeader), por modo:
+     * **bit 0 = Layer 1 vertical**, **bit 1 = Layer 2 vertical**. Las dos capas se
+     * recorren por separado, y hay modos donde no coinciden: el 5 tiene el Layer 1
+     * horizontal y el Layer 2 vertical, y el 0x0A justo al revés.
+     */
     private val VERTICAL_TABLE = intArrayOf(
         0x00, 0x00, 0x80, 0x01, 0x81, 0x02, 0x82, 0x03, 0x83, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
     )
 
-    /** Parsea el nivel [level]; null si no hay datos, es vertical o modo sin Layer 1. */
+    /** Parsea el LAYER 1 del nivel [level]; null si no hay datos o el flujo está corrupto. */
     fun parse(rom: ByteArray, delta: Int, level: Int): SmwLevelTilemap? {
         val p = SnesGameRecipes.smwLayer1DataPc(rom, delta, level) ?: return null
         return P(rom, p).run()
     }
 
+    /**
+     * Parsea el LAYER 2 DE OBJETOS del nivel [level]: los 26 niveles cuyo fondo no es una
+     * imagen comprimida sino geometría de verdad, hecha con los mismos objetos que el
+     * primer plano.
+     *
+     * Se apoya en tres cosas de `BeginLoadingLevelData` ($05:83AC):
+     *  - el flujo de Layer 2 empieza en `ptr_layer2_data + 5`, o sea que también lleva
+     *    cabecera de 5 bytes, pero **no se lee**: el modo y el tileset son los de Layer 1;
+     *  - se usa la tabla de disposición de Layer 2, que reparte con Layer 1 el mismo
+     *    buffer de $7EC800;
+     *  - hay modos que ni siquiera llegan a procesar la capa 2 ([MODES_NO_LAYER2]).
+     *
+     * Devuelve null si el nivel no tiene Layer 2 de objetos (porque lleva imagen, porque
+     * su modo no procesa capa 2, o porque no hay datos).
+     */
+    fun parseLayer2(rom: ByteArray, delta: Int, level: Int): SmwLevelTilemap? {
+        val p = SnesGameRecipes.smwLayer2ObjectDataPc(rom, delta, level) ?: return null
+        // El modo y el tileset salen de la cabecera de LAYER 1: la de Layer 2 se salta.
+        val l1 = SnesGameRecipes.smwLayer1DataPc(rom, delta, level) ?: return null
+        val b1 = if (l1 + 1 < rom.size) rom[l1 + 1].toInt() and 0xFF else return null
+        val mode = b1 and 0x1F
+        if (mode in MODES_NO_LAYER2) return null
+        return P(rom, p, layer = 1, headerPc = l1).run()
+    }
+
     // =============================== máquina de estado ===============================
 
-    private class P(val rom: ByteArray, dataStart: Int) {
+    /**
+     * [layer] 0 = primer plano, 1 = fondo de objetos. Cambia la tabla de disposición y de
+     * qué bit sale "es vertical", nada más: las rutinas de objeto son las mismas.
+     * [headerPc] es de dónde leer la cabecera de 5 bytes (para Layer 2, la de Layer 1).
+     */
+    private class P(val rom: ByteArray, dataStart: Int, val layer: Int = 0, headerPc: Int = dataStart) {
         val lo = ByteArray(BUF) { 0x25 } // aire
         val hi = ByteArray(BUF)          // página 0
 
@@ -187,20 +254,26 @@ internal object SmwLayer1 {
         /** Base de cada pantalla (`kLevelDataLayout_*`), ya elegida según el modo. */
         var layout: IntArray = LAYOUT_STD_HORIZ
 
+        /** PC de la cabecera de 5 bytes (para Layer 2 es la de Layer 1, ver [parseLayer2]). */
+        private val cabecera = headerPc
+
         fun rd(i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0xFF
 
         fun run(): SmwLevelTilemap? {
-            // ---- LoadLevelHeader (solo los campos que afectan al Layer 1) ----
-            val b0 = rd(data); val b1 = rd(data + 1); val b4 = rd(data + 4)
+            // ---- LoadLevelHeader (solo los campos que afectan a la geometría) ----
+            val b0 = rd(cabecera); val b1 = rd(cabecera + 1); val b4 = rd(cabecera + 4)
             screensInLevel = (b0 and 0x1F) + 1
             mode = b1 and 0x1F
             tileset = b4 and 0x0F
-            vertical = VERTICAL_TABLE[mode] and 1 != 0
-            // La disposición sale de kLevelDataLayoutTables_Layer1LoPtrs. Un modo sin
-            // entrada (el 0 de la tabla) es un modo SIN Layer 1: eso los detecta solos,
+            // bit 0 para Layer 1, bit 1 para Layer 2: el juego hace `flags >> 1` cuando
+            // está procesando la capa 2. Hay modos donde las dos capas no coinciden.
+            vertical = (VERTICAL_TABLE[mode] shr layer) and 1 != 0
+            // La disposición sale de kLevelDataLayoutTables_LayerNLoPtrs. Un modo sin
+            // entrada (el 0 de la tabla) es un modo SIN esa capa: eso los detecta solos,
             // sin listarlos a mano.
-            layout = LAYER1_LAYOUT.getOrNull(mode) ?: return done()
-            if (mode in MODES_NO_LAYER1) return done()
+            val tabla = if (layer == 0) LAYER1_LAYOUT else LAYER2_LAYOUT
+            layout = tabla.getOrNull(mode) ?: return done()
+            if (layer == 0 && mode in MODES_NO_LAYER1) return done()
             data += 5
             // ---- LoadLevelDataObject ----
             if (rd(data) == 0xFF) return done()
@@ -345,6 +418,8 @@ internal object SmwLayer1 {
                 when (tileset) {
                     1 -> when (obj) {
                         0x34 -> castleVerticalDoubleEndedPipe()
+                        0x35 -> castleRockWallBackground()
+                        0x36 -> castleLargeSpikedPillar()
                         0x37 -> ropeHorizontalLineGuide()
                         0x38 -> ropeVerticalLineGuide()
                         0x39 -> switchBlocks(0)          // azules
@@ -472,7 +547,7 @@ internal object SmwLayer1 {
                 0x8E -> extSwitchBlockYellow()
                 in 0x57..0x5E -> extGhostSingleTile(k)
                 in 0x61..0x63 -> extGhostClock(k)
-                0x64, 0x65 -> extGhost2x2(k)
+                0x64, 0x65, 0x8F -> extGhost2x2(k)
                 0x49 -> extGhostMural()
                 0x85 -> extYoshisHouse()
                 in 0x8A..0x8D -> extSwitchPalaceSwitch(k)
@@ -682,8 +757,15 @@ internal object SmwLayer1 {
          * 0x25 de la tabla es aire (se deja pasar), como en el original.
          */
         fun extGhost2x2(k: Int) {
-            val data = intArrayOf(0x8C, 0x8D, 0x25, 0x8E, 0x90, 0x91, 0x8F, 0x25)
-            var x = (k - 0x64) * 4
+            // Tabla $0D:E9E1, leída BYTE a byte (la decompilación la declara como uint16,
+            // pero el código la indexa con un puntero a uint8). La VENTANA de casa
+            // fantasma (ext 0x8F) es la misma rutina entrando por el byte 8:
+            // `ExtObj8F_GhostHouseWindow` no hace otra cosa que llamarla con k = 8.
+            val data = intArrayOf(
+                0x8C, 0x8D, 0x25, 0x8E, 0x90, 0x91, 0x8F, 0x25, // 0x64 y 0x65
+                0xFC, 0xFD, 0xFE, 0xFF,                          // 0x8F: la ventana
+            )
+            var x = if (k == 0x8F) 8 else (k - 0x64) * 4
             preserve()
             var rows = 1
             do {
@@ -1497,6 +1579,95 @@ internal object SmwLayer1 {
 
         fun castleStoneBlock() =
             rect3x3(intArrayOf(0x5D, 0x60, 0x63), intArrayOf(0x5E, 0x61, 0x64), intArrayOf(0x5F, 0x62, 0x65))
+
+        /**
+         * Objeto 0x35 de castillo: MURO DE ROCA de fondo (CastleObj35_RockWallBackground,
+         * $0D:C58A). Rectángulo hecho con un patrón de 2×2 teselas —0x94/0x95 arriba y
+         * 0x96/0x97 abajo— repetido nibble-bajo+1 veces a lo ancho y nibble-alto+1 a lo
+         * alto. Todo de página 0: es decorado, no bloquea.
+         */
+        fun castleRockWallBackground() {
+            var v1 = pos
+            val r0 = size and 0xF
+            var r1 = size shr 4
+            preserve()
+            do {
+                var v2 = r0
+                do {
+                    setHi00(v1)
+                    val v3 = horiz(v1, 0x94)
+                    setHi00(v3)
+                    v1 = horiz(v3, 0x95)
+                    v2--
+                } while (v2 >= 0)
+                restore()
+                var v4 = vert()
+                var v5 = r0
+                do {
+                    setHi00(v4)
+                    val v6 = horiz(v4, 0x96)
+                    setHi00(v6)
+                    v4 = horiz(v6, 0x97)
+                    v5--
+                } while (v5 >= 0)
+                restore()
+                v1 = vert()
+                r1--
+            } while (r1 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto 0x36 de castillo: PILAR GRANDE CON PINCHOS (CastleObj36_LargeSpikedPillar,
+         * $0D:C4EF). Cuatro columnas de ancho: los dos bordes van en página 0 (decorado) y
+         * las dos del medio en página 1 (los pinchos, que sí hacen daño).
+         *
+         * El nibble BAJO no es un tamaño sino el lado por el que remata: si vale algo, el
+         * remate (0x87/0x88) va ARRIBA; si vale 0, va ABAJO (0x8D/0x8E). Y el cuerpo
+         * alterna dos filas distintas, que es lo que da el dibujo de los eslabones.
+         */
+        fun castleLargeSpikedPillar() {
+            var v1 = pos
+            val v2 = size and 0xF
+            var r0 = size shr 4
+            preserve()
+            if (v2 != 0) {
+                val v3 = horizNext(v1)
+                setHi00(v3)
+                val v4 = horiz(v3, 0x87)
+                setHi00(v4); horiz(v4, 0x88)
+                restore()
+                v1 = vert()
+            }
+            do {
+                setHi00(v1)
+                val v5 = horiz(v1, 0x89)
+                setHi01(v5)
+                val v6 = horiz(v5, 0x66)
+                setHi01(v6)
+                val v7 = horiz(v6, 0x67)
+                setHi00(v7); horiz(v7, 0x8A)
+                restore()
+                v1 = vert()
+                r0--
+                if (r0 and 0x80 != 0) break
+                setHi00(v1)
+                val v8 = horiz(v1, 0x8B)
+                setHi01(v8)
+                val v9 = horiz(v8, 0x68)
+                setHi01(v9)
+                val v10 = horiz(v9, 0x69)
+                setHi00(v10); horiz(v10, 0x8C)
+                restore()
+                v1 = vert()
+                r0--
+            } while (r0 and 0x80 == 0)
+            if (v2 == 0) {
+                val v11 = horizNext(v1)
+                setHi00(v11)
+                val v12 = horiz(v11, 0x8D)
+                setHi00(v12); horiz(v12, 0x8E)
+            }
+        }
 
         /**
          * BLOQUES DE INTERRUPTOR (GrassObj32_BlueSwitchBlocks, $0D:B920): rectángulo de

@@ -135,6 +135,23 @@ object SnesGameRecipes {
     }
 
     /**
+     * PC del flujo de OBJETOS de Layer 2 de [level], o null si ese nivel no lo tiene.
+     *
+     * El puntero de Layer 2 vale para dos cosas distintas según su BANCO: si es
+     * [SMW_BG_BANK_MARKER] (0xFF) apunta a un fondo de IMAGEN comprimido (ver
+     * [layer2BgParse]); cualquier otro banco (0x06/0x07 en la ROM vanilla) es geometría
+     * de objetos, con el mismo formato que Layer 1.
+     */
+    internal fun smwLayer2ObjectDataPc(rom: ByteArray, delta: Int, level: Int): Int? {
+        val p = SMW_LAYER2_PTR_PC + delta + 3 * level
+        if (p + 2 >= rom.size) return null
+        val bank = byte(rom, p + 2)
+        if (bank == SMW_BG_BANK_MARKER) return null // es una imagen, no objetos
+        val pc = lorom(byte(rom, p), byte(rom, p + 1), bank)
+        return if (pc >= 0 && pc + 5 < rom.size) pc else null
+    }
+
+    /**
      * Tabla de definiciones Map16 por TILESET: PC de la definición (8 bytes) de cada
      * bloque 0..511. Port de InitializeMap16Pointers ($05:81FB, vía snesrev/smw): las
      * definiciones NO son lineales; una máscara de bits decide bloque a bloque si la
@@ -420,22 +437,41 @@ object SnesGameRecipes {
         // paralaje real es harina de otro costal.
         val bgMap = IntArray(w * h) { -1 }
         val bgCells = ArrayList<IntArray>() // píxeles ARGB 16×16 de cada tesela de fondo distinta
-        val bgImg = renderSmwBackground(rom, header, level)
+        // Fondo, y son DOS cosas distintas que no se dibujan igual:
+        //  - IMAGEN comprimida: un telón que el juego NO mueve con el nivel, así que se
+        //    repite para cubrirlo entero;
+        //  - LAYER 2 DE OBJETOS: geometría de verdad, alineada casilla a casilla con el
+        //    nivel. Repetirla la descuadraría, así que va 1:1 y lo que sobra queda vacío.
+        //    Estos niveles antes se quedaban directamente SIN fondo.
+        val imagen = renderSmwBackground(rom, header, level)
+        val bgImg = imagen ?: renderSmwLayer2Objects(rom, header, level)
+        val repite = imagen != null
         if (bgImg != null) {
             val bgCols = bgImg.width / 16; val bgRows = bgImg.height / 16
             if (bgCols > 0 && bgRows > 0) {
                 val byKey = HashMap<List<Int>, Int>() // contenido de la tesela → índice en bgCells
-                // El fondo se repite en LAS DOS direcciones. Antes solo se repetía a lo
-                // ancho y se cortaba en `bgRows`: en horizontal daba igual (el nivel mide
-                // 27 filas, justo lo que trae el fondo), pero un nivel VERTICAL mide 160 y
-                // se quedaba sin fondo de la fila 27 para abajo.
                 for (y in 0 until h) for (x in 0 until w) {
-                    val sc = x % bgCols
-                    val sr = y % bgRows
+                    val sc = if (repite) x % bgCols else x
+                    val sr = if (repite) y % bgRows else y
+                    if (sc >= bgCols || sr >= bgRows) continue
                     val px = IntArray(256)
                     for (py in 0..15) for (pxx in 0..15) px[py * 16 + pxx] = bgImg.get(sc * 16 + pxx, sr * 16 + py)
+                    if (px.all { it ushr 24 == 0 }) continue // tesela vacía: no ocupa hueco
+                    // Con Layer 2 de objetos, el color de BACK AREA va detrás de todo: las
+                    // partes transparentes de una tesela (los bordes redondeados de un
+                    // pilar, por ejemplo) tienen que resolverse a cielo, no dejar agujero.
+                    if (!repite) for (i in px.indices) if (px[i] ushr 24 == 0) px[i] = cgram[0]
                     val idx = byKey.getOrPut(px.toList()) { bgCells.add(px); bgCells.size - 1 }
                     bgMap[y * w + x] = fgTileCount + idx
+                }
+                // Con Layer 2 de OBJETOS el fondo no cubre todo el nivel, y lo que queda
+                // detrás no es transparente: es el COLOR DE BACK AREA (el "cielo" del
+                // nivel, índice 0 de la CGRAM). Sin esto, estos 26 niveles salían con el
+                // cielo agujereado, que es peor que no tener fondo.
+                if (!repite) {
+                    val cielo = IntArray(256) { cgram[0] }
+                    val idxCielo = byKey.getOrPut(cielo.toList()) { bgCells.add(cielo); bgCells.size - 1 }
+                    for (i in bgMap.indices) if (bgMap[i] < 0) bgMap[i] = fgTileCount + idxCielo
                 }
             }
         }
@@ -1827,6 +1863,61 @@ object SnesGameRecipes {
      * en BufferBGTilemap; se decodifica contra la VRAM de 4 slots y se colorea con la
      * CGRAM real del nivel.
      */
+    /**
+     * FONDO DE OBJETOS: renderiza el Layer 2 de los niveles cuyo fondo NO es una imagen
+     * comprimida sino geometría de verdad, hecha con los mismos objetos que el primer
+     * plano ([SmwLayer1.parseLayer2]).
+     *
+     * Hasta ahora estos niveles se quedaban SIN fondo: [layer2BgParse] los clasificaba
+     * bien como "no es una imagen", pero nadie dibujaba la alternativa. Son 26 slots en
+     * la ROM vanilla, y no son casos raros — ahí están los muros del castillo y el
+     * decorado que se ve por detrás del suelo.
+     *
+     * Se dibuja con las MISMAS teselas, paleta y definiciones Map16 que el primer plano,
+     * porque son literalmente los mismos objetos. Devuelve null si el nivel no tiene
+     * Layer 2 de objetos o si no queda nada que pintar.
+     */
+    internal fun renderSmwLayer2Objects(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? {
+        val delta = smwHeaderDelta(header)
+        val tm = SmwLayer1.parseLayer2(rom, delta, level) ?: return null
+        if (tm.totalObjects == 0) return null
+        val (cols, rows) = tm.trimmedSize() ?: return null
+
+        val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
+        val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
+        val fgbgSetting = byte(rom, lpc + 4) and 0x0F
+        val se = SMW_FGBG_GFX_TABLE_PC + delta + 4 * fgbgSetting
+        val slotFiles = intArrayOf(SMW_FG1_GFX, SMW_FG2_GFX, byte(rom, se + 2), byte(rom, se + 3))
+        val vram = arrayOfNulls<IntArray>(512)
+        for (s in 0..3) {
+            val file = slotFiles[s]; if (file == SMW_SLOT_EMPTY) continue
+            val pc = lorom(byte(rom, bLo + file), byte(rom, bHi + file), byte(rom, bBank + file))
+            if (pc < 0x40000 || pc >= rom.size) continue
+            val data = runCatching { LcLz2.decompress(rom, pc).data }.getOrNull() ?: continue
+            val fmt = SnesGraphicsScanner.detectBestFormat(data, 0)?.format ?: SnesGraphicFormat.SNES_3BPP
+            val avail = SnesAssetExtractor.availableTiles(data.size, 0, fmt)
+            for (t in 0 until minOf(avail, 128)) {
+                vram[s * 128 + t] = SnesDecoder.decodeTile(data, t * fmt.bytesPerTile, fmt, t).pixelIndices
+            }
+        }
+        if (vram.all { it == null }) return null
+        fillSmwAnimatedTiles(rom, delta, tm.tileset, vram)
+        val cgram = assembleSmwCgram(rom, delta, level)
+        val defs = smwMap16DefTable(rom, delta, tm.tileset)
+
+        // Fondo TRANSPARENTE: este Layer 2 va DEBAJO del primer plano, y sus huecos tienen
+        // que dejar ver el color de back area, no taparlo con negro.
+        val img = ArgbImage(cols * 16, rows * 16)
+        var pintado = false
+        for (y in 0 until rows) for (x in 0 until cols) {
+            val b = tm.block(x, y)
+            if (b <= 0 || b == 0x25) continue
+            drawSmwBlock(rom, defs, b, vram, cgram, img, x * 16, y * 16)
+            pintado = true
+        }
+        return if (pintado) img else null
+    }
+
     internal fun renderSmwBackground(rom: ByteArray, header: SnesHeader, level: Int): ArgbImage? {
         val delta = smwHeaderDelta(header)
         val entries = layer2BgEntries(rom, delta, level)

@@ -578,6 +578,108 @@ class SmwLayer1Test {
         assertEquals(0x1E2, tm.block(4, 7))
     }
 
+    // --------------------------- LAYER 2 DE OBJETOS ---------------------------
+    // 26 niveles de la ROM no llevan fondo de imagen sino geometría hecha con los mismos
+    // objetos que el primer plano. Se parsea con la misma máquina, cambiando solo la tabla
+    // de disposición y de qué bit sale "es vertical".
+
+    /** ROM con nivel en 0x10000 y flujo de objetos de Layer 2 en 0x11000 (banco 0x02). */
+    private fun romConLayer2(mode: Int, vararg objetosL2: Int): ByteArray {
+        val rom = romWithLevel(0x00, mode, 0x00, 0x00, 0x00, 0xFF)
+        // Puntero de Layer 2: banco 0x02 (≠ 0xFF, o sea OBJETOS) → PC 0x11000.
+        rom[SnesGameRecipes.SMW_LAYER2_PTR_PC] = 0x00
+        rom[SnesGameRecipes.SMW_LAYER2_PTR_PC + 1] = 0x90.toByte()
+        rom[SnesGameRecipes.SMW_LAYER2_PTR_PC + 2] = 0x02
+        // Cabecera de 5 bytes del flujo de Layer 2: se SALTA, no se lee.
+        val datos = intArrayOf(0, 0, 0, 0, 0) + objetosL2.toTypedArray().toIntArray() + intArrayOf(0xFF)
+        datos.forEachIndexed { i, b -> rom[0x11000 + i] = b.toByte() }
+        return rom
+    }
+
+    @Test
+    fun `el Layer 2 de objetos se parsea aparte del Layer 1`() {
+        // Modo 1: Layer 1 en las pantallas 0-15 y Layer 2 de la 16 en adelante, del mismo
+        // buffer de $7EC800. Un ledge en (col 2, fila 1) del Layer 2.
+        val rom = romConLayer2(0x01, 0x21, 0x42, 0x23)
+        val l2 = SmwLayer1.parseLayer2(rom, 0, 0)
+        assertNotNull(l2)
+        assertEquals(1, l2.totalObjects)
+        assertEquals(0, l2.unknownObjects)
+        for (c in 2..5) assertEquals(0x100, l2.block(c, 1), "suelo de Layer 2 en col $c")
+        // Y el Layer 1 del MISMO nivel no ve nada: su flujo está vacío.
+        val l1 = SmwLayer1.parse(rom, 0, 0)
+        assertNotNull(l1)
+        assertEquals(0, l1.totalObjects)
+        assertEquals(0x25, l1.block(2, 1), "el Layer 1 sigue vacío")
+    }
+
+    @Test
+    fun `hay modos que ni siquiera procesan la capa 2`() {
+        // BeginLoadingLevelData corta el bucle tras la capa 1 en estos modos. El 0x0A está
+        // entre ellos, y por eso los verticales de ese modo llevan fondo de IMAGEN.
+        for (mode in intArrayOf(0, 10, 12, 13, 14, 17, 30)) {
+            assertNull(SmwLayer1.parseLayer2(romConLayer2(mode, 0x21, 0x42, 0x23), 0, 0),
+                "el modo $mode no procesa Layer 2")
+        }
+        // El 1 y el 2 sí.
+        for (mode in intArrayOf(1, 2)) {
+            assertNotNull(SmwLayer1.parseLayer2(romConLayer2(mode, 0x21, 0x42, 0x23), 0, 0))
+        }
+    }
+
+    @Test
+    fun `el bit de vertical del Layer 2 es el 1, no el 0`() {
+        // Modo 5: flags 0x02 → Layer 1 HORIZONTAL y Layer 2 VERTICAL. Las dos capas del
+        // mismo nivel no tienen por qué coincidir, y confundir los bits saldría movido.
+        val rom = romConLayer2(0x05, 0x21, 0x42, 0x23)
+        assertEquals(false, SmwLayer1.parse(rom, 0, 0)?.vertical, "el Layer 1 del modo 5 es horizontal")
+        assertEquals(true, SmwLayer1.parseLayer2(rom, 0, 0)?.vertical, "pero su Layer 2 es vertical")
+    }
+
+    @Test
+    fun `un fondo de IMAGEN no es Layer 2 de objetos`() {
+        // Banco 0xFF en el puntero = tilemap comprimido, no geometría. Hay que decir null
+        // para que quien dibuja tire de la vía de imagen.
+        val rom = romConLayer2(0x01, 0x21, 0x42, 0x23)
+        rom[SnesGameRecipes.SMW_LAYER2_PTR_PC + 2] = 0xFF.toByte()
+        assertNull(SmwLayer1.parseLayer2(rom, 0, 0))
+    }
+
+    @Test
+    fun `el pilar con pinchos del castillo remata arriba o abajo segun el nibble bajo`() {
+        // CastleObj36: cuatro columnas, las dos del medio en PÁGINA 1 (los pinchos hacen
+        // daño) y los bordes en página 0. Con nibble bajo ≠ 0 el remate va ARRIBA.
+        val tm = SmwLayer1.parse(romTileset(1, 0x62, 0x64, 0x11), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects, "el 0x36 de castillo ya está portado")
+        // Remate superior en la fila del objeto.
+        assertEquals(0x87, tm.block(5, 2)); assertEquals(0x88, tm.block(6, 2))
+        // Cuerpo: bordes de página 0 y pinchos de página 1 en medio.
+        assertEquals(0x89, tm.block(4, 3))
+        assertEquals(0x166, tm.block(5, 3)); assertEquals(0x167, tm.block(6, 3))
+        assertEquals(0x8A, tm.block(7, 3))
+    }
+
+    @Test
+    fun `el muro de roca del castillo es un patron 2x2 repetido`() {
+        // CastleObj35: 0x94/0x95 arriba y 0x96/0x97 abajo, todo de página 0 (decorado).
+        val tm = SmwLayer1.parse(romTileset(1, 0x62, 0x54, 0x11), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(listOf(0x94, 0x95, 0x94, 0x95), (4..7).map { tm.block(it, 2) })
+        assertEquals(listOf(0x96, 0x97, 0x96, 0x97), (4..7).map { tm.block(it, 3) })
+    }
+
+    @Test
+    fun `la ventana de casa fantasma reusa la rutina del 2x2 entrando por el byte 8`() {
+        // ExtObj8F no tiene cuerpo propio: llama a la del 0x64/0x65 con k = 8.
+        val tm = SmwLayer1.parse(romTileset(5, 0x02, 0x04, 0x8F), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        assertEquals(0xFC, tm.block(4, 2)); assertEquals(0xFD, tm.block(5, 2))
+        assertEquals(0xFE, tm.block(4, 3)); assertEquals(0xFF, tm.block(5, 3))
+    }
+
     @Test
     fun `un modo SIN Layer 1 no trae geometria`() {
         // El modo 9 no tiene entrada en kLevelDataLayoutTables_Layer1LoPtrs (vale 0).
