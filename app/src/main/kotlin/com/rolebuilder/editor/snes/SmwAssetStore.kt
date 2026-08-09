@@ -42,6 +42,10 @@ object SmwAssetStore {
      *       sueltos, y por eso hizo falta atarlo con un segundo test — el que vigilaba
      *       `curatedIds` no veía este caso.
      *   v8: la ESTRELLA (0x76) y el 1-UP (0x78), también de dibujo propio.
+     *   v9: los ocho Koopa CON caparazón (0x04-0x0B) se horneaban a MEDIA ALTURA —16×16
+     *       en vez de 16×32, y las aladas sin su ala—, así que en modo PROYECTO salía
+     *       medio Koopa flotando mientras el modo ROM los enseñaba enteros. Quien horneó
+     *       con la v8 o anterior tiene esos ficheros mal y necesita re-hornear.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -50,7 +54,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 8
+    private const val BAKE_VERSION = 9
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

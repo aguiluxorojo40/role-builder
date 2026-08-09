@@ -68,8 +68,22 @@ class SmwAssetCatalogTest {
         assertEquals(paths.size, paths.toSet().size, "no hay ficheros con la misma ruta")
 
         // Un enemigo de una sola animación va directo en su carpeta, sin subcarpeta 'anim'.
-        val koopa = entries.filter { it.path.startsWith("enemigos/koopa_verde/") }
-        assertTrue(koopa.any { it.path == "enemigos/koopa_verde/koopa_verde.gif" }, "GIF con el nombre del sprite")
+        //
+        // Este test estuvo ROTO un tiempo sin que nadie se enterara: miraba
+        // `enemigos/koopa_verde/`, y esa carpeta dejó de existir al corregir los nombres de
+        // los Koopa (los 0x00-0x03 son los que van SIN caparazón, así que ahora se llama
+        // `koopa_sin_caparazon_verde`). El código estaba bien; el test se quedó viejo. No
+        // salta en CI porque sin ROM se salta entero — es el punto ciego de AUDITORIA.md.
+        //
+        // Para que no vuelva a pasar por un renombrado, la carpeta se busca por el nombre
+        // que de verdad exporta el catálogo en vez de fijarlo a mano.
+        val koopaDir = entries.map { it.path }
+            .firstOrNull { it.startsWith("enemigos/koopa_sin_caparazon_verde/") }
+            ?.substringBeforeLast('/')
+        assertTrue(koopaDir != null, "el Koopa verde sin caparazón debería estar en el catálogo")
+        val koopa = entries.filter { it.path.startsWith("$koopaDir/") }
+        val nombre = koopaDir!!.substringAfterLast('/')
+        assertTrue(koopa.any { it.path == "$koopaDir/$nombre.gif" }, "GIF con el nombre del sprite")
         assertTrue(koopa.none { it.path.contains("/anim/") }, "sin subcarpeta redundante")
 
         // Los nombres repetidos se distinguen: hay 'cheep_cheep' y 'cheep_cheep_2'.

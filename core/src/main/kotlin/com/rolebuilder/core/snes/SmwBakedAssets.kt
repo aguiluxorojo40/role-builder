@@ -116,7 +116,26 @@ object SmwBakedAssets {
         val out = LinkedHashMap<Int, ArgbImage>()
         for (id in SmwEnemyGraphics.curatedIds) {
             if (!SmwEnemyGraphics.isTall(id)) continue
-            val img = runCatching { SmwEnemyGraphics.spriteImage(rom, header, level, id) }.getOrNull()
+            // ⚠ AQUÍ HABÍA UN FALLO QUE SOLO SE VEÍA JUGANDO. Se usaba [spriteImage], que
+            // devuelve SIEMPRE 16×16 —un solo bloque—, para ids que son ALTOS por
+            // definición: `isTall` es el bit 0x40 de `Spr0to13Prop`, o sea "se dibuja como
+            // DOS teselas 16×16 apiladas". Los ocho Koopa con caparazón (0x04-0x0B) se
+            // horneaban a media altura, así que en el modo PROYECTO —el único que tira de
+            // estos ficheros— salía medio Koopa flotando.
+            //
+            // No se notaba en el modo ROM porque ahí el reproductor calcula los fotogramas
+            // en vivo con [SmwEnemyGraphics.spriteFrames], que sí monta el 16×32. Los dos
+            // caminos daban cosas distintas para el mismo enemigo; ahora usan la misma
+            // fuente de verdad.
+            val frames = runCatching {
+                if (SmwEnemyGraphics.isWinged(id)) {
+                    SmwEnemyGraphics.wingedKoopaFrames(rom, header, level, id)
+                } else {
+                    SmwEnemyGraphics.spriteFrames(rom, header, level, id)
+                }
+            }.getOrNull()
+            val img = frames?.firstOrNull()
+                ?: runCatching { SmwEnemyGraphics.spriteImage(rom, header, level, id) }.getOrNull()
             if (img != null) out[id] = img
         }
         // Los de DIBUJO PROPIO (Rex, Pokey, Thwomp, las plataformas de guía…) NO están en

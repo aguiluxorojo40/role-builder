@@ -75,6 +75,34 @@ class SmwBakedAssetsTest {
         assertTrue(big.size >= SmwEnemyGraphics.customEnemyIds.size, "faltan grandes")
     }
 
+    @Test
+    fun `los enemigos ALTOS se hornean a su altura real, no a media`() {
+        // REGRESIÓN de un fallo que solo se veía JUGANDO en modo proyecto: bigSprites
+        // usaba spriteImage, que devuelve siempre 16×16, para ids cuyo bit 0x40 de
+        // Spr0to13Prop dice "se dibuja como DOS teselas apiladas". Los ocho Koopa con
+        // caparazón salían a media altura, mientras que el modo ROM —que calcula los
+        // fotogramas en vivo— los enseñaba enteros. Dos caminos, dos resultados.
+        val rom = findRom() ?: return
+        val header = SnesDecoder.parseHeader(rom)
+        val big = SmwBakedAssets.bigSprites(rom, header)
+        val altos = SmwEnemyGraphics.curatedIds.filter { SmwEnemyGraphics.isTall(it) }
+        assertTrue(altos.isNotEmpty(), "debería haber ids altos que comprobar")
+        for (id in altos) {
+            val img = big[id] ?: continue
+            assertTrue(
+                img.height >= 32,
+                "0x%02X es ALTO y se horneó a %dx%d: debería medir 32 de alto".format(
+                    id, img.width, img.height,
+                ),
+            )
+        }
+        // Y las ALADAS llevan además su ala al lado, así que son más anchas que una casilla.
+        for (id in altos.filter { SmwEnemyGraphics.isWinged(it) }) {
+            val img = big[id] ?: continue
+            assertTrue(img.width > 16, "0x%02X es alada y debería traer el ala".format(id))
+        }
+    }
+
     private fun findRom(): ByteArray? {
         val candidates = listOf(
             System.getenv("SMW_ROM"),
