@@ -61,10 +61,31 @@ data class GameMap(
     val edgeWest: Int? = null,
     val edgeEast: Int? = null,
 ) {
+    init {
+        // Un proyecto no siempre lo hemos hecho nosotros: puede venir de un zip de otro,
+        // de un JSON editado a mano o de una versión anterior de la app. Sin esta
+        // comprobación, un mapa con capas del tamaño equivocado se "importa bien" y no
+        // revienta hasta mucho después —al dibujar o al mover al jugador—, lejos de la
+        // causa. Es mejor negarse a construirlo y decir exactamente qué no cuadra.
+        require(width > 0 && height > 0) { "Mapa $id: dimensiones inválidas ${width}x$height" }
+        require(layers.isNotEmpty()) { "Mapa $id: sin capas de tiles" }
+        layers.forEachIndexed { index, layer ->
+            require(layer.size == width * height) {
+                "Mapa $id: la capa $index tiene ${layer.size} tiles y deberían ser " +
+                    "${width * height} (${width}x$height)"
+            }
+        }
+    }
+
     fun inBounds(x: Int, y: Int): Boolean = x in 0 until width && y in 0 until height
 
+    /**
+     * Tile de la capa [layer] en (x, y), o [EMPTY_TILE] fuera del mapa. También devuelve
+     * vacío si la CAPA no existe: hay mapas de una sola capa (los importados sin fondo se
+     * rellenan, pero un proyecto viejo puede no traerla) y pedir la 1 no debe reventar.
+     */
     fun tileAt(layer: Int, x: Int, y: Int): Int =
-        if (!inBounds(x, y)) EMPTY_TILE else layers[layer][y * width + x]
+        if (layer !in layers.indices || !inBounds(x, y)) EMPTY_TILE else layers[layer][y * width + x]
 
     /** Copia del mapa con un tile cambiado (para el editor). */
     fun withTile(layer: Int, x: Int, y: Int, tile: Int): GameMap {

@@ -203,6 +203,43 @@ class SerializationTest {
         assertNull(restored.edgeSouth)
     }
 
+    // ---- Un proyecto que viene de fuera no es de fiar ----
+    // Un zip de otra persona, un JSON editado a mano o un proyecto de una versión
+    // anterior pueden traer un mapa incoherente. Sin validarlo se "carga bien" y revienta
+    // mucho después, al dibujar o al mover al jugador, lejos de la causa.
+
+    @Test
+    fun `un mapa con capas del tamano equivocado se rechaza al cargarlo`() {
+        // Declara 2x2 pero la primera capa solo trae 3 tiles.
+        val corrupto = """{"id":1,"name":"m","width":2,"height":2,"layers":[[0,0,0],[-1,-1,-1,-1]]}"""
+        kotlin.test.assertFailsWith<Exception> {
+            json.decodeFromString(GameMap.serializer(), corrupto)
+        }
+    }
+
+    @Test
+    fun `un mapa con dimensiones cero se rechaza`() {
+        val corrupto = """{"id":1,"name":"m","width":0,"height":5,"layers":[[],[]]}"""
+        kotlin.test.assertFailsWith<Exception> {
+            json.decodeFromString(GameMap.serializer(), corrupto)
+        }
+    }
+
+    @Test
+    fun `un mapa correcto se sigue cargando`() {
+        // La validación no debe rechazar lo bueno: 2x2 con dos capas de 4 tiles.
+        val bueno = """{"id":1,"name":"m","width":2,"height":2,"layers":[[0,1,2,3],[-1,-1,-1,-1]]}"""
+        val m = json.decodeFromString(GameMap.serializer(), bueno)
+        assertEquals(3, m.tileAt(0, 1, 1))
+    }
+
+    @Test
+    fun `pedir una capa que no existe devuelve tile vacio en vez de reventar`() {
+        val map = GameMap.empty(1, "m", 3, 3)
+        assertEquals(com.rolebuilder.core.model.EMPTY_TILE, map.tileAt(5, 1, 1))
+        assertEquals(com.rolebuilder.core.model.EMPTY_TILE, map.tileAt(-1, 1, 1))
+    }
+
     @Test
     fun `map editing helpers`() {
         var map = GameMap.empty(1, "m", 10, 8)

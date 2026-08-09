@@ -22,9 +22,10 @@ class ZzLayer2ObjectProbe {
         var completos = 0
         val hist = HashMap<String, Int>()
         println("nivel modo  objetos  desconocidos  vert  tamaño")
-        for (lv in 0x000..0x1FF) {
-            val tm = SmwLayer1.parseLayer2(rom, delta, lv) ?: continue
-            if (tm.totalObjects == 0) continue
+        val conObjetos = (0x000..0x1FF)
+            .mapNotNull { lv -> SmwLayer1.parseLayer2(rom, delta, lv)?.let { lv to it } }
+            .filter { (_, tm) -> tm.totalObjects > 0 }
+        for ((lv, tm) in conObjetos) {
             con++
             if (tm.unknownObjects == 0) completos++
             for ((k, v) in tm.unknownIds) hist[k] = (hist[k] ?: 0) + v
