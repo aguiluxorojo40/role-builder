@@ -249,15 +249,10 @@ object SnesGameRecipes {
         val cgram = assembleSmwCgram(rom, delta, level)
         val defs = smwMap16DefTable(rom, delta, tm.tileset)
 
-        // Recorta a las columnas con contenido real (los niveles no llenan 32 pantallas).
-        val totalCols = tm.screens * 16
-        var lastCol = -1
-        for (c in 0 until totalCols) for (r in 0..26) {
-            val b = tm.block(c, r); if (b > 0 && b != 0x25) { lastCol = maxOf(lastCol, c); break }
-        }
-        if (lastCol < 3) return null
-        val cols = minOf(lastCol + 2, totalCols, maxCols)
-        val rows = 27
+        // Recorta al contenido real (los niveles no llenan 32 pantallas). El recorte va por
+        // el eje por el que crece el nivel: a lo ancho si es horizontal, a lo alto si es
+        // vertical.
+        val (cols, rows) = tm.trimmedSize(maxCols) ?: return null
         val img = ArgbImage(cols * 16, rows * 16)
         // Fondo (Layer 2) COMPUESTO detrás del primer plano: si el nivel tiene fondo de
         // imagen, se tila a lo ancho como telón; si no, cielo plano (back area). El primer
@@ -396,14 +391,7 @@ object SnesGameRecipes {
         val cgram = assembleSmwCgram(rom, delta, level)
         val defs = smwMap16DefTable(rom, delta, tm.tileset)
 
-        val totalCols = tm.screens * 16
-        var lastCol = -1
-        for (c in 0 until totalCols) for (r in 0..26) {
-            val b = tm.block(c, r); if (b > 0 && b != 0x25) { lastCol = maxOf(lastCol, c); break }
-        }
-        if (lastCol < 3) return null
-        val w = minOf(lastCol + 2, totalCols, maxCols)
-        val h = 27
+        val (w, h) = tm.trimmedSize(maxCols) ?: return null
 
         // Bloques distintos usados → tesela del atlas. El aire (0x25) queda como -1.
         val blockToTile = HashMap<Int, Int>()
@@ -437,10 +425,15 @@ object SnesGameRecipes {
             val bgCols = bgImg.width / 16; val bgRows = bgImg.height / 16
             if (bgCols > 0 && bgRows > 0) {
                 val byKey = HashMap<List<Int>, Int>() // contenido de la tesela → índice en bgCells
-                for (y in 0 until minOf(h, bgRows)) for (x in 0 until w) {
+                // El fondo se repite en LAS DOS direcciones. Antes solo se repetía a lo
+                // ancho y se cortaba en `bgRows`: en horizontal daba igual (el nivel mide
+                // 27 filas, justo lo que trae el fondo), pero un nivel VERTICAL mide 160 y
+                // se quedaba sin fondo de la fila 27 para abajo.
+                for (y in 0 until h) for (x in 0 until w) {
                     val sc = x % bgCols
+                    val sr = y % bgRows
                     val px = IntArray(256)
-                    for (py in 0..15) for (pxx in 0..15) px[py * 16 + pxx] = bgImg.get(sc * 16 + pxx, y * 16 + py)
+                    for (py in 0..15) for (pxx in 0..15) px[py * 16 + pxx] = bgImg.get(sc * 16 + pxx, sr * 16 + py)
                     val idx = byKey.getOrPut(px.toList()) { bgCells.add(px); bgCells.size - 1 }
                     bgMap[y * w + x] = fgTileCount + idx
                 }
@@ -1039,27 +1032,17 @@ object SnesGameRecipes {
     /**
      * Extrae el mapa de colisión del nivel [level] de una ROM de SMW: parsea la
      * geometría de Layer 1 ([SmwLayer1]) y clasifica cada bloque con la solidez real
-     * del juego ([SmwBlockCollision]). Recorta a las columnas con contenido (los
-     * niveles no llenan las 32 pantallas). Devuelve null si el nivel no tiene datos
-     * de Layer 1 (vertical, sala de jefe) o queda vacío.
+     * del juego ([SmwBlockCollision]). Recorta al contenido (los niveles no llenan las
+     * 32 pantallas). Devuelve null si el nivel no tiene datos de Layer 1 (sala de jefe)
+     * o queda vacío.
      */
     fun smwLevelCollision(rom: ByteArray, header: SnesHeader, level: Int): SmwCollisionMap? {
         val delta = smwHeaderDelta(header)
         val tm = SmwLayer1.parse(rom, delta, level) ?: return null
 
-        // Última columna con algún bloque distinto de aire (0x25), como en las escenas.
-        val totalCols = tm.screens * 16
-        var lastCol = -1
-        for (c in 0 until totalCols) {
-            for (r in 0..26) {
-                val b = tm.block(c, r)
-                if (b > 0 && b != 0x25) { lastCol = c; break }
-            }
-        }
-        if (lastCol < 3) return null
-
-        val cols = minOf(lastCol + 2, totalCols)
-        val rows = 27 // 0x1B0 / 16: alto fijo de un nivel horizontal de SMW
+        // Recorte por el eje por el que crece el nivel (ver SmwLevelTilemap.trimmedSize):
+        // a lo ancho si es horizontal, a lo alto si es vertical.
+        val (cols, rows) = tm.trimmedSize() ?: return null
         val blocks = IntArray(cols * rows)
         val solidity = ArrayList<SmwSolidity>(cols * rows)
         for (r in 0 until rows) {

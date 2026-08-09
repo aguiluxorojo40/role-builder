@@ -21,7 +21,19 @@ package com.rolebuilder.core.snes
  */
 internal object SmwLayer1 {
 
-    /** Resultado: buffer Map16 del nivel (layout: pantalla*0x1B0 + fila*16 + col). */
+    /**
+     * Resultado: buffer Map16 del nivel. La disposición NO es única, y por eso hace falta
+     * [vertical]:
+     *
+     *  - HORIZONTAL: las pantallas se ponen una a la DERECHA de otra, cada una de
+     *    0x1B0 bytes = 27 filas × 16 columnas (las 16 primeras filas en la página 0 y las
+     *    11 restantes a partir del byte 256). El nivel crece a lo ancho.
+     *  - VERTICAL: las pantallas se apilan hacia ABAJO, cada una de 0x200 bytes = 32 filas
+     *    × 16 columnas (16 filas en la página 0 y otras 16 a partir del byte 256). El
+     *    nivel mide siempre 16 columnas y crece a lo alto.
+     *
+     * [block] entiende las dos y siempre se le pasa (x, y) en casillas.
+     */
     internal class SmwLevelTilemap(
         val lo: ByteArray,
         val hi: ByteArray,
@@ -32,21 +44,114 @@ internal object SmwLayer1 {
         val unknownObjects: Int,
         /** id de objeto sin rutina portada → nº de apariciones ("std:NN"/"ext:NN"). */
         val unknownIds: Map<String, Int> = emptyMap(),
+        /** true si el nivel se recorre hacia ABAJO (pantallas apiladas, 16 columnas). */
+        val vertical: Boolean = false,
+        /** Base de cada pantalla dentro de [lo]/[hi] (`kLevelDataLayout_*`). */
+        val screenBase: IntArray = IntArray(32) { it * 0x1B0 },
     ) {
-        /** Bloque Map16 en (colAbs 0..screens*16-1, fila 0..26), o -1 fuera de rango. */
-        fun block(colAbs: Int, row: Int): Int {
-            if (row !in 0..26) return -1
-            val idx = (colAbs / 16) * 0x1B0 + (if (row >= 16) 256 + (row - 16) * 16 else row * 16) + (colAbs % 16)
+        /** Ancho del nivel en casillas: 16 fijas si es vertical, 16 por pantalla si no. */
+        val cols: Int get() = if (vertical) 16 else screens * 16
+
+        /** Alto del nivel en casillas: 32 por pantalla si es vertical, 27 fijas si no. */
+        val rows: Int get() = if (vertical) screens * 32 else 27
+
+        /** Filas por pantalla: 32 en vertical (0x200 bytes), 27 en horizontal (0x1B0). */
+        val rowsPerScreen: Int get() = if (vertical) 32 else 27
+
+        /**
+         * RECORTE al contenido real: los niveles no llenan sus 32 pantallas. Devuelve
+         * (ancho, alto) en casillas, ya recortado por el eje por el que CRECE el nivel —a
+         * lo ancho si es horizontal, a lo alto si es vertical— y con un margen de una
+         * casilla. Devuelve null si no hay contenido suficiente.
+         *
+         * Que el recorte siga el eje bueno no es un detalle: recortar un nivel vertical
+         * por columnas lo dejaría siempre en 16 y con las 32 pantallas de alto vacías
+         * arrastradas detrás.
+         */
+        fun trimmedSize(maxCols: Int = Int.MAX_VALUE, maxRows: Int = Int.MAX_VALUE): Pair<Int, Int>? {
+            var ultimo = -1
+            if (vertical) {
+                for (y in 0 until rows) for (x in 0 until 16) {
+                    val b = block(x, y)
+                    if (b > 0 && b != 0x25) { ultimo = maxOf(ultimo, y); break }
+                }
+                if (ultimo < 3) return null
+                return 16 to minOf(ultimo + 2, rows, maxRows)
+            }
+            for (x in 0 until cols) for (y in 0 until 27) {
+                val b = block(x, y)
+                if (b > 0 && b != 0x25) { ultimo = maxOf(ultimo, x); break }
+            }
+            if (ultimo < 3) return null
+            return minOf(ultimo + 2, cols, maxCols) to 27
+        }
+
+        /** Bloque Map16 en la casilla (x, y), o -1 fuera del nivel. */
+        fun block(x: Int, y: Int): Int {
+            if (x < 0 || y < 0) return -1
+            val screen: Int
+            val col: Int
+            val row: Int
+            if (vertical) {
+                if (x >= 16) return -1
+                screen = y / 32; col = x; row = y % 32
+            } else {
+                if (y >= 27) return -1
+                screen = x / 16; col = x % 16; row = y
+            }
+            if (screen >= screenBase.size) return -1
+            // La página 1 de la pantalla empieza en el byte 256, tanto en horizontal
+            // (filas 16..26) como en vertical (filas 16..31).
+            val idx = screenBase[screen] + (if (row >= 16) 256 + (row - 16) * 16 else row * 16) + col
             if (idx !in lo.indices) return -1
             return (lo[idx].toInt() and 0xFF) or ((hi[idx].toInt() and 0xFF) shl 8)
         }
     }
 
-    /** Tamaño del buffer: 32 pantallas × 0x1B0 (idéntico a $7EC800..$7EFFFF). */
-    private const val BUF = 32 * 0x1B0
+    /**
+     * Tamaño del buffer: $7EC800..$7EFFFF, o sea 0x3800 bytes. No son "32 × 0x1B0"
+     * (eso da 0x3600 y se queda corto): las disposiciones VERTICALES llegan hasta
+     * $7EFE00 + 0x200, que es justo el final de la RAM.
+     */
+    private const val BUF = 0x3800
 
     /** Modos de nivel sin objetos de Layer 1 (salas de jefe / especiales). */
     private val MODES_NO_LAYER1 = intArrayOf(9, 11, 16)
+
+    // ------------------------- DISPOSICIÓN de las pantallas -------------------------
+    // `kLevelDataLayout_*` ($05), como offsets desde $7EC800. Es la tabla que dice dónde
+    // empieza cada pantalla dentro del buffer Map16, y es LO QUE CAMBIA entre un nivel
+    // horizontal y uno vertical: no es una fórmula distinta, es otra tabla.
+
+    /** Horizontal: 32 pantallas de 0x1B0 (27 filas × 16 columnas), una a la derecha de otra. */
+    private val LAYOUT_STD_HORIZ = IntArray(32) { it * 0x1B0 }
+
+    /** Vertical: 28 pantallas de 0x200 (32 filas × 16 columnas), apiladas hacia abajo. */
+    private val LAYOUT_STD_VERT = IntArray(28) { it * 0x200 }
+
+    /** Layer 1 vertical y Layer 2 horizontal: 14 pantallas de 0x200 y luego de 0x1B0. */
+    private val LAYOUT_VERT_L1 = IntArray(30) {
+        if (it < 14) it * 0x200 else 0x1B00 + (it - 14) * 0x1B0
+    }
+
+    /** Layer 1 horizontal y Layer 2 vertical: 16 de 0x1B0 y luego de 0x200. */
+    private val LAYOUT_HORIZ_L1 = IntArray(30) {
+        if (it < 16) it * 0x1B0 else 0x1C00 + (it - 16) * 0x200
+    }
+
+    /**
+     * `kLevelDataLayoutTables_Layer1LoPtrs` ($05): modo de nivel → disposición de Layer 1.
+     * null es "este modo no tiene Layer 1" (el 0 de la tabla del juego), que es de donde
+     * salen de verdad los modos sin geometría, sin necesidad de listarlos a mano.
+     */
+    private val LAYER1_LAYOUT: Array<IntArray?> = arrayOf(
+        LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, LAYOUT_VERT_L1,   // 00-03
+        LAYOUT_VERT_L1, LAYOUT_HORIZ_L1, LAYOUT_HORIZ_L1, LAYOUT_STD_VERT,      // 04-07
+        LAYOUT_STD_VERT, null, LAYOUT_STD_VERT, null,                           // 08-0B
+        LAYOUT_STD_HORIZ, LAYOUT_STD_VERT, LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ,  // 0C-0F
+        null, LAYOUT_STD_HORIZ, null, null, null, null, null, null,             // 10-17
+        null, null, null, null, null, null, LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, // 18-1F
+    )
 
     /** VerticalTable de LoadLevelHeader: bit0 = nivel vertical. */
     private val VERTICAL_TABLE = intArrayOf(
@@ -76,6 +181,12 @@ internal object SmwLayer1 {
         var screensInLevel = 1; var mode = 0; var tileset = 0
         var total = 0; var unknown = 0
 
+        /** Nivel VERTICAL: cambia la tabla de pantallas y el orden de los nibbles. */
+        var vertical = false
+
+        /** Base de cada pantalla (`kLevelDataLayout_*`), ya elegida según el modo. */
+        var layout: IntArray = LAYOUT_STD_HORIZ
+
         fun rd(i: Int): Int = if (i in rom.indices) rom[i].toInt() and 0xFF else 0xFF
 
         fun run(): SmwLevelTilemap? {
@@ -84,7 +195,11 @@ internal object SmwLayer1 {
             screensInLevel = (b0 and 0x1F) + 1
             mode = b1 and 0x1F
             tileset = b4 and 0x0F
-            if (VERTICAL_TABLE[mode] and 1 != 0) return null // verticales: no soportados aún
+            vertical = VERTICAL_TABLE[mode] and 1 != 0
+            // La disposición sale de kLevelDataLayoutTables_Layer1LoPtrs. Un modo sin
+            // entrada (el 0 de la tabla) es un modo SIN Layer 1: eso los detecta solos,
+            // sin listarlos a mano.
+            layout = LAYER1_LAYOUT.getOrNull(mode) ?: return done()
             if (mode in MODES_NO_LAYER1) return done()
             data += 5
             // ---- LoadLevelDataObject ----
@@ -92,12 +207,22 @@ internal object SmwLayer1 {
             var guard = 0
             do {
                 if (++guard > 2000 || data + 3 > rom.size) return null // flujo corrupto
-                val h0 = rd(data); val h1 = rd(data + 1); size = rd(data + 2); data += 3
+                var h0 = rd(data); var h1 = rd(data + 1); size = rd(data + 2); data += 3
                 objNum = (h1 shr 4) or ((h0 and 0x60) shr 1)
+                // En los niveles VERTICALES los nibbles bajos de los dos bytes van
+                // INTERCAMBIADOS respecto al horizontal: el juego los cruza aquí para
+                // poder reutilizar tal cual todas las rutinas de objeto. Se salta el
+                // cruce cuando (objNum:size) como pareja de 16 bits vale menos de 2, que
+                // son la salida y el salto de pantalla —esos llevan el dato en crudo—.
+                if (vertical && ((objNum shl 8) or size) >= 2) {
+                    val bajo0 = h0 and 0x0F
+                    h0 = (h1 and 0x0F) or (h0 and 0xF0)
+                    h1 = bajo0 or (h1 and 0xF0)
+                }
                 pos = ((h0 and 0x0F) shl 4) or (h1 and 0x0F)
                 if (h0 and 0x80 != 0) screen++
                 nextScreen = screen
-                ptr = screen * 0x1B0
+                ptr = layout.getOrElse(screen) { layout.last() }
                 if (h0 and 0x10 != 0) ptr += 256
                 r10 = h0; r11 = h1
                 total++
@@ -112,7 +237,10 @@ internal object SmwLayer1 {
 
         fun unkExt(id: Int) { unknown++; val k = "ext:%02X".format(id); unknownIds[k] = (unknownIds[k] ?: 0) + 1 }
 
-        fun done() = SmwLevelTilemap(lo, hi, screensInLevel, tileset, mode, total, unknown, unknownIds)
+        fun done() = SmwLevelTilemap(
+            lo, hi, screensInLevel, tileset, mode, total, unknown, unknownIds,
+            vertical = vertical, screenBase = layout,
+        )
 
         // ------------------------------ primitivas ------------------------------
         // Réplicas exactas de las rutinas de $0D:A6B1..A9EF (ver smw_0d.c).
@@ -143,6 +271,23 @@ internal object SmwLayer1 {
         }
 
         fun pageCross(cr: Int) { ptr += cr shl 8; ptrBak = ptr }
+
+        /**
+         * Bajar una fila en un nivel VERTICAL
+         * (`HandleVerticalSubScreenCrossingForCurrentObject_VerticalLevel`, $0D:DA82A).
+         * Se diferencia de [vert] en dos cosas: al pasarse de 255 suma 0x200 —una pantalla
+         * vertical entera, no media— y NO toca el backup del puntero.
+         *
+         * Ojo: esto lo usan SOLO los tres objetos de cuesta de nivel vertical. El resto de
+         * objetos siguen llamando a la variante horizontal aunque el nivel sea vertical,
+         * porque el juego no los cambia. Aquí se respeta.
+         */
+        fun vertVertical(): Int {
+            val t = pos + 16
+            pos = t and 0xFF
+            if (t >= 256) ptr += 0x200
+            return pos
+        }
 
         /**
          * Cruce de página CRUDO: el `ptr_lo_map16_data += 256` que hacen a pelo las
@@ -344,8 +489,57 @@ internal object SmwLayer1 {
                 in 0x75..0x7B -> extCanvasTile(k)
                 in 0x7C..0x7E -> extCanvasBit(k)
                 0x7F -> extTorpedoLauncher()
+                in 0x91..0x92 -> extVertSteepLeftSlope(k)
+                in 0x93..0x94 -> extVertNormalLeftSlope(k)
+                in 0x95..0x96 -> extVertVerySteepLeftSlope(k)
                 else -> unkExt(k)
             }
+        }
+
+        // -------------------- cuestas de NIVEL VERTICAL (ExtObj91/93/95) --------------------
+        // Los únicos objetos del juego que usan [vertVertical]. Van en página 1 (son
+        // sólidos) y cada id de la pareja elige una de las dos teselas de su tabla.
+
+        /** 0x91/0x92: cuesta INCLINADA de una columna ($0D:A80D). */
+        fun extVertSteepLeftSlope(k: Int) {
+            val top = intArrayOf(0xAA, 0xAF)
+            val bottom = intArrayOf(0xE2, 0xE4)
+            val i = k - 0x91
+            val v1 = pos
+            setHi01(v1); setLo(v1, top[i])
+            val v3 = vertVertical()
+            setHi01(v3); setLo(v3, bottom[i])
+        }
+
+        /** 0x93/0x94: cuesta NORMAL, dos columnas de ancho ($0D:A846). */
+        fun extVertNormalLeftSlope(k: Int) {
+            val topLeft = intArrayOf(0x96, 0xA0)
+            val topRight = intArrayOf(0x9B, 0xA5)
+            val bottomLeft = intArrayOf(0xDE, 0xE6)
+            val bottomRight = intArrayOf(0xE6, 0xE0)
+            val i = k - 0x93
+            val v1 = pos
+            setHi01(v1)
+            val v3 = horiz(v1, topLeft[i])
+            setHi01(v3); setLo(v3, topRight[i])
+            val v4 = vertVertical()
+            setHi01(v4)
+            val v5 = horiz(v4, bottomLeft[i])
+            setHi01(v5); setLo(v5, bottomRight[i])
+        }
+
+        /** 0x95/0x96: cuesta MUY inclinada, tres filas de una columna ($0D:A87D). */
+        fun extVertVerySteepLeftSlope(k: Int) {
+            val top = intArrayOf(0xCA, 0xCC)
+            val middle = intArrayOf(0xCB, 0xCD)
+            val bottom = intArrayOf(0xF1, 0xF2)
+            val i = k - 0x95
+            val v1 = pos
+            setHi01(v1); setLo(v1, top[i])
+            val v3 = vertVertical()
+            setHi01(v3); setLo(v3, middle[i])
+            val v4 = vertVertical()
+            setHi01(v4); setLo(v4, bottom[i])
         }
 
         // ------------------------------ el LIENZO (canvas) ------------------------------

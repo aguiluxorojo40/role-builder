@@ -505,11 +505,85 @@ class SmwLayer1Test {
         assertEquals(0x1F4, tm.block(4, 3))
     }
 
+    // ------------------------------ NIVELES VERTICALES ------------------------------
+    // Modo 0x0A (y el 8) son verticales. Cambian TRES cosas a la vez: la tabla de bases de
+    // pantalla (0x200 en vez de 0x1B0), el orden de los nibbles de posición, y hacia dónde
+    // crece el nivel. Si solo se cambia una, el nivel sale movido pero "parece" bien.
+
     @Test
-    fun `nivel vertical devuelve null (no soportado aun)`() {
-        // Modo 10 (0x0A) es vertical según la VerticalTable.
-        val rom = romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xFF)
-        assertNull(SmwLayer1.parse(rom, 0, 0))
+    fun `un nivel vertical ya se parsea, y mide 16 columnas`() {
+        // Cabecera: b0 = 1 → 2 pantallas; b1 = 0x0A → modo vertical.
+        val tm = SmwLayer1.parse(romWithLevel(0x01, 0x0A, 0x00, 0x00, 0x00, 0xFF), 0, 0)
+        assertNotNull(tm)
+        assertTrue(tm.vertical, "el modo 0x0A es vertical")
+        assertEquals(16, tm.cols, "un nivel vertical mide SIEMPRE 16 columnas")
+        assertEquals(2 * 32, tm.rows, "y crece hacia abajo: 32 filas por pantalla")
+        assertEquals(32, tm.rowsPerScreen)
+    }
+
+    @Test
+    fun `en vertical los nibbles de posicion van CRUZADOS`() {
+        // Es lo que hace LoadLevelDataObject antes de llamar a la rutina del objeto. En
+        // horizontal el nibble bajo del byte 0 es la FILA; en vertical es la COLUMNA.
+        // Aquí: byte0 bajo = 3 (columna), byte1 bajo = 5 (fila).
+        val tm = SmwLayer1.parse(
+            romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0x23, 0x45, 0x21, 0xFF), 0, 0,
+        )
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Suelo en la fila 5, columnas 3 y 4 (tamaño 0x21 → 2 bloques de ancho).
+        assertEquals(0x100, tm.block(3, 5)); assertEquals(0x100, tm.block(4, 5))
+        // Y tierra debajo, en las filas 6 y 7.
+        for (f in 6..7) for (c in 3..4) assertEquals(0x3F, tm.block(c, f), "tierra ($c,$f)")
+        // Si los nibbles NO se cruzaran, esto habría caído en la fila 3 / columna 5.
+        assertEquals(0x25, tm.block(5, 3), "aire donde caería sin cruzar los nibbles")
+    }
+
+    @Test
+    fun `la fila 16 de una pantalla vertical salta a la segunda mitad del bloque`() {
+        // Cada pantalla vertical son 0x200 bytes: filas 0-15 en la página 0 y 16-31 a
+        // partir del byte 256. Colocar en la fila 20 comprueba ese salto.
+        val tm = SmwLayer1.parse(
+            romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0x22, 0x4E, 0x01, 0xFF), 0, 0,
+        )
+        assertNotNull(tm)
+        // columna 2, fila 14 (0x0E). El bloque cae dentro de la primera mitad.
+        assertEquals(0x100, tm.block(2, 14))
+        assertEquals(0x25, tm.block(2, 15), "no se desborda a la fila siguiente")
+    }
+
+    @Test
+    fun `el bit de pantalla nueva baja una pantalla, no la mueve a la derecha`() {
+        // En vertical las pantallas se APILAN. El mismo bit 0x80 que en horizontal lleva
+        // el objeto a la pantalla de la derecha, aquí lo lleva 32 filas más abajo.
+        val tm = SmwLayer1.parse(
+            romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0xA3, 0x45, 0x21, 0xFF), 0, 0,
+        )
+        assertNotNull(tm)
+        assertEquals(0x100, tm.block(3, 32 + 5), "pantalla 1 = 32 filas más abajo")
+        assertEquals(0x25, tm.block(3, 5), "la pantalla 0 queda vacía")
+    }
+
+    @Test
+    fun `las cuestas de nivel vertical (ext 0x91-0x96) ya se dibujan`() {
+        // ExtObj91/93/95 son los únicos objetos que usan el cruce vertical (+0x200).
+        // Ext: objNum 0 y el id en el byte de tamaño. Columna 4, fila 6.
+        val tm = SmwLayer1.parse(
+            romWithLevel(0x00, 0x0A, 0x00, 0x00, 0x00, 0x04, 0x06, 0x91, 0xFF), 0, 0,
+        )
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects, "el 0x91 ya está portado")
+        // Dos teselas apiladas, las dos de página 1 (son sólidas).
+        assertEquals(0x1AA, tm.block(4, 6))
+        assertEquals(0x1E2, tm.block(4, 7))
+    }
+
+    @Test
+    fun `un modo SIN Layer 1 no trae geometria`() {
+        // El modo 9 no tiene entrada en kLevelDataLayoutTables_Layer1LoPtrs (vale 0).
+        val tm = SmwLayer1.parse(romWithLevel(0x00, 0x09, 0x00, 0x00, 0x00, 0xFF), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.totalObjects)
     }
 
     @Test
