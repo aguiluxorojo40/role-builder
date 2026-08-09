@@ -66,7 +66,9 @@ class RpgEngine(
     var gameOver = false
         private set
 
-    /** Pausa total del mundo (menú abierto). */
+    /** Pausa total del mundo (menú abierto). La UI lo escribe desde su hilo
+     *  mientras tick() corre en el hilo de render, de ahí el @Volatile. */
+    @Volatile
     var paused = false
 
     // ---- UI de mensajes -----------------------------------------------------
@@ -84,6 +86,7 @@ class RpgEngine(
     private var shopOwner: Interpreter? = null
 
     /** Aviso puntual para la UI (p. ej. "¡Nivel 5!"); la UI lo consume poniéndolo a null. */
+    @Volatile
     var notice: String? = null
 
     // ---- efectos de pantalla (el renderer los lee cada frame) ----------------
@@ -110,11 +113,20 @@ class RpgEngine(
     var shakeTimeLeft: Float = 0f
 
     // ---- input (lo escribe la capa de UI) -----------------------------------
+    // La UI escribe desde su hilo y tick() lee desde el hilo de render:
+    // @Volatile garantiza que las pulsaciones no se pierdan por visibilidad.
 
     /** Ejes del joystick virtual, en [-1, 1]. */
+    @Volatile
     var inputX = 0f
+
+    @Volatile
     var inputY = 0f
+
+    @Volatile
     private var actionPressed = false
+
+    @Volatile
     private var secondaryPressed = false
 
     /** Botón A: interactuar con un evento o atacar. */

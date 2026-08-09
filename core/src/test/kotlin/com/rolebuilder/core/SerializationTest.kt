@@ -204,6 +204,31 @@ class SerializationTest {
     }
 
     @Test
+    fun `map with wrong layer size is rejected on load`() {
+        // 2x2 declarado pero la capa solo trae 3 tiles: antes se "cargaba bien"
+        // y reventaba después al dibujar; ahora falla en la importación.
+        val corrupt = """{"id":1,"name":"m","width":2,"height":2,"layers":[[0,0,0],[-1,-1,-1,-1]]}"""
+        kotlin.test.assertFailsWith<Exception> {
+            json.decodeFromString(GameMap.serializer(), corrupt)
+        }
+    }
+
+    @Test
+    fun `map with zero dimensions is rejected`() {
+        val corrupt = """{"id":1,"name":"m","width":0,"height":5,"layers":[[],[]]}"""
+        kotlin.test.assertFailsWith<Exception> {
+            json.decodeFromString(GameMap.serializer(), corrupt)
+        }
+    }
+
+    @Test
+    fun `tileAt out of range layer returns empty tile`() {
+        val map = GameMap.empty(1, "m", 3, 3)
+        assertEquals(com.rolebuilder.core.model.EMPTY_TILE, map.tileAt(5, 1, 1))
+        assertEquals(com.rolebuilder.core.model.EMPTY_TILE, map.tileAt(-1, 1, 1))
+    }
+
+    @Test
     fun `map editing helpers`() {
         var map = GameMap.empty(1, "m", 10, 8)
         map = map.withTile(0, 3, 2, Tiles.WATER)

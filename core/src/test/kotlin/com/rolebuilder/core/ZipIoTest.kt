@@ -100,6 +100,28 @@ class ZipIoTest {
     }
 
     @Test
+    fun `import rejects project with corrupt map layers and cleans up`() {
+        // Un zip con project.json válido pero un mapa estructuralmente roto
+        // no debe quedarse instalado a medias.
+        val source = tempDir()
+        val dest = File(tempDir(), "corrupto")
+        try {
+            writeTemplate(source)
+            File(source, "maps/map_1.json").writeText(
+                """{"id":1,"name":"rota","width":5,"height":5,"layers":[[0],[  -1]]}""",
+            )
+            val bytes = ByteArrayOutputStream().also { ZipIo.exportProject(source, it) }.toByteArray()
+            assertFailsWith<Exception> {
+                ZipIo.importProject(ByteArrayInputStream(bytes), dest)
+            }
+            assertFalse(dest.exists(), "el destino se limpia si el proyecto no carga")
+        } finally {
+            source.deleteRecursively()
+            dest.parentFile?.deleteRecursively()
+        }
+    }
+
+    @Test
     fun `export requires a project folder`() {
         val empty = tempDir()
         try {

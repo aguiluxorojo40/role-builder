@@ -30,9 +30,24 @@ object ProjectIo {
 
     fun mapFileName(mapId: Int): String = "map_$mapId.json"
 
+    /**
+     * Escritura atómica: escribe en un temporal y renombra sobre el destino.
+     * Si la app muere a mitad de escritura, el archivo anterior queda intacto
+     * en lugar de un JSON truncado (partida o proyecto corruptos).
+     */
+    internal fun File.writeTextAtomic(text: String) {
+        val tmp = File(parentFile, "$name.tmp")
+        tmp.writeText(text)
+        if (!tmp.renameTo(this)) {
+            // Fallback (p. ej. sistemas de archivos sin rename sobre destino).
+            writeText(text)
+            tmp.delete()
+        }
+    }
+
     fun saveProject(dir: File, project: Project) {
         dir.mkdirs()
-        File(dir, PROJECT_FILE).writeText(json.encodeToString(Project.serializer(), project))
+        File(dir, PROJECT_FILE).writeTextAtomic(json.encodeToString(Project.serializer(), project))
     }
 
     fun loadProject(dir: File): Project =
@@ -40,7 +55,7 @@ object ProjectIo {
 
     fun saveDatabase(dir: File, database: Database) {
         dir.mkdirs()
-        File(dir, DATABASE_FILE).writeText(json.encodeToString(Database.serializer(), database))
+        File(dir, DATABASE_FILE).writeTextAtomic(json.encodeToString(Database.serializer(), database))
     }
 
     fun loadDatabase(dir: File): Database =
@@ -48,7 +63,7 @@ object ProjectIo {
 
     fun saveMap(dir: File, map: GameMap) {
         val mapsDir = File(dir, MAPS_DIR).also { it.mkdirs() }
-        File(mapsDir, mapFileName(map.id)).writeText(json.encodeToString(GameMap.serializer(), map))
+        File(mapsDir, mapFileName(map.id)).writeTextAtomic(json.encodeToString(GameMap.serializer(), map))
     }
 
     fun loadMap(dir: File, mapId: Int): GameMap =

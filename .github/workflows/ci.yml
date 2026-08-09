@@ -4,6 +4,8 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  # Permite lanzar el CI a mano desde la pestaña Actions (auditorías, re-runs).
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -33,6 +35,45 @@ jobs:
         with:
           name: informe-tests-core
           path: core/build/reports/tests/test
+
+  mutation-tests:
+    name: Mutación de :core (¿los tests detectan código roto?)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Pitest muta el código de core y re-ejecuta la suite: los mutantes
+      # supervivientes señalan tests que pasan aunque el código esté roto.
+      - name: Ejecutar pitest
+        run: ./gradlew :core:pitest --console=plain
+
+      - name: Resumen de mutación
+        if: always()
+        run: |
+          if [ -f core/build/reports/pitest/mutations.xml ]; then
+            total=$(grep -o '<mutation ' core/build/reports/pitest/mutations.xml | wc -l)
+            killed=$(grep -o "status='KILLED'" core/build/reports/pitest/mutations.xml | wc -l)
+            echo "### Mutación de :core" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Mutantes generados: $total" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Mutantes cazados: $killed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Supervivientes (agujeros de la suite): $((total - killed))" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar informe de mutación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informe-mutacion-core
+          path: core/build/reports/pitest
 
   app-build:
     name: Compilar APK (:app)

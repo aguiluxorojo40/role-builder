@@ -49,10 +49,17 @@ fun SettingsTab(state: EditorState) {
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         runCatching {
-            val name = (context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val rawName = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                 val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                 if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else null
-            } ?: "imagen_${System.currentTimeMillis()}.png").let {
+            }
+            // DISPLAY_NAME lo controla el proveedor de contenido (otra app):
+            // quedarse solo con el nombre base y filtrar caracteres evita que
+            // un nombre con "../" escriba fuera de la carpeta de imágenes.
+            val name = (rawName?.let { File(it).name }
+                ?.replace(Regex("[^A-Za-z0-9._()\\- ]"), "_")
+                ?.takeIf { it.isNotBlank() && it != ".png" }
+                ?: "imagen_${System.currentTimeMillis()}.png").let {
                 if (it.endsWith(".png", ignoreCase = true)) it else "$it.png"
             }
             val dest = ProjectIo.imageFile(state.projectDir, name)

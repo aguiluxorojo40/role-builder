@@ -58,8 +58,9 @@ class CombatTest {
         val hp0 = engine.state.hp
         engine.run(1.0f)
         val damage = hp0 - engine.state.hp
-        // Con 1 s de invulnerabilidad, en 1 s solo caben 1-2 golpes.
-        assertTrue(damage in 1..2 * engine.enemies.first().def.attack, "daño acotado: $damage")
+        // Ataque 2 - defensa 1 = 1 de daño por golpe, y con 1 s de
+        // invulnerabilidad en 1 s caben como mucho 2 golpes: daño total 1-2.
+        assertTrue(damage in 1..2, "daño acotado por la invulnerabilidad: $damage")
     }
 
     @Test

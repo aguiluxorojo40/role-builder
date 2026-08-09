@@ -112,6 +112,25 @@ class MapReachabilityTest {
     }
 
     @Test
+    fun `maps linked only by edge connections are not orphans`() {
+        // Regresión: la herramienta solo seguía TransferPlayer e ignoraba las
+        // zonas conectadas por bordes, marcando como huérfanos mapas jugables.
+        val map1 = emptyMap(1).copy(edgeEast = 2)
+        val map2 = emptyMap(2).copy(edgeWest = 1, edgeNorth = 3)
+        val map3 = emptyMap(3).copy(edgeSouth = 2)
+        val maps = mapOf(1 to map1, 2 to map2, 3 to map3)
+        assertEquals(emptySet<Int>(), MapReachability.findOrphanMaps(1, maps))
+    }
+
+    @Test
+    fun `edge pointing to missing map does not crash and rest stays orphan`() {
+        val map1 = emptyMap(1).copy(edgeEast = 99) // vecino inexistente
+        val map2 = emptyMap(2)
+        val maps = mapOf(1 to map1, 2 to map2)
+        assertEquals(setOf(2), MapReachability.findOrphanMaps(1, maps))
+    }
+
+    @Test
     fun `multiple orphans detected`() {
         val map1 = mapWithTransfer(1, targetMapId = 2)
         val map2 = emptyMap(2)

@@ -37,10 +37,23 @@ data class GameMap(
     val edgeWest: Int? = null,
     val edgeEast: Int? = null,
 ) {
+    init {
+        // Los proyectos importados (zips de terceros o JSON editado a mano) no
+        // son de fiar: sin esto, un mapa con capas de tamaño incorrecto se
+        // "importa bien" y revienta después al dibujar o mover al jugador.
+        require(width > 0 && height > 0) { "Mapa $id: dimensiones inválidas ${width}x$height" }
+        require(layers.isNotEmpty()) { "Mapa $id: sin capas de tiles" }
+        layers.forEachIndexed { index, layer ->
+            require(layer.size == width * height) {
+                "Mapa $id: la capa $index tiene ${layer.size} tiles y deberían ser ${width * height} (${width}x$height)"
+            }
+        }
+    }
+
     fun inBounds(x: Int, y: Int): Boolean = x in 0 until width && y in 0 until height
 
     fun tileAt(layer: Int, x: Int, y: Int): Int =
-        if (!inBounds(x, y)) EMPTY_TILE else layers[layer][y * width + x]
+        if (layer !in layers.indices || !inBounds(x, y)) EMPTY_TILE else layers[layer][y * width + x]
 
     /** Copia del mapa con un tile cambiado (para el editor). */
     fun withTile(layer: Int, x: Int, y: Int, tile: Int): GameMap {

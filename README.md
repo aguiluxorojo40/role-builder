@@ -53,8 +53,10 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (34 tests: serialización, movimiento, intérprete, combate y el proyecto
-demo completo). `app` solo dibuja el estado del motor y le pasa el input.
+JVM rápidos (más de 100: serialización, movimiento, intérprete, combate, zonas
+conectadas y el proyecto demo completo), vigilados a su vez por un job de
+*mutation testing* (pitest) en CI que mide si la suite detecta código roto.
+`app` solo dibuja el estado del motor y le pasa el input.
 
 ## Formato de proyecto
 

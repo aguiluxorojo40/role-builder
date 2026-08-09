@@ -57,6 +57,8 @@ class SoundFx(private val context: Context) {
         "chest" -> tone(440f, 880f, 200)
         "heal" -> tone(520f, 780f, 250)
         "shoot" -> tone(500f, 240f, 110, square = true)
+        "coin" -> tone(988f, 1319f, 130)
+        "levelup" -> tone(523f, 1568f, 400)
         else -> tone(440f, 440f, 80)
     }
 
@@ -106,6 +108,12 @@ class SoundFx(private val context: Context) {
 
     companion object {
         private const val SAMPLE_RATE = 22050
-        private val NAMES = listOf("attack", "hit", "hurt", "defeat", "pickup", "select", "chest", "heal", "shoot")
+        // Debe cubrir TODOS los nombres que encola el motor (soundQueue.add):
+        // si falta uno, play() lo descarta en silencio y el juego se queda mudo
+        // en esa acción (pasó con "coin" y "levelup").
+        private val NAMES = listOf(
+            "attack", "hit", "hurt", "defeat", "pickup",
+            "select", "chest", "heal", "shoot", "coin", "levelup",
+        )
     }
 }

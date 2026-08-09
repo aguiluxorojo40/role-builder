@@ -9,6 +9,7 @@ navigationCompose = "2.8.5"
 lifecycle = "2.8.7"
 coreKtx = "1.15.0"
 junit = "4.13.2"
+pitest = "1.15.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -33,3 +34,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+pitest = { id = "info.solidsoft.pitest", version.ref = "pitest" }
