@@ -524,4 +524,85 @@ class SmwLayer1Test {
         assertEquals(1, tm.totalObjects)
         assertTrue(tm.unknownObjects >= 1)
     }
+
+    // ------------- guías de línea en cuesta y lava en cuesta (RopeObj3A / UndergroundObj39) -------------
+    // Estos objetos eran los que más niveles dejaban incompletos (68 y 10 apariciones).
+    // Lo delicado no es la tesela, es el PASO DIAGONAL: cada variante baja una fila y se
+    // desplaza un número distinto de columnas, así que se comprueban posiciones exactas.
+
+    /** ROM sintética con [tileset] en el byte 4 de la cabecera. */
+    private fun romTileset(tileset: Int, vararg obj: Int): ByteArray {
+        val cab = intArrayOf(0x00, 0x00, 0x00, 0x00, tileset)
+        return romWithLevel(*(cab + obj.toTypedArray().toIntArray() + intArrayOf(0xFF)))
+    }
+
+    @Test
+    fun `guia de linea en cuesta izquierda baja una fila y DOS columnas por paso`() {
+        // Tileset 2 (cuerda), obj 0x3A: h0 = 0x60 | fila, h1 = 0xA0 | col.
+        // size 0x20 → nibble bajo 0 (cuesta izquierda normal), nibble alto 2 → 3 pasos.
+        val tm = SmwLayer1.parse(romTileset(2, 0x62, 0xA8, 0x20), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects, "el 0x3A de cuerda ya está portado")
+        // Arranca en (col 8, fila 2) y va bajando: 8→6→4, filas 2→3→4. Dos teselas por
+        // paso (0x8C izquierda, 0x8D derecha), ambas de página 0.
+        val pasos = listOf(Triple(8, 2, 0), Triple(6, 3, 1), Triple(4, 4, 2))
+        for ((col, fila, i) in pasos) {
+            assertEquals(0x8C, tm.block(col, fila), "paso $i: guía izquierda")
+            assertEquals(0x8D, tm.block(col + 1, fila), "paso $i: guía derecha")
+        }
+        assertEquals(0x25, tm.block(8, 3), "debajo del arranque queda aire")
+    }
+
+    @Test
+    fun `la cuesta de ON-OFF baja UNA columna por paso y usa su propia tesela`() {
+        // size 0x21 → nibble bajo 1 (ON/OFF izquierda, tesela 0x86), 3 pasos.
+        val tm = SmwLayer1.parse(romTileset(2, 0x61, 0xA8, 0x21), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Una sola tesela por paso, y el desplazamiento es de UNA columna (+15), no de dos.
+        assertEquals(0x86, tm.block(8, 1))
+        assertEquals(0x86, tm.block(7, 2))
+        assertEquals(0x86, tm.block(6, 3))
+        assertEquals(0x25, tm.block(9, 1), "la de ON/OFF no dibuja segunda tesela")
+
+        // El nibble bajo 4 es la MISMA cuesta con la otra tesela (0x94).
+        val otra = SmwLayer1.parse(romTileset(2, 0x61, 0xA8, 0x24), 0, 0)
+        assertNotNull(otra)
+        assertEquals(0x94, otra.block(8, 1))
+    }
+
+    @Test
+    fun `un nibble fuera de la tabla de seis punteros se cuenta como no portado`() {
+        // La tabla del juego solo tiene 6 entradas: con 6 saltaría a basura. Se prefiere
+        // contarlo que inventar un dibujo.
+        val tm = SmwLayer1.parse(romTileset(2, 0x62, 0xA8, 0x26), 0, 0)
+        assertNotNull(tm)
+        assertEquals(1, tm.unknownObjects)
+        assertEquals(0x25, tm.block(8, 2), "no se dibuja nada")
+    }
+
+    @Test
+    fun `el 0x33 de cuerda son los bloques de interrogacion azules`() {
+        // RopeObj33_BlueSwitchBlocks no es una rutina propia: llama a la de pradera.
+        // Comparar las dos salidas es la forma honesta de comprobarlo.
+        val cuerda = SmwLayer1.parse(romTileset(2, 0x62, 0x38, 0x03), 0, 0)
+        val pradera = SmwLayer1.parse(romTileset(0, 0x62, 0x28, 0x03), 0, 0)
+        assertNotNull(cuerda); assertNotNull(pradera)
+        assertEquals(0, cuerda.unknownObjects, "el 0x33 de cuerda ya está portado")
+        for (c in 0..20) for (r in 0..5) {
+            assertEquals(pradera.block(c, r), cuerda.block(c, r), "bloque ($c,$r)")
+        }
+    }
+
+    @Test
+    fun `la lava en cuesta muy inclinada de la derecha remata con su tesela de borde`() {
+        // Tileset 3 (cueva), obj 0x39: h0 = 0x60 | fila, h1 = 0x90 | col.
+        // size 0x03 → los dos bits bajos = 3 (derecha muy inclinada), un solo paso.
+        val tm = SmwLayer1.parse(romTileset(3, 0x62, 0x94, 0x03), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects, "el 0x39 de cueva ya está portado")
+        // Borde diagonal arriba y remate justo debajo, los dos en página 1.
+        assertEquals(0x1D7, tm.block(4, 2), "borde de la cuesta")
+        assertEquals(0x1FE, tm.block(4, 3), "remate de la fila de lava")
+    }
 }

@@ -212,11 +212,16 @@ internal object SmwLayer1 {
                     }
                     2, 6, 8 -> when (obj) {
                         0x32 -> ropeLogBridge()
+                        // El 0x33 de CUERDA es `RopeObj33_BlueSwitchBlocks`, que no es
+                        // una rutina propia: llama a `GrassObj32_BlueSwitchBlocks_0DB920(0)`,
+                        // o sea exactamente los bloques ! azules de siempre.
+                        0x33 -> switchBlocks(0)          // azules
                         0x34 -> switchBlocks(1)          // rojos
                         0x35 -> ropeColumnWithPlant()
-
+                        0x37 -> castleEscalator()
                         0x38 -> ropeHorizontalLineGuide()
                         0x39 -> ropeVerticalLineGuide()
+                        0x3A -> ropeSlopedLineGuide()
                         0x3C -> ropeMushroomTop()
                         0x3D -> ropeMushroomColumn()
                         else -> unkStd(obj)
@@ -224,8 +229,9 @@ internal object SmwLayer1 {
                     3, 9, 0xA, 0xB, 0xE -> when (obj) {
                         0x34 -> switchBlocks(0)          // azules
                         0x35 -> switchBlocks(1)          // rojos
-                        0x38 -> undergroundRightLavaEdge()
                         0x36 -> underground4SidedGround()
+                        0x38 -> undergroundRightLavaEdge()
+                        0x39 -> undergroundSlopedCaveLava()
                         0x3A -> undergroundCaveLava(withSurface = true)
                         0x3B -> undergroundCaveLava(withSurface = false)
                         0x3C -> undergroundVerySteepSlope()
@@ -1391,6 +1397,122 @@ internal object SmwLayer1 {
             } while (r0 and 0x80 == 0)
         }
 
+        /**
+         * Objeto 0x3A: GUÍA DE LÍNEA EN CUESTA (RopeObj3A_SlopedLineGuide, $0D:CF53).
+         * El nibble BAJO elige variante en una tabla de SEIS entradas
+         * (`kRopeObj3A_SlopedLineGuide_SlopedLineGuidePtrs`), y el ALTO es el número de
+         * pasos menos uno. Es el objeto que más niveles bloqueaba: 68 apariciones.
+         *
+         * Dos formas distintas, no una con parámetro:
+         *  - las cuestas NORMALES (0 izquierda, 2 derecha) dibujan DOS teselas por paso
+         *    —la guía tiene grosor de dos bloques— y por eso van entre preserve/restore;
+         *  - las de ON/OFF (1, 3, 4, 5) dibujan UNA sola tesela con [setLo], sin avanzar
+         *    en horizontal, así que no necesitan salvar el puntero.
+         *
+         * El paso diagonal tampoco es el mismo: la izquierda normal baja +14 (dos
+         * columnas a la izquierda), la de ON/OFF +15 (una), y las de la derecha suman
+         * +18 y +17. De ahí que cada variante lleve su propio avance en vez de
+         * reutilizar [goDownLeft]/[goDownRight] para todas.
+         */
+        fun ropeSlopedLineGuide() {
+            when (val k = size and 0xF) {
+                0 -> ropeSlopedLineGuideLeft()
+                2 -> ropeSlopedLineGuideRight()
+                1, 4 -> ropeSlopedLineGuideOnOffLeft(if (k == 4) 0x94 else 0x86)
+                3, 5 -> ropeSlopedLineGuideOnOffRight(if (k == 5) 0x95 else 0x87)
+                // La tabla del juego solo tiene 6 punteros: un nibble ≥6 saltaría a
+                // basura. Se marca como no portado en vez de inventar un dibujo.
+                else -> unkStd(0x3A)
+            }
+        }
+
+        /** Cuesta IZQUIERDA normal ($0D:CF6E): teselas 0x8C/0x8D, paso diagonal +14. */
+        private fun ropeSlopedLineGuideLeft() {
+            var v1 = pos
+            var v2 = size shr 4
+            preserve()
+            do {
+                setHi00(v1)
+                val v3 = horiz(v1, 0x8C)
+                setHi00(v3); setLo(v3, 0x8D)
+                restore()
+                v1 = stepDownLeftBy14()
+                v2 = (v2 - 1) and 0xFF
+            } while (v2 and 0x80 == 0)
+        }
+
+        /** Cuesta DERECHA normal ($0D:CFF0): teselas 0x8E/0x8F, paso diagonal +18. */
+        private fun ropeSlopedLineGuideRight() {
+            var v1 = pos
+            var v2 = size shr 4
+            preserve()
+            do {
+                setHi00(v1)
+                val v3 = horiz(v1, 0x8E)
+                setHi00(v3); setLo(v3, 0x8F)
+                restore()
+                // +16 (una fila) y luego +2 (dos columnas). El enmascarado final es
+                // `& 0xF1`, no `& 0xF0`: conserva el bit 0 para que la guía siga
+                // cayendo en columnas impares al cambiar de pantalla.
+                if (pos + 16 >= 256) pageCross(1)
+                val v4 = (pos + 16) and 0xFF
+                v1 = (v4 + 2) and 0xFF
+                if ((v1 and 0xF) < 2) {
+                    v1 = (v1 - 16) and 0xF1
+                    forwardOneScreen()
+                }
+                pos = v1
+                v2 = (v2 - 1) and 0xFF
+            } while (v2 and 0x80 == 0)
+        }
+
+        /** Cuesta IZQUIERDA de ON/OFF ($0D:CFB1): una tesela, paso [goDownLeft] (+15). */
+        private fun ropeSlopedLineGuideOnOffLeft(tile: Int) {
+            var v2 = pos
+            var v3 = size shr 4
+            do {
+                setHi00(v2); setLo(v2, tile)
+                v2 = goDownLeft()
+                v3 = (v3 - 1) and 0xFF
+            } while (v3 and 0x80 == 0)
+        }
+
+        /** Cuesta DERECHA de ON/OFF ($0D:D034): una tesela, paso +17. */
+        private fun ropeSlopedLineGuideOnOffRight(tile: Int) {
+            var v2 = pos
+            var v3 = size shr 4
+            do {
+                setHi00(v2); setLo(v2, tile)
+                if (pos + 16 >= 256) pageCross(1)
+                val v4 = (pos + 16) and 0xFF
+                v2 = (v4 + 1) and 0xFF
+                if (v2 and 0xF == 0) {
+                    v2 = (v2 - 1) and 0xF0
+                    forwardOneScreen()
+                }
+                pos = v2
+                v3 = (v3 - 1) and 0xFF
+            } while (v3 and 0x80 == 0)
+        }
+
+        /**
+         * Paso diagonal ABAJO-IZQUIERDA de DOS columnas (+14). Es el hermano de
+         * [goDownLeft] (+15, una columna) para los objetos de guía y lava que avanzan
+         * de dos en dos; el umbral del reajuste de pantalla también es 14, no 15.
+         */
+        fun stepDownLeftBy14(): Int {
+            var r = pos + 14
+            if (r >= 256) pageCross(1)
+            r = r and 0xFF
+            if (r and 0xF >= 14) {
+                if (r + 16 >= 256) pageCross(1)
+                r = (r + 16) and 0xFF
+                backOneScreen()
+            }
+            pos = r
+            return r
+        }
+
         // -------------------------- objetos de SUBTERRÁNEO --------------------------
         // Ports 1:1 de UndergroundObjXX del banco $0D (tilesets 3/9/0xA/0xB/0xE).
 
@@ -1448,6 +1570,146 @@ internal object SmwLayer1 {
                 r1 -= 2
                 r0 = (r0 - 1) and 0xFF
             } while (r0 and 0x80 == 0)
+        }
+
+        /**
+         * Objeto 0x39 de cueva: LAVA EN CUESTA (UndergroundObj39_SlopedCaveLava,
+         * $0D:DAF2). Los DOS bits bajos del tamaño eligen entre las cuatro variantes de
+         * `kUndergroundObj39_SlopedCaveLava_SlopedCaveLavaPtrs`: 0 izquierda, 1
+         * izquierda muy inclinada, 2 derecha, 3 derecha muy inclinada.
+         *
+         * Las cuatro comparten una idea: por cada paso se dibuja el BORDE diagonal de la
+         * lava y, a su lado, el relleno (0xFF) que va creciendo — de ahí el contador
+         * `r2`, que en las suaves sube de dos en dos y en las inclinadas de uno en uno.
+         * Lo que cambia es cómo se llega a la fila siguiente: las de la IZQUIERDA dan un
+         * paso diagonal explícito ([stepDownLeftBy14] o [goDownLeft]), mientras que las
+         * de la DERECHA no lo necesitan — acaban la fila de relleno con la tesela de
+         * borde y ahí mismo se quedan colocadas para el paso siguiente.
+         *
+         * Ojo con el final del bucle: el original decrementa `r0` y sale cuando se ha
+         * desbordado a 0xFF, no cuando llega a 0. Es lo que hace que se pinte UNA fila de
+         * lava de más por debajo de la cuesta, que es justo lo que se ve en el juego.
+         */
+        fun undergroundSlopedCaveLava() {
+            when (size and 3) {
+                0 -> undergroundSlopedCaveLavaLeft()
+                1 -> undergroundSlopedCaveLavaSteepLeft()
+                2 -> undergroundSlopedCaveLavaRight()
+                else -> undergroundSlopedCaveLavaSteepRight()
+            }
+        }
+
+        /** Izquierda suave ($0D:DB06): borde 0xD2/0xD3, relleno 0xFB+0xFF, paso +14. */
+        private fun undergroundSlopedCaveLavaLeft() {
+            var v0 = pos
+            var r2 = 1
+            preserve()
+            var r0 = (size shr 4) + 1
+            var v8: Boolean
+            outer@ while (true) {
+                val v1 = r2
+                setHi01(v0)
+                val v2 = horiz(v0, 0xD2)
+                setHi01(v2)
+                var v3 = horiz(v2, 0xD3)
+                var v4 = s8(v1 - 2)
+                var saltaRelleno = v4 < 0
+                while (true) {
+                    if (!saltaRelleno) {
+                        setHi01(v3)
+                        val v5 = horiz(v3, 0xFB)
+                        setHi01(v5)
+                        var v6 = horiz(v5, 0xFF)
+                        var v7 = s8(v4 - 1)
+                        while (--v7 >= 0) { setHi01(v6); v6 = horiz(v6, 0xFF) }
+                    }
+                    saltaRelleno = false
+                    restore()
+                    r2 += 2
+                    r0 = (r0 - 1) and 0xFF
+                    v8 = r0 and 0x80 != 0
+                    if (r0 != 0) break
+                    v4 = s8(r2 - 2)
+                    v3 = vert()
+                }
+                if (v8) break@outer
+                v0 = stepDownLeftBy14()
+            }
+        }
+
+        /** Izquierda muy inclinada ($0D:DBA4): borde 0xD6, relleno 0xFD+0xFF, paso +15. */
+        private fun undergroundSlopedCaveLavaSteepLeft() {
+            var j = pos
+            var r2 = 0
+            preserve()
+            var r0 = (size shr 4) + 1
+            var v5: Boolean
+            outer@ while (true) {
+                var v1 = r2
+                setHi01(j)
+                var i = horiz(j, 0xD6)
+                while (true) {
+                    var v3 = s8(v1 - 1)
+                    if (v3 >= 0) {
+                        setHi01(i)
+                        var k = horiz(i, 0xFD)
+                        while (--v3 >= 0) { setHi01(k); k = horiz(k, 0xFF) }
+                    }
+                    restore()
+                    r2++
+                    r0 = (r0 - 1) and 0xFF
+                    v5 = r0 and 0x80 != 0
+                    if (r0 != 0) break
+                    v1 = r2
+                    i = vert()
+                }
+                if (v5) break@outer
+                j = goDownLeft()
+            }
+        }
+
+        /** Derecha suave ($0D:DC02): borde 0xD4/0xD5, relleno 0xFF y remate 0xFC. */
+        private fun undergroundSlopedCaveLavaRight() {
+            var v0 = pos
+            var r2 = 1
+            preserve()
+            var r0 = (size shr 4) + 1
+            do {
+                setHi01(v0)
+                val v4 = horiz(v0, 0xD4)
+                setHi01(v4); horiz(v4, 0xD5)
+                restore()
+                var v1 = vert()
+                r2 += 2
+                var v2 = r2
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                while (v2 != 3) { setHi01(v1); v1 = horiz(v1, 0xFF); v2-- }
+                setHi01(v1)
+                val v3 = horiz(v1, 0xFF)
+                setHi01(v3)
+                v0 = horiz(v3, 0xFC)
+            } while (r0 != 0)
+        }
+
+        /** Derecha muy inclinada ($0D:DC61): borde 0xD7, relleno 0xFF y remate 0xFE. */
+        private fun undergroundSlopedCaveLavaSteepRight() {
+            var v0 = pos
+            var r2 = 0
+            preserve()
+            var r0 = (size shr 4) + 1
+            while (r0 != 0) {
+                setHi01(v0); horiz(v0, 0xD7)
+                restore()
+                var v1 = vert()
+                r2++
+                var v2 = r2
+                r0 = (r0 - 1) and 0xFF
+                if (r0 and 0x80 != 0) break
+                while (v2 != 1) { setHi01(v1); v1 = horiz(v1, 0xFF); v2-- }
+                setHi01(v1)
+                v0 = horiz(v1, 0xFE)
+            }
         }
 
         /**
