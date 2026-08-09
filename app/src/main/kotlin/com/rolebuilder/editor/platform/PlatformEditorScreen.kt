@@ -416,6 +416,15 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             if (bytes == null) {
                 Toast.makeText(context, "No se pudo leer la ROM", Toast.LENGTH_LONG).show()
             } else {
+                // Se GUARDA para la sesión: antes se usaba para auto-importar y se tiraba,
+                // así que al entrar luego en AVANZADO había que buscar el fichero otra vez.
+                val nombre = runCatching {
+                    context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                        val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (c.moveToFirst() && i >= 0) c.getString(i) else null
+                    }
+                }.getOrNull() ?: "rom.sfc"
+                com.rolebuilder.editor.snes.SmwRomSession.remember(context, bytes, nombre)
                 val n = runCatching { autoImportSmwRom(state, bytes) }.getOrElse { -1 }
                 val msg = when {
                     n > 0 -> "Cargados $n niveles de la ROM (tiles, colisión y enemigos)"

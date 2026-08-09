@@ -133,8 +133,11 @@ private fun parseOffset(text: String): Int {
 fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     val context = LocalContext.current
 
-    var romBytes by remember { mutableStateOf<ByteArray?>(null) }
-    var romName by remember { mutableStateOf("") }
+    // La ROM sale de [SmwRomSession], no de un `remember` propio. Antes vivía aquí dentro
+    // y moría al cerrar el diálogo: salir de AVANZADO y volver a entrar obligaba a buscar
+    // el fichero otra vez en el selector, aunque acabaras de cargarlo.
+    var romBytes by remember { mutableStateOf(SmwRomSession.get(context)) }
+    var romName by remember { mutableStateOf(SmwRomSession.displayName) }
     // Reproductor de la PRUEBA de música (directo de la ROM). Se para al salir del diálogo.
     var musicTest by remember { mutableStateOf<PlatformerMusic?>(null) }
     var format by remember { mutableStateOf(SnesGraphicFormat.SNES_4BPP) }
@@ -214,6 +217,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                 val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                 if (cursor.moveToFirst() && idx >= 0) cursor.getString(idx) else null
             } ?: "rom.sfc")
+            // Queda guardada para el resto de la sesión: el raíl del editor y el propio
+            // diálogo la encuentran ya cargada sin volver a pedirla.
+            SmwRomSession.remember(context, bytes, romName)
             paletteIndex = -1
         }.onFailure {
             Toast.makeText(context, "No se pudo abrir la ROM: ${it.message}", Toast.LENGTH_LONG).show()
@@ -299,7 +305,20 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         ) {
             Text("Importar assets desde ROM de SNES", style = MaterialTheme.typography.titleMedium)
 
-            Button(onClick = { romLauncher.launch("*/*") }) { Text("Elegir ROM (.smc/.sfc)") }
+            // Con la ROM ya cargada el botón deja de ser lo primero que hay que tocar: pasa
+            // a ser "cambiar de ROM", y se ofrece quitarla. Si no hay ninguna, se pide.
+            if (romBytes == null) {
+                Button(onClick = { romLauncher.launch("*/*") }) { Text("Elegir ROM (.smc/.sfc)") }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { romLauncher.launch("*/*") }) { Text("Cambiar de ROM") }
+                    TextButton(onClick = {
+                        SmwRomSession.forget(context)
+                        romBytes = null
+                        romName = ""
+                    }) { Text("Quitar") }
+                }
+            }
 
             if (header != null) {
                 Text(romName, style = MaterialTheme.typography.labelLarge)
@@ -338,9 +357,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
                     if (gameRecipe.contains("Mario World", ignoreCase = true)) {
                         Button(onClick = {
-                            val rom = romBytes ?: return@Button
+                            if (romBytes == null) return@Button
                             runCatching {
-                                val tmp = java.io.File(context.cacheDir, "smw_play.sfc").apply { writeBytes(rom) }
+                                val tmp = SmwRomSession.asFile(context) ?: error("no hay ROM en la sesion")
                                 context.startActivity(
                                     com.rolebuilder.player.PlatformerActivity.intent(context, tmp, 0x106),
                                 )
@@ -620,9 +639,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 }
                             }) { Text("Capas") }
                             TextButton(onClick = {
-                                val rom = romBytes ?: return@TextButton
+                                if (romBytes == null) return@TextButton
                                 runCatching {
-                                    val tmp = java.io.File(context.cacheDir, "smw_play.sfc").apply { writeBytes(rom) }
+                                    val tmp = SmwRomSession.asFile(context) ?: error("no hay ROM en la sesion")
                                     context.startActivity(
                                         com.rolebuilder.player.PlatformerActivity.intent(context, tmp, listing.level),
                                     )
@@ -642,9 +661,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Button(onClick = {
-                        val rom = romBytes ?: return@Button
+                        if (romBytes == null) return@Button
                         runCatching {
-                            val tmp = java.io.File(context.cacheDir, "smw_extract.sfc").apply { writeBytes(rom) }
+                            val tmp = SmwRomSession.asFile(context) ?: error("no hay ROM en la sesion")
                             context.startActivity(AssetBrowserActivity.intent(context, tmp))
                         }.onFailure {
                             Toast.makeText(context, "No se pudo abrir el catálogo: ${it.message}", Toast.LENGTH_LONG).show()
@@ -684,9 +703,9 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         }
                     }) { Text("Renderizar overworld") }
                     Button(onClick = {
-                        val rom = romBytes ?: return@Button
+                        if (romBytes == null) return@Button
                         runCatching {
-                            val tmp = java.io.File(context.cacheDir, "smw_play.sfc").apply { writeBytes(rom) }
+                            val tmp = SmwRomSession.asFile(context) ?: error("no hay ROM en la sesion")
                             context.startActivity(com.rolebuilder.player.OverworldActivity.intent(context, tmp))
                         }.onFailure {
                             Toast.makeText(context, "No se pudo abrir el mapa: ${it.message}", Toast.LENGTH_LONG).show()
