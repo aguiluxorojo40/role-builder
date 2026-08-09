@@ -528,9 +528,11 @@ class PlatformerActivity : ComponentActivity() {
         // EXCLUYE la meta: la cinta/esfera/cerradura viven en la misma lista de sprites, pero
         // no son bichos — van como ítem de META más abajo.
         val goalIds = com.rolebuilder.core.snes.SmwLevelGoal.GOAL_SPRITES
-        val enemySeeds = SnesGameRecipes.smwLevelEnemies(rom, header, level)
-            .filter { (id, x, y) -> id !in goalIds && x in 0 until col.cols && y in 0 until col.rows }
-            .map { (id, x, y) -> EnemySeed(x * 16, y * 16, id) }
+        // Se usa la vista CON estado: los que el juego coloca aturdidos (0xDA/0xDB de la
+        // lista) nacen ya dentro de su caparazón, no andando.
+        val enemySeeds = SnesGameRecipes.smwLevelEnemySeeds(rom, header, level)
+            .filter { it.id !in goalIds && it.xTile in 0 until col.cols && it.yTile in 0 until col.rows }
+            .map { EnemySeed(it.xTile * 16, it.yTile * 16, it.id, it.stunned) }
         // META del nivel: con esto tocar la cinta marca el nivel como SUPERADO y el mapa del
         // mundo puede disparar su evento. Los niveles sin meta (castillos, casas) no siembran.
         // Cada meta va con SU tipo de salida: la cerradura siembra GOAL_SECRET (salida secreta),

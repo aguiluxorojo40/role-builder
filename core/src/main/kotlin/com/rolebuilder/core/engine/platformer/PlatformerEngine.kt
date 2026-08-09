@@ -68,7 +68,12 @@ class Fireball(var x: Float, var y: Float, var vx: Float) {
 }
 
 /** Semilla de un enemigo: posición inicial en píxeles e id de sprite SMW. */
-class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int)
+/**
+ * Enemigo COLOCADO en el nivel. [stunned] es el estado 9 del juego: el bicho nace ya
+ * metido en su caparazón, quieto en el suelo. En la lista de sprites de la ROM esos van
+ * con ids 0xDA-0xDD, que [com.rolebuilder.core.snes.SmwSpriteSpawn] traduce a su Koopa.
+ */
+class EnemySeed(val xPixel: Int, val yPixel: Int, val id: Int, val stunned: Boolean = false)
 
 /**
  * Conducta de un enemigo según su id de sprite SMW. La mayoría son [WALKER] (patrullan
@@ -517,7 +522,13 @@ class PlatformerEngine(
 
     /** Enemigos vivos del nivel, instanciados de las semillas (+ los que generan los jefes). */
     val enemies: MutableList<PlatformerEnemy> =
-        enemySeeds.mapTo(ArrayList()) { PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id) }
+        enemySeeds.mapTo(ArrayList()) {
+            PlatformerEnemy(it.xPixel.toFloat(), it.yPixel.toFloat(), it.id).apply {
+                // Estado 9 del juego: ya dentro del caparazón y quieto. Es lo que hay
+                // suelto por el suelo en YOSHI'S ISLAND 1 y 2.
+                if (it.stunned && canShell) { shell = true; shellMoving = false; vx = 0f }
+            }
+        }
 
     /** Sub-sprites que un jefe genera este frame (Mechakoopas de Bowser…): se añaden a
      *  [enemies] al FINAL del bucle de enemigos, para no modificar la lista mientras se itera. */

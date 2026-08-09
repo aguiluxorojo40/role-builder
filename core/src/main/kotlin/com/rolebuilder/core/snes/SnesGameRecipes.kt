@@ -514,10 +514,15 @@ object SnesGameRecipes {
             for (f in 0 until SMW_TILEANIM_FRAMES - 1) setAction(orderedBlocks.size + ai * (SMW_TILEANIM_FRAMES - 1) + f, block)
         }
 
-        // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible.
+        // Enemigos/entidades del nivel: la 3ª capa de datos. Se recortan al mapa visible y
+        // se pasan por la MISMA clasificación que la ruta de ROM en vivo ([SmwSpriteSpawn]),
+        // para que el mapa importado y el nivel jugado directo coloquen lo mismo.
         val enemies = SmwSprites.parse(rom, delta, level)?.sprites
             ?.filter { it.xTile in 0 until w && it.yTile in 0 until h }
-            ?.map { Triple(it.id, it.xTile, it.yTile) }
+            ?.mapNotNull {
+                val s = SmwSpriteSpawn.of(it.id)
+                if (!s.isEnemy) null else Triple(s.id, it.xTile, it.yTile)
+            }
             .orEmpty()
 
         return SmwLevelMap(
@@ -1067,17 +1072,37 @@ object SnesGameRecipes {
         return SmwCollisionMap(level, cols, rows, blocks, solidity)
     }
 
+    /** Un enemigo colocado: id YA traducido, casilla y estado inicial del juego. */
+    class SmwEnemySeed(val id: Int, val xTile: Int, val yTile: Int, val status: Int) {
+        /** Nace metido en su caparazón (estado 9): un caparazón suelto por el suelo. */
+        val stunned: Boolean get() = status == SmwSpriteSpawn.STATUS_STUNNED
+    }
+
     /**
-     * ENEMIGOS del nivel [level] como (id de sprite, casilla X, casilla Y), leídos de
-     * la lista de sprites real de la ROM ([SmwSprites]). Es el API público para que
-     * la app siembre enemigos también al jugar un nivel DIRECTO desde la ROM (la ruta
-     * de mapa importado ya los lleva dentro de [SmwLevelMap.enemies]). Vacío si el
-     * nivel no tiene lista válida.
+     * ENEMIGOS del nivel [level] con su ESTADO inicial, pasando el id crudo de la lista
+     * por la clasificación real del juego ([SmwSpriteSpawn], port de `LoadOneSprite`).
+     *
+     * Esto es lo que distingue el id que hay escrito en la ROM del enemigo que acaba
+     * habiendo en el nivel. Se cae de la lista lo que no es un enemigo (lanzadores,
+     * generadores, sprites de scroll de capas) y se traducen los que el juego coloca ya
+     * aturdidos: un 0xDA de la lista es en realidad un Koopa verde (0x04) dentro de su
+     * caparazón, no un sprite 0xDA que no existe.
+     */
+    fun smwLevelEnemySeeds(rom: ByteArray, header: SnesHeader, level: Int): List<SmwEnemySeed> =
+        SmwSprites.parse(rom, smwHeaderDelta(header), level)?.sprites
+            ?.mapNotNull {
+                val s = SmwSpriteSpawn.of(it.id)
+                if (!s.isEnemy) null else SmwEnemySeed(s.id, it.xTile, it.yTile, s.status)
+            }
+            .orEmpty()
+
+    /**
+     * ENEMIGOS del nivel [level] como (id de sprite, casilla X, casilla Y). Es la vista
+     * simple de [smwLevelEnemySeeds]: mismos ids ya traducidos y misma criba, sin el
+     * estado. Vacío si el nivel no tiene lista válida.
      */
     fun smwLevelEnemies(rom: ByteArray, header: SnesHeader, level: Int): List<Triple<Int, Int, Int>> =
-        SmwSprites.parse(rom, smwHeaderDelta(header), level)?.sprites
-            ?.map { Triple(it.id, it.xTile, it.yTile) }
-            .orEmpty()
+        smwLevelEnemySeeds(rom, header, level).map { Triple(it.id, it.xTile, it.yTile) }
 
     /**
      * Índice de las poses de Mario que exporta [smwMarioSheet], en el ORDEN de los

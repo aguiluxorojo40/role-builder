@@ -1289,4 +1289,29 @@ class PlatformerEngineTest {
         assertEquals(PlatformerEngine.SHELL_SPEED, kotlin.math.abs(k.vx),
             "el caparazon pateado va a la velocidad del juego (0x20 = 2 px/f)")
     }
+
+    @Test
+    fun `una semilla ATURDIDA nace ya dentro del caparazon, sin andar`() {
+        // Es lo que hay suelto por el suelo en YOSHI'S ISLAND 1 y 2: en la lista de
+        // sprites son 0xDA/0xDB, que se traducen a Koopa 0x04/0x05 con estado 9.
+        val e = engineEnemies(40, 10, startCol = 5, startRow = 5,
+            seeds = listOf(EnemySeed(20 * 16, 8 * 16 - 14, 0x04, stunned = true))) { g ->
+            for (c in 0 until 40) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        assertTrue(k.shell, "nace ya en su caparazon")
+        assertFalse(k.shellMoving, "y quieto, no deslizandose")
+        assertEquals(0f, k.vx, "no patrulla")
+    }
+
+    @Test
+    fun `una semilla NORMAL del mismo id sigue naciendo andando`() {
+        val e = engineEnemies(40, 10, startCol = 5, startRow = 5,
+            seeds = listOf(EnemySeed(20 * 16, 8 * 16 - 14, 0x04))) { g ->
+            for (c in 0 until 40) g[9][c] = SmwSolidity.SOLID
+        }
+        val k = e.enemies.single()
+        assertFalse(k.shell, "sin estado 9 el Koopa anda con su caparazon puesto")
+        assertTrue(kotlin.math.abs(k.vx) > 0f, "patrulla")
+    }
 }
