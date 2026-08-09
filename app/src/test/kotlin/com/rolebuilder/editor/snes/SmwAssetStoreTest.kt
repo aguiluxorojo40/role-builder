@@ -132,8 +132,8 @@ class SmwAssetStoreTest {
         //
         // Este test ata las dos cosas: al cambiar el numero de ids curados hay que subir la
         // version. Si falla, sube BAKE_VERSION y actualiza el numero de aqui.
-        val idsEsperados = 35
-        val versionEsperada = 5
+        val idsEsperados = 37
+        val versionEsperada = 6
         // JUnit4: el mensaje va PRIMERO.
         assertEquals(
             "cambio el numero de enemigos curados: sube BAKE_VERSION y este numero",

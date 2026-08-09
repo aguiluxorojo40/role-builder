@@ -151,6 +151,9 @@ object SmwEnemyGraphics {
         // eso con la via normal parecia basura: se estaba mirando mal. Con su rutina real
         // salen las barras verde/blancas y el muelle.
         0x2F to "Trampolin",
+        // Tanda 9: los otros dos que el juego dibuja como cuadrado de cuatro teselas y que se
+        // han visto correctos al renderizarlos: la bola de pinchos y el Thwimp.
+        0x14 to "Huevo de Spiny", 0x27 to "Thwimp",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -330,7 +333,20 @@ object SmwEnemyGraphics {
      * como basura al mirarlos con ella: sus cuatro teselas son cuatro bytes SEGUIDOS de la
      * misma tabla plana, no uno.
      */
-    private val SQUARE_SPRITES = mapOf(0x2F to 2)
+    private val SQUARE_SPRITES = mapOf(
+        0x14 to 2, // Spr014_SpinyEgg            -> Draw4Tiles8x8Square(k, 2)
+        0x27 to 1, // Spr027_Thwimp              -> Draw4Tiles8x8Square(k, 1)
+        0x2F to 2, // Spr02F_PortableSpringboard -> Entry1(k, 2, ...)
+        //
+        // NO se meten aqui, aunque tambien llamen a esa rutina:
+        //  · Goomba en PARACAIDAS (0x3F/0x40): su fila de propiedades sale de una tabla POR
+        //    FOTOGRAMA (kSprXXX_ParachutingEnemy_DATA_01D5B0 = {1,5,0}), y con la del
+        //    fotograma 0 salen fragmentos sueltos, no el bicho.
+        //  · Topo de cornisa (0x4D/0x4E): su dibujo de cuadrado es solo el ESTADO "asomando"
+        //    (SprXXX_SmallMontyMole_State01_AboutToEmerge), no su aspecto normal. Ademas ya
+        //    estan curados y se dibujan bien por la via de siempre, asi que meterlos aqui
+        //    seria ROMPER dos enemigos que funcionan.
+    )
 
     /**
      * Imagen 16×16 de un sprite dibujado como cuadrado de cuatro teselas de 8×8. Port de
