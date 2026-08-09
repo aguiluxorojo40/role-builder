@@ -4,8 +4,8 @@ import com.rolebuilder.core.model.event.EventCommand
 
 /**
  * Utilidad para detectar mapas "huérfanos" (inalcanzables desde el mapa inicial).
- * Recorre los eventos de cada mapa buscando comandos TransferPlayer para construir
- * un grafo de accesibilidad.
+ * Recorre los eventos de cada mapa buscando comandos TransferPlayer y las
+ * conexiones de zona por los bordes para construir un grafo de accesibilidad.
  */
 object MapReachability {
 
@@ -32,7 +32,8 @@ object MapReachability {
             val currentId = queue.removeFirst()
             val map = maps[currentId] ?: continue
 
-            val targets = extractTransferTargets(map)
+            val targets = extractTransferTargets(map) +
+                listOfNotNull(map.edgeNorth, map.edgeSouth, map.edgeWest, map.edgeEast)
             for (targetId in targets) {
                 if (targetId !in reachable && targetId in maps) {
                     reachable.add(targetId)
