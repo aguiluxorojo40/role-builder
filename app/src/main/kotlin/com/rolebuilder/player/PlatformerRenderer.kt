@@ -147,6 +147,29 @@ class PlatformerRenderer(
     /** Muestra el overlay de COLISIÓN (hitboxes + rejilla de solidez + warps). */
     @Volatile var showHitboxes = false
 
+    /**
+     * Diagnostico de DIBUJO de enemigos. Con el activado, el renderer apunta por que via se
+     * pinta cada id y lo publica en [enemyDrawInfo].
+     *
+     * Existe porque deducir esto desde una captura del movil ha fallado dos veces: los
+     * enemigos salian "raros" y las teorias sobre por que (que si el grafico, que si el
+     * atlas) eran equivocadas. Esto lo convierte en un dato.
+     */
+    @Volatile var debugEnemyDraw = false
+
+    /**
+     * Resumen de por que via se dibuja cada id de enemigo presente en el nivel, una linea por
+     * id: `0xAB x18 -> propio 20x31`. Se rellena solo si [debugEnemyDraw] esta activo.
+     */
+    @Volatile var enemyDrawInfo: List<String> = emptyList()
+
+    /** Apunta que via dibujo el id [id] y cuantos van (para [enemyDrawInfo]). */
+    private fun anotarVia(vias: HashMap<Int, Pair<String, Int>>?, id: Int, via: String) {
+        if (vias == null) return
+        val previo = vias[id]
+        vias[id] = via to ((previo?.second ?: 0) + 1)
+    }
+
     /** Alto de la caja de Mario PEQUEÑO (px); el panel lo ajusta conservando los pies. */
     var playerSmallHeight: Float
         get() = engine.smallHeight
@@ -384,6 +407,9 @@ class PlatformerRenderer(
             }
         }
 
+        // Diagnostico: id -> (via, cuantos). Solo se monta con debugEnemyDraw activo.
+        val vias = if (debugEnemyDraw) HashMap<Int, Pair<String, Int>>() else null
+
         // Enemigos: primero los fotogramas VIVOS de la ROM (Koopa CON caparazón, andar
         // animado a la cadencia real de SMW: cambia cada 8 fotogramas); si no, el atlas
         // horneado; si no, un rectángulo. Aplastados = franja fina al pisarlos.
@@ -423,6 +449,7 @@ class PlatformerRenderer(
             val live = romEnemyTex[drawId]
             val big = bigTex[drawId]
             if (e.alive && big != null) {
+                if (debugEnemyDraw) anotarVia(vias, e.id, "propio ${big.second.width}x${big.second.height}")
                 // Sprite GRANDE (Thwomp, fuego grande…): a su tamaño real (celdas = px/16),
                 // centrado en horizontal y anclado por los pies.
                 val (tex, bmp) = big
@@ -432,6 +459,7 @@ class PlatformerRenderer(
                 val feet = (e.y + e.height) / 16f - hCells
                 batch.draw(tex, cx, feet, wCells, hCells, flipX = e.vx > 0f)
             } else if (e.alive && live != null && live.isNotEmpty()) {
+                if (debugEnemyDraw) anotarVia(vias, e.id, "vivo ${live[0].width}x${live[0].height} x${live.size}f")
                 // Fotogramas VIVOS anclados por los pies y centrados. El ancho sale del
                 // bitmap: 16 px (1 casilla, andadores) o 32 px (2 casillas, Koopas aladas
                 // con su ala). El andar/aleteo alterna a la cadencia real de SMW.
@@ -442,6 +470,7 @@ class PlatformerRenderer(
                 val feet = (e.y + e.height) / 16f
                 batch.draw(walkFrame, cx, feet - hCells, wCells, hCells, flipX = e.vx > 0f)
             } else if (e.alive && etex != null && frame != null) {
+                if (debugEnemyDraw) anotarVia(vias, e.id, "atlas col $frame/${ENEMY_FRAME.size}")
                 // Atlas horneado: celda cuadrada (ATLAS_CELL = 2×2 casillas) anclada por los
                 // pies y centrada, con ATLAS_FRAMES fotogramas apilados; el sprite entero
                 // (aladas incluidas) sin partir. Fotograma vivo a la cadencia de SMW.
@@ -458,10 +487,19 @@ class PlatformerRenderer(
                     flipX = e.vx > 0f,
                 )
             } else if (e.alive) {
+                if (debugEnemyDraw) anotarVia(vias, e.id, "SIN GRAFICO (rectangulo)")
                 batch.draw(white, ex, e.y / 16f, ew, e.height / 16f, r = 0.65f, g = 0.20f, b = 0.55f, a = 1f)
             } else {
                 val fh = e.height / 16f * 0.3f
                 batch.draw(white, ex, (e.y + e.height * 0.7f) / 16f, ew, fh, r = 0.5f, g = 0.5f, b = 0.5f, a = 1f)
+            }
+        }
+
+        // Publica el resumen del diagnostico: una linea por id, ordenada.
+        if (vias != null) {
+            enemyDrawInfo = vias.entries.sortedBy { it.key }.map { (id, v) ->
+                val nombre = com.rolebuilder.core.snes.SmwSpriteNames.nameOf(id)
+                "0x%02X %-22s x%-3d -> %s".format(id, nombre.take(22), v.second, v.first)
             }
         }
 

@@ -701,6 +701,8 @@ private fun PlatformerScreen(
             // Las vidas las lleva el mapa del mundo, no el motor: llegan por el intent.
             val livesNow = remember { lives }
             var starsNow by remember { mutableStateOf(0) }
+            // Diagnóstico de dibujo de enemigos (vacío si el interruptor está apagado).
+            var enemyDebugLines by remember { mutableStateOf(emptyList<String>()) }
             var wonNow by remember { mutableStateOf(false) }
             var warped by remember { mutableStateOf(false) }
             var died by remember { mutableStateOf(false) }
@@ -710,6 +712,7 @@ private fun PlatformerScreen(
                     scoreNow = renderer.score
                     timeNow = renderer.timeLeft
                     starsNow = renderer.bonusStars
+                    enemyDebugLines = renderer.enemyDrawInfo
                     wonNow = renderer.won
                     val warp = renderer.pendingWarp
                     if (warp != null && !warped) { warped = true; onWarp(warp) }
@@ -794,6 +797,24 @@ private fun PlatformerScreen(
                 }
                 if (musicIcon.isNotEmpty()) {
                     Text(musicIcon, fontSize = 18.sp)
+                }
+            }
+
+            // Diagnóstico de enemigos: qué id hay y por qué vía se dibuja cada uno. Abajo a
+            // la izquierda para no tapar el HUD ni los botones.
+            if (enemyDebugLines.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 12.dp, bottom = 12.dp)
+                        .background(Color(0xCC000000), RoundedCornerShape(6.dp))
+                        .padding(8.dp),
+                ) {
+                    Text("Enemigos (id · cuántos · vía)", color = Color(0xFFFFD54F), fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold)
+                    for (linea in enemyDebugLines.take(12)) {
+                        Text(linea, color = Color.White, fontSize = 11.sp)
+                    }
                 }
             }
 
@@ -976,6 +997,7 @@ private fun PhysicsPanel(
 
     // Cajas de colisión (hitboxes): estado de los sliders y valores de arranque.
     var showBoxes by remember { mutableStateOf(renderer.showHitboxes) }
+    var showEnemyDebug by remember { mutableStateOf(renderer.debugEnemyDraw) }
     val originalSmallH = remember { renderer.playerSmallHeight }
     val originalEnemyBox = remember { renderer.enemyBoxSize() }
     var smallH by remember { mutableStateOf(renderer.playerSmallHeight) }
@@ -1018,6 +1040,22 @@ private fun PhysicsPanel(
             Box(Modifier.weight(1f))
             Switch(checked = showBoxes, onCheckedChange = { showBoxes = it; renderer.showHitboxes = it })
         }
+        // ------------------------------------- diagnostico de dibujo de enemigos
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Diagnóstico de enemigos", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Box(Modifier.weight(1f))
+            Switch(
+                checked = showEnemyDebug,
+                onCheckedChange = { showEnemyDebug = it; renderer.debugEnemyDraw = it },
+            )
+        }
+        Text(
+            "Dice POR QUÉ VÍA se dibuja cada enemigo del nivel (gráfico propio, fotogramas " +
+                "vivos de la ROM, atlas horneado o rectángulo por falta de gráfico), con su id " +
+                "y cuántos hay. Sirve para saber si un enemigo sale raro porque le falta el " +
+                "gráfico o porque se está usando el equivocado, en vez de deducirlo mirando.",
+            color = Color(0xFFBBBBBB), fontSize = 12.sp,
+        )
         Text(
             "Ver las cajas REALES del motor sobre el juego: Mario (verde), enemigos " +
                 "(rojo), powerups (amarillo), bolas (naranja), warps (cian) y la " +
