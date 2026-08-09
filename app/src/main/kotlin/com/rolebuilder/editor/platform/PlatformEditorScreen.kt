@@ -389,7 +389,31 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds). Se lee del
     // ALMACÉN horneado desde la ROM (SmwAssetStore), NO de assets/ —en el repo no va (Nintendo)—;
     // por eso se re-lee cuando cambia el estado de horneado (tras cargar la ROM ya aparece).
-    val baked = com.rolebuilder.editor.snes.SmwAssetStore.isBaked(context)
+    // RE-HORNEADO AUTOMÁTICO. El almacén se marca obsoleto al subir BAKE_VERSION, pero
+    // hasta ahora el único sitio que reaccionaba era la pantalla de título, y solo si
+    // llegabas a ella CON la ROM: quien abría el proyecto directo se quedaba con los
+    // assets viejos sin enterarse (el medio Koopa de los caparazones, sin ir más lejos,
+    // seguiría saliendo mal por muy arreglado que estuviera el código).
+    //
+    // Ahora que la ROM está siempre a mano ([SmwRomSession]) se puede arreglar solo: si
+    // el almacén está viejo y hay ROM, se re-hornea en segundo plano y se vuelven a leer
+    // el atlas y los sprites grandes. El contador es lo que dispara esa re-lectura.
+    var bakeTick by remember { mutableIntStateOf(0) }
+    val baked = remember(bakeTick) { com.rolebuilder.editor.snes.SmwAssetStore.isBaked(context) }
+    LaunchedEffect(bakeTick) {
+        if (baked) return@LaunchedEffect
+        val rom = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            com.rolebuilder.editor.snes.SmwRomSession.get(context)
+        } ?: return@LaunchedEffect
+        val n = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { com.rolebuilder.editor.snes.SmwAssetStore.bake(context, rom) }
+                .getOrDefault(0)
+        }
+        if (n > 0) {
+            bakeTick++ // vuelve a leer atlas y sprites grandes, ya con los nuevos
+            Toast.makeText(context, "Assets de SMW actualizados desde tu ROM", Toast.LENGTH_SHORT).show()
+        }
+    }
     val enemyAtlas = remember(baked) { loadStoreImageBitmap(context, "sprites/enemies.png") }
     // Sprites GRANDES (jefes y enemigos mayores) por id: los que no caben en el atlas
     // cuadrado y se dibujan desde big_<id>.png, para poder COLOCARLOS también en el editor.
