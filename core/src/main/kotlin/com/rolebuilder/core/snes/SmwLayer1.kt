@@ -230,6 +230,7 @@ internal object SmwLayer1 {
                         0x34 -> switchBlocks(0)          // azules
                         0x35 -> switchBlocks(1)          // rojos
                         0x36 -> underground4SidedGround()
+                        0x37 -> undergroundLargeCanvas()
                         0x38 -> undergroundRightLavaEdge()
                         0x39 -> undergroundSlopedCaveLava()
                         0x3A -> undergroundCaveLava(withSurface = true)
@@ -338,8 +339,136 @@ internal object SmwLayer1 {
                 0x56 -> extLineGuideEnd(horizontalGuide = false)
                 0x60 -> extCaveLavaInnerCorner()
                 0x88, 0x89 -> extTreeBranch(k)
+                0x70 -> extBitOfCanvasPair()
+                in 0x71..0x74 -> extCanvas(k)
+                in 0x75..0x7B -> extCanvasTile(k)
+                in 0x7C..0x7E -> extCanvasBit(k)
+                0x7F -> extTorpedoLauncher()
                 else -> unkExt(k)
             }
+        }
+
+        // ------------------------------ el LIENZO (canvas) ------------------------------
+        // Familia ExtObj70..ExtObj7E ($0D:CEA6, $0D:E0AE, $0D:DA68, $0D:DA80): el decorado
+        // de "lienzo" con marco que usa el nivel 0x1D2. Son objetos de adorno, sin
+        // colisión: piezas sueltas de una tesela, parejas y el bastidor completo de 4×5.
+
+        /**
+         * TABLA DE TESELAS DEL LIENZO ($0D:E05E, PC 0x06E05E): 4 variantes × 19 teselas.
+         *
+         * Va escrita a mano aquí y no copiada de `smw_0d.c` porque **la decompilación la
+         * trunca**: declara `kExtObj71_Canvas1_Tiles[19]` pero el código indexa hasta la
+         * 75 usando `kExtObj71_Canvas1_TileIndex = {0, 19, 38, 57}`. Las 57 teselas que
+         * faltan se recuperaron leyendo la ROM en ese offset, y la propia estructura las
+         * valida: los cuatro bloques empiezan por 5C 5D 5E 60 (el borde superior) y
+         * acaban en 76 76 76 (el inferior), que es justo el marco del lienzo.
+         */
+        private val CANVAS_TILES = intArrayOf(
+            // 0x71: lienzo liso
+            0x5C, 0x5D, 0x5E, 0x60, 0x73, 0x74, 0x75, 0x73, 0x74, 0x75,
+            0x73, 0x74, 0x75, 0x73, 0x74, 0x75, 0x76, 0x76, 0x76,
+            // 0x72
+            0x5C, 0x5D, 0x5E, 0x60, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C,
+            0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x76, 0x76, 0x76,
+            // 0x73
+            0x5C, 0x5D, 0x5E, 0x60, 0x73, 0x7D, 0x75, 0x73, 0x7E, 0x75,
+            0x73, 0x74, 0x75, 0x7F, 0x74, 0x75, 0x76, 0x76, 0x76,
+            // 0x74
+            0x5C, 0x5D, 0x5E, 0x60, 0x77, 0x82, 0x83, 0x7A, 0x85, 0x86,
+            0x81, 0x78, 0x79, 0x84, 0x7B, 0x7C, 0x76, 0x76, 0x76,
+        )
+
+        /** Base de cada variante en [CANVAS_TILES] (`kExtObj71_Canvas1_TileIndex`). */
+        private val CANVAS_BASE = intArrayOf(0, 19, 38, 57)
+
+        /**
+         * Objetos 0x71-0x74: LIENZO COMPLETO (ExtObj71_Canvas1, $0D:E0AE). En el nivel
+         * 0x1D2 son los TAPICES colgados del castillo de Bowser. Miden 4 de ancho por 6
+         * de alto y se dibujan así, gastando las 19 teselas de la variante:
+         *
+         *  - fila 0: cuatro teselas de página 1 (el travesaño del que cuelga, lo único
+         *    sólido);
+         *  - filas 1 a 4: tres teselas de página 0 cada una (la tela);
+         *  - la fila 4 lleva además un remate 0x5F de página 1 a la derecha, que es fijo
+         *    y no sale de la tabla;
+         *  - fila 5: tres teselas de página 0 (el fleco de abajo).
+         */
+        fun extCanvas(k: Int) {
+            var v1 = CANVAS_BASE[k - 0x71]
+            var v0 = pos
+            preserve()
+            var r1 = 2
+            var r2 = 3
+            do { setHi01(v0); v0 = horiz(v0, CANVAS_TILES[v1++]); r2-- } while (r2 and 0x80 == 0)
+            restore()
+            var v2 = vert()
+            do {
+                r2 = 2
+                do { setHi00(v2); v2 = horiz(v2, CANVAS_TILES[v1++]); r2-- } while (r2 and 0x80 == 0)
+                restore()
+                v2 = vert()
+                r1--
+            } while (r1 and 0x80 == 0)
+            r2 = 2
+            do { setHi00(v2); v2 = horiz(v2, CANVAS_TILES[v1++]); r2-- } while (r2 and 0x80 == 0)
+            setHi01(v2); setLo(v2, 0x5F)
+            restore()
+            r2 = 2
+            var v3 = vert()
+            do { setHi00(v3); v3 = horiz(v3, CANVAS_TILES[v1++]); r2-- } while (r2 and 0x80 == 0)
+        }
+
+        /**
+         * Objetos 0x75-0x7B: UNA tesela suelta del lienzo (ExtObj75_CanvasTile1,
+         * $0D:DA68), de la tabla $0D:DA60 según (ext - 0x75).
+         */
+        fun extCanvasTile(k: Int) {
+            val tiles = intArrayOf(0x7D, 0x7E, 0x7F, 0x80, 0x81, 0x82, 0x83)
+            val v0 = pos
+            setHi00(v0); setLo(v0, tiles[k - 0x75])
+        }
+
+        /**
+         * Objetos 0x7C-0x7E: PAREJA VERTICAL del lienzo (ExtObj7C_BitOfCanvas1,
+         * $0D:DA80): una tesela arriba y otra justo debajo, las dos de página 0.
+         */
+        fun extCanvasBit(k: Int) {
+            val top = intArrayOf(0x81, 0x82, 0x83)
+            val bottom = intArrayOf(0x84, 0x85, 0x86)
+            val i = k - 0x7C
+            val v0 = pos
+            setHi00(v0); setLo(v0, top[i])
+            val v2 = vert()
+            setHi00(v2); setLo(v2, bottom[i])
+        }
+
+        /**
+         * Objeto 0x70: PAREJA HORIZONTAL del lienzo (ExtObj70_BitOfCanvas1, $0D:CEA6):
+         * teselas 0x84 y 0x85 una al lado de la otra, en página 0.
+         */
+        fun extBitOfCanvasPair() {
+            val v0 = pos
+            setHi00(v0)
+            val v1 = horiz(v0, 0x84)
+            setHi00(v1); setLo(v1, 0x85)
+        }
+
+        /**
+         * Objeto 0x7F: LANZATORPEDOS (ExtObj7F_TorpedoLauncher, $0D:DAA2): cuadrado de
+         * 2×2 con las teselas 0x66/0x67 arriba y 0x68/0x69 abajo, todas de página 1
+         * (son sólidas). El original recorre la tabla de dos en dos usando el bit 0 del
+         * índice como fin de fila, que es lo que aquí hace la condición `v1 and 1`.
+         */
+        fun extTorpedoLauncher() {
+            val tiles = intArrayOf(0x66, 0x67, 0x68, 0x69)
+            var v0 = pos
+            var v1 = 0
+            preserve()
+            do {
+                do { setHi01(v0); v0 = horiz(v0, tiles[v1++]) } while (v1 and 1 != 0)
+                restore()
+                v0 = vert()
+            } while (v1 != 4)
         }
 
         /**
@@ -1590,6 +1719,97 @@ internal object SmwLayer1 {
          * desbordado a 0xFF, no cuando llega a 0. Es lo que hace que se pinte UNA fila de
          * lava de más por debajo de la cuesta, que es justo lo que se ve en el juego.
          */
+        /**
+         * Objeto 0x37 de cueva: LIENZO GRANDE (UndergroundObj37_LargeCanvas, $0D:DF3A).
+         * Es el decorado completo de una sala —el del nivel 0x1D2— y funciona distinto a
+         * todo lo demás, en tres fases:
+         *
+         *  1. Cinco listones horizontales de 16 teselas (0x61, página 1) separados por
+         *     cuatro filas, empezando en la fila 5. Es lo único que usa el puntero del
+         *     objeto tal cual.
+         *  2. OCHO bastidores de lienzo (4 de ancho × 5 de alto) en posiciones FIJAS de
+         *     las tablas $0D:DF2A/$0D:DF32. Aquí el original se salta el puntero del
+         *     objeto y escribe directamente en $7EC800/$7EC900, o sea siempre en la
+         *     pantalla 0, pase donde pase el objeto.
+         *  3. El nibble bajo del tamaño dice a cuántas pantallas se REPLICA lo anterior,
+         *     copiando la pantalla 0 entera con `MemCpy`.
+         *
+         * Se conservan dos rarezas del original en vez de "arreglarlas": la copia es de
+         * 0x1B1 bytes, uno más que una pantalla (se cuela en la siguiente, que de todas
+         * formas se sobrescribe en la vuelta siguiente), y las tres filas centrales del
+         * bastidor repiten SIEMPRE las mismas tres teselas porque el índice no avanza.
+         */
+        fun undergroundLargeCanvas() {
+            val canvasTiles = intArrayOf(
+                0x5C, 0x5D, 0x5E, 0x60, 0x73, 0x74, 0x75, 0x62, 0x63, 0x64, 0x5F, 0x76, 0x76, 0x76,
+            )
+            val posLo = intArrayOf(0x50, 0x58, 0x94, 0x9C, 0xD0, 0xD8, 0x14, 0x1C)
+            val posHi = intArrayOf(0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC9, 0xC9)
+            val veces = size and 0xF
+
+            // --- 1. los cinco listones ---
+            preserve()
+            pos = 80
+            var v1 = pos
+            var r1 = 4
+            do {
+                var v2 = 15
+                do { setHi01(v1); v1 = horiz(v1, 0x61); v2-- } while (v2 >= 0)
+                restore()
+                if (pos + 64 >= 256) pageCross(1)
+                pos = (pos + 64) and 0xFF
+                v1 = pos
+                r1--
+            } while (r1 and 0x80 == 0)
+
+            // --- 2. los ocho bastidores, en coordenadas absolutas de la pantalla 0 ---
+            for (r0 in 0..7) {
+                r1 = 2
+                pos = posLo[r0]
+                var v4 = pos
+                // $C800 → índice 0 del buffer; $C900 → 0x100 (la "página 1" de la pantalla).
+                ptr = (posHi[r0] - 0xC8) shl 8
+                ptrBak = ptr
+                var r2 = 3
+                var idx = 0
+                do { setHi01(v4); v4 = horiz(v4, canvasTiles[idx++]); r2-- } while (r2 and 0x80 == 0)
+                restore()
+                var v6 = vert()
+                do {
+                    // Las teselas 4/5/6 NO avanzan el índice: las tres filas centrales
+                    // del bastidor son idénticas, y así es en el original.
+                    setHi00(v6)
+                    val v7 = horiz(v6, canvasTiles[4])
+                    setHi00(v7)
+                    val v8 = horiz(v7, canvasTiles[5])
+                    setHi00(v8); setLo(v8, canvasTiles[6])
+                    v6 = vert()
+                    r1--
+                } while (r1 and 0x80 == 0)
+                var v9 = 7
+                r2 = 3
+                do { setHi01(v6); v6 = horiz(v6, canvasTiles[v9++]); r2-- } while (r2 and 0x80 == 0)
+                restore()
+                r2 = 2
+                var v10 = vert()
+                do { setHi00(v10); v10 = horiz(v10, canvasTiles[v9++]); r2-- } while (r2 and 0x80 == 0)
+            }
+
+            // --- 3. réplica de la pantalla 0 en las siguientes ---
+            // El original no protege el caso `veces == 0` (se desbordaría y leería la
+            // tabla de pantallas fuera de rango); aquí se corta en la última entrada real.
+            var quedan = veces
+            var pantalla = 1
+            while (quedan > 0 && pantalla <= 15) {
+                val dst = pantalla * 0x1B0
+                for (n in 0 until 0x1B1) {
+                    if (dst + n < lo.size && n < lo.size) { lo[dst + n] = lo[n]; hi[dst + n] = hi[n] }
+                }
+                quedan--
+                pantalla++
+            }
+        }
+
         fun undergroundSlopedCaveLava() {
             when (size and 3) {
                 0 -> undergroundSlopedCaveLavaLeft()

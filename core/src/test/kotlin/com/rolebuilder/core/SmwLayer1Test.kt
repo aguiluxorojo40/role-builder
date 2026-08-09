@@ -594,6 +594,80 @@ class SmwLayer1Test {
         }
     }
 
+    // ------------------- el LIENZO y el lanzatorpedos (ExtObj70..7F / UndergroundObj37) -------------------
+    // Objetos extendidos: se codifican con objNum 0 y el id en el byte de tamaño.
+
+    @Test
+    fun `el lanzatorpedos es un cuadrado 2x2 solido`() {
+        // ext 0x7F en fila 2, col 4: h0 = fila, h1 = col, tamaño = id extendido.
+        val tm = SmwLayer1.parse(romTileset(3, 0x02, 0x04, 0x7F), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Las cuatro teselas van en página 1 (0x1xx) porque el lanzatorpedos es sólido.
+        assertEquals(0x166, tm.block(4, 2)); assertEquals(0x167, tm.block(5, 2))
+        assertEquals(0x168, tm.block(4, 3)); assertEquals(0x169, tm.block(5, 3))
+        assertEquals(0x25, tm.block(6, 2), "no se sale de sus 2×2")
+    }
+
+    @Test
+    fun `el tapiz mide 4 de ancho por 6 de alto y solo el travesano es solido`() {
+        val tm = SmwLayer1.parse(romTileset(3, 0x02, 0x04, 0x71), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Fila 0: el travesaño, cuatro teselas de PÁGINA 1.
+        assertEquals(listOf(0x15C, 0x15D, 0x15E, 0x160), (4..7).map { tm.block(it, 2) })
+        // Filas 1-4: la tela, tres teselas de página 0 y siempre las mismas.
+        for (f in 3..6) assertEquals(listOf(0x73, 0x74, 0x75), (4..6).map { tm.block(it, f) }, "fila $f")
+        // El remate 0x5F de la fila 4 es de página 1 y va a la DERECHA de la tela.
+        assertEquals(0x15F, tm.block(7, 6))
+        // Fila 5: el fleco.
+        assertEquals(listOf(0x76, 0x76, 0x76), (4..6).map { tm.block(it, 7) })
+    }
+
+    @Test
+    fun `las piezas sueltas del lienzo son de adorno, en pagina 0`() {
+        // ext 0x77 → tercera tesela de la tabla de piezas sueltas.
+        val suelta = SmwLayer1.parse(romTileset(3, 0x02, 0x04, 0x77), 0, 0)
+        assertNotNull(suelta)
+        assertEquals(0, suelta.unknownObjects)
+        assertEquals(0x7F, suelta.block(4, 2))
+        // ext 0x7D → pareja VERTICAL (una tesela y la de debajo).
+        val pareja = SmwLayer1.parse(romTileset(3, 0x02, 0x04, 0x7D), 0, 0)
+        assertNotNull(pareja)
+        assertEquals(0x82, pareja.block(4, 2)); assertEquals(0x85, pareja.block(4, 3))
+        // ext 0x70 → pareja HORIZONTAL.
+        val dupla = SmwLayer1.parse(romTileset(3, 0x02, 0x04, 0x70), 0, 0)
+        assertNotNull(dupla)
+        assertEquals(0x84, dupla.block(4, 2)); assertEquals(0x85, dupla.block(5, 2))
+    }
+
+    @Test
+    fun `el lienzo grande pone cinco travesanos y replica la pantalla entera`() {
+        // std 0x37 de cueva: h0 = 0x60 | fila, h1 = 0x70 | col. El nibble bajo del
+        // tamaño (1) dice a cuántas pantallas se replica.
+        val tm = SmwLayer1.parse(romTileset(3, 0x60, 0x70, 0x01), 0, 0)
+        assertNotNull(tm)
+        assertEquals(0, tm.unknownObjects)
+        // Los cinco travesaños van en filas FIJAS (5, 9, 13, 17 y 21), no donde caiga el
+        // objeto. Pero los ocho tapices se pintan DESPUÉS y encima, y como miden 6 de
+        // alto acaban tapando casi todo: de los cinco travesaños solo asoman trozos del
+        // primero y del último. Es lo que se ve en el pasillo del castillo.
+        for (c in listOf(4, 7, 12, 15)) assertEquals(0x161, tm.block(c, 5), "travesaño fila 5 col $c")
+        for (c in listOf(0, 3, 8, 11)) assertEquals(0x161, tm.block(c, 21), "travesaño fila 21 col $c")
+        // Donde sí hay tapiz, manda el tapiz.
+        assertEquals(0x15C, tm.block(0, 5), "tapiz encima del travesaño")
+        assertEquals(0x15C, tm.block(8, 5), "segundo tapiz de la fila 5")
+        // Las filas 9, 13 y 17 quedan enteramente cubiertas por la tela y los travesaños
+        // de los tapices, así que ahí no queda ni un bloque 0x161 a la vista.
+        for (f in listOf(9, 13, 17)) for (c in 0..15) {
+            assertTrue(tm.block(c, f) != 0x161, "fila $f col $c: el travesaño debería estar tapado")
+        }
+        // Y todo ello se replica tal cual en la pantalla siguiente (columnas 16+).
+        for (c in 0..15) for (f in listOf(5, 9, 13)) {
+            assertEquals(tm.block(c, f), tm.block(c + 16, f), "réplica en ($c,$f)")
+        }
+    }
+
     @Test
     fun `la lava en cuesta muy inclinada de la derecha remata con su tesela de borde`() {
         // Tileset 3 (cueva), obj 0x39: h0 = 0x60 | fila, h1 = 0x90 | col.
