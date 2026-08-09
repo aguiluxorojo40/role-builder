@@ -128,4 +128,34 @@ class SmwEnemyGraphicsTest {
             assertFalse(SmwEnemyGraphics.handles(id), "0x${id.toString(16)} está descartado")
         }
     }
+
+    @Test
+    fun `los que faltaban para los primeros niveles tienen dibujo propio`() {
+        // Todos estos tienen id >= 0x54, o sea fuera de kGenericSpriteOAMData_TilesOffset
+        // (84 entradas): por la via generica NUNCA podian salir. Si alguno se cae de aqui,
+        // vuelve a aparecer como rectangulo en YOSHI'S ISLAND 1/2/3.
+        val esperados = mapOf(
+            0x9F to "Banzai Bill",
+            0x91 to "Chargin' Chuck",
+            0x95 to "Clappin' Chuck",
+            0xB9 to "caja de mensaje",
+            0xBD to "Koopa desnudo deslizandose",
+            0x83 to "bloque volador",
+        )
+        for ((id, que) in esperados) {
+            assertTrue(id in SmwEnemyGraphics.customEnemyIds, "falta el dibujo propio de $que (0x%02X)".format(id))
+        }
+    }
+
+    @Test
+    fun `el agujero de warp y la seta invisible NO se dibujan, y eso es correcto`() {
+        // Sus rutinas ($02:EADA y $03:C30F) no ponen ni una tesela en el OAM. Marcarlos
+        // evita contarlos para siempre como huecos y acabar inventandoles un dibujo.
+        assertTrue(SmwEnemyGraphics.isIntentionallyInvisible(0x8E), "el agujero de warp no dibuja")
+        assertTrue(SmwEnemyGraphics.isIntentionallyInvisible(0xC7), "la seta invisible no dibuja")
+        // Y no vale marcar de invisible a cualquiera para que cuadren las cuentas.
+        for (id in intArrayOf(0x9F, 0x91, 0xB9, 0x83, 0x00, 0xAB)) {
+            assertFalse(SmwEnemyGraphics.isIntentionallyInvisible(id), "0x%02X si se ve".format(id))
+        }
+    }
 }

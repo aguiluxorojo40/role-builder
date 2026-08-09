@@ -50,6 +50,7 @@ class ZzFirstLevelsReport {
             val sinGrafico = ArrayList<String>()
             for ((id, n) in porId) {
                 if (id in SmwLevelGoal.GOAL_SPRITES) continue          // es meta, no enemigo
+                if (SmwEnemyGraphics.isIntentionallyInvisible(id)) continue // no dibuja NADA en el juego
                 if (SmwEnemyGraphics.handles(id)) continue             // catálogo curado
                 val propio = runCatching {
                     SmwEnemyGraphics.customEnemyImage(rom, header, lv, id) != null

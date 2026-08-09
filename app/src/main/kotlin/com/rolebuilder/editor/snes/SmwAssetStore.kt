@@ -44,7 +44,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 6
+    private const val BAKE_VERSION = 7
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

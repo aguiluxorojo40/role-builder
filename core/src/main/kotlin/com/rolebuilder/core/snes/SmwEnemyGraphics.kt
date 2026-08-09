@@ -579,7 +579,115 @@ object SmwEnemyGraphics {
             ),
             palRow = (8 + 2) * 16,
         ),
+
+        // ---- los que faltaban para el 100% de YOSHI'S ISLAND 1/2/3 ----
+        // Todos estos tienen id ≥ 0x54, o sea fuera de kGenericSpriteOAMData_TilesOffset
+        // (que solo llega a 84 entradas), así que NUNCA podían salir por la vía genérica:
+        // o tienen rutina de dibujo propia, o pisan la tesela que la genérica había puesto.
+
+        // BANZAI BILL (0x9F), Spr09F_BanzaiBill_Draw ($02:D5E4): la bala gigante, un
+        // CUADRADO de 4×4 teselas 16×16 = 64×64 px, de kSpr09F_BanzaiBill_Tiles/XDisp/
+        // YDisp/Prop. Las dos últimas llevan Prop 0xB3 en vez de 0x33: mismo color pero
+        // VOLTEADAS en vertical, que es como el juego reaprovecha la cola. Paleta 1
+        // ((0x33 >> 1) & 7), o sea fila 8+1 de la CGRAM.
+        0x9F to CustomEnemy(banzaiBillTiles(), palRow = (8 + 1) * 16),
+
+        // CHARGIN' CHUCK (0x91) y CLAPPIN' CHUCK (0x95), Spr091_CharginChuck_Draw
+        // ($02:C81A): comparten rutina, y el fotograma 0 son tres teselas — cabeza,
+        // un 8×8 de detalle y el cuerpo. Las teselas EXTRA (la pelota de béisbol, el
+        // polvo) solo aparecen a partir del fotograma 0x14, así que no van en la pose
+        // base. La paleta sale del sprite ($166E): las Prop de este fotograma solo
+        // llevan el bit de volteo, sin bits de color.
+        0x91 to CustomEnemy(chuckFrame0()),
+        0x95 to CustomEnemy(chuckFrame0()),
+
+        // CAJA DE MENSAJE (0xB9), Spr0B9_MessageBox ($03:8D6F): llama a la rutina
+        // genérica y acto seguido PISA la tesela con `charnum = -64`, o sea 0xC0. Por eso
+        // daba "sin gráfico": su id está fuera de la tabla genérica, pero el dibujo real
+        // no depende de ella. Una sola tesela 16×16.
+        0xB9 to CustomEnemy(listOf(OamTile(0xC0, 0, 0))),
+
+        // KOOPA AZUL DESNUDO DESLIZÁNDOSE (0xBD), Spr0BD_SlidingNakedBlueKoopa
+        // ($03:8958): mismo patrón que la caja de mensaje — genérica y luego
+        // `charnum = -122` (0x86). El otro valor (-32 = 0xE0) es el del temporizador de
+        // vuelta, no la pose normal.
+        0xBD to CustomEnemy(listOf(OamTile(0x86, 0, 0))),
+
+        // BLOQUE VOLADOR (0x83), Spr083_LeftFlyingBlock ($01:AD6E): otra vez el mismo
+        // patrón, `charnum = spr_table00c2[k] ? 46 : 42` → 0x2A en reposo. Y encima
+        // DrawWingTiles ($01:9E95) le pone las dos ALAS, que es lo que lo hace volar.
+        //
+        // La posición de las alas NO es libre y conviene hacerla bien, porque si se
+        // quedan cortas se montan encima del bloque y lo tapan. Sale de dos sitios que
+        // se suman: la propia DrawWingTiles desplaza el sprite (−2, +2) antes del ala
+        // izquierda y le suma 4 a la X antes de la derecha, y luego
+        // DrawWingTiles_019E37 aplica su tabla `kDrawWingTiles_XDisp` (16 bits con
+        // signo: −1 la izquierda, +9 la derecha) y `_YDisp` (−4). Total:
+        //
+        //   ala izquierda  x = −2 − 1 = −3     ala derecha  x = −2 + 4 + 9 = +11
+        //   las dos        y = +2 − 4 = −2
+        //
+        // Con eso flanquean el bloque de 16 px en vez de taparlo. Son de 8×8
+        // (`kDrawWingTiles_TileSize` = 0 en el fotograma 0), tesela 0x5D, y la izquierda
+        // va volteada (Prop 0x46; el 0x40 es el volteo). Paleta 3 en las dos.
+        //
+        // Los valores van escritos aquí y no tomados de [WING_TILE]/[WING_DISP_X]: esas
+        // constantes se declaran MÁS ABAJO en el fichero y todavía no existen cuando se
+        // construye este mapa.
+        0x83 to CustomEnemy(
+            listOf(
+                OamTile(0x2A, 0, 0),
+                OamTile(0x5D, -3, -2, size16 = false, xflip = true, palRow = (8 + 3) * 16),
+                OamTile(0x5D, 11, -2, size16 = false, palRow = (8 + 3) * 16),
+            ),
+        ),
     )
+
+    /**
+     * Los 16 cuadros del BANZAI BILL, en el orden de sus tablas: cuatro filas de cuatro
+     * teselas 16×16. Se saca a función porque la lista es larga y en el mapa estorbaría.
+     */
+    private fun banzaiBillTiles(): List<OamTile> {
+        val tiles = intArrayOf(
+            0x80, 0x82, 0x84, 0x86,
+            0xA0, 0x88, 0xCE, 0xEE,
+            0xC0, 0xC2, 0xCE, 0xEE,
+            0x8E, 0xAE, 0x84, 0x86,
+        )
+        // kSpr09F_BanzaiBill_Prop: 0x33 en todas menos las dos últimas, que son 0xB3
+        // (bit 0x80 = volteo vertical).
+        return tiles.mapIndexed { i, t ->
+            OamTile(t, (i % 4) * 16, (i / 4) * 16, vflip = i >= 14)
+        }
+    }
+
+    /**
+     * Fotograma 0 de los CHUCK (`spr_table1602` = 0, `spr_table151c` = 0, mirando a la
+     * derecha). Cabeza de kSpr091_CharginChuck_HeadTiles[0] con su volteo (Prop 0x40),
+     * el 8×8 de kSpr091_CharginChuck_BodyTiles1[0] —tamaño 0 en BodyTileSize1— y el
+     * cuerpo de BodyTiles2[0].
+     */
+    private fun chuckFrame0(): List<OamTile> = listOf(
+        OamTile(0x06, -8, -8, xflip = true),        // cabeza (HeadXDisp/YDisp = 0xF8 = −8)
+        OamTile(0x0D, -8, 6, size16 = false),       // detalle 8×8 (BodyXDisp1/YDisp1)
+        OamTile(0x4E, 0, 0),                        // cuerpo (BodyXDisp2 = 0)
+    )
+
+    /**
+     * Sprites que NO SE DIBUJAN, y no por falta de datos: su rutina no llega a poner una
+     * sola tesela en el OAM. Distinguirlos importa, porque si no se cuentan para siempre
+     * como "enemigos sin gráfico" y se acaba inventándoles un dibujo que el juego no tiene.
+     *
+     *  - `0x8E` AGUJERO DE TELETRANSPORTE (`Spr08E_WarpHole`, $02:EADA): su rutina entera
+     *    es comprobar la colisión con Mario y moverlo. Ni una llamada de dibujo.
+     *  - `0xC7` SETA INVISIBLE (`Spr0C7_InvisibleMushroom`, $03:C30F): tampoco dibuja; al
+     *    tocarla se convierte en el sprite 116 (la seta de verdad) y es ESA la que se ve.
+     *    El nombre ya lo decía.
+     */
+    val INVISIBLE_SPRITES: Set<Int> = setOf(0x8E, 0xC7)
+
+    /** true si [spriteId] es invisible A PROPÓSITO (ver [INVISIBLE_SPRITES]). */
+    fun isIntentionallyInvisible(spriteId: Int): Boolean = spriteId in INVISIBLE_SPRITES
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */
     private fun superKoopaFrame0(capePal: Int): List<OamTile> = listOf(
