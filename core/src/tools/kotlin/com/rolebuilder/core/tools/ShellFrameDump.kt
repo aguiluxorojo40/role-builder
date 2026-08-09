@@ -504,3 +504,80 @@ object KoopaStackedDump {
         println("Filas de arriba abajo: 0x00..0x07 -> ${f.absolutePath}")
     }
 }
+
+/**
+ * ESCENA CON ENEMIGOS: dibuja el nivel y encima cada enemigo en su sitio, resolviendo su
+ * sprite con el MISMO orden de prioridad que el renderer de la app (dibujo propio →
+ * fotogramas vivos → nada). Los que se quedan sin gráfico salen como recuadro morado, igual
+ * que en el juego.
+ *
+ * Existe para dejar de depender de una captura del movil para saber que se ve. Es una
+ * "captura offline" que puedo mirar yo, y comparar con la del dispositivo: si coinciden, el
+ * fallo esta en los datos/graficos; si no, esta en la capa de la app (escala, camara, GL).
+ *
+ *   ./gradlew :core:dumpScene --args="--rom smw.sfc --level 0x105 --cols 40 --out out/"
+ */
+object SceneWithEnemies {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x105; var cols = 40; var out = "escena"
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x105" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+                "--cols" -> cols = args.getOrElse(++i) { "40" }.toInt()
+                "--out" -> out = args.getOrElse(++i) { "escena" }
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        val mapa = com.rolebuilder.core.snes.SnesGameRecipes.extractSmwLevelAsMap(rom, hdr, lvl)
+        if (mapa == null) { println("Nivel no reconstruible."); return }
+        val render = com.rolebuilder.core.snes.SnesGameRecipes.renderLevelLayers(mapa, minOf(mapa.mapWidth, cols))
+        val img = render.combined
+
+        println("Nivel 0x${lvl.toString(16)} · escena ${img.width}x${img.height}")
+        println("id   nombre                 pos(px)     via")
+        for ((id, cx, cy) in com.rolebuilder.core.snes.SnesGameRecipes.smwLevelEnemies(rom, hdr, lvl)) {
+            val x = cx * 16
+            val y = cy * 16
+            if (x >= img.width) continue
+            // MISMO orden que el renderer de la app.
+            val propio = runCatching { gfx.customEnemyImage(rom, hdr, lvl, id) }.getOrNull()
+            val vivo = if (propio == null) runCatching { gfx.spriteFrames(rom, hdr, lvl, id) }
+                .getOrNull()?.firstOrNull() else null
+            val sprite = propio ?: vivo
+            val via = when {
+                propio != null -> "propio ${propio.width}x${propio.height}"
+                vivo != null -> "vivo ${vivo.width}x${vivo.height}"
+                else -> "SIN GRAFICO"
+            }
+            println("0x%02X %-22s %5d,%-5d %s".format(id, gfx.nameOf(id) ?: "?", x, y, via))
+            if (sprite != null) {
+                // Anclado por los pies, como el renderer.
+                val oy = y + 16 - sprite.height
+                for (py in 0 until sprite.height) for (px in 0 until sprite.width) {
+                    val c = sprite.get(px, py); if (c ushr 24 == 0) continue
+                    val dx = x + px; val dy = oy + py
+                    if (dx in 0 until img.width && dy in 0 until img.height) img.set(dx, dy, c)
+                }
+            } else {
+                // Sin gráfico: recuadro morado, como el último recurso del renderer.
+                for (py in 0 until 14) for (px in 0 until 14) {
+                    val dx = x + px; val dy = y + py
+                    if (dx in 0 until img.width && dy in 0 until img.height) img.set(dx, dy, 0xFFA6338C.toInt())
+                }
+            }
+        }
+        val dir = java.io.File(out).apply { mkdirs() }
+        val f = java.io.File(dir, "escena_%03x.png".format(lvl))
+        val bi = java.awt.image.BufferedImage(img.width, img.height, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        bi.setRGB(0, 0, img.width, img.height, img.pixels, 0, img.width)
+        javax.imageio.ImageIO.write(bi, "png", f)
+        println("Escena: ${f.absolutePath}")
+    }
+}

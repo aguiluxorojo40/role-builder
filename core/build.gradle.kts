@@ -150,3 +150,11 @@ tasks.register<JavaExec>("dumpKoopaStacked") {
     mainClass.set("com.rolebuilder.core.tools.KoopaStackedDump")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("dumpScene") {
+    group = "verification"
+    description = "Dibuja el nivel CON sus enemigos, como deberia verse en la app"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.SceneWithEnemies")
+    systemProperty("java.awt.headless", "true")
+}
