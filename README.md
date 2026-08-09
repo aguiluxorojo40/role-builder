@@ -73,9 +73,14 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (124 tests: serialización, movimiento, intérprete, combate, extracción
-de assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del
-motor y le pasa el input.
+JVM rápidos (535: serialización, movimiento, intérprete, combate, extracción de
+assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del motor
+y le pasa el input.
+
+La cifra de arriba se queda vieja enseguida; para sacarla de verdad, `./gradlew
+:core:test` y mirar el informe. Lo que sí conviene saber es cómo está repartida:
+`core` tiene ~10.600 líneas de test para ~23.600 de código, y `app` solo ~160 para
+~13.900. Ese desequilibrio está medido y explicado en [AUDITORIA.md](AUDITORIA.md).
 
 ## Formato de proyecto
 
@@ -120,8 +125,11 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 
 - minSdk 26 (Android 8.0), target 34, OpenGL ES 3.0.
 - El juego se ejecuta en apaisado; el editor en cualquier orientación.
-- CI en GitHub Actions: ejecuta los tests de `core` y compila el APK de
-  depuración (descargable como artefacto del workflow).
+- CI en GitHub Actions: tests de `core`, tests JVM de `app`, análisis estático
+  (detekt) y compilación del APK de depuración (descargable como artefacto del
+  workflow). Lo que CI **no** puede comprobar es la extracción desde la ROM: en el
+  repositorio no hay ROM, así que esas sondas se saltan solas. Ver
+  [AUDITORIA.md](AUDITORIA.md).
 
 ## Publica tu juego como app independiente
 
