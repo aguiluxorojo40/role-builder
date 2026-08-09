@@ -146,6 +146,11 @@ object SmwEnemyGraphics {
         // tambien dejo claro que el Podoboo (0x33) y el trampolin (0x2F) NO valen por esa
         // via: dan teselas de fuente, porque llevan rutina de dibujo propia.
         0x3E to "P-Switch",
+        // Tanda 8: el TRAMPOLIN (0x2F), 21 niveles. Se dibuja como CUADRADO de cuatro teselas
+        // de 8x8 (GenericGFXRtDraw4Tiles8x8Square, $01:9CF5), no como bloque de 16x16, y por
+        // eso con la via normal parecia basura: se estaba mirando mal. Con su rutina real
+        // salen las barras verde/blancas y el muelle.
+        0x2F to "Trampolin",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -296,6 +301,67 @@ object SmwEnemyGraphics {
         val arriba = art.paintBlock(TILE_BYTES[off] + art.page * 0x100, img, 0, 0)
         val abajo = art.paintBlock(TILE_BYTES[off + 1] + art.page * 0x100, img, 0, 16)
         return if (arriba || abajo) img else null
+    }
+
+    /**
+     * Desplazamientos de las CUATRO teselas de 8×8 de un sprite "cuadrado"
+     * (`kGenericSpriteOAMData_XDisp` / `_YDisp`, $01): forman un 16×16 con dos arriba y dos
+     * abajo.
+     */
+    private val SQUARE_XDISP = intArrayOf(0, 8, 0, 8)
+    private val SQUARE_YDISP = intArrayOf(0, 0, 8, 8)
+
+    /**
+     * `kGenericSpriteOAMData_Prop` (24 bytes): propiedades por tesela, en filas de 4. La rutina
+     * indexa `Prop[tesela + 4 * fila]`, y la FILA la elige cada sprite (el trampolín usa la 2,
+     * el Podoboo la 1). Los bits 0x40/0x80 son volteo horizontal/vertical, que es como el juego
+     * compone simetrías reutilizando la misma tesela.
+     */
+    private val SQUARE_PROP = intArrayOf(
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x40,
+        0x00, 0x40, 0x80, 0xC0, 0x40, 0x40, 0x00, 0x00,
+        0x40, 0x00, 0xC0, 0x80, 0x40, 0x40, 0x40, 0x40,
+    )
+
+    /**
+     * Sprites que el juego dibuja como CUADRADO DE CUATRO TESELAS 8×8
+     * (`GenericGFXRtDraw4Tiles8x8Square`, $01:9CF5), con la fila de [SQUARE_PROP] que usa cada
+     * uno. No caben en la vía normal —que pinta UN bloque de 16×16 por byte— y por eso salían
+     * como basura al mirarlos con ella: sus cuatro teselas son cuatro bytes SEGUIDOS de la
+     * misma tabla plana, no uno.
+     */
+    private val SQUARE_SPRITES = mapOf(0x2F to 2)
+
+    /**
+     * Imagen 16×16 de un sprite dibujado como cuadrado de cuatro teselas de 8×8. Port de
+     * `GenericGFXRtDraw4Tiles8x8Square_Entry1` ($01:9CF5):
+     *
+     *     base    = TilesOffset[spriteId] + 4·fotograma
+     *     tesela  = Tiles[i + base]        (i = 0..3)
+     *     posición= XDisp[i], YDisp[i]
+     *     props   = Prop[i + 4·fila]       (volteos incluidos)
+     *
+     * Null si el id no se dibuja así o faltan datos.
+     */
+    fun squareTileImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int,
+                        frame: Int = 0): ArgbImage? {
+        val fila = SQUARE_SPRITES[spriteId] ?: return null
+        if (spriteId !in OAM_OFFSET.indices) return null
+        val art = buildSpriteArt(rom, header, level, spriteId) ?: return null
+        val base = OAM_OFFSET[spriteId] + 4 * frame
+        val img = ArgbImage(16, 16)
+        var pintado = false
+        for (i in 0 until 4) {
+            val idx = base + i
+            if (idx >= TILE_BYTES.size) continue
+            val prop = SQUARE_PROP.getOrElse(i + 4 * fila) { 0 }
+            val ok = art.paintTile(
+                TILE_BYTES[idx] + art.page * 0x100, img, SQUARE_XDISP[i], SQUARE_YDISP[i],
+                size16 = false, xflip = (prop and 0x40) != 0, vflip = (prop and 0x80) != 0,
+            )
+            if (ok) pintado = true
+        }
+        return if (pintado) img else null
     }
 
     /**
@@ -564,6 +630,10 @@ object SmwEnemyGraphics {
         spriteId: Int,
         frames: Int = genericAnimFrames(spriteId),
     ): List<ArgbImage>? {
+        // Sprites de CUADRADO de 4 teselas (trampolin...): su dibujo no es un bloque de
+        // 16x16 por byte, sino cuatro teselas de 8x8 seguidas. Sin esta rama saldrian como
+        // basura, que es exactamente lo que parecian antes de encontrar la rutina.
+        squareTileImage(rom, header, level, spriteId)?.let { return listOf(it) }
         val art = artFor(rom, header, level, spriteId) ?: return null
         val off = OAM_OFFSET[spriteId]
         val tall = isTall(spriteId)

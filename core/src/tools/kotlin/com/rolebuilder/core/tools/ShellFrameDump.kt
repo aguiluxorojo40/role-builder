@@ -663,7 +663,11 @@ object GfxTriage {
         val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
         val ids = idsArg.split(",").mapNotNull { it.trim().toIntOrNull(16) }
         val filas = ids.mapNotNull { id ->
-            val img = runCatching { gfx.genericImageUnchecked(rom, hdr, lvl, id) }.getOrNull()
+            // Primero la via de CUADRADO de 4 teselas (si el id se dibuja asi); si no, la
+            // generica de un bloque. Mirarlo con la via equivocada es lo que hacia parecer
+            // basura a sprites que en realidad si se pueden dibujar.
+            val img = runCatching { gfx.squareTileImage(rom, hdr, lvl, id) }.getOrNull()
+                ?: runCatching { gfx.genericImageUnchecked(rom, hdr, lvl, id) }.getOrNull()
             println("0x%02X %-24s %s".format(id, com.rolebuilder.core.snes.SmwSpriteNames.nameOf(id),
                 if (img != null) "dibuja" else "nada"))
             img?.let { id to it }
