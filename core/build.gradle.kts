@@ -174,3 +174,11 @@ tasks.register<JavaExec>("cribaGfx") {
     mainClass.set("com.rolebuilder.core.tools.GfxTriage")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("checkWiring") {
+    group = "verification"
+    description = "Comprueba que todo lo curado llega de verdad al atlas y al dibujo"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.WiringCheck")
+    systemProperty("java.awt.headless", "true")
+}

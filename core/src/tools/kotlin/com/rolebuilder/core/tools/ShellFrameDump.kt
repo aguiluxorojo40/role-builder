@@ -696,3 +696,64 @@ object GfxTriage {
         println("Criba (orden: ${filas.joinToString(",") { "0x%02X".format(it.first) }}): ${f.absolutePath}")
     }
 }
+
+/**
+ * COMPROBACION DE CABLEADO: verifica que todo lo curado llega de verdad hasta el final.
+ *
+ * Curar un id no sirve de nada si luego la via que usa la app no lo dibuja, o si el atlas
+ * horneado no tiene su columna. Esto lo comprueba pieza por pieza, que es lo unico que
+ * distingue "esta en el catalogo" de "se ve en el juego".
+ *
+ *   ./gradlew :core:checkWiring --args="--rom smw.sfc --level 0x106"
+ */
+object WiringCheck {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x106
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x106" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        var fallos = 0
+
+        // 1) Todo id curado debe producir ALGUN grafico por la via que usa la app.
+        println("== Ids curados que no dibujan (deberia estar vacio) ==")
+        for (id in gfx.curatedIds) {
+            val fr = runCatching { gfx.spriteFrames(rom, hdr, lvl, id) }.getOrNull()
+            val custom = runCatching { gfx.customEnemyImage(rom, hdr, lvl, id) }.getOrNull()
+            val winged = runCatching { gfx.wingedKoopaFrames(rom, hdr, lvl, id) }.getOrNull()
+            if (fr.isNullOrEmpty() && custom == null && winged.isNullOrEmpty()) {
+                println("  FALLO 0x%02X %s".format(id, gfx.nameOf(id) ?: "?")); fallos++
+            }
+        }
+
+        // 2) El atlas horneado debe tener UNA COLUMNA por id curado: es de donde el renderer
+        //    saca el ancho de celda, y si no cuadra se desplazan TODOS los enemigos.
+        val atlas = com.rolebuilder.core.snes.SmwBakedAssets.enemyAtlas(rom, hdr, lvl)
+        val esperado = gfx.curatedIds.size * gfx.ATLAS_CELL
+        println("== Atlas ==")
+        if (atlas == null) { println("  FALLO: no se pudo hornear"); fallos++ }
+        else {
+            println("  ${atlas.width}x${atlas.height} · esperado ancho $esperado (${gfx.curatedIds.size} ids)")
+            if (atlas.width != esperado) { println("  FALLO: el ancho no cuadra"); fallos++ }
+        }
+
+        // 3) La hoja de caparazones debe traer los cuatro colores.
+        val shells = com.rolebuilder.core.snes.SmwBakedAssets.shellSheet(rom, hdr, lvl)
+        println("== Caparazones ==")
+        if (shells == null) { println("  FALLO: no se hornea"); fallos++ }
+        else println("  ${shells.width}x${shells.height} (4 colores x ciclo de giro)")
+
+        println()
+        println(if (fallos == 0) "CABLEADO OK: todo lo curado llega hasta el final."
+                else "$fallos FALLOS de cableado")
+    }
+}
