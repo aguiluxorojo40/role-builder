@@ -158,3 +158,19 @@ tasks.register<JavaExec>("dumpScene") {
     mainClass.set("com.rolebuilder.core.tools.SceneWithEnemies")
     systemProperty("java.awt.headless", "true")
 }
+
+tasks.register<JavaExec>("auditGfx") {
+    group = "verification"
+    description = "Cuenta que enemigos se quedan SIN grafico, por frecuencia"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.MissingGfxAudit")
+    systemProperty("java.awt.headless", "true")
+}
+
+tasks.register<JavaExec>("cribaGfx") {
+    group = "verification"
+    description = "Hoja de contacto de los ids sin grafico, para ver cuales se pueden curar"
+    classpath = sourceSets["tools"].runtimeClasspath
+    mainClass.set("com.rolebuilder.core.tools.GfxTriage")
+    systemProperty("java.awt.headless", "true")
+}

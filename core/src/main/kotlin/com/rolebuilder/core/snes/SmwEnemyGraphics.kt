@@ -140,6 +140,12 @@ object SmwEnemyGraphics {
         // propósito: el orden de [curatedIds] fija los fotogramas del atlas horneado, así que
         // meterlos en medio desincronizaría el atlas de quien ya lo tenga generado.
         0x04 to "Koopa verde", 0x06 to "Koopa azul", 0x07 to "Koopa amarillo",
+        // Tanda 7: el P-SWITCH (0x3E). Sale en 38 niveles —de los ids sin cubrir es el que
+        // mas niveles toca— y su entrada de la tabla generica SI es su aspecto real: el
+        // bloque amarillo con la "P". Verificado cribando con genericImageUnchecked, que
+        // tambien dejo claro que el Podoboo (0x33) y el trampolin (0x2F) NO valen por esa
+        // via: dan teselas de fuente, porque llevan rutina de dibujo propia.
+        0x3E to "P-Switch",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -290,6 +296,33 @@ object SmwEnemyGraphics {
         val arriba = art.paintBlock(TILE_BYTES[off] + art.page * 0x100, img, 0, 0)
         val abajo = art.paintBlock(TILE_BYTES[off + 1] + art.page * 0x100, img, 0, 16)
         return if (arriba || abajo) img else null
+    }
+
+    /**
+     * INSPECCIÓN: dibuja [spriteId] con la tabla OAM genérica **saltándose la guarda del
+     * catálogo curado**, que es la que hace que [spriteFrames] devuelva null para los ids no
+     * curados.
+     *
+     * Sirve para CRIBAR: la auditoría dice que más de la mitad de los sprites colocados en el
+     * juego se quedan sin gráfico, y no porque no exista, sino porque su id no está curado y
+     * ni se intenta. Con esto se puede mirar cuáles saldrían bien y curarlos, y cuáles dan
+     * basura porque tienen rutina de dibujo propia. NO usar para pintar en el juego: la
+     * guarda existe justamente porque para muchos ids esta tabla no es su aspecto real.
+     */
+    fun genericImageUnchecked(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int,
+                              tall: Boolean = isTall(spriteId)): ArgbImage? {
+        if (spriteId !in OAM_OFFSET.indices) return null
+        val art = buildSpriteArt(rom, header, level, spriteId) ?: return null
+        val off = OAM_OFFSET[spriteId]
+        if (off >= TILE_BYTES.size) return null
+        val img = ArgbImage(16, 32)
+        val pintado = if (tall && off + 1 < TILE_BYTES.size) {
+            art.paintBlock(TILE_BYTES[off] + art.page * 0x100, img, 0, 0) or
+                art.paintBlock(TILE_BYTES[off + 1] + art.page * 0x100, img, 0, 16)
+        } else {
+            art.paintBlock(TILE_BYTES[off] + art.page * 0x100, img, 0, 16)
+        }
+        return if (pintado) img else null
     }
 
     /** DEPURACIÓN: vuelca los primeros [count] fotogramas de la tabla OAM de [spriteId],

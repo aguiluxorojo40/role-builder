@@ -33,6 +33,7 @@ object SmwAssetStore {
      *   v1: sprites + SFX.   v2: + música de nivel (music/level.aram).
      *   v3: los Koopa CON caparazón 0x04/0x06/0x07 entran en el catálogo curado, y se hornea
      *       la hoja de CAPARAZONES (sprites/shells.png).
+     *   v4: el P-Switch (0x3E) entra en el catálogo curado (una columna más en el atlas).
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -41,7 +42,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 3
+    private const val BAKE_VERSION = 4
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

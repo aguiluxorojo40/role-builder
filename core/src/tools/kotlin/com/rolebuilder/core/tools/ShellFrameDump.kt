@@ -581,3 +581,114 @@ object SceneWithEnemies {
         println("Escena: ${f.absolutePath}")
     }
 }
+
+/**
+ * AUDITORÍA: recorre los niveles y cuenta que ids de sprite se quedan SIN grafico, ordenados
+ * por cuantas veces aparecen. Son los que en el juego salen como recuadro morado.
+ *
+ * Es la lista de la compra para saber que arreglar primero: no vale lo mismo un enemigo que
+ * sale 60 veces repartido por el juego que uno que sale una vez.
+ *
+ *   ./gradlew :core:auditGfx --args="--rom smw.sfc"
+ */
+object MissingGfxAudit {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""
+        var i = 0
+        while (i < args.size) { if (args[i] == "--rom") romPath = args.getOrElse(++i) { "" }; i++ }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        val sinGrafico = HashMap<Int, Int>()
+        val conGrafico = HashMap<Int, Int>()
+        val nivelesDe = HashMap<Int, MutableSet<Int>>()
+        var niveles = 0
+        for (lvl in 0x000..0x1FF) {
+            val lista = runCatching {
+                com.rolebuilder.core.snes.SnesGameRecipes.smwLevelEnemies(rom, hdr, lvl)
+            }.getOrNull() ?: continue
+            if (lista.isEmpty()) continue
+            niveles++
+            for ((id, _, _) in lista) {
+                val tiene = runCatching { gfx.customEnemyImage(rom, hdr, lvl, id) }.getOrNull() != null ||
+                    runCatching { gfx.spriteFrames(rom, hdr, lvl, id) }.getOrNull()?.isNotEmpty() == true
+                if (tiene) conGrafico[id] = (conGrafico[id] ?: 0) + 1
+                else {
+                    sinGrafico[id] = (sinGrafico[id] ?: 0) + 1
+                    nivelesDe.getOrPut(id) { HashSet() }.add(lvl)
+                }
+            }
+        }
+        val totalSin = sinGrafico.values.sum()
+        val totalCon = conGrafico.values.sum()
+        println("Niveles con sprites: $niveles")
+        println("Colocaciones CON grafico: $totalCon · SIN grafico: $totalSin " +
+            "(${if (totalCon + totalSin > 0) 100 * totalSin / (totalCon + totalSin) else 0}% sin)")
+        println()
+        println("veces  niveles  id    nombre")
+        for ((id, n) in sinGrafico.entries.sortedByDescending { it.value }.take(25)) {
+            println("%5d  %7d  0x%02X  %s".format(n, nivelesDe[id]?.size ?: 0, id,
+                com.rolebuilder.core.snes.SmwSpriteNames.nameOf(id)))
+        }
+    }
+}
+
+/**
+ * CRIBA: hoja de contacto de los ids que HOY no tienen grafico, dibujados con la tabla OAM
+ * generica saltandose la guarda del catalogo. Sirve para mirar cuales saldrian bien y curarlos,
+ * y cuales dan basura porque llevan rutina de dibujo propia.
+ *
+ *   ./gradlew :core:cribaGfx --args="--rom smw.sfc --level 0x106 --ids 33,3E,2F,B9,9E,72 --out out/"
+ */
+object GfxTriage {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        var romPath = ""; var lvl = 0x106; var out = "criba"; var scale = 5
+        var idsArg = "33,3E,2F,B9,9E,72,13,C4,A5,26,91,BF,99,98,78"
+        var i = 0
+        while (i < args.size) {
+            when (args[i]) {
+                "--rom" -> romPath = args.getOrElse(++i) { "" }
+                "--level" -> lvl = args.getOrElse(++i) { "0x106" }
+                    .let { if (it.startsWith("0x", true)) it.drop(2).toInt(16) else it.toInt() }
+                "--ids" -> idsArg = args.getOrElse(++i) { idsArg }
+                "--out" -> out = args.getOrElse(++i) { "criba" }
+                "--scale" -> scale = args.getOrElse(++i) { "5" }.toInt()
+            }
+            i++
+        }
+        val rom = java.io.File(romPath).readBytes()
+        val hdr = com.rolebuilder.core.snes.SnesDecoder.parseHeader(rom)
+        val gfx = com.rolebuilder.core.snes.SmwEnemyGraphics
+        val ids = idsArg.split(",").mapNotNull { it.trim().toIntOrNull(16) }
+        val filas = ids.mapNotNull { id ->
+            val img = runCatching { gfx.genericImageUnchecked(rom, hdr, lvl, id) }.getOrNull()
+            println("0x%02X %-24s %s".format(id, com.rolebuilder.core.snes.SmwSpriteNames.nameOf(id),
+                if (img != null) "dibuja" else "nada"))
+            img?.let { id to it }
+        }
+        if (filas.isEmpty()) { println("nada que cribar"); return }
+        val cw = 16 * scale; val ch = 32 * scale; val p = 6
+        val cols = 8
+        val nf = (filas.size + cols - 1) / cols
+        val hoja = ArgbImage(p + cols * (cw + p), p + nf * (ch + p))
+        for (x in 0 until hoja.width) for (y in 0 until hoja.height) hoja.set(x, y, 0xFF202024.toInt())
+        filas.forEachIndexed { n, (_, img) ->
+            val ox = p + (n % cols) * (cw + p); val oy = p + (n / cols) * (ch + p)
+            for (y in 0 until img.height) for (x in 0 until img.width) {
+                val c = img.get(x, y); if (c ushr 24 == 0) continue
+                for (dy in 0 until scale) for (dx in 0 until scale) {
+                    val px = ox + x * scale + dx; val py = oy + y * scale + dy
+                    if (px in 0 until hoja.width && py in 0 until hoja.height) hoja.set(px, py, c)
+                }
+            }
+        }
+        val dir = java.io.File(out).apply { mkdirs() }
+        val f = java.io.File(dir, "criba.png")
+        val bi = java.awt.image.BufferedImage(hoja.width, hoja.height, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        bi.setRGB(0, 0, hoja.width, hoja.height, hoja.pixels, 0, hoja.width)
+        javax.imageio.ImageIO.write(bi, "png", f)
+        println("Criba (orden: ${filas.joinToString(",") { "0x%02X".format(it.first) }}): ${f.absolutePath}")
+    }
+}
