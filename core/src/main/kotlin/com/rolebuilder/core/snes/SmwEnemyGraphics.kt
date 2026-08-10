@@ -510,12 +510,16 @@ object SmwEnemyGraphics {
         ),
         // Blurp (0xC2): 1 tesela 16×16 (Spr0C2_Blurp, $03: charnum 0xA2; paleta de $166E).
         0xC2 to CustomEnemy(listOf(OamTile(0xA2, 0, 0))),
-        // Super Koopa suelo (0x73) / capa roja (0x71): frame 0 de ANDAR (SprXXX_SuperKoopas,
-        // $02; SprXXX_SuperKoopas_02EBB5 usa frame 0/1 al andar, sin vflip). 4 teselas:
-        // cuerpo 0xe0 (16×16, paleta del sprite) + CAPA 0xc8/0xd8/0xd0 (8×8). La capa usa la
-        // paleta especial de la fórmula (Prop|v4)&~2: 0x73 (≥0x72, v4=4)→2, 0x71 (v4=8)→4.
-        0x73 to CustomEnemy(superKoopaFrame0(capePal = (8 + 2) * 16)),
-        0x71 to CustomEnemy(superKoopaFrame0(capePal = (8 + 4) * 16)),
+        // LAS TRES SUPER KOOPA, cada una en el fotograma que de verdad usa (ver
+        // [superKoopaFrame], donde está el porqué de la página y del fotograma).
+        //  - 0x73 es la de SUELO: corre, y correr es el fotograma 0.
+        //  - 0x71 y 0x72 cruzan la pantalla VOLANDO y nunca andan: su estado fija el
+        //    fotograma 2/3, la pose con la capa extendida.
+        // El valor de la capa lo decide una comparación explícita con el 0x72:
+        // `if (spr_spriteid >= 0x72) v4 = 4`, y por debajo v4 = 8.
+        0x73 to CustomEnemy(superKoopaFrame(frame = 0, capeV4 = 4)),
+        0x72 to CustomEnemy(superKoopaFrame(frame = 2, capeV4 = 4)),
+        0x71 to CustomEnemy(superKoopaFrame(frame = 2, capeV4 = 8)),
         // PorcuPuffer (0xC3): pez globo 32×32 = 4 teselas 16×16 en (∓8,∓8) (Spr0C3_PorcuPuffer_Draw,
         // $03: PocruPufferTiles/DispX/DispY). Frame 0. Paleta 6 (Prop 0x0D → (0xD>>1)&7).
         0xC3 to CustomEnemy(
@@ -756,22 +760,6 @@ object SmwEnemyGraphics {
         //
         // `flags = 51` = 0x33: página 1 (bit 0) y paleta (0x33>>1)&7 = 1.
         0x9E to CustomEnemy(listOf(OamTile(0xE8, 0, 0, page = 1)), palRow = (8 + 1) * 16),
-        // ⚠ EL 0x72 NO ESTÁ AQUÍ A PROPÓSITO, y merece quedar escrito porque por código parecía
-        // el añadido más fácil de todos: comparte rutina con las otras dos Super Koopa que ya
-        // estaban (`SprXXX_SuperKoopas`, $02:EB31) y su paleta de capa la decide una
-        // comparación EXPLÍCITA con este id (`if (spr_spriteid >= 0x72) v4 = 4`, $02:ECDE),
-        // así que sale byte a byte igual que el 0x73.
-        //
-        // Pero al MIRARLO no hay ninguna Super Koopa: sale una mancha naranja con una forma
-        // amarilla. Y no es cosa del nivel elegido — el 0x72 solo está puesto en los niveles
-        // 00D/015/016/017, los cuatro con el mismo ajuste de GFX (5), y volcando la hoja de
-        // VRAM entera de ese banco no aparece la Super Koopa por ningún lado: es un banco de
-        // fuego, monedas y llaves. O el dibujo no se puede reconstruir desde estos niveles, o
-        // lo que la lista de sprites da por 0x72 no es lo que creemos.
-        //
-        // Eso deja en duda también al 0x73 y al 0x71, que YA están en el catálogo y salen
-        // igual. Añadir el 0x72 sin resolverlo solo repartiría el mismo dibujo dudoso por 41
-        // colocaciones más, así que se queda fuera hasta saber qué pasa.
         // LOS CHUCK QUE FALTABAN. Los ocho (0x91-0x98) entran por la MISMA rutina de dibujo
         // —la tabla de sprites apunta `Spr046_DigginChuck` para todo el rango, y esa llama a
         // `Spr091_CharginChuck_Draw` ($02:C81A)—, y la cabeza y el cuerpo salen de tablas
@@ -894,12 +882,77 @@ object SmwEnemyGraphics {
     fun hasDynamicGraphics(spriteId: Int): Boolean = spriteId in DYNAMIC_GFX_SPRITES
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */
-    private fun superKoopaFrame0(capePal: Int): List<OamTile> = listOf(
-        OamTile(0xe0, 0, 0, size16 = true),                       // cuerpo (paleta $166E)
-        OamTile(0xc8, 8, 0, size16 = false, palRow = capePal),    // capa
-        OamTile(0xd8, 8, 8, size16 = false, palRow = capePal),    // capa
-        OamTile(0xd0, 16, 8, size16 = false, palRow = capePal),   // capa
-    )
+    /**
+     * Un fotograma de SUPER KOOPA (`SprXXX_SuperKoopas_Draw`, $02:ECDE), armado desde sus
+     * tablas reales: nueve fotogramas de cuatro teselas. [capeV4] es el valor que el juego
+     * mete en la propiedad de las teselas de CAPA — 8 para el 0x71 y 4 desde el 0x72, por una
+     * comparación explícita: `if (spr_spriteid >= 0x72) v4 = 4`.
+     *
+     * Se copian las tablas enteras en vez de escribir a mano un fotograma porque cuál toca
+     * depende del ESTADO del enemigo, y teniéndolas delante se puede sacar el que de verdad
+     * usa cada variante en vez del primero que salga.
+     *
+     * ⚠ AQUÍ ESTABAN LOS DOS FALLOS que tenían a estas Koopas dibujadas como una mancha:
+     *
+     *  1. LA PÁGINA de tesela NO se hereda del nivel, y darla por heredada leía la mitad
+     *     equivocada de la VRAM de sprites. La rutina tiene dos ramas y ninguna la coge de
+     *     $166E: las teselas con el bit 1 en su Prop (la CAPA) van por `v5 = (Prop|v4) & ~2`,
+     *     que deja el bit 0 a 1 → página 1 fija; el resto van por `v5 = r5 | Prop` con
+     *     `r5 = spr_table15f6[k] & 0xE`, y ese `& 0xE` **borra el bit 0** del valor del nivel,
+     *     así que la página sale del Prop de la tesela y de nada más.
+     *  2. EL FOTOGRAMA. El catálogo usaba el 0 para las dos que había, pero el 0 es el de
+     *     ANDAR y la voladora no anda nunca: cruza la pantalla. Su estado fija
+     *     `spr_table1602 = 2` ó `3` (`SprXXX_SuperKoopas_02EBF8`, $02:EBF8), que es la pose
+     *     con la capa extendida. El 0 es el de la de suelo mientras corre
+     *     (`SprXXX_SuperKoopas_02EBB5` con r0≠0, $02:EBB5).
+     *
+     * Las tablas van DENTRO de la función a propósito: [CUSTOM_ENEMIES] se construye al
+     * cargar la clase y llama aquí, así que unas constantes declaradas más abajo en el
+     * fichero todavía no existirían — mismo tropiezo que ya está anotado en las alas.
+     */
+    private fun superKoopaFrame(frame: Int, capeV4: Int): List<OamTile> {
+        val tiles = intArrayOf(
+            0xc8, 0xd8, 0xd0, 0xe0, 0xc9, 0xd9, 0xc0, 0xe2, 0xe4, 0xe5, 0xf2, 0xe0,
+            0xf4, 0xf5, 0xf2, 0xe0, 0xda, 0xca, 0xe0, 0xcf, 0xdb, 0xcb, 0xe0, 0xcf,
+            0xe4, 0xe5, 0xe0, 0xcf, 0xf4, 0xf5, 0xe2, 0xcf, 0xe4, 0xe5, 0xe2, 0xcf,
+        )
+        val xDisp = intArrayOf(
+            0x8, 0x8, 0x10, 0x0, 0x8, 0x8, 0x10, 0x0, 0x8, 0x10, 0x10, 0x0,
+            0x8, 0x10, 0x10, 0x0, 0x9, 0x9, 0x0, 0x0, 0x9, 0x9, 0x0, 0x0,
+            0x8, 0x10, 0x0, 0x0, 0x8, 0x10, 0x0, 0x0, 0x8, 0x10, 0x0, 0x0,
+        )
+        // Los negativos vienen como 0xFF/0xFD en la tabla: aquí van ya con signo.
+        val yDisp = intArrayOf(
+            0x0, 0x8, 0x8, 0x0, 0x0, 0x8, 0x8, 0x0, 0x3, 0x3, 0x8, 0x0,
+            0x3, 0x3, 0x8, 0x0, -1, 0x7, 0x0, 0x0, -1, 0x7, 0x0, 0x0,
+            -3, -3, 0x0, 0x0, -3, -3, 0x0, 0x0, -3, -3, 0x0, 0x0,
+        )
+        val prop = intArrayOf(
+            0x3, 0x3, 0x3, 0x0, 0x3, 0x3, 0x3, 0x0, 0x3, 0x3, 0x1, 0x1,
+            0x3, 0x3, 0x1, 0x1, 0x83, 0x83, 0x80, 0x0, 0x83, 0x83, 0x80, 0x0,
+            0x3, 0x3, 0x0, 0x1, 0x3, 0x3, 0x0, 0x1, 0x3, 0x3, 0x0, 0x1,
+        )
+        val size = intArrayOf(
+            0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2,
+            0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 2, 0,
+            0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2, 0,
+        )
+        return (0..3).map { i ->
+            val v = frame * 4 + i
+            val p = prop[v]
+            val capa = (p and 2) != 0
+            val flags = if (capa) (p or capeV4) and 2.inv() else p
+            OamTile(
+                tiles[v], xDisp[v], yDisp[v],
+                size16 = size[v] == 2,
+                vflip = (p and 0x80) != 0,
+                // La capa lleva su paleta en la fórmula; el resto se queda con la del nivel,
+                // porque su Prop no aporta bits de paleta y `r5 | Prop` deja los de $166E.
+                palRow = if (capa) (8 + ((flags shr 1) and 7)) * 16 else null,
+                page = flags and 1,
+            )
+        }
+    }
 
     /** Ids de sprite de los POWERUPS y su tesela (`kPowerUpAndItemGFXRt_PowerUpTiles`, $01). */
     private val POWERUP_SPRITES = intArrayOf(0x74, 0x75, 0x77) // seta, flor de fuego, pluma

@@ -52,6 +52,10 @@ object SmwAssetStore {
      *       grandes sueltos, no tocan el atlas — pero sin subir la versión el almacén viejo
      *       no se re-hornea y esos cuatro seguirían sin fichero.
      *  v11: los cinco Chuck que faltaban (0x92, 0x93, 0x94, 0x97, 0x98) y el Thwomp (0x26).
+     *  v12: las SUPER KOOPA (0x71/0x73) estaban MAL horneadas —salían como una mancha naranja
+     *       porque heredaban del nivel una página de tesela que su rutina no hereda, y la
+     *       voladora usaba encima el fotograma de andar—. Quien horneó con la v11 o anterior
+     *       tiene esos PNG mal. Entra también la 0x72, que ya se puede dibujar bien.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -60,7 +64,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 11
+    private const val BAKE_VERSION = 12
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

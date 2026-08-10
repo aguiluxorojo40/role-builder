@@ -26,10 +26,10 @@ class ZzNuevosSpritesProbe {
         val out = File("/tmp/claude-0/-home-user-role-builder/a10077d4-0a3f-5105-8ad8-f3622d1f4549/scratchpad/sprites")
         out.mkdirs()
 
-        val objetivo = listOf(0x98, 0x97, 0x93, 0x92, 0x94, 0x96, 0x26)
+        val objetivo = listOf(0x71, 0x72, 0x73)
         // Un id puede verse DISTINTO segun el nivel (banco de GFX y paleta son del nivel), asi
         // que para los dudosos se vuelcan varios niveles y se comparan.
-        val varios = setOf(0x26)
+        val varios = setOf(0x72)
         // Para cada id, el primer nivel de la ROM donde está puesto de verdad.
         val donde = HashMap<Int, Int>()
         val todos = HashMap<Int, LinkedHashSet<Int>>()

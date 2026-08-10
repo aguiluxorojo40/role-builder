@@ -186,6 +186,41 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `la Super Koopa que vuela no usa el fotograma de andar`() {
+        // El catalogo usaba el fotograma 0 para todas, y el 0 es el de ANDAR: la voladora no
+        // anda nunca, cruza la pantalla. Su estado fija `spr_table1602 = 2` o `3`
+        // (SprXXX_SuperKoopas_02EBF8, $02:EBF8), que es la pose con la capa extendida; el 0 es
+        // el de la de suelo mientras corre ($02:EBB5 con r0 distinto de cero). Se nota al
+        // mirarlo: con el 0 la voladora sale con la capa recogida bajo el cuerpo.
+        val suelo = SmwEnemyGraphics.customEnemyTilesForTest(0x73, ajuste = 5)
+        val vuela = SmwEnemyGraphics.customEnemyTilesForTest(0x72, ajuste = 5)
+        assertNotNull(suelo, "falta la Super Koopa de suelo")
+        assertNotNull(vuela, "falta la Super Koopa voladora")
+        assertEquals(listOf(0xc8, 0xd8, 0xd0, 0xe0), suelo.map { it.tile }, "la de suelo es el fotograma 0")
+        assertEquals(listOf(0xe4, 0xe5, 0xf2, 0xe0), vuela.map { it.tile }, "la voladora es el fotograma 2")
+    }
+
+    @Test
+    fun `las Super Koopa no heredan del nivel la pagina de tesela`() {
+        // Su rutina ($02:ECDE) tiene dos ramas y NINGUNA la coge de $166E: las teselas de CAPA
+        // van por `(Prop|v4) & ~2`, que deja el bit 0 a 1 (pagina 1 fija), y el resto por
+        // `r5 | Prop` con `r5 = spr_table15f6[k] & 0xE` — y ese `& 0xE` BORRA el bit 0 del
+        // valor del nivel. Heredarla leia la mitad equivocada de la VRAM de sprites y las
+        // dibujaba como una mancha naranja.
+        for (id in intArrayOf(0x71, 0x72, 0x73)) {
+            val t = SmwEnemyGraphics.customEnemyTilesForTest(id, ajuste = 5)
+            assertNotNull(t, "falta la Super Koopa 0x%02X".format(id))
+            assertTrue(t.all { it.page != null }, "0x%02X fija la pagina en TODAS sus teselas".format(id))
+        }
+        // Y la capa de la 0x71 no lleva la misma paleta que las otras dos: su `v4` es 8 en vez
+        // de 4, por la comparacion `if (spr_spriteid >= 0x72) v4 = 4`.
+        val capa71 = SmwEnemyGraphics.customEnemyTilesForTest(0x71, ajuste = 5)!!.first().palRow
+        val capa72 = SmwEnemyGraphics.customEnemyTilesForTest(0x72, ajuste = 5)!!.first().palRow
+        assertEquals((8 + 4) * 16, capa71, "la 0x71 va con la paleta 4")
+        assertEquals((8 + 2) * 16, capa72, "de la 0x72 en adelante, con la 2")
+    }
+
+    @Test
     fun `todos los Chuck que salen en la ROM comparten el mismo fotograma`() {
         // La tabla de sprites manda TODO el rango 0x91-0x98 a la misma rutina de dibujo, y la
         // cabeza y el cuerpo salen de tablas indexadas por el estado de la ANIMACION, no por
