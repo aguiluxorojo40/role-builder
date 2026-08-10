@@ -505,7 +505,7 @@ object SmwEnemyGraphics {
         0x5F to CustomEnemy(flatPlatformNarrow()),
         0x57 to CustomEnemy(flatPlatformWide()),
         0xAB to CustomEnemy(
-            listOf(OamTile(0x8a, -4, -15), OamTile(0xaa, 0, 0)),
+            listOf(OamTile(0x8a, -4, -15, page = 1), OamTile(0xaa, 0, 0, page = 1)),
             palRow = (8 + 3) * 16,
         ),
         // Blurp (0xC2): 1 tesela 16×16 (Spr0C2_Blurp, $03: charnum 0xA2; paleta de $166E).
@@ -524,8 +524,8 @@ object SmwEnemyGraphics {
         // $03: PocruPufferTiles/DispX/DispY). Frame 0. Paleta 6 (Prop 0x0D → (0xD>>1)&7).
         0xC3 to CustomEnemy(
             listOf(
-                OamTile(0x86, -8, -8), OamTile(0xc0, 8, -8),
-                OamTile(0xa6, -8, 8), OamTile(0xc2, 8, 8),
+                OamTile(0x86, -8, -8, page = 1), OamTile(0xc0, 8, -8, page = 1),
+                OamTile(0xa6, -8, 8, page = 1), OamTile(0xc2, 8, 8, page = 1),
             ),
             palRow = (8 + 6) * 16,
         ),
@@ -533,9 +533,9 @@ object SmwEnemyGraphics {
         // teselas de COLA 8×8 (0xa3) detrás (Spr0AA_Fishbone_Draw, $03: TailTiles/XDisp/YDisp).
         0xAA to CustomEnemy(
             listOf(
-                OamTile(0xA6, 0, 0, size16 = true),
-                OamTile(0xa3, -8, 0, size16 = false),
-                OamTile(0xa3, -8, 8, size16 = false),
+                OamTile(0xA6, 0, 0, size16 = true, page = 1),
+                OamTile(0xa3, -8, 0, size16 = false, page = 1),
+                OamTile(0xa3, -8, 8, size16 = false, page = 1),
             ),
         ),
         // Wiggler (0x86): oruga de 5 segmentos 16×16 + flor 8×8 (Spr086_Wiggler, $02:02F035).
@@ -563,8 +563,8 @@ object SmwEnemyGraphics {
         // real del dino está en el fichero 0x25 (SP3), no en el 0x13 estático del nivel.
         0xA9 to CustomEnemy(
             listOf(
-                OamTile(0x42, 0, 0, xflip = true), OamTile(0x40, 16, 0, xflip = true),
-                OamTile(0x62, 0, 16, xflip = true), OamTile(0x60, 16, 16, xflip = true),
+                OamTile(0x42, 0, 0, xflip = true, page = 1), OamTile(0x40, 16, 0, xflip = true, page = 1),
+                OamTile(0x62, 0, 16, xflip = true, page = 1), OamTile(0x60, 16, 16, xflip = true, page = 1),
             ),
             palRow = (8 + 7) * 16,
             gfxSetting = 19,
@@ -591,8 +591,8 @@ object SmwEnemyGraphics {
         // 0x2f → paleta 7, página 1.
         0x6E to CustomEnemy(
             listOf(
-                OamTile(0xc0, 0, 0), OamTile(0xc2, 16, 0),
-                OamTile(0xe4, 0, 16), OamTile(0xe6, 16, 16),
+                OamTile(0xc0, 0, 0, page = 1), OamTile(0xc2, 16, 0, page = 1),
+                OamTile(0xe4, 0, 16, page = 1), OamTile(0xe6, 16, 16, page = 1),
             ),
             palRow = (8 + 7) * 16,
         ),
@@ -604,11 +604,11 @@ object SmwEnemyGraphics {
         // paletas 4/2/2/2 (fila 8+p). r2!=0 (sin flip): la llama sale a la IZQUIERDA.
         0x6F to CustomEnemy(
             listOf(
-                OamTile(0xaa, 0, 0, palRow = (8 + 7) * 16),      // cabeza (frame r4=1)
-                OamTile(0x86, -8, 0, palRow = (8 + 2) * 16),     // llama (cerca de la boca)
-                OamTile(0x84, -20, 0, palRow = (8 + 2) * 16),
-                OamTile(0x82, -32, 0, palRow = (8 + 2) * 16),
-                OamTile(0x80, -40, 0, palRow = (8 + 4) * 16),    // punta de la llama
+                OamTile(0xaa, 0, 0, palRow = (8 + 7) * 16, page = 1),   // cabeza (frame r4=1)
+                OamTile(0x86, -8, 0, palRow = (8 + 2) * 16, page = 1),  // llama (cerca de la boca)
+                OamTile(0x84, -20, 0, palRow = (8 + 2) * 16, page = 1),
+                OamTile(0x82, -32, 0, palRow = (8 + 2) * 16, page = 1),
+                OamTile(0x80, -40, 0, palRow = (8 + 4) * 16, page = 1), // punta de la llama
             ),
         ),
         // Blargg (0xA8): cabeza de dragón de lava, 5 teselas 16×16 (Spr0A8_Blargg_Draw rama
@@ -616,8 +616,8 @@ object SmwEnemyGraphics {
         // teselas 0xa2/0xa4 (arriba), 0xc2/0xc4/0xa6 (abajo). Prop 0x05 → paleta 2, página 1.
         0xA8 to CustomEnemy(
             listOf(
-                OamTile(0xa2, -8, -8), OamTile(0xa4, 8, -8),
-                OamTile(0xc2, -8, 8), OamTile(0xc4, 8, 8), OamTile(0xa6, 24, 8),
+                OamTile(0xa2, -8, -8, page = 1), OamTile(0xa4, 8, -8, page = 1),
+                OamTile(0xc2, -8, 8, page = 1), OamTile(0xc4, 8, 8, page = 1), OamTile(0xa6, 24, 8, page = 1),
             ),
             palRow = (8 + 2) * 16,
         ),
@@ -812,7 +812,7 @@ object SmwEnemyGraphics {
         // kSpr09F_BanzaiBill_Prop: 0x33 en todas menos las dos últimas, que son 0xB3
         // (bit 0x80 = volteo vertical).
         return tiles.mapIndexed { i, t ->
-            OamTile(t, (i % 4) * 16, (i / 4) * 16, vflip = i >= 14)
+            OamTile(t, (i % 4) * 16, (i / 4) * 16, vflip = i >= 14, page = 1)
         }
     }
 

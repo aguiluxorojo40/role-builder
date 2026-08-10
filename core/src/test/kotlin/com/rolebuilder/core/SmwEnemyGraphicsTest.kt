@@ -186,6 +186,35 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `el que fija su propiedad OAM a mano fija tambien la pagina en el catalogo`() {
+        // REGLA que sale del fallo de las Super Koopa: si la rutina de un enemigo escribe su
+        // `flags` con una constante, ahi el bit 0 es el noveno bit del nº de tesela — o sea la
+        // PAGINA — y no se puede heredar del nivel. En la ROM de SMW las dos coinciden para
+        // todos estos (se comprobo id a id contra $166E, cero discrepancias, y los 37 dibujos
+        // salen byte a byte iguales antes y despues de fijarla), pero coincidir no es lo mismo
+        // que ser correcto: a la Super Koopa se le acabo la suerte porque su rutina BORRA ese
+        // bit, y estuvo dibujandose como una mancha hasta que se miro.
+        //
+        // Cada id de aqui lleva al lado la tabla de la que sale su propiedad.
+        val fijanSuPropiedad = mapOf(
+            0xAB to "kSpr0AB_Rex_Prop = {0x47, 0x07}",
+            0xC3 to "kSpr0C3_PorcuPuffer_PocruPufferGfxProp = {0x0d, ...}",
+            0xAA to "kSpr0AA_Fishbone_Prop = {0x4d, 0xcd, 0x0d, 0x8d}",
+            0x9F to "kSpr09F_BanzaiBill_Prop = {0x33, ...}",
+            0xA8 to "kSpr0A8_Blargg_Prop = {0x45, 0x05}",
+            0x6F to "kSpr06F_DinoTorch_DinoTorchProp = {0x09, 0x05, ...}",
+            0x6E to "kSpr06F_DinoTorch_DinoRhinoProp = {0x2f, ...}",
+            0xA9 to "kSpr0A9_Reznor_Prop = {0x3f, ...}",
+        )
+        for ((id, tabla) in fijanSuPropiedad) {
+            val t = SmwEnemyGraphics.customEnemyTilesForTest(id, ajuste = 1)
+            assertNotNull(t, "falta 0x%02X".format(id))
+            assertTrue(t.all { it.page == 1 },
+                "0x%02X saca la pagina de su propia propiedad (%s), no del nivel".format(id, tabla))
+        }
+    }
+
+    @Test
     fun `la Super Koopa que vuela no usa el fotograma de andar`() {
         // El catalogo usaba el fotograma 0 para todas, y el 0 es el de ANDAR: la voladora no
         // anda nunca, cruza la pantalla. Su estado fija `spr_table1602 = 2` o `3`
