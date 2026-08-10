@@ -29,6 +29,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Button
@@ -76,6 +77,8 @@ import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.player.ui.VirtualJoystick
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -94,23 +97,52 @@ class PlatformerActivity : ComponentActivity() {
      */
     private var hudArt: ((Int, Int, Int, Int) -> Bitmap?)? = null
 
+    /**
+     * AVISO de por qué no se pudo montar el nivel, o null si fue bien. Lo escriben
+     * [buildProjectRenderer]/[buildRomRenderer], que ahora corren FUERA del hilo principal:
+     * desde ahí un `Toast` reventaría (`Can't toast on a thread that has not called
+     * Looper.prepare()`), así que dejan el motivo aquí y lo enseña quien sí puede.
+     */
+    private var avisoCarga: String? = null
+
+    /** Todo lo que hace falta para jugar, ya montado por [cargarNivel] en segundo plano. */
+    private class NivelCargado(val renderer: PlatformerRenderer?, val aviso: String?)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemBars()
 
-        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
-        val renderer = if (projectPath != null) {
-            buildProjectRenderer(File(projectPath)) ?: run { finish(); return }
-        } else {
-            buildRomRenderer() ?: run { finish(); return }
-        }
-        // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming. En
-        // la ruta ROM (▶) suena la música REAL del nivel (su musicIndex del header); en modo
-        // PROYECTO, la del mapa importado (su platformMusicIndex); si nada de eso, la canción
-        // de nivel por defecto del banco horneado.
-        music = (buildRomMusic() ?: buildProjectMusic() ?: PlatformerMusic.fromAssets(this))
-            ?.also { it.start() }
+        // TOCAR ▶ NO PUEDE DEJAR LA PANTALLA MUERTA. Montar un nivel es el trabajo más caro de
+        // toda la app: leer la ROM entera (megas, y DOS veces contando la música), reconstruir
+        // el nivel con su atlas de tiles y su Layer 2, componer los sprites de Mario y los de
+        // CADA enemigo del nivel, preparar el HUD y ensamblar la canción. Todo eso se hacía
+        // aquí mismo, en `onCreate`, o sea en el hilo principal: Android no puede pintar
+        // mientras dura, así que lo que se veía era la pantalla ANTERIOR congelada varios
+        // segundos, como si la app se hubiera colgado. Es exactamente la sensación de "esto va
+        // lento" que hay que quitar.
+        //
+        // Ahora la ventana se pinta AL INSTANTE con su aviso de carga y el trabajo se va a
+        // `Dispatchers.IO`. Al hilo principal solo vuelve lo que de verdad le toca: arrancar la
+        // música, avisar de un fallo y enseñar el juego ya montado.
         setContent {
+            var cargado by remember { mutableStateOf<NivelCargado?>(null) }
+            LaunchedEffect(Unit) {
+                val n = withContext(Dispatchers.IO) { cargarNivel() }
+                n.aviso?.let { Toast.makeText(this@PlatformerActivity, it, Toast.LENGTH_LONG).show() }
+                if (n.renderer == null) {
+                    finish()
+                    return@LaunchedEffect
+                }
+                // La música ya la dejó apuntada [cargarNivel]; aquí solo se arranca, para que
+                // empiece a sonar con el nivel a la vista y no antes.
+                music?.start()
+                cargado = n
+            }
+            val renderer = cargado?.renderer
+            if (renderer == null) {
+                PantallaMontandoNivel()
+                return@setContent
+            }
             PlatformerScreen(
                 renderer,
                 onRestart = { recreate() },
@@ -167,6 +199,32 @@ class PlatformerActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * MONTA EL NIVEL ENTERO (para `Dispatchers.IO`): el renderer con su motor, sus gráficos y
+     * su audio, más la música de fondo. Solo lee ficheros y calcula; no toca ninguna vista, así
+     * que es seguro fuera del hilo principal — los avisos de fallo no se enseñan aquí, se
+     * apuntan en [avisoCarga] y los saca [onCreate] cuando vuelve.
+     *
+     * La música se deja apuntada en [music] YA, sin arrancarla: si el jugador se sale mientras
+     * carga, [onDestroy] la encuentra y la para en vez de dejarla suelta.
+     */
+    private fun cargarNivel(): NivelCargado {
+        avisoCarga = null
+        val projectPath = intent.getStringExtra(EXTRA_PROJECT_PATH)
+        val renderer = if (projectPath != null) {
+            buildProjectRenderer(File(projectPath))
+        } else {
+            buildRomRenderer()
+        }
+        if (renderer == null) return NivelCargado(null, avisoCarga ?: "No se pudo montar el nivel.")
+        // Música de fondo: motor N-SPC+S-DSP real de SMW, sintetizado en streaming. En
+        // la ruta ROM (▶) suena la música REAL del nivel (su musicIndex del header); en modo
+        // PROYECTO, la del mapa importado (su platformMusicIndex); si nada de eso, la canción
+        // de nivel por defecto del banco horneado.
+        music = buildRomMusic() ?: buildProjectMusic() ?: PlatformerMusic.fromAssets(this)
+        return NivelCargado(renderer, avisoCarga)
+    }
+
     override fun onDestroy() {
         music?.stop()
         music = null
@@ -182,7 +240,7 @@ class PlatformerActivity : ComponentActivity() {
             val map = ProjectIo.loadMap(projectDir, mapId)
             val tileset = database.tileset(map.tilesetId) ?: database.tilesets.firstOrNull()
                 ?: run {
-                    Toast.makeText(this, "El proyecto no tiene tileset.", Toast.LENGTH_LONG).show()
+                    avisoCarga = "El proyecto no tiene tileset."
                     return null
                 }
             // Inicio: el del proyecto, o el punto de entrada del warp que nos trajo aquí.
@@ -206,7 +264,7 @@ class PlatformerActivity : ComponentActivity() {
                 romShellFrames = loadShellFrames(),
             )
         } catch (e: Exception) {
-            Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
+            avisoCarga = "No se pudo cargar el proyecto: ${e.message}"
             null
         }
     }
@@ -218,17 +276,17 @@ class PlatformerActivity : ComponentActivity() {
         val rom = try {
             File(romPath).readBytes()
         } catch (e: Exception) {
-            Toast.makeText(this, "No se pudo leer la ROM: ${e.message}", Toast.LENGTH_LONG).show()
+            avisoCarga = "No se pudo leer la ROM: ${e.message}"
             return null
         }
         val engine = try {
             buildEngine(rom, level)
         } catch (e: Exception) {
-            Toast.makeText(this, "No se pudo cargar el nivel: ${e.message}", Toast.LENGTH_LONG).show()
+            avisoCarga = "No se pudo cargar el nivel: ${e.message}"
             return null
         }
         if (engine == null) {
-            Toast.makeText(this, "Faltan datos (colisión/físicas/inicio) para el nivel.", Toast.LENGTH_LONG).show()
+            avisoCarga = "Faltan datos (colisión/físicas/inicio) para el nivel."
             return null
         }
         // Sprite REAL de Mario (GFX32) COMPUESTO como el juego: cada pose apila cabeza
@@ -641,6 +699,39 @@ class PlatformerActivity : ComponentActivity() {
  * funcion top-level y no ve los miembros privados de la clase.
  */
 private const val HUD_ANCHO_MAXIMO = 0.62f
+
+/**
+ * Lo que se ve mientras se monta el nivel, que ahora ocurre en segundo plano. Sin esto la
+ * ventana saldría en negro sin explicar nada, que es igual de malo que la congelación que se
+ * acaba de quitar: la espera sigue existiendo, lo que cambia es que se puede VER.
+ *
+ * Fondo azul de cielo de SMW en vez de negro, para que la transición desde el editor no
+ * parpadee a oscuro y de vuelta.
+ */
+@Composable
+private fun PantallaMontandoNivel() {
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF6B8CFF)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = Color.White)
+            Text(
+                "Montando el nivel…",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            Text(
+                "Se reconstruyen sus tiles, sus enemigos y su música desde la ROM.",
+                color = Color.White.copy(alpha = 0.8f),
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 6.dp, start = 24.dp, end = 24.dp),
+            )
+        }
+    }
+}
 
 @Composable
 private fun PlatformerScreen(
