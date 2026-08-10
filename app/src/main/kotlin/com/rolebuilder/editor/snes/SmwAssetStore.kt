@@ -51,6 +51,7 @@ object SmwAssetStore {
      *       colocaciones que salían como rectángulo. Son de dibujo propio, o sea sprites
      *       grandes sueltos, no tocan el atlas — pero sin subir la versión el almacén viejo
      *       no se re-hornea y esos cuatro seguirían sin fichero.
+     *  v11: los cinco Chuck que faltaban (0x92, 0x93, 0x94, 0x97, 0x98) y el Thwomp (0x26).
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -59,7 +60,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 10
+    private const val BAKE_VERSION = 11
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

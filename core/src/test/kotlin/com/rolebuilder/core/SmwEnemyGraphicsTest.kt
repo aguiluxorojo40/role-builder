@@ -186,6 +186,38 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `todos los Chuck que salen en la ROM comparten el mismo fotograma`() {
+        // La tabla de sprites manda TODO el rango 0x91-0x98 a la misma rutina de dibujo, y la
+        // cabeza y el cuerpo salen de tablas indexadas por el estado de la ANIMACION, no por
+        // el id: por eso el fotograma del 0x91 vale para sus hermanos. El 0x96 se queda fuera
+        // aposta, que no esta puesto en ningun nivel y no habria donde comprobarlo.
+        val chucks = intArrayOf(0x91, 0x92, 0x93, 0x94, 0x95, 0x97, 0x98)
+        val base = SmwEnemyGraphics.customEnemyTilesForTest(0x91, ajuste = 1)
+        assertNotNull(base, "falta el Chuck de referencia")
+        for (id in chucks) {
+            val t = SmwEnemyGraphics.customEnemyTilesForTest(id, ajuste = 1)
+            assertNotNull(t, "falta el Chuck 0x%02X".format(id))
+            assertEquals(base.map { it.tile }, t.map { it.tile }, "0x%02X usa el mismo dibujo".format(id))
+        }
+        assertNull(SmwEnemyGraphics.customEnemyTilesForTest(0x96, ajuste = 1),
+            "el 0x96 no sale en ningun nivel: no se cataloga lo que no se puede comprobar")
+    }
+
+    @Test
+    fun `el Thwomp es simetrico y en reposo NO lleva la cara de enfado`() {
+        // Su tabla ($01, Prop = {0x03,0x43,0x03,0x43}) dice que las teselas de la DERECHA son
+        // las de la izquierda volteadas: el 0x40 es el volteo. Y la QUINTA tesela de la tabla
+        // (0xC8) no entra, porque el bucle arranca en el indice 3 y solo llega al 4 cuando
+        // `spr_table1528` no es cero, o sea cuando el Thwomp ya se ha lanzado.
+        val t = SmwEnemyGraphics.customEnemyTilesForTest(0x26, ajuste = 1)
+        assertNotNull(t, "falta el Thwomp")
+        assertEquals(4, t.size, "en reposo son cuatro teselas, sin la cara de enfado")
+        assertFalse(t.any { it.tile == 0xC8 }, "la cara de enfado es de cuando cae, no de reposo")
+        assertEquals(listOf(false, true, false, true), t.map { it.xflip }, "la mitad derecha va volteada")
+        assertEquals(listOf(0x8E, 0x8E, 0xAE, 0xAE), t.map { it.tile }, "arriba 0x8E y abajo 0xAE")
+    }
+
+    @Test
     fun `Sparky cambia de teselas segun el banco de GFX del nivel`() {
         // No es un matiz: su rutina ($02:BE4E) MIRA el ajuste de GFX de sprites del nivel y
         // con el 2 usa la otra forma. Dando por hecha la rama comun, la tesela 0x0A caia

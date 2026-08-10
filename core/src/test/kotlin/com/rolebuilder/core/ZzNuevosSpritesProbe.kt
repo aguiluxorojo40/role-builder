@@ -26,10 +26,10 @@ class ZzNuevosSpritesProbe {
         val out = File("/tmp/claude-0/-home-user-role-builder/a10077d4-0a3f-5105-8ad8-f3622d1f4549/scratchpad/sprites")
         out.mkdirs()
 
-        val objetivo = listOf(0xC4, 0xA5, 0x70, 0x9E)
+        val objetivo = listOf(0x98, 0x97, 0x93, 0x92, 0x94, 0x96, 0x26)
         // Un id puede verse DISTINTO segun el nivel (banco de GFX y paleta son del nivel), asi
         // que para los dudosos se vuelcan varios niveles y se comparan.
-        val varios = setOf(0x9E, 0xA5)
+        val varios = setOf(0x26)
         // Para cada id, el primer nivel de la ROM donde está puesto de verdad.
         val donde = HashMap<Int, Int>()
         val todos = HashMap<Int, LinkedHashSet<Int>>()
@@ -62,11 +62,11 @@ class ZzNuevosSpritesProbe {
 
         // Hoja de VRAM del nivel donde vive la bola: para MIRAR si la tesela que se ha
         // elegido es de verdad la bola, y no un trozo de otro dibujo del mismo banco.
-        SmwEnemyGraphics.spriteVramSheet(rom, header, 0x007, 0x9E, (8 + 1) * 16)?.let { v ->
+        SmwEnemyGraphics.spriteVramSheet(rom, header, 0x00D, 0x73, (8 + 2) * 16)?.let { v ->
             val bi = BufferedImage(v.width, v.height, BufferedImage.TYPE_INT_ARGB)
             for (y in 0 until v.height) for (x in 0 until v.width) bi.setRGB(x, y, v.get(x, y))
-            ImageIO.write(bi, "png", File(out, "vram_007.png"))
-            println("  hoja VRAM del nivel 007 -> vram_007.png (%dx%d)".format(v.width, v.height))
+            ImageIO.write(bi, "png", File(out, "vram_00D.png"))
+            println("  hoja VRAM del nivel 00D -> vram_00D.png (%dx%d)".format(v.width, v.height))
         }
 
         for ((id, lvs) in todos) {

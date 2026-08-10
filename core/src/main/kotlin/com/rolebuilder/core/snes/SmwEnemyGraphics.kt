@@ -756,6 +756,58 @@ object SmwEnemyGraphics {
         //
         // `flags = 51` = 0x33: página 1 (bit 0) y paleta (0x33>>1)&7 = 1.
         0x9E to CustomEnemy(listOf(OamTile(0xE8, 0, 0, page = 1)), palRow = (8 + 1) * 16),
+        // ⚠ EL 0x72 NO ESTÁ AQUÍ A PROPÓSITO, y merece quedar escrito porque por código parecía
+        // el añadido más fácil de todos: comparte rutina con las otras dos Super Koopa que ya
+        // estaban (`SprXXX_SuperKoopas`, $02:EB31) y su paleta de capa la decide una
+        // comparación EXPLÍCITA con este id (`if (spr_spriteid >= 0x72) v4 = 4`, $02:ECDE),
+        // así que sale byte a byte igual que el 0x73.
+        //
+        // Pero al MIRARLO no hay ninguna Super Koopa: sale una mancha naranja con una forma
+        // amarilla. Y no es cosa del nivel elegido — el 0x72 solo está puesto en los niveles
+        // 00D/015/016/017, los cuatro con el mismo ajuste de GFX (5), y volcando la hoja de
+        // VRAM entera de ese banco no aparece la Super Koopa por ningún lado: es un banco de
+        // fuego, monedas y llaves. O el dibujo no se puede reconstruir desde estos niveles, o
+        // lo que la lista de sprites da por 0x72 no es lo que creemos.
+        //
+        // Eso deja en duda también al 0x73 y al 0x71, que YA están en el catálogo y salen
+        // igual. Añadir el 0x72 sin resolverlo solo repartiría el mismo dibujo dudoso por 41
+        // colocaciones más, así que se queda fuera hasta saber qué pasa.
+        // LOS CHUCK QUE FALTABAN. Los ocho (0x91-0x98) entran por la MISMA rutina de dibujo
+        // —la tabla de sprites apunta `Spr046_DigginChuck` para todo el rango, y esa llama a
+        // `Spr091_CharginChuck_Draw` ($02:C81A)—, y la cabeza y el cuerpo salen de tablas
+        // indexadas por el estado de la ANIMACIÓN, no por el id. Por eso el mismo fotograma
+        // vale para todos, igual que ya valía para el 0x91 y el 0x95.
+        //
+        // Lo que NO se guarda es el trasto de cada uno: `DrawExtraTiles` y
+        // `DrawDigginChuckExtraTiles` añaden la pala del que cava, las manos del que aplaude
+        // o la pelota del que bota, y eso sí depende del id y del fotograma. Se dibuja el
+        // Chuck, no su herramienta. Es mucho mejor que el rectángulo de antes, pero conviene
+        // que quede dicho en vez de darlo por completo.
+        0x92 to CustomEnemy(chuckFrame0()),
+        0x93 to CustomEnemy(chuckFrame0()),
+        0x94 to CustomEnemy(chuckFrame0()),
+        // (el 0x96 se queda fuera: no está puesto en NINGÚN nivel de la ROM, así que no hay
+        // dónde comprobarlo ni a quién servirle el dibujo)
+        0x97 to CustomEnemy(chuckFrame0()),
+        0x98 to CustomEnemy(chuckFrame0()),
+        // Thwomp (0x26): el bloque de piedra con cara (Spr026_Thwomp_Draw, $01:AF54). Cuatro
+        // teselas 16×16 en dos filas, y las de la DERECHA son las de la izquierda volteadas
+        // (Prop = {0x03, 0x43, 0x03, 0x43}: el 0x40 es el volteo). Página 1 y paleta
+        // (3>>1)&7 = 1, otra que fija su propiedad a mano.
+        //
+        // La QUINTA tesela de la tabla (0xC8, la CARA de enfado) no entra: el bucle arranca
+        // en el índice 3 y solo llega al 4 cuando `spr_table1528` no es cero, o sea cuando el
+        // Thwomp ya se ha lanzado. En reposo —que es el fotograma que guarda este catálogo—
+        // el juego no la dibuja.
+        0x26 to CustomEnemy(
+            listOf(
+                OamTile(0x8E, -4, 0, page = 1),
+                OamTile(0x8E, 4, 0, page = 1, xflip = true),
+                OamTile(0xAE, -4, 16, page = 1),
+                OamTile(0xAE, 4, 16, page = 1, xflip = true),
+            ),
+            palRow = (8 + 1) * 16,
+        ),
     )
 
     /**
