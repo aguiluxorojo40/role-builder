@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -855,4 +856,26 @@ class SmwLayer1Test {
         assertEquals(0x1D7, tm.block(4, 2), "borde de la cuesta")
         assertEquals(0x1FE, tm.block(4, 3), "remate de la fila de lava")
     }
+
+    @Test
+    fun `cero objetos solo esta BIEN en los modos de sala de jefe`() {
+        // `BeginLoadingLevelData` ($05:83AC) corta el bucle ANTES de la primera llamada a
+        // `LoadLevelDataObject()` cuando el modo es 9, 11 o 16:
+        //
+        //     if (misc_level_mode_setting == 9 || == 11 || == 16) break;
+        //     if (*ptr_layer1_data != 0xFF) LoadLevelDataObject();
+        //
+        // O sea que en esos tres un nivel sin objetos es EL DATO CORRECTO, no un nivel roto:
+        // son las 24 salas de jefe de la ROM, y su sala se monta desde el fondo. Tratarlas
+        // como ilegibles las descartaba enteras, que es lo que pasaba antes.
+        for (modo in intArrayOf(9, 11, 16)) {
+            assertTrue(SmwLayer1.esSalaDeJefe(modo), "el modo $modo no carga objetos")
+        }
+        // Y no vale ensanchar la excepcion para que cuadren mas niveles: en cualquier otro
+        // modo el juego SI procesa objetos, asi que cero objetos sigue siendo "no hay nivel".
+        for (modo in intArrayOf(0, 1, 2, 8, 10, 12, 13, 14, 17, 30)) {
+            assertFalse(SmwLayer1.esSalaDeJefe(modo), "el modo $modo si carga objetos")
+        }
+    }
+
 }

@@ -393,6 +393,18 @@ object SnesGameRecipes {
     /** Fondo compuesto: [map] es celda → índice de tesela (-1 vacío) y [cells] los píxeles. */
     private class SmwBackgroundCells(val map: IntArray, val cells: List<IntArray>)
 
+    /**
+     * Tamaño en casillas 16×16 del FONDO del nivel, o null si no tiene. Es la medida de la
+     * habitación en las SALAS DE JEFE: como su primer plano está vacío por diseño, el fondo es
+     * lo único que dice cómo de grande es el sitio.
+     */
+    private fun tamanoDelFondo(rom: ByteArray, header: SnesHeader, level: Int): Pair<Int, Int>? {
+        val bg = runCatching { renderSmwBackground(rom, header, level) }.getOrNull() ?: return null
+        val w = bg.width / 16
+        val h = bg.height / 16
+        return if (w > 0 && h > 0) w to h else null
+    }
+
     private fun buildSmwBackgroundCells(
         rom: ByteArray,
         header: SnesHeader,
@@ -445,7 +457,14 @@ object SnesGameRecipes {
     fun extractSmwLevelAsMap(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = 256): SmwLevelMap? {
         val delta = smwHeaderDelta(header)
         val tm = SmwLayer1.parse(rom, delta, level) ?: return null
-        if (tm.totalObjects == 0 || tm.unknownObjects * 10 > tm.totalObjects) return null
+        // SALA DE JEFE: cero objetos es lo NORMAL en los modos 9/11/16 —el juego corta el
+        // bucle antes de procesar ninguno ([SmwLayer1.MODES_SIN_OBJETOS])—, así que ahí no
+        // puede tomarse por nivel ilegible. En esos 24 niveles el primer plano queda vacío a
+        // propósito y lo que se ve es el FONDO; en cualquier otro modo, cero objetos sí
+        // significa que no hay nada que reconstruir.
+        val salaDeJefe = SmwLayer1.esSalaDeJefe(tm.mode)
+        if (!salaDeJefe && tm.totalObjects == 0) return null
+        if (tm.unknownObjects * 10 > tm.totalObjects) return null
         val (bLo, bHi, bBank) = findSmwGfxTable(rom) ?: return null
         val lpc = smwLayer1DataPc(rom, delta, level) ?: return null
         val fgbgSetting = byte(rom, lpc + 4) and 0x0F
@@ -472,7 +491,12 @@ object SnesGameRecipes {
         val cgram = assembleSmwCgram(rom, delta, level)
         val defs = smwMap16DefTable(rom, delta, tm.tileset)
 
-        val (w, h) = tm.trimmedSize(maxCols) ?: return null
+        // El recorte se hace sobre el PRIMER PLANO, así que en una sala de jefe —vacía por
+        // definición— no encuentra nada y da null. Ahí la sala la marca el fondo: se toma su
+        // tamaño en casillas, que es el de la habitación de verdad.
+        val (w, h) = tm.trimmedSize(maxCols)
+            ?: (if (salaDeJefe) tamanoDelFondo(rom, header, level) else null)
+            ?: return null
 
         // Bloques distintos usados → tesela del atlas. El aire (0x25) queda como -1.
         val blockToTile = HashMap<Int, Int>()
@@ -483,7 +507,9 @@ object SnesGameRecipes {
             if (block <= 0 || block == 0x25 || block >= 0x200) continue
             tiles[y * w + x] = blockToTile.getOrPut(block) { orderedBlocks.add(block); orderedBlocks.size - 1 }
         }
-        if (orderedBlocks.isEmpty()) return null
+        // Sin bloques de primer plano no hay nivel que enseñar… salvo en una sala de jefe,
+        // donde eso es justo lo que hay: el atlas se queda con lo que aporte el fondo.
+        if (orderedBlocks.isEmpty() && !salaDeJefe) return null
 
         val columns = 16
         // Bloques que animan: sus fotogramas extra van APÉNDICE al final del atlas, así

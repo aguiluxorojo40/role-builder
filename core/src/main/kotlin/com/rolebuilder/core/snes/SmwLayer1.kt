@@ -176,6 +176,36 @@ internal object SmwLayer1 {
      */
     private val MODES_NO_LAYER2 = intArrayOf(0, 10, 12, 13, 14, 17, 30)
 
+    /**
+     * Modos que NO PROCESAN NI UN OBJETO, de ninguna capa: son las SALAS DE JEFE. El bucle de
+     * `BeginLoadingLevelData` ($05:83AC) corta ANTES de la primera llamada:
+     * ```
+     * if (misc_level_mode_setting == 9 || == 11 || == 16)
+     *     break;                       // ← sale aquí
+     * if (*ptr_layer1_data != 0xFF)
+     *     LoadLevelDataObject();
+     * ```
+     *
+     * O sea que un nivel de estos con CERO objetos no es un fallo del parser ni un dato
+     * corrupto: es exactamente lo que hace el juego. Su sala no está en el flujo de objetos —
+     * lo que se ve es el fondo (y, en las de Modo 7, gráficos que monta el propio jefe).
+     *
+     * Importa distinguirlo porque "cero objetos" es también el síntoma de un nivel ilegible,
+     * y sin esta lista los 24 niveles de jefe de la ROM se descartaban como si estuvieran
+     * rotos.
+     */
+    val MODES_SIN_OBJETOS: IntArray = intArrayOf(9, 11, 16)
+
+    /**
+     * ¿El modo [mode] es de los que NO cargan objetos ([MODES_SIN_OBJETOS])? Dicho de otro
+     * modo: ¿un nivel de este modo con cero objetos está BIEN, o está roto?
+     *
+     * Es la regla entera en una línea, y por eso vive aquí y no repartida por quien la use:
+     * en 9/11/16 el primer plano vacío es el dato correcto y la sala hay que montarla igual;
+     * en cualquier otro modo, cero objetos significa que no hay nivel que reconstruir.
+     */
+    fun esSalaDeJefe(mode: Int): Boolean = mode in MODES_SIN_OBJETOS
+
     private val LAYER1_LAYOUT: Array<IntArray?> = arrayOf(
         LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, LAYOUT_STD_HORIZ, LAYOUT_VERT_L1,   // 00-03
         LAYOUT_VERT_L1, LAYOUT_HORIZ_L1, LAYOUT_HORIZ_L1, LAYOUT_STD_VERT,      // 04-07
