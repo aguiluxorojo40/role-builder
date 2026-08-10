@@ -73,7 +73,7 @@ app/    Aplicación Android (solo UI y render)
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (535: serialización, movimiento, intérprete, combate, extracción de
+JVM rápidos (566: serialización, movimiento, intérprete, combate, extracción de
 assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del motor
 y le pasa el input.
 
