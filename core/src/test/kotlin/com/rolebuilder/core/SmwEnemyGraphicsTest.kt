@@ -3,6 +3,7 @@ package com.rolebuilder.core
 import com.rolebuilder.core.snes.SmwEnemyGraphics
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -166,6 +167,66 @@ class SmwEnemyGraphicsTest {
         // sprite y nadie los dibujaba.
         assertTrue(0x76 in SmwEnemyGraphics.customEnemyIds, "falta la estrella (0x76)")
         assertTrue(0x78 in SmwEnemyGraphics.customEnemyIds, "falta el 1-Up (0x78)")
+    }
+
+    @Test
+    fun `la tanda de los mas puestos en toda la ROM tiene dibujo propio`() {
+        // Elegidos por lo que de verdad pesa: colocaciones en niveles jugables de la ROM
+        // entera, no por lo llamativos que sean. Entre los cuatro suman 132 colocaciones que
+        // hasta ahora salian como rectangulo.
+        val esperados = mapOf(
+            0xC4 to "plataforma gris que se cae (35 colocaciones)",
+            0xA5 to "Sparky/Fuzzy (34)",
+            0x9E to "bola con cadena (44)",
+            0x70 to "Pokey (19)",
+        )
+        for ((id, que) in esperados) {
+            assertTrue(id in SmwEnemyGraphics.customEnemyIds, "falta el dibujo propio de $que (0x%02X)".format(id))
+        }
+    }
+
+    @Test
+    fun `Sparky cambia de teselas segun el banco de GFX del nivel`() {
+        // No es un matiz: su rutina ($02:BE4E) MIRA el ajuste de GFX de sprites del nivel y
+        // con el 2 usa la otra forma. Dando por hecha la rama comun, la tesela 0x0A caia
+        // encima del grafico de la BOTA y Sparky se dibujaba como un zapato. Aqui se fija que
+        // las dos ramas existen y son DISTINTAS; el aspecto de cada una se comprobo mirando
+        // los PNG (negro con boca roja en los niveles de ajuste 2, chispa naranja en el resto).
+        val a = SmwEnemyGraphics.customEnemyTilesForTest(0xA5, ajuste = 1)
+        val b = SmwEnemyGraphics.customEnemyTilesForTest(0xA5, ajuste = 2)
+        assertNotNull(a, "falta la forma comun de Sparky")
+        assertNotNull(b, "falta la forma del ajuste 2")
+        assertEquals(listOf(0x0A), a.map { it.tile }, "la forma comun es la tesela 0x0A")
+        assertEquals(listOf(0xC8), b.map { it.tile }, "con ajuste 2 la rutina usa la 0xC8")
+    }
+
+    @Test
+    fun `los que fijan su propia propiedad OAM no heredan la pagina del nivel`() {
+        // `oam[64].flags = sprites_tile_priority | 3` lleva las DOS cosas: el bit 0 es el
+        // noveno bit del nº de tesela y los bits 1-3 la paleta. Si se toma solo la paleta y la
+        // pagina se saca de $166E, se pinta la otra mitad de la VRAM de sprites: basura con
+        // forma de tesela. La plataforma gris (flags 3), el Pokey (5) y la bola (0x33) fijan
+        // pagina 1 en todas sus teselas.
+        for ((id, que) in mapOf(0xC4 to "plataforma gris", 0x70 to "Pokey", 0x9E to "bola con cadena")) {
+            val tiles = SmwEnemyGraphics.customEnemyTilesForTest(id, ajuste = 1)
+            assertNotNull(tiles, "falta $que")
+            assertTrue(tiles.all { it.page == 1 }, "$que fija la pagina 1 en su propiedad OAM")
+        }
+    }
+
+    @Test
+    fun `el Pokey lleva la cabeza arriba y cuatro cuerpos debajo`() {
+        // El nº de tesela sale de si el segmento de ENCIMA sigue vivo ($02, bucle de dibujo):
+        // si lo esta va cuerpo (0xE8) y si no, CABEZA (0x8A). Con los cinco segmentos vivos
+        // eso deja la cabeza arriba del todo. Invertirlo dibuja un Pokey decapitado con la
+        // cara en el suelo, que es exactamente el fallo facil de cometer al portar el bucle,
+        // porque en el juego va de abajo a arriba.
+        val t = SmwEnemyGraphics.customEnemyTilesForTest(0x70, ajuste = 1)
+        assertNotNull(t, "falta el Pokey")
+        assertEquals(5, t.size, "cinco segmentos")
+        assertEquals(0x8A, t.first().tile, "la cabeza va arriba")
+        assertTrue(t.drop(1).all { it.tile == 0xE8 }, "los otros cuatro son cuerpo")
+        assertEquals(listOf(0, 16, 32, 48, 64), t.map { it.dy }, "16 px por segmento, de arriba abajo")
     }
 
     @Test

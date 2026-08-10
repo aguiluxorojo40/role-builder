@@ -187,7 +187,18 @@ object SmwEnemyGraphics {
                   /** Volteo VERTICAL de la tesela (bit 0x80 de la propiedad OAM). */
                   val vflip: Boolean = false,
                   /** Fila de paleta propia de ESTA tesela (o null = la del sprite/override global). */
-                  val palRow: Int? = null)
+                  val palRow: Int? = null,
+                  /**
+                   * PÁGINA de tesela propia de ESTA tesela (0 o 1), o null = la del nivel ($166E).
+                   *
+                   * Hace falta porque no todos los enemigos heredan la propiedad OAM del nivel:
+                   * los que ESCRIBEN su `flags` a mano (`oam[64].flags = sprites_tile_priority | 3`
+                   * y compañía) están fijando ahí las dos cosas a la vez — el bit 0 es el noveno
+                   * bit del nº de tesela y los bits 1-3 la paleta. Quedarse solo con la paleta y
+                   * sacar la página de $166E pinta el gráfico de OTRA mitad de la VRAM de sprites,
+                   * que es basura con forma de tesela.
+                   */
+                  val page: Int? = null)
 
     /**
      * Compone un sprite de enemigo con DIBUJO PROPIO (fuera de la tabla OAM genérica) a
@@ -208,7 +219,7 @@ object SmwEnemyGraphics {
         val img = ArgbImage(maxX - minX, maxY - minY)
         var any = false
         for (t in tiles) {
-            val base = (t.tile and 0xFF) + art.page * 0x100
+            val base = (t.tile and 0xFF) + (t.page ?: art.page) * 0x100
             if (art.paintTile(base, img, t.dx - minX, t.dy - minY, t.size16, t.xflip, t.palRow ?: row, t.vflip)) any = true
         }
         return if (any) img else null
@@ -240,7 +251,15 @@ object SmwEnemyGraphics {
      */
     fun customEnemyImage(rom: ByteArray, header: SnesHeader, level: Int, spriteId: Int): ArgbImage? {
         val c = CUSTOM_ENEMIES[spriteId] ?: return null
-        return customSprite(rom, header, level, spriteId, c.tiles, c.palRow, c.gfxSetting)
+        val variante = if (c.porAjuste.isEmpty()) null else {
+            val ajuste = c.gfxSetting
+                ?: SnesGameRecipes.smwLevelInfo(rom, header, level)?.spriteGfx?.and(0x0F)
+            c.porAjuste[ajuste]
+        }
+        return customSprite(
+            rom, header, level, spriteId,
+            variante?.first ?: c.tiles, variante?.second ?: c.palRow, c.gfxSetting,
+        )
     }
 
     /**
@@ -426,6 +445,17 @@ object SmwEnemyGraphics {
     /** Ids con dibujo propio soportados (para el bake de `big_<id>.png`). */
     val customEnemyIds: List<Int> get() = CUSTOM_ENEMIES.keys.toList()
 
+    /**
+     * Teselas del dibujo propio de [spriteId] para un nivel con ese [ajuste] de GFX de
+     * sprites, o null si no está en el catálogo. Es la MISMA elección que hace
+     * [customEnemyImage] antes de pintar, expuesta sin ROM para poder fijarla en tests: qué
+     * teselas se eligen es una decisión del port, y sin ROM no hay otra forma de comprobarla.
+     */
+    fun customEnemyTilesForTest(spriteId: Int, ajuste: Int): List<OamTile>? {
+        val c = CUSTOM_ENEMIES[spriteId] ?: return null
+        return c.porAjuste[c.gfxSetting ?: ajuste]?.first ?: c.tiles
+    }
+
     /** Plataforma ESTRECHA: 3 teselas 16×16 seguidas ($01:B2DF, rama sin 1602). */
     private fun flatPlatformNarrow(): List<OamTile> =
         listOf(OamTile(0x60, 0, 0), OamTile(0x61, 16, 0), OamTile(0x62, 32, 0))
@@ -439,7 +469,15 @@ object SmwEnemyGraphics {
 
     private class CustomEnemy(val tiles: List<OamTile>, val palRow: Int? = null,
                               /** Ajuste de GFX de sprites FORZADO (salas de jefe Modo 7); null = el del nivel. */
-                              val gfxSetting: Int? = null)
+                              val gfxSetting: Int? = null,
+                              /**
+                               * Variantes por AJUSTE DE GFX DE SPRITES del nivel. Unos pocos enemigos no
+                               * se dibujan siempre igual: su rutina MIRA qué banco de sprites ha cargado
+                               * el nivel y cambia de teselas, porque el dibujo que les toca no está en el
+                               * mismo sitio en los dos bancos. Sin esto se pinta la tesela del otro banco,
+                               * que no es "parecida": es OTRO gráfico entero.
+                               */
+                              val porAjuste: Map<Int, Pair<List<OamTile>, Int?>> = emptyMap())
 
     /**
      * Layouts de teselas REALES de enemigos con dibujo propio, transcritos de sus rutinas
@@ -658,6 +696,66 @@ object SmwEnemyGraphics {
                 OamTile(0x5D, 11, -2, size16 = false, palRow = (8 + 3) * 16),
             ),
         ),
+        // Plataforma gris que se cae (0xC4): 4 teselas 16×16 seguidas, 64×16 en total
+        // (Spr0C4_GreyFallingPlatform_Draw, $03:8492; XDisp = {0,0x10,0x20,0x30},
+        // Tiles = {0x60,0x61,0x61,0x62} — extremo, centro, centro, extremo).
+        //
+        // Esta escribe su propiedad a mano: `flags = sprites_tile_priority | 3`. Ese 3 lleva
+        // las DOS cosas: bit 0 = página 1 y bits 1-3 = paleta (3>>1)&7 = 1. Por eso no hereda
+        // nada de $166E, ni la página ni la paleta.
+        0xC4 to CustomEnemy(
+            (0..3).map { i ->
+                OamTile(intArrayOf(0x60, 0x61, 0x61, 0x62)[i], i * 16, 0, page = 1)
+            },
+            palRow = (8 + 1) * 16,
+        ),
+        // Sparky (0xA5): la chispa que recorre las paredes. UNA tesela 16×16
+        // (SprXXX_WallFollowers_SparkyDraw, $02:BE4E): parte de GenericGFXRtDraw1Tile16x16 —o
+        // sea, paleta y página del nivel— y solo le cambia el nº de tesela a 10 = 0x0A. Su
+        // `flags ^= 16*(counter & 0xC)` es la ROTACIÓN de la chispa fotograma a fotograma
+        // (volteos H/V); el fotograma 0 va sin voltear, que es el que se guarda.
+        //
+        // Y hay que MIRAR el ajuste, no dar por hecho la rama común: con el ajuste de GFX de
+        // sprites 2 la rutina usa la otra forma —tesela -56 = 0xC8 con la propiedad de Fuzzy
+        // (`kSprXXX_WallFollowers_FuzzyProp` = {0x05,0x45}: página 1, paleta (5>>1)&7 = 2; el
+        // 0x40 del segundo es el volteo del parpadeo)—. Y no es un matiz de color: la tesela
+        // 0x0A en un nivel de ajuste 2 cae encima del gráfico de la BOTA de Yoshi, así que
+        // Sparky salía dibujado como un zapato. Se vio renderizando el PNG y mirándolo.
+        0xA5 to CustomEnemy(
+            listOf(OamTile(0x0A, 0, 0)),
+            porAjuste = mapOf(2 to (listOf(OamTile(0xC8, 0, 0, page = 1)) to (8 + 2) * 16)),
+        ),
+        // Pokey (0x70): el cactus de cinco segmentos (Spr070_Pokey, $02:B665 y su bucle de
+        // dibujo). Se pinta de ABAJO hacia arriba, 16 px por segmento, y el nº de tesela sale
+        // de si el segmento de ENCIMA sigue vivo: si lo está va cuerpo (-24 = 0xE8) y si no,
+        // CABEZA (-118 = 0x8A). Con el Pokey entero (los cinco vivos) eso da cuatro cuerpos y
+        // la cabeza arriba del todo, que es lo que se guarda.
+        //
+        // El bamboleo en X (`XDisp = {0,+1,0,-1}` indexado por `(j + frame>>3) & 3`) es la
+        // animación de balanceo; aquí se congela en el fotograma 0, o sea j&3.
+        //
+        // `flags = sprites_tile_priority | 5`: página 1 (bit 0) y paleta (5>>1)&7 = 2.
+        0x70 to CustomEnemy(
+            (0..4).map { fila ->
+                // fila 0 = arriba (cabeza). En el juego el bucle va de j=4 (abajo) a j=0.
+                val j = 4 - fila
+                OamTile(
+                    if (fila == 0) 0x8A else 0xE8,
+                    intArrayOf(0, 1, 0, -1)[j and 3],
+                    fila * 16,
+                    page = 1,
+                )
+            },
+            palRow = (8 + 2) * 16,
+        ),
+        // Bola de la BOLA CON CADENA (0x9E): la bola que gira, tesela -24 = 0xE8 16×16
+        // (Spr09E_BallNChain_Sub, $02:D62A: `r8 = -24` para el id 0x9E, frente al -94 del
+        // 0xA3). La CADENA no se guarda: no es una tesela, son posiciones calculadas en vivo
+        // sobre `kCircleCoordinates` según el ángulo del giro, y este catálogo guarda un
+        // fotograma fijo. Lo que hace daño —y lo que se ve— es la bola.
+        //
+        // `flags = 51` = 0x33: página 1 (bit 0) y paleta (0x33>>1)&7 = 1.
+        0x9E to CustomEnemy(listOf(OamTile(0xE8, 0, 0, page = 1)), palRow = (8 + 1) * 16),
     )
 
     /**

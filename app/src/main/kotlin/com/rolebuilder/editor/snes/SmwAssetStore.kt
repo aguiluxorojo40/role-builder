@@ -46,6 +46,11 @@ object SmwAssetStore {
      *       en vez de 16×32, y las aladas sin su ala—, así que en modo PROYECTO salía
      *       medio Koopa flotando mientras el modo ROM los enseñaba enteros. Quien horneó
      *       con la v8 o anterior tiene esos ficheros mal y necesita re-hornear.
+     *  v10: los cuatro sprites MÁS PUESTOS de la ROM que seguían sin dibujo (plataforma gris
+     *       que se cae 0xC4, Sparky/Fuzzy 0xA5, bola con cadena 0x9E y Pokey 0x70): 132
+     *       colocaciones que salían como rectángulo. Son de dibujo propio, o sea sprites
+     *       grandes sueltos, no tocan el atlas — pero sin subir la versión el almacén viejo
+     *       no se re-hornea y esos cuatro seguirían sin fichero.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -54,7 +59,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 9
+    private const val BAKE_VERSION = 10
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
