@@ -262,8 +262,13 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
      * está puesto llama a `ChangeNormalSpriteDirection`. Da 0x01, 0x02, 0x05 y 0x06 — o sea
      * el ROJO y el AZUL, con y sin caparazón, y NO las aladas. Antes era una lista a mano
      * (`0x01, 0x0A, 0x0B`) que se equivocaba en las dos direcciones.
+     *
+     * Es `var` porque una Koopa ALADA que pierde las alas SE CONVIERTE en otro id
+     * (`kGenericSpriteToSpawnTable`: 0x08/0x09→0x04, 0x0A/0x0B→0x05) y pasa a comportarse
+     * como ese: las rojas (0x0A/0x0B → 0x05) empiezan a girar en el borde, que de aladas
+     * no lo hacían.
      */
-    val turnsAtLedge = (PlatformerEngine.SPR_0TO13_PROP.getOrElse(id) { 0 } and 0x02) != 0
+    var turnsAtLedge = (PlatformerEngine.SPR_0TO13_PROP.getOrElse(id) { 0 } and 0x02) != 0
 
     /** La Planta Piraña de fuego (0x50) escupe bolas; la cabeza-abajo (0x2A) asoma al revés. */
     val firePiranha = id == 0x50
@@ -323,6 +328,47 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
     var shellKickGrace = 0
 
     /**
+     * Contador de DESPERTAR del caparazón (`spr_decrementing_table1558`): mientras corre, el
+     * caparazón parpadea y tiembla, y al llegar a 1 vuelve a ser un Koopa andando
+     * (`SprStatus09_Stunned_019624`, $01:9624). Lo pone a
+     * [PlatformerEngine.SHELL_WAKE_FRAMES] el Koopa desnudo al meterse dentro. Vale 0 en un
+     * caparazón normal, que en SMW se queda quieto para siempre.
+     */
+    var wakeTimer = 0
+    /**
+     * Contador del Koopa DESNUDO enganchado a un caparazón (`spr_decrementing_table1558`
+     * también, pero en el desnudo): [PlatformerEngine.NAKED_KOOPA_ENTER_FRAMES] hasta
+     * meterse dentro (`sub_1A72E`, $01:A72E).
+     */
+    var enterTimer = 0
+    /** Pareja desnudo↔caparazón mientras dura el enganche (`spr_table1594`). */
+    var partner: PlatformerEnemy? = null
+    /** Id del desnudo que se metió (`spr_table160e`); el [PlatformerEngine.NAKED_KOOPA_KICKER_ID] patea. */
+    var enteredById = -1
+
+    /**
+     * El Koopa desnudo va DESLIZÁNDOSE de panza (`spr_table1528`), que es como sale del
+     * caparazón recién pisado: a 4 px/f frenando 0.125 px/f por fotograma
+     * (`SprXXX_Generic_018952`, $01:8952). Al pararse se queda TUMBADO ([downTimer]).
+     */
+    var sliding = false
+    /**
+     * Fotogramas que el Koopa desnudo se queda TUMBADO tras el deslizamiento
+     * (`spr_decrementing_table163e`, que arranca en 0xFF y a mitad —0x80— le hace dar el
+     * saltito de levantarse y volver a andar).
+     */
+    var downTimer = 0
+
+    /**
+     * ¿El caparazón está PARPADEANDO (a punto de despertar)? Es el
+     * `spr_table00c2[k] = 1558 | 1540` de `SprStatus09_Stunned_019624`: mientras vale ≠ 0,
+     * `StunnedShellGFXRt_01980F` ($01:980F) dibuja la cabeza/patas del Koopa asomando y
+     * desplaza el caparazón 1 px en X un fotograma sí y otro no (`oam[66].xpos + (v4 & 1)`),
+     * que es el temblor previo. La capa de dibujo lo usa para pintar ese aviso.
+     */
+    val shellBlinking: Boolean get() = shell && wakeTimer > 0
+
+    /**
      * Fotogramas en que este enemigo NO interactúa con Mario (port de
      * `spr_decrementing_table154c`, que el juego consulta al principio de
      * `CheckPlayerToNormalSpriteColl_01A80F` y, si vale ≠ 0, se salta la colisión).
@@ -349,8 +395,16 @@ class PlatformerEnemy(var x: Float, var y: Float, val id: Int) {
 
     init {
         if (behavior != EnemyBehavior.WALKER && behavior != EnemyBehavior.BOSS) vx = 0f
-        // El Koopa desnudo (0x00-0x03) corre más rápido que un andador normal.
-        if (isNakedKoopa) vx = -PlatformerEngine.NAKED_KOOPA_SPEED
+        // Velocidad de andar REAL del sprite genérico (kSprXXX_Generic_Spr0to13SpeedX,
+        // $01:8B0A): 0.5 px/f o 0.75 px/f según el bit 0x01 de Spr0to13Prop. Antes TODOS los
+        // andadores iban a 0.5, así que el Koopa azul y el amarillo andaban lentos de más.
+        if (behavior == EnemyBehavior.WALKER && id < PlatformerEngine.SPR_0TO13_PROP.size) {
+            vx = -PlatformerEngine.walkSpeedOf(id)
+        }
+        // OJO: el Koopa desnudo COLOCADO en el nivel arranca andando como cualquier otro
+        // (`kUnk_1817d[0x00..0x03] = SprXXX_Generic_Init_StandardSpritesInit`, $01:8575, que
+        // solo lo hace mirar a Mario). Los 4 px/f son EXCLUSIVOS del que sale disparado de un
+        // caparazón pisado, y encima son un DESLIZAMIENTO que frena (ver [spawnNakedKoopa]).
         // Los jefes son grandes: caja de colisión mayor (editable en caliente). Patrullan
         // despacio como un andador robusto.
         if (isBoss) {
@@ -756,8 +810,10 @@ class PlatformerEngine(
             return true
         }
         // Llevando un Mechakoopa volteado: lo LANZA (o lo deja, volteado, si se pulsa abajo).
+        // El CAPARAZÓN no pasa por aquí: en SMW se coge y se suelta con el botón MANTENIDO
+        // (`io_controller_hold1 & 0x40`), no en el flanco → lo lleva [updateCarriedShell].
         val mech = carriedEnemy
-        if (mech != null) {
+        if (mech != null && !mech.shell) {
             mech.carried = false
             if (inputDown) {
                 mech.vx = 0f   // lo deja en el suelo, aún volteado
@@ -1102,6 +1158,7 @@ class PlatformerEngine(
         updateItems()
         updateFireballs()
         updateGrabBlocks()
+        updateCarriedShell()
         updateEnemyProjectiles()
         handlePlayerEnemyContact()
         collectCoins()
@@ -1389,7 +1446,7 @@ class PlatformerEngine(
                     else {
                         e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
                         moveEnemyVertical(e)
-                        moveEnemyHorizontal(e)
+                        if (e.isNakedKoopa) updateNakedKoopa(e) else moveEnemyHorizontal(e)
                         if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
                     }
                 }
@@ -1581,6 +1638,9 @@ class PlatformerEngine(
         // Nace justo bajo los pies de Mario: sin gracia lo mataría en el mismo fotograma
         // del pisotón. El juego le pone `spr_decrementing_table154c[j] = 16`.
         n.contactGrace = NAKED_KOOPA_SPAWN_GRACE
+        // Y nace DESLIZÁNDOSE (`spr_table1528[j] = 16`), no andando: esos 4 px/f frenan hasta
+        // pararse y entonces se queda tumbado un rato. Ver [updateNakedKoopa].
+        n.sliding = true
         pendingSpawns.add(n)
     }
 
@@ -1722,6 +1782,8 @@ class PlatformerEngine(
      * quieto, solo se posa. Se apaga al caer al vacío.
      */
     private fun updateShell(e: PlatformerEnemy) {
+        // LLEVADO en brazos (estado 0x0B): lo coloca [updateCarriedShell]; ni gravedad ni nada.
+        if (e.carried) return
         e.vy = min(e.vy + SPRITE_GRAVITY, SPRITE_MAX_FALL)
         moveEnemyVertical(e)
         if (e.shellKickGrace > 0) e.shellKickGrace--
@@ -1734,13 +1796,251 @@ class PlatformerEngine(
             else e.x = nx
             // Arrolla a los demás enemigos que solape (no a otro caparazón parado ni a sí mismo).
             for (o in enemies) {
-                if (o === e || !o.alive || o.hidden) continue
-                if (e.x < o.x + o.width && e.x + e.width > o.x && e.y < o.y + o.height && e.y + e.height > o.y) {
+                if (!puedeArrollarA(e, o)) continue
+                if (overlaps(e, o)) {
                     o.alive = false; o.squashTimer = 12; stompEvents++
                 }
             }
         }
+        tickShellWake(e)
         if (e.y > (rows + 3) * tileSize) e.alive = false // cayó al vacío
+    }
+
+    /**
+     * El caparazón que DESPIERTA: cuenta atrás de [PlatformerEnemy.wakeTimer]
+     * (`spr_decrementing_table1558`) y, al llegar a 1, el Koopa vuelve a estar de pie
+     * (`SprStatus09_Stunned_019624`, $01:9624, rama `1558 == 1`):
+     * ```
+     * InitializeNormalSpriteRAMTables_YXPPCCCTAndPropertyTables(k);
+     * SprXXX_Generic_Init_MakeSpriteFacePlayer(k);
+     * uint8 v2 = 8;
+     * if (spr_table160e[k] == 3) { ++spr_table187b[k]; ...; v2 = 10; }
+     * spr_current_status[k] = v2;
+     * ```
+     * O sea: estado 08 (Koopa andando, ENCARANDO a Mario) salvo que quien se metió fuera el
+     * desnudo id 3, que en vez de ponérselo lo PATEA → estado 0x0A (caparazón deslizándose)
+     * con `187b` puesto, que es la rama que acelera hasta ±[SHELL_SPEED].
+     */
+    private fun tickShellWake(e: PlatformerEnemy) {
+        if (e.wakeTimer <= 0) return
+        if (--e.wakeTimer > 0) return
+        val marioCx = player.x + tuning.playerWidth / 2f
+        val faceLeft = marioCx < e.x + e.width / 2f
+        if (e.enteredById == NAKED_KOOPA_KICKER_ID) {
+            // El desnudo 0x03 PATEA el caparazón hacia Mario en vez de ponérselo.
+            e.shellMoving = true
+            e.vx = if (faceLeft) -SHELL_SPEED else SHELL_SPEED
+            e.shellKickGrace = SHELL_KICK_GRACE
+        } else {
+            // Vuelve a ser un Koopa CON caparazón, andando y mirando a Mario.
+            e.shell = false
+            e.shellMoving = false
+            e.vx = if (faceLeft) -walkSpeedOf(e.koopaColorId) else walkSpeedOf(e.koopaColorId)
+        }
+        e.partner = null
+        e.enteredById = -1
+    }
+
+    /**
+     * Koopa DESNUDO (0x00-0x03), port de `SprXXX_Generic_018952` ($01:8952). Tiene tres
+     * estados que hasta ahora el motor no distinguía (iba SIEMPRE a 4 px/f, ocho veces más
+     * rápido que un andador y para siempre):
+     *  1. **deslizándose** ([PlatformerEnemy.sliding], `spr_table1528`): es como sale del
+     *     caparazón recién pisado. Frena `r0 = 2` unidades por fotograma mientras pisa suelo
+     *     (`spr_xspeed[k] = v5 - r0`, `r0 = 1` en hielo) y una pared lo para en seco
+     *     (`if (CheckNormalSpriteLevelColl_Wall(k)) spr_xspeed[k] = 0;`).
+     *  2. **tumbado** ([PlatformerEnemy.downTimer], `spr_decrementing_table163e = 0xFF`):
+     *     quieto (`sub_1891F` le pone `spr_xspeed = 0`) hasta que el contador baja a 0x80,
+     *     donde encara a Mario, da un saltito (`spr_yspeed = -32`) y se pone a andar.
+     *  3. **andando**: velocidad normal de la tabla genérica ([walkSpeedOf]).
+     */
+    private fun updateNakedKoopa(e: PlatformerEnemy) {
+        when {
+            e.downTimer > 0 -> {
+                e.vx = 0f
+                if (--e.downTimer <= 0) {   // 163e llegó a 0x80: se levanta encarando a Mario
+                    e.vy = NAKED_KOOPA_GETUP_HOP
+                    val marioCx = player.x + tuning.playerWidth / 2f
+                    val toLeft = marioCx < e.x + e.width / 2f
+                    e.vx = if (toLeft) -walkSpeedOf(e.id) else walkSpeedOf(e.id)
+                }
+            }
+            e.sliding -> {
+                val before = e.x
+                moveEnemyHorizontal(e)
+                if (e.onGround) {
+                    // Frena 2 unidades (0.125 px/f) por fotograma hasta pararse.
+                    e.vx = if (e.vx > 0f) e.vx - NAKED_KOOPA_SLIDE_DECEL else e.vx + NAKED_KOOPA_SLIDE_DECEL
+                }
+                // Pared: el juego lo PARA (no lo gira). moveEnemyHorizontal ya invirtió el
+                // signo, así que se detecta por que no ha avanzado.
+                val hitWall = e.x == before
+                if (hitWall || abs(e.vx) < NAKED_KOOPA_SLIDE_DECEL) {
+                    e.vx = 0f
+                    e.sliding = false
+                    e.downTimer = NAKED_KOOPA_DOWN_FRAMES
+                }
+            }
+            else -> {
+                moveEnemyHorizontal(e)
+                // Solo el que anda de pie puede volver a meterse en un caparazón.
+                tickNakedKoopaEnteringShell(e)
+            }
+        }
+    }
+
+    /**
+     * El Koopa DESNUDO que se mete en un caparazón parado. Port de
+     * `CheckNormalSpriteToNormalSpriteColl_01A6D9` ($01:A6D9) + `sub_1A72E` ($01:A72E) +
+     * la rama `1558 == 1` de `SprXXX_Generic_018952` ($01:8952):
+     *  1. desnudo en el suelo tocando un caparazón parado, ninguno de los dos con contador:
+     *     el desnudo SALTA (`yspeed = -32`) y arranca 24 fotogramas ([enterTimer]);
+     *  2. al agotarse, si siguen tocándose, el desnudo DESAPARECE
+     *     (`SubOffscreen_Bank01_EraseSprite`) y le pasa al caparazón
+     *     `1558 = 16` + `160e = id del desnudo`;
+     *  3. el caparazón parpadea esos 16 fotogramas y despierta ([tickShellWake]).
+     *
+     * Es el ÚNICO camino por el que un caparazón vuelve a ser Koopa en SMW: uno suelto en el
+     * suelo NO se levanta solo.
+     */
+    private fun tickNakedKoopaEnteringShell(e: PlatformerEnemy) {
+        val shell = e.partner
+        if (e.enterTimer > 0) {
+            if (shell == null || !shell.alive || !shell.shell) { e.enterTimer = 0; e.partner = null; return }
+            if (--e.enterTimer > 0) return
+            // Se agotó: solo entra si SIGUEN tocándose (el juego rehace la comprobación).
+            if (overlaps(e, shell)) {
+                e.alive = false
+                e.squashTimer = 0            // desaparece sin quedar aplastado: es que se metió
+                shell.wakeTimer = SHELL_WAKE_FRAMES
+                shell.enteredById = e.id
+                shell.partner = null
+            }
+            e.partner = null
+            return
+        }
+        if (!e.onGround) return
+        for (o in enemies) {
+            if (!esCaparazonLibre(e, o)) continue
+            if (!overlaps(e, o)) continue
+            // Los dos filtros de `CheckNormalSpriteToNormalSpriteColl_01A6D9`:
+            //  - `(uint8)(xlo[k] - xlo[j] + 8) >= 0x10` → tienen que estar separados ≥ 8 px
+            //    (si no, el desnudo recién salido del caparazón se metería en el acto);
+            //  - `spr_table157c[k] == r2` → el desnudo tiene que ir HACIA el caparazón.
+            val dx = e.x - o.x
+            if (abs(dx) < 8f) continue
+            if ((e.vx < 0f) != (dx > 0f)) continue
+            e.enterTimer = NAKED_KOOPA_ENTER_FRAMES
+            e.vy = NAKED_KOOPA_ENTER_HOP
+            e.partner = o
+            o.partner = e
+            return
+        }
+    }
+
+    /** ¿Se solapan las cajas de estos dos enemigos? */
+    /**
+     * ¿El caparazón [e] puede arrollar a [o]? Vale igual para el pateado y para el que va en
+     * brazos, que es el mismo trato en el juego. Sale a función porque en línea disparaba el
+     * aviso de condición demasiado compleja, y porque tenerlo en UN sitio evita que las dos
+     * copias se separen con el tiempo.
+     */
+    private fun puedeArrollarA(e: PlatformerEnemy, o: PlatformerEnemy): Boolean =
+        o !== e && o.alive && !o.hidden && !o.carried
+
+    /**
+     * ¿[o] es un caparazón LIBRE en el suelo, de los que un Koopa desnudo puede aprovechar?
+     * O sea: caparazón de verdad, quieto (ni deslizándose ni en brazos), sin haber empezado a
+     * despertar y apoyado en el suelo.
+     */
+    private fun esCaparazonLibre(e: PlatformerEnemy, o: PlatformerEnemy): Boolean =
+        o !== e && o.alive && o.shell && !o.shellMoving && !o.carried &&
+            o.wakeTimer <= 0 && o.onGround
+
+    private fun overlaps(a: PlatformerEnemy, b: PlatformerEnemy): Boolean =
+        a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
+
+    /**
+     * Velocidad con que sale el caparazón al patearlo/soltarlo, port de la rama común de
+     * `CheckPlayerToNormalSpriteColl_01AA42` y `SprStatus0B_Carried_019F9B`:
+     * `kSprStatus0B_Carried_ShellXSpeed[dir]` (±46) y, si Mario va en ESE mismo sentido,
+     * `+ player_xspeed / 2` — por eso un caparazón pateado en carrera sale más rápido.
+     */
+    private fun shellKickSpeed(toRight: Boolean): Float {
+        val base = if (toRight) SHELL_KICK_SPEED else -SHELL_KICK_SPEED
+        val extra = if ((player.vx > 0f) == toRight) player.vx / 2f else 0f
+        return base + extra
+    }
+
+    /** Patea el caparazón [e] (estado 0x0A) hacia la derecha o la izquierda. */
+    private fun kickShell(e: PlatformerEnemy, towardRightOfMario: Boolean) {
+        e.carried = false
+        e.shell = true
+        e.shellMoving = true
+        e.vx = shellKickSpeed(towardRightOfMario)
+        e.shellKickGrace = SHELL_KICK_GRACE
+        stompEvents++ // reutiliza el SFX de "patada/pisotón"
+    }
+
+    /**
+     * Koopa ALADA pisada: PIERDE las alas y se convierte en el Koopa de suelo de su color.
+     * `kGenericSpriteToSpawnTable` ($01:8B26) = `{0,1,2,3,4,5,6,7,4,4,5,5,…}` → 0x08/0x09
+     * pasan a 0x04 (verde) y 0x0A/0x0B a 0x05 (rojo). El id CAMBIA de verdad, así que
+     * también cambian su conducta de borde y su velocidad de andar: las rojas, que de aladas
+     * no giraban en el precipicio, de andadoras SÍ (bit 0x02 de `Spr0to13Prop[0x05] = 0x42`).
+     */
+    private fun loseWings(e: PlatformerEnemy) {
+        e.winged = false
+        e.vy = 0f
+        e.turnsAtLedge = (SPR_0TO13_PROP.getOrElse(e.koopaColorId) { 0 } and 0x02) != 0
+        e.vx = if (player.x + tuning.playerWidth / 2f < e.x + e.width / 2f) walkSpeedOf(e.koopaColorId)
+        else -walkSpeedOf(e.koopaColorId)
+    }
+
+    /**
+     * Caparazón LLEVADO en brazos (estado 0x0B, `SprStatus0B_Carried` $01:9F71):
+     *  - mientras se mantiene CORRER va pegado delante de Mario
+     *    (`SprStatus0B_Carried_01A0B1`, ±11 px del centro y `ypos + 13`, o `+15` si Mario es
+     *    pequeño o está agachado) y ARROLLA a lo que toque
+     *    (`CheckNormalSpriteToNormalSpriteCollision`);
+     *  - al SOLTAR el botón (`SprStatus0B_Carried_019F9B`): con ARRIBA sale disparado hacia
+     *    arriba (`yspeed = -112`) llevándose la mitad de la velocidad de Mario; con ABAJO se
+     *    deja en el suelo quieto (estado 9); si no, se PATEA hacia delante.
+     */
+    private fun updateCarriedShell() {
+        val e = carriedEnemy ?: return
+        if (!e.shell) return          // el Mechakoopa va por [updateGrabBlocks]/[updateMechakoopa]
+        if (!e.alive) { carriedEnemy = null; return }
+        if (running && !player.dead) {
+            val cx = player.x + tuning.playerWidth / 2f
+            e.x = (if (player.facingRight) cx + CARRIED_SHELL_X else cx - CARRIED_SHELL_X) - e.width / 2f
+            e.y = player.y + (if (player.big) CARRIED_SHELL_Y_BIG else CARRIED_SHELL_Y_SMALL)
+            e.vx = 0f; e.vy = 0f
+            // Un caparazón en brazos arrolla igual que uno pateado.
+            for (o in enemies) {
+                if (!puedeArrollarA(e, o)) continue
+                if (overlaps(e, o)) { o.alive = false; o.squashTimer = 12; stompEvents++ }
+            }
+            return
+        }
+        // Soltó el botón (o murió): se acabó llevarlo.
+        e.carried = false
+        carriedEnemy = null
+        when {
+            inputUp -> {
+                e.shellMoving = false
+                e.vx = player.vx / 2f
+                e.vy = SHELL_THROW_UP_SPEED
+                e.shellKickGrace = SHELL_KICK_GRACE
+                grabThrowEvents++
+            }
+            inputDown -> {          // lo deja quieto en el suelo, otra vez en estado 9
+                e.shellMoving = false
+                e.vx = 0f
+                e.shellKickGrace = SHELL_KICK_GRACE
+            }
+            else -> { kickShell(e, towardRightOfMario = player.facingRight); grabThrowEvents++ }
+        }
     }
 
     /**
@@ -2033,8 +2333,18 @@ class PlatformerEngine(
             if (!e.alive) continue
             // La Piraña METIDA en el tubo no hiere ni colisiona (está a resguardo).
             if (e.hidden) continue
+            // Lo que Mario LLEVA en brazos (caparazón/Mechakoopa) va pegado a él: no colisiona.
+            if (e.carried) continue
             // Gracia de contacto (spr_decrementing_table154c): el enemigo aún no interactúa.
-            if (e.contactGrace > 0) continue
+            //
+            // La del caparazón recién PATEADO cuenta igual, y no es un detalle: al soltarlo
+            // sigue solapando a Mario —venía pegado a él, en brazos—, así que sin esto la
+            // colisión del mismo fotograma lo tomaba por un PISOTÓN y le anulaba la patada
+            // (`shellMoving = false; vx = 0`). El caparazón se quedaba muerto a los pies de
+            // Mario en vez de salir disparado. El original se salta la colisión ENTERA
+            // mientras la gracia corre (`CheckPlayerToNormalSpriteColl_01A80F`, $01:A80F),
+            // no solo la parte que hace daño.
+            if (e.contactGrace > 0 || e.shellKickGrace > 0) continue
             val overlap = p.x < e.x + e.width && p.x + pw > e.x &&
                 p.y < e.y + e.height && p.y + ph > e.y
             if (!overlap) continue
@@ -2053,21 +2363,26 @@ class PlatformerEngine(
                     if (stompFromAbove) { e.shellMoving = false; e.vx = 0f; bounceMario() }
                     else if (e.shellKickGrace <= 0) { hurtPlayer(); return }
                 }
-                // Caparazón QUIETO: pisarlo rebota (sigue quieto); tocarlo de lado lo PATEA.
+                // Caparazón QUIETO: pisarlo rebota (sigue quieto); tocarlo de lado lo COGE si
+                // se lleva pulsado CORRER, y si no lo PATEA. Port de
+                // `CheckPlayerToNormalSpriteColl_01AA42` ($01:AA42): `if ((io_controller_hold1
+                // & 0x40) != 0 && !(riding_yoshi | carrying)) { status = 0x0B; ... return; }`
+                // — o sea, el botón Y se mira MANTENIDO (no en el flanco) y solo si Mario no
+                // lleva ya nada. Si no, cae a la patada de abajo.
                 e.canShell && e.shell -> {
                     if (stompFromAbove) bounceMario()
-                    else {
-                        val marioCx = p.x + pw / 2f
-                        e.shellMoving = true
-                        e.vx = if (e.x + e.width / 2f >= marioCx) SHELL_SPEED else -SHELL_SPEED
-                        e.shellKickGrace = SHELL_KICK_GRACE
-                        stompEvents++ // reutiliza el SFX de "patada/pisotón"
+                    else if (running && carriedEnemy == null && carriedBlock == null) {
+                        e.carried = true; e.shellMoving = false; e.vx = 0f; e.vy = 0f
+                        carriedEnemy = e
+                        grabEvents++
+                    } else {
+                        kickShell(e, towardRightOfMario = e.x + e.width / 2f >= p.x + pw / 2f)
                     }
                 }
                 // Koopa ALADA: pisarla le quita las ALAS y queda de andador (aún NO caparazón).
                 e.canShell && e.winged -> {
                     if (stompFromAbove) {
-                        e.winged = false; e.vy = 0f; e.vx = 0f
+                        loseWings(e)
                         bounceMario(); stompEvents++
                     } else { hurtPlayer(); return }
                 }
@@ -2460,15 +2775,32 @@ class PlatformerEngine(
 
         // ---- Caparazón de Koopa (estados 09 quieto / 0A pateado / 0B en brazos, $01) ----
         /**
-         * Velocidad del caparazón PATEADO (px/f). Es `kSprStatus0A_Kicked_XSpeed`
-         * = `{0xE0, 0x20}`, o sea ±0x20 = ±32 unidades = 2 px/f.
+         * Velocidad del caparazón que un KOOPA patea (px/f): `kSprStatus0A_Kicked_XSpeed`
+         * = `{0xE0, 0x20}` = ∓0x20 = ±32 unidades = **2 px/f**. Es la rama `spr_table187b`
+         * de `SprStatus0A_Kicked` ($01:9913 → $01:98A9), la que corre cuando el caparazón lo
+         * ha pateado un Koopa desnudo (ver [SHELL_WAKE_FRAMES]) y no Mario; ahí la rutina
+         * RAMPA la velocidad ±2 por fotograma hasta ese ±32 y la restablece al rebotar en
+         * una pared.
          *
-         * Antes aquí ponía 55 citando una tabla "ShellSpeedX = 0x37" que NO existe en el
-         * banco $01: el caparazón iba un 72% más rápido de la cuenta. Los 46/52 de
-         * [SHELL_THROW_SPEED] sí se parecen a ese 55, así que probablemente se confundió
-         * la patada con el LANZAMIENTO, que son cosas distintas.
+         * ⚠ Esto NO es la patada de Mario: esa es [SHELL_KICK_SPEED] (±46). Durante un
+         * tiempo el motor usó este ±32 para la patada de Mario, que es la rama equivocada.
          */
         const val SHELL_SPEED = 32f / 16f
+
+        /**
+         * Frenada del Koopa desnudo mientras se DESLIZA (`SprXXX_Generic_018952`, $01:8952):
+         * `r0 = 2` unidades por fotograma (`r0 = 1` si el nivel es de hielo) = 0.125 px/f².
+         * Desde los 4 px/f de salida tarda ~32 fotogramas en pararse, unos 66 px.
+         */
+        const val NAKED_KOOPA_SLIDE_DECEL = 2f / 16f
+        /**
+         * Fotogramas que el Koopa desnudo se queda TUMBADO al acabar de deslizarse:
+         * `spr_decrementing_table163e = 0xFF` y el saltito de levantarse llega al bajar a
+         * `0x80` → **127** fotogramas boca abajo antes de volver a andar.
+         */
+        const val NAKED_KOOPA_DOWN_FRAMES = 0xFF - 0x80
+        /** Saltito con que se levanta (`spr_yspeed[k] = -32` = −2 px/f). */
+        const val NAKED_KOOPA_GETUP_HOP = -32f / 16f
 
         /**
          * Velocidad del KOOPA DESNUDO al huir (px/f), valor EXACTO del juego:
@@ -2485,12 +2817,31 @@ class PlatformerEngine(
         const val NAKED_KOOPA_SPAWN_GRACE = 16
 
         /**
-         * Velocidad del caparazón LANZADO desde los brazos (px/f), que NO es la de la
-         * patada: `kSprStatus0B_Carried_ShellXSpeed` = `{0xD2, 0x2E, 0xCC, 0x34}` → ±46
-         * andando y ±52 corriendo.
+         * Velocidad del caparazón que MARIO patea o suelta de los brazos (px/f):
+         * `kSprStatus0B_Carried_ShellXSpeed` = `{0xD2, 0x2E, 0xCC, 0x34}` = ±46 a pie y ±52
+         * subido a Yoshi ([SHELL_KICK_SPEED_YOSHI]). La MISMA tabla la usan los dos sitios,
+         * por eso patada y lanzamiento van igual de rápidos:
+         *  - patada de pasada, `CheckPlayerToNormalSpriteColl_01AA42` ($01:AA42):
+         *    `spr_xspeed[k] = kSprStatus0B_Carried_ShellXSpeed[dir]`.
+         *  - soltar el botón llevándolo, `SprStatus0B_Carried_019F9B` ($01:9F9B):
+         *    `spr_xspeed[k] = kSprStatus0B_Carried_ShellXSpeed[facing + (yoshi ? 2 : 0)]`.
+         *
+         * OJO: el índice 2/3 (±52) es el de ir SUBIDO A YOSHI, no el de correr — antes
+         * estaba documentado como "corriendo", que es otra cosa. Lo que sí añade correr es
+         * la MITAD de la velocidad de Mario cuando va en el mismo sentido
+         * ([shellKickSpeed]), que es la rama `(player_xspeed ^ xspeed) & 0x80 == 0`.
          */
-        const val SHELL_THROW_SPEED = 46f / 16f
-        const val SHELL_THROW_SPEED_RUNNING = 52f / 16f
+        const val SHELL_KICK_SPEED = 46f / 16f
+        const val SHELL_KICK_SPEED_YOSHI = 52f / 16f
+
+        /** Alias histórico de [SHELL_KICK_SPEED] (misma tabla, mismo valor). */
+        const val SHELL_THROW_SPEED = SHELL_KICK_SPEED
+
+        /**
+         * Impulso VERTICAL del caparazón lanzado hacia ARRIBA (soltar el botón con ARRIBA
+         * pulsado, `SprStatus0B_Carried_019F9B`): `spr_yspeed[k] = -112` unidades = −7 px/f.
+         */
+        const val SHELL_THROW_UP_SPEED = -112f / 16f
 
         /**
          * `kSprXXX_Generic_Spr0to13Prop` ($01:8AF6): propiedades de dibujo/conducta de los
@@ -2518,8 +2869,87 @@ class PlatformerEngine(
          */
         val SHELL_SPIN_FRAMES = intArrayOf(6, 7, 8, 7)
         val SHELL_SPIN_XFLIP = booleanArrayOf(false, false, false, true)
-        /** Gracia tras patear: el `KickingTimer = 0x0C` de SMW = 12 frames (valor exacto). */
-        const val SHELL_KICK_GRACE = 12
+
+        /**
+         * Cada cuántos fotogramas AVANZA el ciclo de giro del caparazón: `KickedShellDraw`
+         * ($01:9A2A) indexa con `(counter_local_frames >> 2) & 3`, o sea **4 fotogramas**
+         * por dibujo (16 por vuelta completa). No es la cadencia de andar, que es 8
+         * ([WALK_ANIM_PERIOD_FRAMES]): el caparazón gira al DOBLE de rápido.
+         */
+        const val SHELL_SPIN_PERIOD_FRAMES = 4
+
+        /**
+         * Cadencia de la animación de ANDAR de los sprites genéricos:
+         * `SetNormalSpriteAnimationFrame` ($01:8E5F) hace
+         * `spr_table1602[k] = (++spr_table1570[k] & 8) != 0`, o sea el fotograma cambia
+         * cada **8 fotogramas** (16 por ciclo de dos dibujos).
+         */
+        const val WALK_ANIM_PERIOD_FRAMES = 8
+
+        /**
+         * Gracia sin herir a Mario tras patear/soltar el caparazón:
+         * `spr_decrementing_table154c[k] = 16` en `CheckPlayerToNormalSpriteColl_01AA42`
+         * ($01:AA42) y en `SprStatus0B_Carried_019F9B` ($01:9F9B). Son **16** fotogramas,
+         * no 12: el 12 de antes era el `timer_display_player_kicking_pose`, que es la POSE
+         * de Mario dando la patada, no la gracia del caparazón.
+         */
+        const val SHELL_KICK_GRACE = 16
+
+        /**
+         * Fotogramas que el Koopa DESNUDO tarda en meterse en un caparazón parado:
+         * `sub_1A72E` ($01:A72E) le pone `spr_decrementing_table1558[k] = 24` y lo hace
+         * saltar (`spr_yspeed[k] = -32` = −2 px/f). Al agotarse, si sigue tocando el
+         * caparazón, el desnudo DESAPARECE y le pasa el testigo al caparazón
+         * ([SHELL_WAKE_FRAMES]).
+         */
+        const val NAKED_KOOPA_ENTER_FRAMES = 24
+        /** Impulso vertical del Koopa desnudo al engancharse al caparazón (`yspeed = -32`). */
+        const val NAKED_KOOPA_ENTER_HOP = -32f / 16f
+
+        /**
+         * Fotogramas que el caparazón PARPADEA antes de volver a ser un Koopa andando:
+         * `spr_decrementing_table1558[shell] = 16` en `SprXXX_Generic_018952` ($01:8952),
+         * y `SprStatus09_Stunned_019624` ($01:9624) lo devuelve a estado 08 cuando ese
+         * contador llega a 1.
+         *
+         * Este es el ÚNICO camino por el que un caparazón despierta en SMW: un caparazón
+         * suelto NO se levanta solo (con `1540 = 0` la rutina sale sin hacer nada) — hace
+         * falta que un Koopa desnudo se meta dentro.
+         */
+        const val SHELL_WAKE_FRAMES = 16
+
+        /**
+         * Id del Koopa desnudo que, en vez de PONERSE el caparazón, lo PATEA: el 0x03.
+         * `SprStatus09_Stunned_019624` compara `spr_table160e[k] == 3` (que es el id del
+         * desnudo que entró) y, si coincide, deja el sprite en estado **0x0A** (pateado)
+         * con `spr_table187b` puesto, en vez del 08 de andar.
+         */
+        const val NAKED_KOOPA_KICKER_ID = 0x03
+
+        /**
+         * Colocación del caparazón LLEVADO en brazos (`SprStatus0B_Carried_01A0B1`,
+         * $01:A0B1): `kSprStatus0B_Carried_CarriedSpriteXOffsetLo` = `{0x0B, 0xF5, …}` = ±11
+         * px del centro de Mario, y `SetSprYPos(k, py + 13)` — o `+15` si Mario es pequeño,
+         * está agachado o en la pose de recoger.
+         */
+        const val CARRIED_SHELL_X = 11f
+        const val CARRIED_SHELL_Y_BIG = 13f
+        const val CARRIED_SHELL_Y_SMALL = 15f
+
+        /**
+         * Velocidad de ANDAR de los sprites genéricos 0x00-0x13 en unidades de SMW:
+         * `kSprXXX_Generic_Spr0to13SpeedX` = `{0x08, 0xF8, 0x0C, 0xF4}` = ±8 (0.5 px/f) y
+         * ±12 (0.75 px/f). Se indexa por `dir + 2` cuando el bit 0x01 de
+         * [SPR_0TO13_PROP] está puesto, así que los ids 0x02/0x03/0x06/0x07 (el Koopa AZUL
+         * y el AMARILLO, con y sin caparazón) andan **un 50% más rápido** que el verde y el
+         * rojo. Antes todos los andadores iban a 0.5 px/f.
+         */
+        const val WALK_SPEED_SLOW = 8f / 16f
+        const val WALK_SPEED_FAST = 12f / 16f
+
+        /** Velocidad de andar del sprite genérico [id] (0x00-0x13), en px/f. */
+        fun walkSpeedOf(id: Int): Float =
+            if (SPR_0TO13_PROP.getOrElse(id) { 0 } and 0x01 != 0) WALK_SPEED_FAST else WALK_SPEED_SLOW
 
         // ---- Koopas ALADAS (Parakoopa 0x08-0x0B): valores EXACTOS de las rutinas
         // GreenParaKoopa/RedVertParaKoopa/RedHorzParaKoopa ($01), en unidades de SMW.
