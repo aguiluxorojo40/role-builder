@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -24,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -36,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +79,9 @@ import com.rolebuilder.editor.EditorState
 import com.rolebuilder.player.PlatformerMusic
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.floor
 
 /**
@@ -111,12 +117,99 @@ private val VIVID_16 = intArrayOf(
 private fun defaultColorPalette(colorCount: Int): IntArray =
     IntArray(colorCount) { i -> if (i < VIVID_16.size) VIVID_16[i] else 0xFF000000.toInt() }
 
+/**
+ * Lo que se saca de una ROM recién elegida SIN tocar la interfaz: sus bytes, su nombre y
+ * cuántos assets se hornearon (y si entró la música). Todo eso es leer, decodificar y escribir
+ * ficheros, o sea trabajo para `Dispatchers.IO`; el hilo principal solo recibe este resultado.
+ */
+private class RomCargada(val bytes: ByteArray, val nombre: String, val horneados: Int, val musica: Boolean)
+
 /** Resultado de la vista previa: imagen, rejilla y, en modo automático, la paleta elegida. */
 private data class PreviewData(
     val bitmap: ImageBitmap,
     val sheet: SnesAssetExtractor.TileSheet,
     val autoPalette: String?,
 )
+
+/**
+ * Calcula la VISTA PREVIA (hoja de tiles, o atlas si se agrupan sprites) con los parámetros
+ * actuales. Vive FUERA del composable a propósito: descomprime, decodifica y monta un mapa de
+ * bits, y eso se rehace con cada cambio de parámetro — incluida **cada letra** que se teclea en
+ * el offset. Suelta aquí, se puede llamar desde `Dispatchers.IO` y la interfaz sigue viva
+ * mientras tanto. Devuelve null si en ese offset/formato no hay datos válidos.
+ */
+@Suppress("LongParameterList", "ReturnCount", "CyclomaticComplexMethod")
+private fun calcularPreview(
+    rom: ByteArray,
+    format: SnesGraphicFormat,
+    offsetText: String,
+    columns: Int,
+    tiles: Int,
+    paletteIndex: Int,
+    decompressMode: Int,
+    spriteTiles: Int,
+    detected: List<SnesPalette>,
+): PreviewData? = runCatching {
+    val offset = parseOffset(offsetText)
+    // Descompresión opcional: los tiles salen del bloque descomprimido,
+    // pero la paleta se sigue leyendo de la ROM original.
+    val tileRom: ByteArray
+    val tileOffset: Int
+    when (decompressMode) {
+        1 -> {
+            val auto = CompressionCodecs.autoDecompress(rom, offset, format)
+                ?: return@runCatching null
+            tileRom = auto.result.data; tileOffset = 0
+        }
+        2 -> {
+            val res = runCatching { LcLz2.decompress(rom, offset) }.getOrNull()
+                ?: return@runCatching null
+            tileRom = res.data; tileOffset = 0
+        }
+        else -> { tileRom = rom; tileOffset = offset }
+    }
+    val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
+    if (available <= 0) return@runCatching null
+    val count = tiles.coerceIn(1, minOf(available, 1024))
+    var autoPalette: String? = null
+    val palette = when {
+        paletteIndex == PALETTE_GRAYSCALE -> SnesDecoder.grayscalePalette(format.colorCount)
+        paletteIndex == PALETTE_AUTO -> {
+            // El emparejador puntúa cada paleta detectada CONTRA estos
+            // tiles y se queda con la que mejor les sienta (y su sub-paleta).
+            val match = SnesPaletteMatcher
+                .rankPalettes(tileRom, tileOffset, format, count, detected)
+                .firstOrNull()
+            if (match != null) {
+                autoPalette = match.source.name + if (match.window > 0) {
+                    " · colores ${match.window}-${match.window + format.colorCount - 1}"
+                } else ""
+                match.colors
+            } else defaultColorPalette(format.colorCount)
+        }
+        paletteIndex >= 0 -> detected.getOrNull(paletteIndex)?.colors
+            ?: defaultColorPalette(format.colorCount)
+        else -> defaultColorPalette(format.colorCount)
+    }
+    val sheet = if (spriteTiles > 1) {
+        // Agrupa bloques de spriteTiles×spriteTiles tiles en sprites enteros.
+        val availSprites = SnesAssetExtractor.availableSprites(
+            tileRom.size, tileOffset, format, spriteTiles, spriteTiles,
+        )
+        if (availSprites <= 0) return@runCatching null
+        val spriteCount = (count / (spriteTiles * spriteTiles))
+            .coerceIn(1, minOf(availSprites, 1024))
+        SnesAssetExtractor.extractSpriteAtlas(
+            tileRom, tileOffset, format, palette, spriteCount,
+            spriteTiles, spriteTiles, columns.coerceAtLeast(1),
+        )
+    } else {
+        SnesAssetExtractor.extractTileSheet(
+            tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
+        )
+    }
+    PreviewData(SnesImport.toBitmap(sheet.image).asImageBitmap(), sheet, autoPalette)
+}.getOrNull()
 
 private fun parseOffset(text: String): Int {
     val s = text.trim()
@@ -133,11 +226,55 @@ private fun parseOffset(text: String): Int {
 fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     val context = LocalContext.current
 
+    // TODO LO PESADO, FUERA DEL HILO PRINCIPAL. Casi cada botón de este diálogo recorre la
+    // ROM entera: hornear los assets son 544 ms medidos en escritorio, extraer los gráficos
+    // del juego 758 ms, listar los niveles importables 323 ms… y un móvil es varias veces
+    // más lento. Hasta ahora eso se hacía en el `onClick`, es decir, en el hilo de interfaz:
+    // tocabas el botón y la pantalla se quedaba muerta, sin decir nada, hasta que terminaba.
+    //
+    // [enSegundoPlano] es el patrón para todos: la parte CARA (que es cálculo o E/S, nunca
+    // estado de Compose) se va a `Dispatchers.IO` y lo que se APLICA a la interfaz vuelve al
+    // hilo principal. Mientras haya una tarea en marcha se enseña cuál y no se acepta otra
+    // —dos horneados a la vez sobre los mismos ficheros no acaban bien—.
+    val scope = rememberCoroutineScope()
+    var tarea by remember { mutableStateOf<String?>(null) }
+    fun <T> enSegundoPlano(etiqueta: String, pesado: () -> T, aplicar: (Result<T>) -> Unit) {
+        if (tarea != null) return
+        tarea = etiqueta
+        scope.launch {
+            val resultado = withContext(Dispatchers.IO) { runCatching(pesado) }
+            tarea = null
+            aplicar(resultado)
+        }
+    }
+
+    // Cada botón ⬇ hace lo mismo: renderizar algo de la ROM y escribirlo en Descargas —o sea,
+    // cálculo y E/S— y luego avisar. [hacer] devuelve el mensaje de éxito y corre en segundo
+    // plano; el aviso sale ya en el hilo principal.
+    fun exportar(etiqueta: String, fallo: String, hacer: () -> String) {
+        enSegundoPlano(etiqueta, hacer) { r ->
+            Toast.makeText(context, r.getOrElse { "$fallo: ${it.message}" }, Toast.LENGTH_LONG).show()
+        }
+    }
+
     // La ROM sale de [SmwRomSession], no de un `remember` propio. Antes vivía aquí dentro
     // y moría al cerrar el diálogo: salir de AVANZADO y volver a entrar obligaba a buscar
     // el fichero otra vez en el selector, aunque acabaras de cargarlo.
-    var romBytes by remember { mutableStateOf(SmwRomSession.get(context)) }
-    var romName by remember { mutableStateOf(SmwRomSession.displayName) }
+    //
+    // Recuperarla es leer megas de disco, y hacerlo aquí mismo era leerlos EN COMPOSICIÓN
+    // (hilo principal): el diálogo tardaba en aparecer sin motivo visible. Ahora se lee
+    // aparte y hasta que llega se dice que se está recuperando.
+    var romBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var romName by remember { mutableStateOf("") }
+    var recuperandoRom by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        val bytes = withContext(Dispatchers.IO) { SmwRomSession.get(context) }
+        if (bytes != null) {
+            romBytes = bytes
+            romName = SmwRomSession.displayName
+        }
+        recuperandoRom = false
+    }
     // Reproductor de la PRUEBA de música (directo de la ROM). Se para al salir del diálogo.
     var musicTest by remember { mutableStateOf<PlatformerMusic?>(null) }
     var format by remember { mutableStateOf(SnesGraphicFormat.SNES_4BPP) }
@@ -163,8 +300,14 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
     val header = remember(romBytes) { romBytes?.let { SnesDecoder.parseHeader(it) } }
     // Juego reconocido con receta (modo fácil), o null.
     val gameRecipe = remember(header) { header?.let { SnesGameRecipes.detect(it) } }
-    val detected: List<SnesPalette> = remember(romBytes) {
-        romBytes?.let { SnesDecoder.scanRomForPalettes(it) } ?: emptyList()
+    // Paletas CGRAM de la ROM: 196 ms medidos recorriéndola entera. Se buscan fuera del hilo
+    // principal; hasta que aparecen, la lista está vacía (el desplegable enseña las opciones
+    // fijas) y el diálogo se abre al instante en vez de esperar a esto.
+    var detected by remember(romBytes) { mutableStateOf<List<SnesPalette>>(emptyList()) }
+    LaunchedEffect(romBytes) {
+        val rom = romBytes
+        detected = if (rom == null) emptyList()
+        else withContext(Dispatchers.IO) { runCatching { SnesDecoder.scanRomForPalettes(rom) }.getOrDefault(emptyList()) }
     }
     val paletteOptions = remember(detected) {
         listOf(
@@ -181,12 +324,18 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
     // Buscar hojas de sprites/personajes en vez de fondos (no penaliza la transparencia).
     var spriteSearch by remember { mutableStateOf(false) }
-    // Autodetección de zonas con gráficos sin comprimir para el offset elegido.
-    val candidates: List<Int> = remember(romBytes, format, spriteSearch) {
-        romBytes?.let { rom ->
-            if (spriteSearch) SnesGraphicsScanner.findSpriteCandidates(rom, format).map { it.offset }
-            else SnesGraphicsScanner.findCandidates(rom, format).map { it.offset }
-        } ?: emptyList()
+    // Autodetección de zonas con gráficos sin comprimir para el offset elegido. Rastrear la
+    // ROM cuesta 110-250 ms medidos, y se rehacía EN COMPOSICIÓN con cada cambio de formato o
+    // del interruptor de sprites: cada toque congelaba la pantalla un cuarto de segundo.
+    var candidates by remember { mutableStateOf<List<Int>>(emptyList()) }
+    LaunchedEffect(romBytes, format, spriteSearch) {
+        val rom = romBytes
+        candidates = if (rom == null) emptyList() else withContext(Dispatchers.IO) {
+            runCatching {
+                if (spriteSearch) SnesGraphicsScanner.findSpriteCandidates(rom, format).map { it.offset }
+                else SnesGraphicsScanner.findCandidates(rom, format).map { it.offset }
+            }.getOrDefault(emptyList())
+        }
     }
     var candidateIndex by remember { mutableStateOf(0) }
     fun jumpToCandidate(i: Int) {
@@ -198,100 +347,70 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
     val romLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
-        runCatching {
-            val bytes = SnesImport.readRomBytes(context, uri)
-                ?: error("No se pudo leer el archivo")
-            // HORNEA los assets de SMW (Mario, enemigos, powerups, moneda, jefes y efectos de
-            // sonido) desde la ROM del usuario al almacén del dispositivo. En el repo no va
-            // ninguno: son de Nintendo. Con esto el modo PROYECTO (sin ROM) sigue teniéndolos.
-            runCatching { SmwAssetStore.bake(context, bytes) }.onSuccess { n ->
-                if (n > 0) {
-                    val music = if (SmwAssetStore.isMusicBaked(context)) "música ✓" else "música ✗"
-                    Toast.makeText(
-                        context, "Assets de SMW generados desde tu ROM ($n) · $music", Toast.LENGTH_LONG,
-                    ).show()
+        // Leer la ROM y HORNEAR sus assets son 544 ms medidos en escritorio (y el horneado
+        // escribe decenas de PNG): en el hilo principal esto dejaba el diálogo congelado sin
+        // ninguna señal. Ahora va a segundo plano con su aviso; lo único que vuelve al hilo
+        // principal es asignar los estados de Compose.
+        enSegundoPlano(
+            "Leyendo la ROM y horneando sus assets…",
+            {
+                val bytes = SnesImport.readRomBytes(context, uri)
+                    ?: error("No se pudo leer el archivo")
+                // HORNEA los assets de SMW (Mario, enemigos, powerups, moneda, jefes y efectos de
+                // sonido) desde la ROM del usuario al almacén del dispositivo. En el repo no va
+                // ninguno: son de Nintendo. Con esto el modo PROYECTO (sin ROM) sigue teniéndolos.
+                val n = runCatching { SmwAssetStore.bake(context, bytes) }.getOrDefault(0)
+                val nombre = (context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && idx >= 0) cursor.getString(idx) else null
+                } ?: "rom.sfc")
+                // Queda guardada para el resto de la sesión: el raíl del editor y el propio
+                // diálogo la encuentran ya cargada sin volver a pedirla.
+                SmwRomSession.remember(context, bytes, nombre)
+                RomCargada(bytes, nombre, n, SmwAssetStore.isMusicBaked(context))
+            },
+            { resultado ->
+                resultado.onSuccess { r ->
+                    romBytes = r.bytes
+                    romName = r.nombre
+                    paletteIndex = -1
+                    if (r.horneados > 0) {
+                        val music = if (r.musica) "música ✓" else "música ✗"
+                        Toast.makeText(
+                            context, "Assets de SMW generados desde tu ROM (${r.horneados}) · $music",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }.onFailure {
+                    Toast.makeText(context, "No se pudo abrir la ROM: ${it.message}", Toast.LENGTH_LONG).show()
                 }
-            }
-            romBytes = bytes
-            romName = (context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                if (cursor.moveToFirst() && idx >= 0) cursor.getString(idx) else null
-            } ?: "rom.sfc")
-            // Queda guardada para el resto de la sesión: el raíl del editor y el propio
-            // diálogo la encuentran ya cargada sin volver a pedirla.
-            SmwRomSession.remember(context, bytes, romName)
-            paletteIndex = -1
-        }.onFailure {
-            Toast.makeText(context, "No se pudo abrir la ROM: ${it.message}", Toast.LENGTH_LONG).show()
-        }
+            },
+        )
     }
 
-    // Vista previa reactiva: recalcula la hoja de tiles al cambiar cualquier parámetro.
-    val preview: PreviewData? =
-        remember(romBytes, format, offsetText, columns, tiles, paletteIndex, decompressMode, spriteTiles) {
-            val rom = romBytes ?: return@remember null
-            runCatching {
-                val offset = parseOffset(offsetText)
-                // Descompresión opcional: los tiles salen del bloque descomprimido,
-                // pero la paleta se sigue leyendo de la ROM original.
-                val tileRom: ByteArray
-                val tileOffset: Int
-                when (decompressMode) {
-                    1 -> {
-                        val auto = CompressionCodecs.autoDecompress(rom, offset, format)
-                            ?: return@runCatching null
-                        tileRom = auto.result.data; tileOffset = 0
-                    }
-                    2 -> {
-                        val res = runCatching { LcLz2.decompress(rom, offset) }.getOrNull()
-                            ?: return@runCatching null
-                        tileRom = res.data; tileOffset = 0
-                    }
-                    else -> { tileRom = rom; tileOffset = offset }
-                }
-                val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
-                if (available <= 0) return@runCatching null
-                val count = tiles.coerceIn(1, minOf(available, 1024))
-                var autoPalette: String? = null
-                val palette = when {
-                    paletteIndex == PALETTE_GRAYSCALE -> SnesDecoder.grayscalePalette(format.colorCount)
-                    paletteIndex == PALETTE_AUTO -> {
-                        // El emparejador puntúa cada paleta detectada CONTRA estos
-                        // tiles y se queda con la que mejor les sienta (y su sub-paleta).
-                        val match = SnesPaletteMatcher
-                            .rankPalettes(tileRom, tileOffset, format, count, detected)
-                            .firstOrNull()
-                        if (match != null) {
-                            autoPalette = match.source.name + if (match.window > 0) {
-                                " · colores ${match.window}-${match.window + format.colorCount - 1}"
-                            } else ""
-                            match.colors
-                        } else defaultColorPalette(format.colorCount)
-                    }
-                    paletteIndex >= 0 -> detected.getOrNull(paletteIndex)?.colors
-                        ?: defaultColorPalette(format.colorCount)
-                    else -> defaultColorPalette(format.colorCount)
-                }
-                val sheet = if (spriteTiles > 1) {
-                    // Agrupa bloques de spriteTiles×spriteTiles tiles en sprites enteros.
-                    val availSprites = SnesAssetExtractor.availableSprites(
-                        tileRom.size, tileOffset, format, spriteTiles, spriteTiles,
-                    )
-                    if (availSprites <= 0) return@runCatching null
-                    val spriteCount = (count / (spriteTiles * spriteTiles))
-                        .coerceIn(1, minOf(availSprites, 1024))
-                    SnesAssetExtractor.extractSpriteAtlas(
-                        tileRom, tileOffset, format, palette, spriteCount,
-                        spriteTiles, spriteTiles, columns.coerceAtLeast(1),
-                    )
-                } else {
-                    SnesAssetExtractor.extractTileSheet(
-                        tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
-                    )
-                }
-                PreviewData(SnesImport.toBitmap(sheet.image).asImageBitmap(), sheet, autoPalette)
-            }.getOrNull()
+    // Vista previa reactiva: se rehace al cambiar cualquier parámetro… pero FUERA del hilo
+    // principal ([calcularPreview]). Antes se calculaba en plena composición, así que CADA
+    // TECLA del offset descomprimía y volvía a montar la hoja entera con la interfaz parada:
+    // escribir un offset a mano se sentía como teclear sobre barro. Al ir en un efecto, un
+    // cambio nuevo además CANCELA el cálculo anterior, que ya no le interesa a nadie.
+    var preview by remember { mutableStateOf<PreviewData?>(null) }
+    var calculandoPreview by remember { mutableStateOf(false) }
+    LaunchedEffect(
+        romBytes, format, offsetText, columns, tiles, paletteIndex, decompressMode, spriteTiles, detected,
+    ) {
+        val rom = romBytes
+        if (rom == null) {
+            preview = null
+            return@LaunchedEffect
         }
+        calculandoPreview = true
+        preview = withContext(Dispatchers.IO) {
+            calcularPreview(
+                rom, format, offsetText, columns, tiles, paletteIndex, decompressMode, spriteTiles, detected,
+            )
+        }
+        calculandoPreview = false
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
@@ -305,10 +424,30 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         ) {
             Text("Importar assets desde ROM de SNES", style = MaterialTheme.typography.titleMedium)
 
+            // AVISO DE TRABAJO EN MARCHA. Ahora que lo pesado ya no bloquea la interfaz, sin
+            // este aviso el diálogo respondería tan normal y parecería que el botón no ha
+            // hecho nada. Dice QUÉ se está haciendo, no solo que se está haciendo.
+            val enMarcha = tarea
+            if (enMarcha != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Text(enMarcha, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
             // Con la ROM ya cargada el botón deja de ser lo primero que hay que tocar: pasa
             // a ser "cambiar de ROM", y se ofrece quitarla. Si no hay ninguna, se pide.
             if (romBytes == null) {
-                Button(onClick = { romLauncher.launch("*/*") }) { Text("Elegir ROM (.smc/.sfc)") }
+                if (recuperandoRom) {
+                    // Todavía se está leyendo del almacén la ROM de la sesión: pedir otra
+                    // aquí sería pedirle al usuario algo que ya tiene.
+                    Text("Recuperando tu ROM…", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    Button(onClick = { romLauncher.launch("*/*") }) { Text("Elegir ROM (.smc/.sfc)") }
+                }
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = { romLauncher.launch("*/*") }) { Text("Cambiar de ROM") }
@@ -346,14 +485,28 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             "(sin tocar nada técnico) y luego toca las imágenes que quieras guardar.",
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    Button(onClick = {
-                        val rom = romBytes ?: return@Button
-                        val hdr = header ?: return@Button
-                        recipeFindings = runCatching { SnesGameRecipes.extract(rom, hdr) }.getOrDefault(emptyList())
-                        if (recipeFindings.isEmpty()) {
-                            Toast.makeText(context, "No se pudo leer el mapa gráfico de este juego.", Toast.LENGTH_LONG).show()
-                        }
-                    }) { Text("Extraer gráficos de $gameRecipe") }
+                    // 758 ms medidos en escritorio: recorre la ROM entera montando cada
+                    // conjunto de gráficos. Fuera del hilo principal.
+                    Button(
+                        enabled = tarea == null,
+                        onClick = {
+                            val rom = romBytes ?: return@Button
+                            val hdr = header ?: return@Button
+                            enSegundoPlano(
+                                "Extrayendo los gráficos de $gameRecipe…",
+                                { SnesGameRecipes.extract(rom, hdr) },
+                                { r ->
+                                    recipeFindings = r.getOrDefault(emptyList())
+                                    if (recipeFindings.isEmpty()) {
+                                        Toast.makeText(
+                                            context, "No se pudo leer el mapa gráfico de este juego.",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }
+                                },
+                            )
+                        },
+                    ) { Text("Extraer gráficos de $gameRecipe") }
 
                     if (gameRecipe.contains("Mario World", ignoreCase = true)) {
                         Button(onClick = {
@@ -374,30 +527,47 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         // y el problema era el horneado; si no ensambla, avisa (la ROM no trae ese
                         // banco); si ensambla pero no suena, es el audio del móvil.
                         DisposableEffect(Unit) { onDispose { musicTest?.stop() } }
-                        Button(onClick = {
-                            val cur = musicTest
-                            if (cur != null) { cur.stop(); musicTest = null; return@Button }
-                            val rom = romBytes ?: return@Button
-                            val hdr = header
-                            val setting = (hdr?.let {
-                                runCatching { SnesGameRecipes.smwLevelInfo(rom, it, 0x105)?.musicIndex }.getOrNull()
-                            } ?: 2)
-                            val song = com.rolebuilder.core.snes.SmwMusic.levelSongId(setting)
-                            val m = runCatching { com.rolebuilder.player.PlatformerMusic.fromRom(rom, song) }.getOrNull()
-                            if (m == null) {
-                                Toast.makeText(
-                                    context,
-                                    "🔇 Esta ROM no ensambla la música (✗): no trae el banco esperado o no es SMW estándar.",
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            } else {
-                                m.start(); musicTest = m
-                                Toast.makeText(
-                                    context, "🔊 Sonando la canción $song de la ROM. ¿La oyes? (sube el volumen MULTIMEDIA). Toca otra vez para parar.",
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            }
-                        }) { Text(if (musicTest != null) "⏹ Parar prueba de música" else "🔊 Probar música (directo de la ROM)") }
+                        Button(
+                            enabled = tarea == null,
+                            onClick = {
+                                val cur = musicTest
+                                if (cur != null) { cur.stop(); musicTest = null; return@Button }
+                                val rom = romBytes ?: return@Button
+                                val hdr = header
+                                // ENSAMBLAR la canción lee la ROM y monta el banco de audio:
+                                // eso va en segundo plano. Arrancarla (y el aviso) vuelve al
+                                // hilo principal.
+                                enSegundoPlano(
+                                    "Ensamblando la música de tu ROM…",
+                                    {
+                                        val setting = (hdr?.let {
+                                            runCatching { SnesGameRecipes.smwLevelInfo(rom, it, 0x105)?.musicIndex }.getOrNull()
+                                        } ?: 2)
+                                        val song = com.rolebuilder.core.snes.SmwMusic.levelSongId(setting)
+                                        song to runCatching {
+                                            com.rolebuilder.player.PlatformerMusic.fromRom(rom, song)
+                                        }.getOrNull()
+                                    },
+                                    { r ->
+                                        val m = r.getOrNull()?.second
+                                        val song = r.getOrNull()?.first
+                                        if (m == null) {
+                                            Toast.makeText(
+                                                context,
+                                                "🔇 Esta ROM no ensambla la música (✗): no trae el banco esperado o no es SMW estándar.",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        } else {
+                                            m.start(); musicTest = m
+                                            Toast.makeText(
+                                                context, "🔊 Sonando la canción $song de la ROM. ¿La oyes? (sube el volumen MULTIMEDIA). Toca otra vez para parar.",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }
+                                    },
+                                )
+                            },
+                        ) { Text(if (musicTest != null) "⏹ Parar prueba de música" else "🔊 Probar música (directo de la ROM)") }
 
                         // ESTADO de la música del MODO PROYECTO: el editor la lee del fichero
                         // horneado (music/level.aram); las rutas ▶/título la ensamblan de la ROM y
@@ -428,8 +598,17 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         // Offsets marcados [PROBABLE] en el core (tablas Map16 de terreno y de
                         // fondo): son deducciones, no datos verificados. Si apuntan mal, el fondo
                         // sale incorrecto SIN avisar. Aquí se comprueban contra TU ROM y se dice.
-                        val map16 = remember(romBytes) {
-                            romBytes?.let { SnesGameRecipes.checkProbableOffsets(it) }.orEmpty()
+                        // Comprobarlas recorre las tablas enteras: 330 ms medidos, y se hacían
+                        // EN COMPOSICIÓN, o sea que abrir este diálogo ya salía caro antes de
+                        // tocar nada. Ahora se comprueban aparte y aparecen cuando están.
+                        var map16 by remember(romBytes) {
+                            mutableStateOf<List<SnesGameRecipes.Map16Check>>(emptyList())
+                        }
+                        LaunchedEffect(romBytes) {
+                            val rom = romBytes
+                            map16 = if (rom == null) emptyList() else withContext(Dispatchers.IO) {
+                                runCatching { SnesGameRecipes.checkProbableOffsets(rom) }.getOrDefault(emptyList())
+                            }
                         }
                         if (map16.isNotEmpty()) {
                             Text(
@@ -453,24 +632,36 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         // fallan. Es la evidencia que valida la regla SIN sacar la ROM del
                         // dispositivo (nada sube a ningún sitio).
                         var auditResumen by remember(romBytes) { mutableStateOf<String?>(null) }
-                        Button(onClick = {
-                            val rom = romBytes ?: return@Button
-                            val hdr = header ?: return@Button
-                            runCatching {
-                                // Fondos (Layer 2) + tabla de primer plano (Layer 1) en el mismo toque.
-                                auditResumen = SnesGameRecipes.auditLayer2Summary(rom, hdr) +
-                                    "\n— Tabla Map16 de PRIMER PLANO —\n" +
-                                    SnesGameRecipes.auditMap16Fg(rom, hdr)
-                                // Detalle por nivel a Descargas, para poder mirarlo con calma.
-                                val tsv = SnesGameRecipes.auditLayer2(rom, hdr).joinToString("\n")
-                                SnesImport.exportToDownloads(
-                                    context, "smw_audit_fondos.tsv", "text/tab-separated-values",
-                                    tsv.toByteArray(),
+                        // Recorrer los 512 slots + exportar el TSV son ~430 ms medidos más la
+                        // escritura del fichero: cálculo y E/S, o sea segundo plano.
+                        Button(
+                            enabled = tarea == null,
+                            onClick = {
+                                val rom = romBytes ?: return@Button
+                                val hdr = header ?: return@Button
+                                enSegundoPlano(
+                                    "Auditando las tablas Map16 de tu ROM…",
+                                    {
+                                        // Fondos (Layer 2) + tabla de primer plano (Layer 1) en el mismo toque.
+                                        val resumen = SnesGameRecipes.auditLayer2Summary(rom, hdr) +
+                                            "\n— Tabla Map16 de PRIMER PLANO —\n" +
+                                            SnesGameRecipes.auditMap16Fg(rom, hdr)
+                                        // Detalle por nivel a Descargas, para poder mirarlo con calma.
+                                        val tsv = SnesGameRecipes.auditLayer2(rom, hdr).joinToString("\n")
+                                        SnesImport.exportToDownloads(
+                                            context, "smw_audit_fondos.tsv", "text/tab-separated-values",
+                                            tsv.toByteArray(),
+                                        )
+                                        resumen
+                                    },
+                                    { r ->
+                                        auditResumen = r.getOrElse {
+                                            "Falló la auditoría: ${it::class.simpleName}: ${it.message}"
+                                        }
+                                    },
                                 )
-                            }.onFailure {
-                                auditResumen = "Falló la auditoría: ${it::class.simpleName}: ${it.message}"
-                            }
-                        }) { Text("🔎 Auditar tablas Map16 (fondo y primer plano)") }
+                            },
+                        ) { Text("🔎 Auditar tablas Map16 (fondo y primer plano)") }
                         auditResumen?.let { r ->
                             Text(
                                 r,
@@ -484,14 +675,31 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             )
                         }
 
-                        Button(onClick = {
-                            val rom = romBytes ?: return@Button
-                            // Parte DETALLADO: dice qué paso falló y por qué, en vez del 0 mudo.
-                            val report = SmwAssetStore.bakeDetailed(context, rom)
-                            bakeStatus = SmwAssetStore.status(context)
-                            bakeDetail = report.failures.map { "${it.name}: ${it.detail}" }
-                            Toast.makeText(context, report.summary(), Toast.LENGTH_LONG).show()
-                        }) { Text("🔄 Rehornear assets del editor") }
+                        // Rehornear son 544 ms medidos de decodificar sprites y sonidos, más
+                        // escribir decenas de ficheros: en el hilo principal, la pantalla se
+                        // quedaba muerta justo cuando el usuario espera ver qué pasa.
+                        Button(
+                            enabled = tarea == null,
+                            onClick = {
+                                val rom = romBytes ?: return@Button
+                                enSegundoPlano(
+                                    "Rehorneando los assets del editor desde tu ROM…",
+                                    {
+                                        // Parte DETALLADO: dice qué paso falló y por qué, en vez del 0 mudo.
+                                        val report = SmwAssetStore.bakeDetailed(context, rom)
+                                        report to SmwAssetStore.status(context)
+                                    },
+                                    { r ->
+                                        val report = r.getOrNull()?.first
+                                        r.getOrNull()?.second?.let { bakeStatus = it }
+                                        bakeDetail = report?.failures?.map { "${it.name}: ${it.detail}" }.orEmpty()
+                                        val msg = report?.summary()
+                                            ?: "No se pudo rehornear: ${r.exceptionOrNull()?.message}"
+                                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                    },
+                                )
+                            },
+                        ) { Text("🔄 Rehornear assets del editor") }
                         // El MOTIVO de cada fallo, en pantalla: antes esto se lo tragaba un
                         // runCatching y el usuario solo veía cuadros rojos sin explicación.
                         bakeDetail.forEach {
@@ -556,29 +764,37 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             "colisión), no una imagen. Aparece en tu lista de mapas para editarlo y jugarlo.",
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    Button(onClick = {
-                        val rom = romBytes; val hdr = header
-                        if (rom != null && hdr != null) {
-                            // Antes un FALLO del código y una ROM sin niveles daban el mismo
-                            // mensaje ("no hay niveles"), o sea que se culpaba a la ROM de
-                            // nuestros errores. Ahora se distingue y se dice el motivo real.
-                            runCatching { SnesGameRecipes.listImportableSmwLevels(rom, hdr) }
-                                .onSuccess {
-                                    levelListings = it
-                                    if (it.isEmpty()) Toast.makeText(
-                                        context, "Esta ROM no tiene niveles reconstruibles.", Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                                .onFailure { e ->
-                                    levelListings = emptyList()
-                                    Toast.makeText(
-                                        context,
-                                        "Fallo al listar niveles (no es culpa de la ROM): ${e::class.simpleName}: ${e.message}",
-                                        Toast.LENGTH_LONG,
-                                    ).show()
-                                }
-                        }
-                    }) { Text("Buscar niveles importables") }
+                    // Listar los niveles recorre los 512 slots: 323 ms medidos. Segundo plano.
+                    Button(
+                        enabled = tarea == null,
+                        onClick = {
+                            val rom = romBytes; val hdr = header
+                            if (rom != null && hdr != null) {
+                                // Antes un FALLO del código y una ROM sin niveles daban el mismo
+                                // mensaje ("no hay niveles"), o sea que se culpaba a la ROM de
+                                // nuestros errores. Ahora se distingue y se dice el motivo real.
+                                enSegundoPlano(
+                                    "Buscando los niveles importables…",
+                                    { SnesGameRecipes.listImportableSmwLevels(rom, hdr) },
+                                    { r ->
+                                        r.onSuccess {
+                                            levelListings = it
+                                            if (it.isEmpty()) Toast.makeText(
+                                                context, "Esta ROM no tiene niveles reconstruibles.", Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }.onFailure { e ->
+                                            levelListings = emptyList()
+                                            Toast.makeText(
+                                                context,
+                                                "Fallo al listar niveles (no es culpa de la ROM): ${e::class.simpleName}: ${e.message}",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }
+                                    },
+                                )
+                            }
+                        },
+                    ) { Text("Buscar niveles importables") }
                     if (levelListings.isNotEmpty()) {
                         Text(
                             "${levelListings.size} niveles del juego reconstruibles. \"Mapa\" lo importa " +
@@ -597,47 +813,83 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.weight(1f),
                             )
-                            TextButton(onClick = {
-                                val rom = romBytes; val hdr = header
-                                runCatching {
-                                    if (rom == null || hdr == null) error("carga primero la ROM")
+                            // Importar un nivel COMPLETO extrae el paquete entero (nivel +
+                            // sub-niveles): cientos de milisegundos. Se extrae fuera del hilo
+                            // principal y solo el alta en el editor vuelve a él, que es lo
+                            // único que escribe estado de Compose.
+                            TextButton(
+                                enabled = tarea == null,
+                                onClick = {
+                                    val rom = romBytes; val hdr = header
+                                    if (rom == null || hdr == null) {
+                                        Toast.makeText(context, "No se pudo: carga primero la ROM", Toast.LENGTH_LONG).show()
+                                        return@TextButton
+                                    }
                                     val realName = SnesGameRecipes.smwLevelName(rom, hdr, listing.level)
                                         ?: "Nivel ${listing.level.toString(16).uppercase()}"
-                                    val msg = importSmwLevelBundle(state, rom, hdr, listing.level, realName)
-                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                }.onFailure {
-                                    Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }) { Text("Mapa") }
+                                    enSegundoPlano(
+                                        "Importando ${listing.name} y sus sub-niveles…",
+                                        { extraerBundleSmw(state.projectDir, rom, hdr, listing.level, realName) },
+                                        { r ->
+                                            val extraido = r.getOrNull()
+                                            if (extraido == null) {
+                                                Toast.makeText(
+                                                    context, "No se pudo: ${r.exceptionOrNull()?.message}", Toast.LENGTH_LONG,
+                                                ).show()
+                                            } else {
+                                                val msg = aplicarBundleSmw(state, realName, extraido)
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                    )
+                                },
+                            ) { Text("Mapa") }
                             // Diferencia Layer 1 / Layer 2 del nivel y los SACA como PNG separados
                             // (más la escena combinada) a Descargas: el extractor a la altura de la app.
-                            TextButton(onClick = {
-                                val rom = romBytes; val hdr = header
-                                runCatching {
-                                    if (rom == null || hdr == null) error("carga primero la ROM")
-                                    val layers = SnesImport.levelLayers(rom, hdr, listing.level)
-                                        ?: error("nivel no reconstruible")
-                                    val hx = listing.level.toString(16).uppercase()
-                                    var saved = 0
-                                    fun put(suffix: String, bmp: Bitmap) {
-                                        if (SnesImport.exportToDownloads(
-                                                context, "smw_${hx}_$suffix.png", "image/png",
-                                                SnesImport.bitmapToPng(bmp),
-                                            ) != null
-                                        ) saved++
+                            // Separar las capas RENDERIZA el nivel entero (704 ms medidos) y
+                            // encima escribe tres PNG en Descargas: cálculo + E/S, todo fuera
+                            // del hilo principal.
+                            TextButton(
+                                enabled = tarea == null,
+                                onClick = {
+                                    val rom = romBytes; val hdr = header
+                                    if (rom == null || hdr == null) {
+                                        Toast.makeText(context, "No se pudo: carga primero la ROM", Toast.LENGTH_LONG).show()
+                                        return@TextButton
                                     }
-                                    put("layer1", layers.layer1)
-                                    layers.layer2?.let { put("layer2", it) }
-                                    put("scene", layers.scene)
-                                    val bg = if (layers.layer2 != null) "" else " (este nivel no tiene fondo)"
-                                    Toast.makeText(
-                                        context, "Capas exportadas: $saved PNG en Descargas$bg",
-                                        Toast.LENGTH_LONG,
-                                    ).show()
-                                }.onFailure {
-                                    Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }) { Text("Capas") }
+                                    enSegundoPlano(
+                                        "Separando y exportando las capas de ${listing.name}…",
+                                        {
+                                            val layers = SnesImport.levelLayers(rom, hdr, listing.level)
+                                                ?: error("nivel no reconstruible")
+                                            val hx = listing.level.toString(16).uppercase()
+                                            var saved = 0
+                                            fun put(suffix: String, bmp: Bitmap) {
+                                                if (SnesImport.exportToDownloads(
+                                                        context, "smw_${hx}_$suffix.png", "image/png",
+                                                        SnesImport.bitmapToPng(bmp),
+                                                    ) != null
+                                                ) saved++
+                                            }
+                                            put("layer1", layers.layer1)
+                                            layers.layer2?.let { put("layer2", it) }
+                                            put("scene", layers.scene)
+                                            saved to (layers.layer2 != null)
+                                        },
+                                        { r ->
+                                            r.onSuccess { (saved, conFondo) ->
+                                                val bg = if (conFondo) "" else " (este nivel no tiene fondo)"
+                                                Toast.makeText(
+                                                    context, "Capas exportadas: $saved PNG en Descargas$bg",
+                                                    Toast.LENGTH_LONG,
+                                                ).show()
+                                            }.onFailure {
+                                                Toast.makeText(context, "No se pudo: ${it.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                        },
+                                    )
+                                },
+                            ) { Text("Capas") }
                             TextButton(onClick = {
                                 if (romBytes == null) return@TextButton
                                 runCatching {
@@ -683,25 +935,32 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             "(destello real del juego). Se guarda en tu carpeta Descargas.",
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    Button(onClick = {
-                        val rom = romBytes; val hdr = header
-                        if (rom != null && hdr != null) {
-                            runCatching { SnesImport.overworldMap(rom, hdr)?.asImageBitmap() }
-                                .onSuccess {
-                                    overworldPreview = it
-                                    if (it == null) Toast.makeText(
-                                        context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG,
-                                    ).show()
-                                }
-                                .onFailure { e ->
-                                    overworldPreview = null
-                                    Toast.makeText(
-                                        context, "Fallo al renderizar el overworld: ${e::class.simpleName}: ${e.message}",
-                                        Toast.LENGTH_LONG,
-                                    ).show()
-                                }
-                        }
-                    }) { Text("Renderizar overworld") }
+                    Button(
+                        enabled = tarea == null,
+                        onClick = {
+                            val rom = romBytes; val hdr = header
+                            if (rom != null && hdr != null) {
+                                enSegundoPlano(
+                                    "Renderizando el mapa del mundo…",
+                                    { SnesImport.overworldMap(rom, hdr)?.asImageBitmap() },
+                                    { r ->
+                                        r.onSuccess {
+                                            overworldPreview = it
+                                            if (it == null) Toast.makeText(
+                                                context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG,
+                                            ).show()
+                                        }.onFailure { e ->
+                                            overworldPreview = null
+                                            Toast.makeText(
+                                                context, "Fallo al renderizar el overworld: ${e::class.simpleName}: ${e.message}",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }
+                                    },
+                                )
+                            }
+                        },
+                    ) { Text("Renderizar overworld") }
                     Button(onClick = {
                         if (romBytes == null) return@Button
                         runCatching {
@@ -731,93 +990,103 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 .border(1.dp, Color(0xFF555555), RoundedCornerShape(4.dp)),
                         )
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            TextButton(onClick = {
-                                val rom = romBytes; val hdr = header
-                                runCatching {
-                                    if (rom == null || hdr == null) error("carga la ROM")
-                                    val bmp = SnesImport.overworldMap(rom, hdr) ?: error("no es SMW")
-                                    val where = SnesImport.exportToDownloads(
-                                        context, "smw_overworld.png", "image/png", SnesImport.bitmapToPng(bmp),
-                                    ) ?: error("no se pudo guardar")
-                                    Toast.makeText(context, "PNG guardado en $where", Toast.LENGTH_LONG).show()
-                                }.onFailure {
-                                    Toast.makeText(context, "No se pudo exportar PNG: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }, modifier = Modifier.weight(1f)) { Text("⬇ PNG") }
-                            TextButton(onClick = {
-                                val rom = romBytes; val hdr = header
-                                runCatching {
-                                    if (rom == null || hdr == null) error("carga la ROM")
-                                    val gif = SnesImport.overworldGif(rom, hdr) ?: error("no es SMW")
-                                    val where = SnesImport.exportToDownloads(
-                                        context, "smw_overworld.gif", "image/gif", gif,
-                                    ) ?: error("no se pudo guardar")
-                                    Toast.makeText(context, "GIF animado guardado en $where", Toast.LENGTH_LONG).show()
-                                }.onFailure {
-                                    Toast.makeText(context, "No se pudo exportar GIF: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }, modifier = Modifier.weight(1f)) { Text("⬇ GIF animado") }
+                            TextButton(
+                                enabled = tarea == null,
+                                onClick = {
+                                    val rom = romBytes; val hdr = header
+                                    exportar("Exportando el overworld a PNG…", "No se pudo exportar PNG") {
+                                        if (rom == null || hdr == null) error("carga la ROM")
+                                        val bmp = SnesImport.overworldMap(rom, hdr) ?: error("no es SMW")
+                                        val where = SnesImport.exportToDownloads(
+                                            context, "smw_overworld.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                        ) ?: error("no se pudo guardar")
+                                        "PNG guardado en $where"
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                            ) { Text("⬇ PNG") }
+                            TextButton(
+                                enabled = tarea == null,
+                                onClick = {
+                                    val rom = romBytes; val hdr = header
+                                    exportar("Montando el GIF animado del overworld…", "No se pudo exportar GIF") {
+                                        if (rom == null || hdr == null) error("carga la ROM")
+                                        val gif = SnesImport.overworldGif(rom, hdr) ?: error("no es SMW")
+                                        val where = SnesImport.exportToDownloads(
+                                            context, "smw_overworld.gif", "image/gif", gif,
+                                        ) ?: error("no se pudo guardar")
+                                        "GIF animado guardado en $where"
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                            ) { Text("⬇ GIF animado") }
                         }
-                        TextButton(onClick = {
-                            val rom = romBytes; val hdr = header
-                            runCatching {
-                                if (rom == null || hdr == null) error("carga la ROM")
-                                val world = SnesImport.overworldWorld(rom, hdr)
-                                if (world.isEmpty()) error("no es SMW")
-                                var saved = 0
-                                world.forEach { (name, bmp) ->
-                                    if (SnesImport.exportToDownloads(
-                                            context, "smw_ow_$name.png", "image/png", SnesImport.bitmapToPng(bmp),
-                                        ) != null
-                                    ) saved++
+                        TextButton(
+                            enabled = tarea == null,
+                            onClick = {
+                                val rom = romBytes; val hdr = header
+                                exportar("Exportando el mundo completo…", "No se pudo exportar el mundo") {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    val world = SnesImport.overworldWorld(rom, hdr)
+                                    if (world.isEmpty()) error("no es SMW")
+                                    var saved = 0
+                                    world.forEach { (name, bmp) ->
+                                        if (SnesImport.exportToDownloads(
+                                                context, "smw_ow_$name.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                            ) != null
+                                        ) saved++
+                                    }
+                                    "Mundo completo: $saved PNG en Descargas"
                                 }
-                                Toast.makeText(context, "Mundo completo: $saved PNG en Descargas", Toast.LENGTH_LONG).show()
-                            }.onFailure {
-                                Toast.makeText(context, "No se pudo exportar el mundo: ${it.message}", Toast.LENGTH_LONG).show()
-                            }
-                        }) { Text("⬇ Mundo completo (todos los submapas, PNG)") }
-                        TextButton(onClick = {
-                            val rom = romBytes; val hdr = header
-                            runCatching {
-                                if (rom == null || hdr == null) error("carga la ROM")
-                                val bmp = SnesImport.overworldSpriteSheet(rom, hdr) ?: error("no es SMW")
-                                val where = SnesImport.exportToDownloads(
-                                    context, "smw_ow_sprites.png", "image/png", SnesImport.bitmapToPng(bmp),
-                                ) ?: error("no se pudo guardar")
-                                Toast.makeText(context, "Sprites del mapa guardados en $where", Toast.LENGTH_LONG).show()
-                            }.onFailure {
-                                Toast.makeText(context, "No se pudo exportar los sprites: ${it.message}", Toast.LENGTH_LONG).show()
-                            }
-                        }) { Text("⬇ Sprites del mapa (Boo, nube, piraña…) PNG") }
+                            },
+                        ) { Text("⬇ Mundo completo (todos los submapas, PNG)") }
+                        TextButton(
+                            enabled = tarea == null,
+                            onClick = {
+                                val rom = romBytes; val hdr = header
+                                exportar("Exportando los sprites del mapa…", "No se pudo exportar los sprites") {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    val bmp = SnesImport.overworldSpriteSheet(rom, hdr) ?: error("no es SMW")
+                                    val where = SnesImport.exportToDownloads(
+                                        context, "smw_ow_sprites.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                    ) ?: error("no se pudo guardar")
+                                    "Sprites del mapa guardados en $where"
+                                }
+                            },
+                        ) { Text("⬇ Sprites del mapa (Boo, nube, piraña…) PNG") }
                         // MARIO del mapa: la hoja de las 4 direcciones (PNG) y el GIF andando.
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            TextButton(onClick = {
-                                val rom = romBytes; val hdr = header
-                                runCatching {
-                                    if (rom == null || hdr == null) error("carga la ROM")
-                                    val bmp = SnesImport.overworldMarioSheet(rom, hdr) ?: error("no es SMW")
-                                    val where = SnesImport.exportToDownloads(
-                                        context, "smw_ow_mario.png", "image/png", SnesImport.bitmapToPng(bmp),
-                                    ) ?: error("no se pudo guardar")
-                                    Toast.makeText(context, "Mario del mapa guardado en $where", Toast.LENGTH_LONG).show()
-                                }.onFailure {
-                                    Toast.makeText(context, "No se pudo exportar Mario: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }, modifier = Modifier.weight(1f)) { Text("⬇ Mario mapa PNG") }
-                            TextButton(onClick = {
-                                val rom = romBytes; val hdr = header
-                                runCatching {
-                                    if (rom == null || hdr == null) error("carga la ROM")
-                                    // Dirección 2 = mirando a cámara (el idle del juego).
-                                    val gif = SnesImport.overworldMarioGif(rom, hdr, 2) ?: error("no es SMW")
-                                    val where = SnesImport.exportToDownloads(
-                                        context, "smw_ow_mario_walk.gif", "image/gif", gif,
-                                    ) ?: error("no se pudo guardar")
-                                    Toast.makeText(context, "Mario andando (GIF) guardado en $where", Toast.LENGTH_LONG).show()
-                                }.onFailure {
-                                    Toast.makeText(context, "No se pudo exportar el GIF: ${it.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }, modifier = Modifier.weight(1f)) { Text("⬇ Mario andando GIF") }
+                            TextButton(
+                                enabled = tarea == null,
+                                onClick = {
+                                    val rom = romBytes; val hdr = header
+                                    exportar("Exportando el Mario del mapa…", "No se pudo exportar Mario") {
+                                        if (rom == null || hdr == null) error("carga la ROM")
+                                        val bmp = SnesImport.overworldMarioSheet(rom, hdr) ?: error("no es SMW")
+                                        val where = SnesImport.exportToDownloads(
+                                            context, "smw_ow_mario.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                        ) ?: error("no se pudo guardar")
+                                        "Mario del mapa guardado en $where"
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                            ) { Text("⬇ Mario mapa PNG") }
+                            TextButton(
+                                enabled = tarea == null,
+                                onClick = {
+                                    val rom = romBytes; val hdr = header
+                                    exportar("Montando el GIF de Mario andando…", "No se pudo exportar el GIF") {
+                                        if (rom == null || hdr == null) error("carga la ROM")
+                                        // Dirección 2 = mirando a cámara (el idle del juego).
+                                        val gif = SnesImport.overworldMarioGif(rom, hdr, 2) ?: error("no es SMW")
+                                        val where = SnesImport.exportToDownloads(
+                                            context, "smw_ow_mario_walk.gif", "image/gif", gif,
+                                        ) ?: error("no se pudo guardar")
+                                        "Mario andando (GIF) guardado en $where"
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                            ) { Text("⬇ Mario andando GIF") }
                         }
                     }
 
@@ -828,25 +1097,33 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                             "el logo \"SUPER MARIO WORLD\" (Layer 3) y su paleta reales. Exportable a PNG.",
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    Button(onClick = {
-                        val rom = romBytes; val hdr = header
-                        if (rom != null && hdr != null) {
-                            runCatching { SnesImport.titleScreen(rom, hdr)?.asImageBitmap() }
-                                .onSuccess {
-                                    titlePreview = it
-                                    if (it == null) Toast.makeText(
-                                        context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG,
-                                    ).show()
-                                }
-                                .onFailure { e ->
-                                    titlePreview = null
-                                    Toast.makeText(
-                                        context, "Fallo al reconstruir el título: ${e::class.simpleName}: ${e.message}",
-                                        Toast.LENGTH_LONG,
-                                    ).show()
-                                }
-                        }
-                    }) { Text("Renderizar pantalla de título") }
+                    Button(
+                        enabled = tarea == null,
+                        onClick = {
+                            val rom = romBytes; val hdr = header
+                            if (rom != null && hdr != null) {
+                                // Reconstruir el título descomprime un nivel entero: fuera.
+                                enSegundoPlano(
+                                    "Reconstruyendo la pantalla de título…",
+                                    { SnesImport.titleScreen(rom, hdr)?.asImageBitmap() },
+                                    { r ->
+                                        r.onSuccess {
+                                            titlePreview = it
+                                            if (it == null) Toast.makeText(
+                                                context, "Esta ROM no parece ser Super Mario World.", Toast.LENGTH_LONG,
+                                            ).show()
+                                        }.onFailure { e ->
+                                            titlePreview = null
+                                            Toast.makeText(
+                                                context, "Fallo al reconstruir el título: ${e::class.simpleName}: ${e.message}",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        }
+                                    },
+                                )
+                            }
+                        },
+                    ) { Text("Renderizar pantalla de título") }
                     titlePreview?.let { ts ->
                         Image(
                             bitmap = ts,
@@ -859,19 +1136,20 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                                 .background(Color(0xFF202024), RoundedCornerShape(4.dp))
                                 .border(1.dp, Color(0xFF555555), RoundedCornerShape(4.dp)),
                         )
-                        TextButton(onClick = {
-                            val rom = romBytes; val hdr = header
-                            runCatching {
-                                if (rom == null || hdr == null) error("carga la ROM")
-                                val bmp = SnesImport.titleScreen(rom, hdr) ?: error("no es SMW")
-                                val where = SnesImport.exportToDownloads(
-                                    context, "smw_titulo.png", "image/png", SnesImport.bitmapToPng(bmp),
-                                ) ?: error("no se pudo guardar")
-                                Toast.makeText(context, "PNG guardado en $where", Toast.LENGTH_LONG).show()
-                            }.onFailure {
-                                Toast.makeText(context, "No se pudo exportar: ${it.message}", Toast.LENGTH_LONG).show()
-                            }
-                        }) { Text("⬇ PNG de la pantalla de título") }
+                        TextButton(
+                            enabled = tarea == null,
+                            onClick = {
+                                val rom = romBytes; val hdr = header
+                                exportar("Exportando la pantalla de título…", "No se pudo exportar") {
+                                    if (rom == null || hdr == null) error("carga la ROM")
+                                    val bmp = SnesImport.titleScreen(rom, hdr) ?: error("no es SMW")
+                                    val where = SnesImport.exportToDownloads(
+                                        context, "smw_titulo.png", "image/png", SnesImport.bitmapToPng(bmp),
+                                    ) ?: error("no se pudo guardar")
+                                    "PNG guardado en $where"
+                                }
+                            },
+                        ) { Text("⬇ PNG de la pantalla de título") }
                     }
 
                     HorizontalDivider()
@@ -1014,9 +1292,10 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         "color 0 se guarda transparente (fondo de los sprites).",
                     style = MaterialTheme.typography.bodySmall,
                 )
-                if (paletteIndex == PALETTE_AUTO && preview?.autoPalette != null) {
+                val paletaAuto = preview?.autoPalette
+                if (paletteIndex == PALETTE_AUTO && paletaAuto != null) {
                     Text(
-                        "Elegida para este gráfico: ${preview.autoPalette}. Si el color no " +
+                        "Elegida para este gráfico: $paletaAuto. Si el color no " +
                             "convence, elige otra del desplegable.",
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -1033,9 +1312,12 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 
                 HorizontalDivider()
                 Text("Vista previa", style = MaterialTheme.typography.titleSmall)
-                if (preview != null) {
-                    val img = preview.bitmap
-                    val sheet = preview.sheet
+                // Copia local: `preview` ahora es estado que puede cambiar mientras se compone
+                // (lo rellena el efecto de fondo), así que se lee UNA vez y se usa esa.
+                val vistaPrevia = preview
+                if (vistaPrevia != null) {
+                    val img = vistaPrevia.bitmap
+                    val sheet = vistaPrevia.sheet
                     Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1063,6 +1345,11 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         "${sheet.columns}×${sheet.rows} $unit · ${img.width}×${img.height} px · celda ${sheet.tileSize}px",
                         style = MaterialTheme.typography.bodySmall,
                     )
+                } else if (calculandoPreview) {
+                    // Se distingue "aún se está calculando" de "aquí no hay gráficos": antes
+                    // no hacía falta (se calculaba de golpe), ahora sí, y confundirlos haría
+                    // creer que el offset está mal cuando solo falta un instante.
+                    Text("Calculando la vista previa…", style = MaterialTheme.typography.bodySmall)
                 } else {
                     Text(
                         "Sin datos válidos en este offset/formato. Prueba otro offset " +
@@ -1124,9 +1411,30 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
 @Composable
 private fun GfxBankToTilesetSection(state: EditorState, rom: ByteArray, header: SnesHeader) {
     val context = LocalContext.current
-    val banks = remember(rom) { SmwGfxLibrary.banks(rom) }
-    if (banks.isEmpty()) return
-    val paletteRows = remember(rom, header) { SmwGfxLibrary.paletteRows(rom, header) }
+    // LISTAR LOS BANCOS DESCOMPRIME TODOS los gráficos de la ROM: 810 ms medidos en
+    // escritorio, y se hacía EN COMPOSICIÓN — o sea que abrir este diálogo con una ROM de SMW
+    // costaba casi un segundo de pantalla congelada aunque no fueras a tocar esta sección.
+    // Ahora se leen en segundo plano y hasta que llegan se dice que se están leyendo.
+    var banks by remember(rom) { mutableStateOf<List<SmwGfxLibrary.Bank>>(emptyList()) }
+    var paletteRows by remember(rom) { mutableStateOf<List<IntArray>>(emptyList()) }
+    var leyendoBancos by remember(rom) { mutableStateOf(true) }
+    LaunchedEffect(rom, header) {
+        val leidos = withContext(Dispatchers.IO) {
+            runCatching { SmwGfxLibrary.banks(rom) }.getOrDefault(emptyList()) to
+                runCatching { SmwGfxLibrary.paletteRows(rom, header) }.getOrDefault(emptyList())
+        }
+        banks = leidos.first
+        paletteRows = leidos.second
+        leyendoBancos = false
+    }
+    if (banks.isEmpty()) {
+        // OJO: este retorno va DESPUÉS del efecto, no antes; si no, la lectura no arrancaría
+        // nunca y la sección no aparecería jamás.
+        if (leyendoBancos) {
+            Text("Leyendo los bancos GFX de tu ROM…", style = MaterialTheme.typography.bodySmall)
+        }
+        return
+    }
     val rowCount = if (paletteRows.isNotEmpty()) paletteRows.size else SmwGfxLibrary.PALETTE_ROWS
 
     var bankIdx by remember { mutableStateOf(0) }
@@ -1244,6 +1552,18 @@ private fun GfxBankToTilesetSection(state: EditorState, rom: ByteArray, header: 
 internal const val AUTO_MAX_LEVELS = 8
 
 /**
+ * Escribe el ATLAS de un nivel importado como PNG del proyecto y devuelve su nombre de
+ * archivo. Es codificar una imagen y escribirla en disco —E/S pura, sin tocar el
+ * [EditorState]—, así que se puede (y se debe) hacer FUERA del hilo principal: son ocho
+ * atlas seguidos al auto-importar una ROM.
+ */
+internal fun guardarAtlasSmw(projectDir: java.io.File, name: String, m: SnesGameRecipes.SmwLevelMap): String {
+    val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
+    SnesImport.saveTilesetPng(projectDir, fileName, SnesImport.toBitmap(m.atlas))
+    return fileName
+}
+
+/**
  * Importa UN nivel de SMW como mapa jugable del proyecto (tileset con colisión real +
  * acciones de bloque + Layer 2 de fondo editable + enemigos). Devuelve el id del
  * tileset creado. Lo usa el Platform Builder para auto-cargar los niveles de una ROM.
@@ -1257,9 +1577,12 @@ internal fun importSmwLevelMap(
     rom: ByteArray? = null,
     hdr: SnesHeader? = null,
     level: Int? = null,
+    // Atlas YA guardado ([guardarAtlasSmw]), para que quien importe en lote pueda escribir los
+    // PNG en un hilo de fondo y dejar aquí solo lo que toca el estado del editor. Si es null,
+    // se guarda ahora mismo, como siempre.
+    atlasFile: String? = null,
 ): Int {
-    val fileName = SnesImport.sanitizeFileName("smw_${name}_tiles")
-    SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
+    val fileName = atlasFile ?: guardarAtlasSmw(state.projectDir, name, m)
     val tsId = state.nextTilesetId()
     state.addTileset(
         Tileset(
@@ -1324,13 +1647,35 @@ private fun smwMusicIndex(rom: ByteArray, hdr: SnesHeader, level: Int): Int =
  * comportamiento clásico: un solo mapa ([fallback]) sin warps.
  * Devuelve el mensaje para el usuario.
  */
-private fun importSmwLevelBundle(
-    state: EditorState,
+private class SubNivelListo(
+    val level: Int,
+    val nombre: String,
+    val mapa: SnesGameRecipes.SmwLevelMap,
+    val atlasFile: String,
+    /** Meta real del sub-nivel (cinta/esfera/cerradura), ya leída de la ROM. */
+    val metas: List<PlatformItemMark>,
+    /** Índice de música de SU cabecera, para que suene su canción al jugarlo. */
+    val musica: Int,
+    /** Bocas de warp del sub-nivel, en crudo: el destino se traduce a id de mapa al aplicar. */
+    val warps: List<SmwWarpTiles.LevelWarp>,
+)
+
+/** El paquete entero ya extraído, más el motivo si hubo que caer a un solo nivel. */
+private class BundleExtraido(val subniveles: List<SubNivelListo>, val error: String?)
+
+/**
+ * MITAD CARA de importar un nivel completo (para `Dispatchers.IO`): extrae el paquete —el
+ * nivel y sus sub-niveles—, lee metas, música y bocas de warp de cada uno y escribe sus atlas
+ * PNG. Solo lee la ROM y escribe ficheros: no toca el [EditorState], así que puede correr
+ * fuera del hilo principal. Son cientos de milisegundos que antes se comía la interfaz.
+ */
+private fun extraerBundleSmw(
+    projectDir: java.io.File,
     rom: ByteArray,
     hdr: SnesHeader,
     level: Int,
     name: String,
-): String {
+): BundleExtraido {
     // Si el paquete (nivel + sub-niveles + warps) no se puede extraer, se cae a UN solo nivel.
     // Eso es una degradación real —te llevas menos de lo que crees— así que se deja traza y
     // el mensaje final la refleja, en vez de fingir que se importó todo.
@@ -1342,17 +1687,41 @@ private fun importSmwLevelBundle(
         bundle?.levels?.zip(bundle.maps)
             ?: listOf(level to (SnesGameRecipes.extractSmwLevelAsMap(rom, hdr, level) ?: error("nivel no reconstruible")))
 
+    val subniveles = entries.map { (lv, m) ->
+        val subName = if (lv == level) name else "$name·${lv.toString(16).uppercase()}"
+        SubNivelListo(
+            level = lv,
+            nombre = subName,
+            mapa = m,
+            atlasFile = guardarAtlasSmw(projectDir, subName, m),
+            // META del nivel: la cinta/esfera/cerradura reales del sub-nivel, para que al
+            // JUGAR el mapa importado tocar la meta cuente como SUPERADO (antes no se sembraba
+            // ninguna → el nivel no tenía final).
+            metas = smwGoalMarks(rom, hdr, lv, m.mapWidth, m.mapHeight),
+            // Música real del sub-nivel: al jugar el mapa suena SU canción (no la genérica).
+            musica = smwMusicIndex(rom, hdr, lv),
+            warps = runCatching { SmwWarpTiles.levelWarps(rom, hdr, lv) }.getOrDefault(emptyList()),
+        )
+    }
+    return BundleExtraido(subniveles, bundleError)
+}
+
+/**
+ * MITAD QUE TOCA EL EDITOR (hilo principal): da de alta cada sub-nivel ya extraído por
+ * [extraerBundleSmw] y rellena [GameMap.platformWarps] cruzando las bocas de warp reales con
+ * los ids de mapa recién creados — así las tuberías/puertas FUNCIONAN al jugar el mapa.
+ * Devuelve el mensaje para el usuario.
+ */
+private fun aplicarBundleSmw(state: EditorState, name: String, extraido: BundleExtraido): String {
     // 1ª pasada: crea tileset + mapa por sub-nivel y apunta nivel SMW → id de mapa.
     val mapIdByLevel = HashMap<Int, Int>()
-    val created = ArrayList<Pair<Int, GameMap>>()
-    for ((lv, m) in entries) {
-        val subName = if (lv == level) name else "$name·${lv.toString(16).uppercase()}"
-        val fileName = SnesImport.sanitizeFileName("smw_${subName}_tiles")
-        SnesImport.saveTilesetPng(state.projectDir, fileName, SnesImport.toBitmap(m.atlas))
+    val created = ArrayList<Pair<SubNivelListo, GameMap>>()
+    for (sub in extraido.subniveles) {
+        val m = sub.mapa
         val tsId = state.nextTilesetId()
         state.addTileset(
             Tileset(
-                id = tsId, name = "$subName (SMW)", image = fileName,
+                id = tsId, name = "${sub.nombre} (SMW)", image = sub.atlasFile,
                 tileSize = 16, columns = m.columns, rows = m.rows,
                 passable = m.passable, platformSolidity = m.solidity,
                 platformSlopeShape = m.slopeShapes,
@@ -1369,29 +1738,25 @@ private fun importSmwLevelBundle(
         }
         val stored = state.addImportedMap(
             GameMap(
-                id = 0, name = "SMW $subName", width = m.mapWidth, height = m.mapHeight,
+                id = 0, name = "SMW ${sub.nombre}", width = m.mapWidth, height = m.mapHeight,
                 tilesetId = tsId,
                 layers = layers,
                 platformEnemies = m.enemies.map {
                     PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
                 },
-                // META del nivel: la cinta/esfera/cerradura reales del sub-nivel, para que al
-                // JUGAR el mapa importado tocar la meta cuente como SUPERADO (antes no se sembraba
-                // ninguna → el nivel no tenía final).
-                platformItems = smwGoalMarks(rom, hdr, lv, m.mapWidth, m.mapHeight),
-                // Música real del sub-nivel: al jugar el mapa suena SU canción (no la genérica).
-                platformMusicIndex = smwMusicIndex(rom, hdr, lv),
+                platformItems = sub.metas,
+                platformMusicIndex = sub.musica,
             )
         )
-        mapIdByLevel[lv] = stored.id
-        created.add(lv to stored)
+        mapIdByLevel[sub.level] = stored.id
+        created.add(sub to stored)
     }
 
     // 2ª pasada: warps por sub-nivel, con el destino traducido a id de mapa del
     // proyecto. Solo puertas y tuberías verticales (mismos criterios que levelWarps).
     var warpCount = 0
-    for ((lv, stored) in created) {
-        val warps = SmwWarpTiles.levelWarps(rom, hdr, lv).mapNotNull { w ->
+    for ((sub, stored) in created) {
+        val warps = sub.warps.mapNotNull { w ->
             mapIdByLevel[w.destLevel]?.let { destMapId ->
                 MapWarp(
                     x = w.xTile, y = w.yTile,
@@ -1408,7 +1773,7 @@ private fun importSmwLevelBundle(
     // Deja abierto el nivel PRINCIPAL (el primero), no el último sub-nivel del
     // bundle: si no, tras importar el editor mostraba una salita casi vacía.
     created.firstOrNull()?.let { state.selectMap(it.second.id) }
-    val aviso = bundleError?.let { " — ⚠ solo el nivel principal: falló el paquete ($it)" } ?: ""
+    val aviso = extraido.error?.let { " — ⚠ solo el nivel principal: falló el paquete ($it)" } ?: ""
     return if (created.size > 1) {
         "Nivel completo: ${created.size} mapas y $warpCount warps (SMW $name)$aviso"
     } else {

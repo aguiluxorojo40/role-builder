@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -62,6 +63,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,6 +97,7 @@ import com.rolebuilder.core.snes.SmwSolidity
 import com.rolebuilder.core.snes.SmwSpriteNames
 import com.rolebuilder.core.snes.SnesDecoder
 import com.rolebuilder.core.snes.SnesGameRecipes
+import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.editor.loadBigSprites
 import com.rolebuilder.editor.loadImageBitmap
@@ -102,11 +105,15 @@ import com.rolebuilder.editor.loadStoreImageBitmap
 import com.rolebuilder.editor.snes.AUTO_MAX_LEVELS
 import com.rolebuilder.editor.snes.SnesImport
 import com.rolebuilder.editor.snes.SnesImportDialog
+import com.rolebuilder.editor.snes.guardarAtlasSmw
 import com.rolebuilder.editor.snes.importSmwLevelMap
 import com.rolebuilder.editor.widgets.DropdownField
 import com.rolebuilder.editor.widgets.IntField
 import com.rolebuilder.player.PlatformerActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.PI
 import kotlin.math.cos
@@ -274,20 +281,56 @@ private fun solidityOfTile(tileset: Tileset?, tile: Int): SmwSolidity {
 }
 
 /**
- * Auto-importa una ROM de SMW: extrae los niveles como mapas jugables (tiles con
- * gráficos reales, colisión y enemigos ya colocados), selecciona el primero y borra
- * el nivel de arranque vacío si no se había tocado. Devuelve el nº de niveles, 0 si
- * no hay niveles reconocibles, o lanza si la ROM no es válida.
+ * AUTO-IMPORTAR UNA ROM, EN DOS MITADES. Cargar una ROM de SMW hace dos cosas muy distintas:
+ * descomprimir y reconstruir sus niveles (caro: **1276 ms medidos** para los 8 niveles en un
+ * JVM de escritorio, y un móvil es varias veces más lento) y darlos de alta en el editor
+ * (instantáneo, pero escribe estado de Compose).
+ *
+ * Estaban pegadas en una sola función que se llamaba desde el callback del selector de
+ * archivos, o sea en el HILO PRINCIPAL: la app se quedaba clavada más de un segundo —varios
+ * en un móvil— sin pintar nada, que es justo la sensación de "esto va lento" que hay que
+ * quitar. Separadas, la mitad cara ([extraerNivelesSmw]) se puede mandar a `Dispatchers.IO`
+ * y la que toca el editor ([aplicarNivelesSmw]) se queda donde tiene que estar: el estado de
+ * Compose SOLO se escribe desde el hilo principal.
  */
-internal fun autoImportSmwRom(state: EditorState, romBytes: ByteArray): Int {
+internal class NivelSmwListo(
+    /** Nº de nivel en la ROM (para leer su meta y su música). */
+    val level: Int,
+    val nombre: String,
+    val mapa: SnesGameRecipes.SmwLevelMap,
+    /** PNG del atlas, ya escrito en el proyecto (la escritura es E/S: fuera del hilo principal). */
+    val atlasFile: String,
+)
+
+/** Lo extraído de la ROM, listo para darlo de alta en el editor sin más cálculo. */
+internal class RomSmwExtraida(val header: SnesHeader, val niveles: List<NivelSmwListo>)
+
+/**
+ * MITAD CARA (para `Dispatchers.IO`): reconstruye los niveles de la ROM como mapas jugables
+ * —tiles con gráficos reales, colisión y enemigos— y escribe sus atlas PNG en el proyecto.
+ * No toca el [EditorState], así que es seguro llamarla desde un hilo de fondo. Lanza si la
+ * ROM no es válida.
+ */
+internal fun extraerNivelesSmw(projectDir: File, romBytes: ByteArray): RomSmwExtraida {
     val header = SnesDecoder.parseHeader(romBytes)
-    val maps = SnesGameRecipes.extractSmwLevelMaps(romBytes, header).take(AUTO_MAX_LEVELS)
-    if (maps.isEmpty()) return 0
+    val niveles = SnesGameRecipes.extractSmwLevelMaps(romBytes, header)
+        .take(AUTO_MAX_LEVELS)
+        .map { (lv, nm, m) -> NivelSmwListo(lv, nm, m, guardarAtlasSmw(projectDir, nm, m)) }
+    return RomSmwExtraida(header, niveles)
+}
+
+/**
+ * MITAD QUE TOCA EL EDITOR (hilo principal): da de alta los niveles ya extraídos, selecciona
+ * el primero y borra el nivel de arranque vacío si no se había tocado. Devuelve el nº de
+ * niveles, o 0 si la ROM no traía ninguno reconocible.
+ */
+internal fun aplicarNivelesSmw(state: EditorState, romBytes: ByteArray, extraida: RomSmwExtraida): Int {
+    if (extraida.niveles.isEmpty()) return 0
     val starterId = state.currentMapId
     val starter = state.currentMap
     var firstId: Int? = null
-    maps.forEach { (lv, nm, m) ->
-        importSmwLevelMap(state, nm, m, romBytes, header, lv)
+    extraida.niveles.forEach { n ->
+        importSmwLevelMap(state, n.nombre, n.mapa, romBytes, extraida.header, n.level, n.atlasFile)
         if (firstId == null) firstId = state.currentMapId
     }
     firstId?.let { state.selectMap(it) }
@@ -298,7 +341,7 @@ internal fun autoImportSmwRom(state: EditorState, romBytes: ByteArray): Int {
     ) {
         state.deleteMap(starterId)
     }
-    return maps.size
+    return extraida.niveles.size
 }
 
 // ---- Modo Seleccionar: encontrar, mover, borrar y editar objetos ----
@@ -434,26 +477,53 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     }
 
     // Selector de ROM: al elegir un .sfc, auto-importa los niveles con gráficos reales.
+    //
+    // FUERA DEL HILO PRINCIPAL. Leer los megas de la ROM, guardarla y reconstruir sus 8
+    // niveles cuesta >1,2 s medidos en escritorio (varios en un móvil), y antes todo eso
+    // pasaba DENTRO de este callback, es decir en el hilo de interfaz: la pantalla se
+    // congelaba sin pintar nada y parecía que la app se había colgado. Ahora la parte cara
+    // va a `Dispatchers.IO` y solo vuelve al hilo principal lo que escribe estado de Compose
+    // ([aplicarNivelesSmw]), que desde otro hilo ni siquiera sería seguro.
+    val scope = rememberCoroutineScope()
+    // Mientras carga: se ve un aviso y NO se puede volver a lanzar el selector (dos ROMs a
+    // la vez dejarían el proyecto con los niveles duplicados y entremezclados).
+    var romCargando by remember { mutableStateOf(false) }
     val romPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            val bytes = SnesImport.readRomBytes(context, uri)
-            if (bytes == null) {
-                Toast.makeText(context, "No se pudo leer la ROM", Toast.LENGTH_LONG).show()
-            } else {
-                // Se GUARDA para la sesión: antes se usaba para auto-importar y se tiraba,
-                // así que al entrar luego en AVANZADO había que buscar el fichero otra vez.
-                val nombre = runCatching {
-                    context.contentResolver.query(uri, null, null, null, null)?.use { c ->
-                        val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                        if (c.moveToFirst() && i >= 0) c.getString(i) else null
+        if (uri != null && !romCargando) {
+            romCargando = true
+            scope.launch {
+                val extraida = withContext(Dispatchers.IO) {
+                    val bytes = SnesImport.readRomBytes(context, uri)
+                    if (bytes == null) {
+                        null
+                    } else {
+                        // Se GUARDA para la sesión: antes se usaba para auto-importar y se
+                        // tiraba, así que al entrar luego en AVANZADO había que buscar el
+                        // fichero otra vez.
+                        val nombre = runCatching {
+                            context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                                val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                                if (c.moveToFirst() && i >= 0) c.getString(i) else null
+                            }
+                        }.getOrNull() ?: "rom.sfc"
+                        com.rolebuilder.editor.snes.SmwRomSession.remember(context, bytes, nombre)
+                        bytes to runCatching { extraerNivelesSmw(projectDir, bytes) }.getOrNull()
                     }
-                }.getOrNull() ?: "rom.sfc"
-                com.rolebuilder.editor.snes.SmwRomSession.remember(context, bytes, nombre)
-                val n = runCatching { autoImportSmwRom(state, bytes) }.getOrElse { -1 }
+                }
+                // De vuelta en el hilo principal: dar de alta los niveles en el editor.
+                val bytes = extraida?.first
+                val listos = extraida?.second
+                val n = when {
+                    bytes == null -> -2 // ni siquiera se pudo leer el archivo
+                    listos == null -> -1 // se leyó, pero la extracción falló
+                    else -> aplicarNivelesSmw(state, bytes, listos)
+                }
+                romCargando = false
                 val msg = when {
                     n > 0 -> "Cargados $n niveles de la ROM (tiles, colisión y enemigos)"
                     n == 0 -> "No se encontraron niveles. ¿Es una ROM de Super Mario World?"
-                    else -> "No se pudo cargar la ROM"
+                    n == -1 -> "No se pudo cargar la ROM"
+                    else -> "No se pudo leer la ROM"
                 }
                 Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
             }
@@ -528,7 +598,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         when (a) {
             RailAction.NUEVO -> showNewLevel = true
             RailAction.AJUSTES -> showLevelSettings = true
-            RailAction.ROM -> romPicker.launch("*/*")
+            RailAction.ROM -> if (!romCargando) romPicker.launch("*/*")
             RailAction.BLOQUES -> showMap16 = true
             RailAction.AVANZADO -> showRomImport = true
             RailAction.GUARDAR -> { state.save(); Toast.makeText(context, "Nivel guardado", Toast.LENGTH_SHORT).show() }
@@ -815,6 +885,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         )
                         Button(
                             onClick = { romPicker.launch("*/*") },
+                            // Deshabilitado mientras carga: el botón dejaría de responder
+                            // "de verdad" igual, pero así se VE por qué.
+                            enabled = !romCargando,
                             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                                 containerColor = MarioRed, contentColor = Color.Black,
                             ),
@@ -923,6 +996,38 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             optionLabel = { "${it.id}: ${it.name}" },
                             onSelect = { state.selectMap(it.id) },
                         )
+                    }
+                }
+
+                // AVISO DE PROGRESO de la carga de la ROM. Ahora que el trabajo pesado ya no
+                // bloquea la interfaz, sin esto el usuario tocaría "ROM", vería la pantalla
+                // tan campante y pensaría que no ha pasado nada. Va el ÚLTIMO dentro del Box
+                // para quedar por encima del raíl y del botón flotante, y se come los toques
+                // (Modifier.clickable sin acción) para que no se pueda tocar nada a medias.
+                if (romCargando) {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                            .background(Color(0xCC0B1220))
+                            .clickable { },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = CoinYellow)
+                            Text(
+                                "Leyendo tu ROM e importando sus niveles…",
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.padding(top = 14.dp),
+                            )
+                            Text(
+                                "Tarda unos segundos: se reconstruyen los tiles, la colisión " +
+                                    "y los enemigos de cada nivel.",
+                                color = Color.White.copy(alpha = 0.75f),
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(top = 6.dp, start = 24.dp, end = 24.dp),
+                            )
+                        }
                     }
                 }
             }

@@ -259,19 +259,41 @@ private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun GfxPaletteView(rom: ByteArray, header: SnesHeader) {
     val context = LocalContext.current
-    val banks = remember(rom) { SmwGfxLibrary.banks(rom) }
-    val rows = remember(rom) { SmwGfxLibrary.paletteRows(rom, header) }
+    // LISTAR LOS BANCOS DESCOMPRIME TODOS los gráficos de la ROM: 810 ms medidos en un JVM de
+    // escritorio (varios segundos en un móvil), y se hacía EN COMPOSICIÓN — o sea, en el hilo
+    // de interfaz: tocar la pestaña "GFX y Paletas" dejaba la pantalla clavada sin avisar.
+    // Igual que el catálogo de sprites de arriba, se lee fuera del hilo principal.
+    var banks by remember(rom) { mutableStateOf<List<SmwGfxLibrary.Bank>>(emptyList()) }
+    var rows by remember(rom) { mutableStateOf<List<IntArray>>(emptyList()) }
+    var leyendo by remember(rom) { mutableStateOf(true) }
     var bankIdx by remember { mutableIntStateOf(0) }
-    var palRow by remember { mutableIntStateOf(if (rows.size > 8) 8 else 0) }
+    var palRow by remember { mutableIntStateOf(0) }
+    LaunchedEffect(rom, header) {
+        val leido = withContext(Dispatchers.IO) {
+            runCatching { SmwGfxLibrary.banks(rom) }.getOrDefault(emptyList()) to
+                runCatching { SmwGfxLibrary.paletteRows(rom, header) }.getOrDefault(emptyList())
+        }
+        banks = leido.first
+        rows = leido.second
+        // La fila 8 es la de los sprites: el arranque útil de siempre, ahora que las filas
+        // no existen hasta que termina la lectura.
+        palRow = if (rows.size > 8) 8 else 0
+        leyendo = false
+    }
 
     if (banks.isEmpty() || rows.isEmpty()) {
+        // OJO: este retorno va DESPUÉS del efecto; delante, la lectura no arrancaría nunca.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No se pudieron leer bancos/paletas (¿ROM no SMW?).", color = Color.White)
+            Text(
+                if (leyendo) "Leyendo los bancos GFX de tu ROM…"
+                else "No se pudieron leer bancos/paletas (¿ROM no SMW?).",
+                color = Color.White,
+            )
         }
         return
     }
 
-    val sheet: Bitmap? = remember(bankIdx, palRow) {
+    val sheet: Bitmap? = remember(banks, rows, bankIdx, palRow) {
         val bank = banks.getOrNull(bankIdx) ?: return@remember null
         val row = rows.getOrNull(palRow) ?: return@remember null
         SmwGfxLibrary.bankSheet(rom, bank.id, row)?.let { SnesImport.toBitmap(it) }
