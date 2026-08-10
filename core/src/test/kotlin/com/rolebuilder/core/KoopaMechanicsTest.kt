@@ -144,15 +144,83 @@ class KoopaMechanicsTest {
         e.run(1)
         assertTrue(k.carried, "primero hay que tenerlo en brazos")
         // El Goomba se pone DEBAJO del caparazón que Mario ya lleva, para probar el arrollado
-        // en si mismo. Antes este test hacia andar a Mario hasta el Goomba, y lo que ganaba la
-        // carrera era la caja de MARIO: moria antes de que el caparazon llegase. Esa carrera
-        // entre las dos cajas es un problema aparte y sigue PENDIENTE (ver el informe).
+        // EN SÍ MISMO, sin depender de dónde caiga cada caja al andar. El caso de "andar hacia
+        // el enemigo" —que es el que fallaba de verdad, porque la caja del caparazón quedaba
+        // bajo los pies de Mario— tiene ahora su propio test:
+        // `andar hacia un enemigo con el caparazon en brazos mata al ENEMIGO, no a Mario`.
         e.moveX = 0f            // Mario quieto: el caparazon no se mueve bajo los pies del test
         e.run(1)
         goomba.x = k.x
         goomba.y = k.y
         e.run(1)
         assertFalse(goomba.alive, "llevar el caparazón encima arrolla al enemigo que toca")
+    }
+
+    /** Motor con el caparazón al lado de Mario y un enemigo [aCol] columnas más allá. */
+    private fun engineCaparazonYEnemigo(aCol: Int): Triple<PlatformerEngine, PlatformerEnemy, PlatformerEnemy> {
+        val e = engineEnemies(40, 10, startCol = 5, startRow = 7,
+            seeds = listOf(
+                EnemySeed(5 * 16 + 8, 8 * 16 - 14, 0x05),      // caparazón pegado a Mario
+                EnemySeed(aCol * 16, 8 * 16 - 16, 0x0F),       // un andador cualquiera
+            )) { g -> for (c in 0 until 40) g[9][c] = SmwSolidity.SOLID }
+        val k = e.enemies[0]
+        k.shell = true; k.shellMoving = false; k.vx = 0f
+        return Triple(e, k, e.enemies[1])
+    }
+
+    /**
+     * EL CASO REAL, el que fallaba: Mario coge el caparazón y CAMINA hacia un enemigo.
+     *
+     * En SMW el caparazón en brazos hace de ESCUDO por delante. No es que Mario sea invulnerable
+     * llevándolo: es pura geometría. El sprite llevado sigue haciendo su propia colisión
+     * sprite-contra-sprite cada fotograma (`SprStatus0B_Carried_019F9B` $01:9F9B llama a
+     * `CheckNormalSpriteToNormalSpriteCollision` $01:A40D) desde una caja que va ~11 px por
+     * delante de la de Mario (`SprStatus0B_Carried_01A0B1` $01:A0B1, y los anchos de
+     * $03:B664/$03:B69F), así que alcanza al enemigo unos fotogramas ANTES.
+     *
+     * Se comprueba justo eso: cuando el enemigo muere, Mario todavía no lo estaba rozando.
+     * Si alguien "arreglase" esto haciendo invulnerable a Mario mientras carga, el margen
+     * saldría negativo y el test cantaría.
+     */
+    @Test
+    fun `andar hacia un enemigo con el caparazon en brazos mata al ENEMIGO, no a Mario`() {
+        val (e, k, bicho) = engineCaparazonYEnemigo(aCol = 12)
+        e.running = true
+        e.run(1)
+        assertTrue(k.carried, "primero hay que tenerlo en brazos")
+
+        e.moveX = 1f            // …y ahora ANDA hacia él, sin soltar el botón
+        var margen = Float.NaN  // px que le faltaban a Mario para tocarlo cuando murió
+        repeat(120) {
+            val seguiaVivo = bicho.alive
+            e.tick()
+            assertFalse(e.player.dead, "Mario NO puede morir llevando el caparazón por delante")
+            if (seguiaVivo && !bicho.alive) margen = bicho.x - (e.player.x + tuning.playerWidth)
+        }
+        assertFalse(bicho.alive, "el enemigo muere arrollado por el caparazón que Mario lleva")
+        assertTrue(margen > 0f,
+            "el caparazón alcanza al enemigo ANTES de que lo roce Mario (margen = $margen px)")
+        // `sub_1A685` ($01:A685) deja a los DOS en estado 2: llevarse a uno por delante GASTA
+        // el caparazón, no es una apisonadora.
+        assertFalse(k.alive, "el caparazón muere con él")
+        assertNull(e.carriedEnemy, "y Mario se queda con las manos vacías")
+    }
+
+    /**
+     * El escudo es solo POR DELANTE: el caparazón va a ±11 px en el sentido en que MIRA Mario
+     * ($01:A0B1), así que un enemigo que llega por la espalda toca antes la caja de Mario. Es
+     * la otra mitad de la prueba: sin esto, "no morir" podría estar arreglado a lo bruto.
+     */
+    @Test
+    fun `el caparazon en brazos NO protege por la espalda`() {
+        val (e, k, bicho) = engineCaparazonYEnemigo(aCol = 1)
+        e.running = true
+        e.run(1)
+        assertTrue(k.carried, "lo lleva en brazos")
+        assertTrue(e.player.facingRight, "y mira a la derecha, o sea: el enemigo le viene por detrás")
+        bicho.vx = 1f           // el andador sube por la izquierda hacia la espalda de Mario
+        e.run(120)
+        assertTrue(e.player.dead, "por detrás el caparazón no tapa nada y el enemigo hiere")
     }
 
     // ---- El caparazón que DESPIERTA -------------------------------------------------------

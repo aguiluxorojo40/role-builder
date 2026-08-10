@@ -2012,15 +2012,8 @@ class PlatformerEngine(
         if (!e.shell) return          // el Mechakoopa va por [updateGrabBlocks]/[updateMechakoopa]
         if (!e.alive) { carriedEnemy = null; return }
         if (running && !player.dead) {
-            val cx = player.x + tuning.playerWidth / 2f
-            e.x = (if (player.facingRight) cx + CARRIED_SHELL_X else cx - CARRIED_SHELL_X) - e.width / 2f
-            e.y = player.y + (if (player.big) CARRIED_SHELL_Y_BIG else CARRIED_SHELL_Y_SMALL)
-            e.vx = 0f; e.vy = 0f
-            // Un caparazón en brazos arrolla igual que uno pateado.
-            for (o in enemies) {
-                if (!puedeArrollarA(e, o)) continue
-                if (overlaps(e, o)) { o.alive = false; o.squashTimer = 12; stompEvents++ }
-            }
+            colocarCaparazonEnBrazos(e)
+            arrollarConCaparazonEnBrazos(e)
             return
         }
         // Soltó el botón (o murió): se acabó llevarlo.
@@ -2041,6 +2034,92 @@ class PlatformerEngine(
             }
             else -> { kickShell(e, towardRightOfMario = player.facingRight); grabThrowEvents++ }
         }
+    }
+
+    /**
+     * Coloca el caparazón en las manos de Mario, port de `SprStatus0B_Carried_01A0B1`
+     * ($01:A0B1):
+     * ```
+     * SetSprXPos(k, px + kSprStatus0B_Carried_CarriedSpriteXOffset[v1]);  // ±11
+     * uint8 v4 = 13;
+     * if (player_ducking_flag || !player_current_power_up || timer_display_player_pick_up_pose) v4 = 15;
+     * SetSprYPos(k, py + v4);
+     * ```
+     *
+     * ⚠ EL FALLO QUE SE ARREGLA AQUÍ ESTABA EN LA Y. Ese `py + 13` está medido desde
+     * `player_ypos`, que en SMW es el origen del MARCO de Mario (32 px de alto), **no** la
+     * tapa de su caja de colisión. Se comprueba en `StandardSpriteToSpriteCollisionChecks_
+     * GetMarioClipping` ($03:B664), que arma la caja con
+     * `kStandardSpriteToSpriteCollisionChecks_MarioClipDispY/MarioClippingHeight`:
+     * grande → `ypos+6` alto `0x1A`(26), pequeño/agachado → `ypos+20` alto `0x0C`(12). Las
+     * DOS acaban en `ypos + 32`: **los pies de Mario están siempre 32 px bajo `player_ypos`**.
+     *
+     * O sea que el caparazón cuelga 32−13 = **19 px sobre los pies** (17 si Mario es pequeño),
+     * a la altura de la barriga. Nuestro motor guarda en `player.y` la TAPA de la caja, que
+     * mide `playerHeight` (14-26 px, no 32), así que sumarle 13/15 a secas dejaba el
+     * caparazón **por debajo de los pies de Mario, bajo tierra**: su caja no llegaba a tocar
+     * la de un enemigo de pie en el suelo (rozaba su borde inferior por 0 px) y por eso el
+     * que llegaba primero era Mario. Se mide desde los PIES, que es lo que sí equivale.
+     */
+    private fun colocarCaparazonEnBrazos(e: PlatformerEnemy) {
+        val cx = player.x + tuning.playerWidth / 2f
+        e.x = (if (player.facingRight) cx + CARRIED_SHELL_X else cx - CARRIED_SHELL_X) - e.width / 2f
+        // Desde los PIES, no desde la tapa de la caja: el desplazamiento del juego cuenta
+        // desde `player_ypos` y los pies caen 32 px más abajo ([SMW_PLAYER_FRAME_H]).
+        val sobreLosPies = SMW_PLAYER_FRAME_H - (if (player.big) CARRIED_SHELL_Y_BIG else CARRIED_SHELL_Y_SMALL)
+        e.y = player.y + playerHeight - sobreLosPies
+        e.vx = 0f
+        e.vy = 0f
+    }
+
+    /**
+     * El caparazón EN BRAZOS arrolla a lo que toca, y **por eso Mario no muere al andar hacia
+     * un enemigo llevándolo**: el caparazón le hace de escudo por delante.
+     *
+     * Así lo hace el juego, y no es por ninguna prioridad especial del jugador:
+     *  1. El sprite llevado NO deja de colisionar por estar en brazos: `SprStatus0B_Carried_
+     *     019F9B` ($01:9F9B) llama cada fotograma a `CheckNormalSpriteToNormalSpriteCollision`
+     *     ($01:A40D) con su propia caja, la que ya lo pone [colocarCaparazonEnBrazos] DELANTE
+     *     de Mario. Como esa caja va ~11 px más adelantada que la de Mario (`SprClippingDispX`
+     *     = 2, ancho 12 para él y para el enemigo, $03:B69F), el caparazón alcanza al enemigo
+     *     VARIOS fotogramas antes de que Mario lo roce. La protección es GEOMÉTRICA.
+     *  2. El desenlace es `CheckNormalSpriteToNormalSpriteColl_01A4BA` ($01:A4BA): con el
+     *     llevado en estado 0x0B y el otro en 08/09/0A/0B cae en `sub_1A685` ($01:A685), que
+     *     mata a los DOS (`spr_current_status = 2` y `yspeed = -48` a cada uno) y los separa
+     *     con `xspeed` opuestos. Por eso aquí muere también el caparazón y Mario se queda con
+     *     las manos vacías: llevarse a uno por delante GASTA el caparazón, no es una apisonadora.
+     *  3. Cuando el enemigo queda en estado 2 ya no ejecuta su rutina normal, así que su
+     *     `CheckPlayerToNormalSpriteCollision` ($01:A7E4) no llega a correr y no puede herir a
+     *     Mario.
+     *
+     * Del ORDEN dentro del fotograma: en `ProcessNormalSprites` ($01:808C) los sprites van del
+     * hueco 11 al 0 y cada uno mira contra los huecos MENORES que él, así que quién gana un
+     * empate exacto depende del número de hueco — arbitrario. Aquí el barrido del caparazón se
+     * ejecuta antes que [handlePlayerEnemyContact] (ver [tick]) para que el empate sea siempre
+     * el mismo y el test no dependa del orden de la lista.
+     *
+     * Nos quedamos con el solapamiento AABB de [overlaps] en vez de la ventana del original
+     * (±16 px entre orígenes de sprite, $01:A40D) porque esa ventana necesita el índice de
+     * recorte POR SPRITE ($03:B69F) que este motor no tiene, y sus enemigos miden 14×14 y no
+     * 16×16. El margen sale algo más justo que en SMW, pero del mismo signo.
+     *
+     * @return true si el caparazón sigue en brazos; false si se lo llevó por delante y murió.
+     */
+    private fun arrollarConCaparazonEnBrazos(e: PlatformerEnemy): Boolean {
+        for (o in enemies) {
+            if (!puedeArrollarA(e, o)) continue
+            if (!overlaps(e, o)) continue
+            o.alive = false
+            o.squashTimer = 12
+            stompEvents++
+            // `sub_1A685` ($01:A685) también deja al caparazón en estado 2: muere con él.
+            e.alive = false
+            e.squashTimer = 12
+            e.carried = false
+            carriedEnemy = null
+            return false
+        }
+        return true
     }
 
     /**
@@ -2935,6 +3014,21 @@ class PlatformerEngine(
         const val CARRIED_SHELL_X = 11f
         const val CARRIED_SHELL_Y_BIG = 13f
         const val CARRIED_SHELL_Y_SMALL = 15f
+
+        /**
+         * Alto del MARCO de Mario en SMW: 32 px de `player_ypos` a sus pies, sea grande o
+         * pequeño. Lo fija `StandardSpriteToSpriteCollisionChecks_GetMarioClipping`
+         * ($03:B664) al armar la caja con `MarioClipDispY`/`MarioClippingHeight`
+         * (`{6, 20, 16, 24}` y `{0x1A, 0x0C, 0x20, 0x18}`): grande da `ypos+6 … ypos+32`,
+         * pequeño o agachado da `ypos+20 … ypos+32`. Los dos terminan en +32.
+         *
+         * Hace falta porque los desplazamientos que el juego da para lo que Mario LLEVA
+         * ([CARRIED_SHELL_Y_BIG]/[CARRIED_SHELL_Y_SMALL]) están medidos desde `player_ypos`,
+         * y aquí `player.y` es la tapa de la caja de colisión (de [SMALL_HEIGHT] a
+         * [BIG_HEIGHT], nunca 32). Restando de este 32 se pasan a "px sobre los PIES", que es
+         * la referencia que sí significa lo mismo en los dos sitios.
+         */
+        const val SMW_PLAYER_FRAME_H = 32f
 
         /**
          * Velocidad de ANDAR de los sprites genéricos 0x00-0x13 en unidades de SMW:
