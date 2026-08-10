@@ -442,7 +442,19 @@ object SmwEnemyGraphics {
         return out
     }
 
-    /** Ids con dibujo propio soportados (para el bake de `big_<id>.png`). */
+    /**
+     * Ids con dibujo propio soportados (para el bake de `big_<id>.png`).
+     *
+     * ⚠ AÑADIR O QUITAR UNO OBLIGA A TOCAR TRES SITIOS MÁS, y esto está escrito aquí porque
+     * los tres viven en `:app`, que **no se puede compilar sin el SDK de Android**: en un
+     * entorno sin él el módulo ni siquiera entra en el proyecto de Gradle, así que el fallo no
+     * aparece hasta CI. Ya pasó: tres commits seguidos en rojo por no actualizarlos.
+     *
+     *  - `SmwAssetStore.BAKE_VERSION`, o el almacén de quien ya horneó no se rehace y el
+     *    sprite nuevo se queda sin fichero.
+     *  - los DOS recuentos de `SmwAssetStoreTest` (`curatedIds.size` y `customEnemyIds.size`),
+     *    que son la red que avisa de justo eso.
+     */
     val customEnemyIds: List<Int> get() = CUSTOM_ENEMIES.keys.toList()
 
     /**
