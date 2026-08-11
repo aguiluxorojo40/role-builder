@@ -64,6 +64,7 @@ import com.rolebuilder.core.snes.SmwGfxLibrary
 import com.rolebuilder.core.snes.SmwLevelBundle
 import com.rolebuilder.core.snes.SmwLevelGoal
 import com.rolebuilder.core.snes.SmwWarpTiles
+import com.rolebuilder.core.snes.WarpEnter
 import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesAutoExtractor
@@ -1753,14 +1754,21 @@ private fun aplicarBundleSmw(state: EditorState, name: String, extraido: BundleE
     }
 
     // 2ª pasada: warps por sub-nivel, con el destino traducido a id de mapa del
-    // proyecto. Solo puertas y tuberías verticales (mismos criterios que levelWarps).
+    // proyecto. Puertas, tuberías verticales y horizontales (los criterios de levelWarps).
     var warpCount = 0
     for ((sub, stored) in created) {
         val warps = sub.warps.mapNotNull { w ->
             mapIdByLevel[w.destLevel]?.let { destMapId ->
                 MapWarp(
                     x = w.xTile, y = w.yTile,
-                    input = if (w.enterDown) 0 else 1, // 0=abajo (tubería), 1=arriba (puerta)
+                    // 0=abajo (tubería), 1=arriba (puerta), 2/3=de lado (tubería horizontal,
+                    // hacia la izquierda / hacia la derecha). Son los ordinales de WarpInput.
+                    input = when (w.enter) {
+                        WarpEnter.DOWN -> 0
+                        WarpEnter.UP -> 1
+                        WarpEnter.SIDE_LEFT -> 2
+                        WarpEnter.SIDE_RIGHT -> 3
+                    },
                     destMapId = destMapId, destX = w.destXTile, destY = w.destYTile,
                 )
             }

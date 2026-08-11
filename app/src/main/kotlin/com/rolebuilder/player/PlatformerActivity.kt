@@ -616,8 +616,18 @@ class PlatformerActivity : ComponentActivity() {
         val warps = com.rolebuilder.core.snes.SmwWarpTiles.levelWarps(rom, header, level).map {
             com.rolebuilder.core.engine.platformer.EngineWarp(
                 col = it.xTile, row = it.yTile,
-                input = if (it.enterDown) com.rolebuilder.core.engine.platformer.WarpInput.DOWN
-                else com.rolebuilder.core.engine.platformer.WarpInput.UP,
+                // De lado tambien: la tuberia horizontal se entra ANDANDO contra su boca, no
+                // pulsando Arriba (ver WarpEnter y $00:F3C4).
+                input = when (it.enter) {
+                    com.rolebuilder.core.snes.WarpEnter.DOWN ->
+                        com.rolebuilder.core.engine.platformer.WarpInput.DOWN
+                    com.rolebuilder.core.snes.WarpEnter.UP ->
+                        com.rolebuilder.core.engine.platformer.WarpInput.UP
+                    com.rolebuilder.core.snes.WarpEnter.SIDE_LEFT ->
+                        com.rolebuilder.core.engine.platformer.WarpInput.SIDE_LEFT
+                    com.rolebuilder.core.snes.WarpEnter.SIDE_RIGHT ->
+                        com.rolebuilder.core.engine.platformer.WarpInput.SIDE_RIGHT
+                },
                 destMapId = it.destLevel, destX = it.destXTile, destY = it.destYTile,
             )
         }

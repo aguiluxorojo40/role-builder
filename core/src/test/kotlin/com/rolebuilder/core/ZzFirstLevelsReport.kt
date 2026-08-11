@@ -197,7 +197,7 @@ class ZzFirstLevelsReport {
                 }
             }
         }
-        println("  Warps          : %d salidas en la tabla, %d bocas resueltas, %d bocas HORIZONTALES sin soporte"
+        println("  Warps          : %d salidas en la tabla, %d bocas resueltas (%d de ellas HORIZONTALES, ya soportadas)"
             .format(salidas.size, resueltos.size, horizontales))
         resueltos.take(4).forEach {
             println("                   (%d,%d) %s → %03X (%d,%d)".format(
