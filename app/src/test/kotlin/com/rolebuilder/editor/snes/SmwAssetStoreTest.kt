@@ -133,7 +133,7 @@ class SmwAssetStoreTest {
         // Este test ata las dos cosas: al cambiar el numero de ids curados hay que subir la
         // version. Si falla, sube BAKE_VERSION y actualiza el numero de aqui.
         val idsEsperados = 41
-        val versionEsperada = 16
+        val versionEsperada = 17
         // JUnit4: el mensaje va PRIMERO.
         assertEquals(
             "cambio el numero de enemigos curados: sube BAKE_VERSION y este numero",
@@ -156,6 +156,6 @@ class SmwAssetStoreTest {
             idsEsperados,
             com.rolebuilder.core.snes.SmwEnemyGraphics.customEnemyIds.size,
         )
-        assertEquals(16, SmwAssetStore.bakeVersion())
+        assertEquals(17, SmwAssetStore.bakeVersion())
     }
 }

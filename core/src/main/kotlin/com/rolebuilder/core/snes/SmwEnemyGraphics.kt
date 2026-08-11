@@ -1535,6 +1535,14 @@ object SmwEnemyGraphics {
     private val ANIMATED_2FRAME = setOf(
         // Andadores genéricos (≤0x13): Koopas con/sin caparazón, Goombas, Buzzy.
         0x00, 0x01, 0x02, 0x03, 0x05, 0x0F, 0x10, 0x11,
+        // Los OTROS TRES Koopa CON caparazón. Se quedaron fuera al entrar en el catálogo
+        // (solo estaba el rojo 0x05) y el andar les salía CONGELADO mientras su hermano
+        // rojo movía las patas. No hace falta mirarlo para saberlo: en
+        // `kGenericSpriteOAMData_TilesOffset` ($01) las cuatro entradas 0x04..0x07 valen
+        // LO MISMO, 0x00 —igual que las cuatro aladas 0x08..0x0B, que sí animaban—, y el
+        // fotograma se suma con `+ 2 * spr_table1602[k]` sobre ese offset. O sea: los cuatro
+        // Koopa leen exactamente las mismas teselas y solo se diferencian en la PALETA.
+        0x04, 0x06, 0x07,
         // Verificados renderizando ambos fotogramas desde la ROM (2º fotograma REAL):
         // Cheep-Cheep (aleteo de aleta), Spike Top (giro), Bony Beetle (mandíbula), Boo
         // (se tapa/destapa la cara), Eerie (ondeo), Rip Van Fish (aletas), Topo (andar).

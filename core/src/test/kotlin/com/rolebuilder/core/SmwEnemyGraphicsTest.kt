@@ -48,6 +48,25 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
+    fun `los cuatro Koopa CON caparazon animan, no solo el rojo`() {
+        // Entraron en el catálogo de tres en tres (el rojo 0x05 ya estaba) y los otros tres se
+        // quedaron sin animar: en el mismo nivel, el rojo movía las patas y el verde, el azul
+        // y el amarillo andaban congelados. Y leen LAS MISMAS TESELAS: en
+        // `kGenericSpriteOAMData_TilesOffset` ($01) las entradas 0x04..0x07 valen las cuatro
+        // 0x00, igual que las aladas 0x08..0x0B; el fotograma se suma encima con
+        // `+ 2 * spr_table1602[k]`. Lo único que los distingue es la paleta.
+        for (id in 0x04..0x0B) {
+            assertEquals(SmwEnemyGraphics.ATLAS_FRAMES, SmwEnemyGraphics.animFrameCount(id),
+                "0x%02X anda, así que anima".format(id))
+        }
+        // Y los que NO animan siguen sin animar: su 2º byte OAM daría basura porque su
+        // animación real la lleva su propia rutina, no la tabla genérica.
+        for (id in intArrayOf(0x1C, 0x29, 0x2C, 0x4B)) {
+            assertEquals(1, SmwEnemyGraphics.animFrameCount(id), "0x%02X es estático".format(id))
+        }
+    }
+
+    @Test
     fun `shellImage solo acepta los Koopa que llevan caparazon`() {
         // Sin ROM no se puede pintar, pero el contrato de ids sí se comprueba: los Koopa
         // SIN caparazón (0x00-0x03) y cualquier otro id no tienen caparazón que dibujar.

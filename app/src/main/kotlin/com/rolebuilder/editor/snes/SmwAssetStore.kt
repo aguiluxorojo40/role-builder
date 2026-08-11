@@ -78,6 +78,11 @@ object SmwAssetStore {
      *       propio: la burbuja con un sprite dentro (0x9D, 54 colocaciones), el Fuzzy de guía
      *       (0x68, 37) y la plataforma con cuenta atrás (0xBA, 34). No tocan el atlas, pero
      *       sin subir la versión el almacén viejo no se re-hornea y se quedarían sin fichero.
+     *  v17: los Koopa CON caparazón verde (0x04), azul (0x06) y amarillo (0x07) ANIMAN. Solo
+     *       animaba el rojo (0x05), que era el que estaba en el catálogo antes que ellos, así
+     *       que en el mismo nivel el rojo movía las patas y los otros tres andaban congelados.
+     *       Esto sí toca el atlas: su segundo fotograma pasa a ser el de verdad en vez de una
+     *       copia del primero, y quien tenga el almacén de la v16 o anterior lo tiene repetido.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -86,7 +91,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 16
+    private const val BAKE_VERSION = 17
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
