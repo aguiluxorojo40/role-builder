@@ -36,7 +36,7 @@ class PlatformerBody(var x: Float, var y: Float) {
 }
 
 /** Qué otorga un [PowerupItem]: SETA (crece), FLOR (fuego) o PLUMA (capa/planeo). */
-enum class PowerupKind { MUSHROOM, FIRE_FLOWER, CAPE_FEATHER }
+enum class PowerupKind { MUSHROOM, FIRE_FLOWER, CAPE_FEATHER, ONE_UP }
 
 /**
  * Powerup en marcha (píxeles): sale de un bloque `?`, cae con gravedad, avanza en
@@ -196,12 +196,18 @@ class GrabBlock(var x: Float, var y: Float) {
  *  - [MOON_3UP]: la LUNA 3-UP; se recoge al tocarla y da TRES vidas ([MOON_3UP_LIVES]).
  *  - [MIDWAY]: la CINTA del punto intermedio; se atraviesa, marca el punto de control
  *    del nivel y hace crecer al jugador si iba pequeño.
+ *  - [CHECKPOINT_1UP_1]..[CHECKPOINT_1UP_4]: los cuatro puntos de control INVISIBLES del
+ *    1-UP escondido; hay que pisarlos EN ORDEN y el cuarto suelta una seta verde. Son
+ *    cuatro valores y no uno porque el orden es justo lo que decide si hay premio.
  *
  * Los valores NUEVOS van SIEMPRE al final: el ordinal se guarda en el tileset del
  * proyecto (`platformBlockActions`) y en la rejilla de acciones de los mapas ya
  * importados, así que reordenarlos cambiaría en silencio lo que hace cada celda.
  */
-enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN, GRAB, MOON_3UP, MIDWAY }
+enum class BlockAction {
+    NONE, COIN, PRIZE, DRAGON_COIN, GRAB, MOON_3UP, MIDWAY,
+    CHECKPOINT_1UP_1, CHECKPOINT_1UP_2, CHECKPOINT_1UP_3, CHECKPOINT_1UP_4,
+}
 
 /**
  * Vidas que da una LUNA 3-UP. Son TRES, y sale de seguir el rastro entero:
@@ -757,6 +763,18 @@ class PlatformerEngine(
 
     /** Contador monótono de "he pasado por la cinta del punto intermedio". */
     var midwayEvents = 0
+        private set
+
+    /**
+     * Puntos de control del 1-UP escondido pisados EN ORDEN (0..[CHECKPOINTS_1UP_TOTAL]).
+     * Es `counter_1up_check_points_collected` ($7E:1421); pisar uno fuera de orden lo
+     * devuelve a 0 ([touchCheckpoint]).
+     */
+    var checkpoints1up = 0
+        private set
+
+    /** Contador monótono de "se ha completado la secuencia y ha salido la seta verde". */
+    var hidden1upEvents = 0
         private set
 
     /**
@@ -1318,9 +1336,43 @@ class PlatformerEngine(
                 BlockAction.DRAGON_COIN -> collectDragonCoinAt(c, r)
                 BlockAction.MOON_3UP -> collectMoonAt(c, r)
                 BlockAction.MIDWAY -> crossMidwayAt(c, r)
+                BlockAction.CHECKPOINT_1UP_1 -> touchCheckpoint(0)
+                BlockAction.CHECKPOINT_1UP_2 -> touchCheckpoint(1)
+                BlockAction.CHECKPOINT_1UP_3 -> touchCheckpoint(2)
+                BlockAction.CHECKPOINT_1UP_4 -> touchCheckpoint(3)
                 else -> {}
             }
         }
+    }
+
+    /**
+     * Pisa el punto de control [index] (0..3) de la secuencia del 1-UP escondido. Port
+     * literal de `RunPlayerBlockCode_00F28C` ($00:F28C):
+     *
+     * ```
+     * if (v1 == counter)                       -> counter = v1 + 1   (avanza)
+     * else if (v1 + 1 != counter && counter<4) -> counter = 0        (reinicia)
+     * // v1 + 1 == counter  -> el que acabas de pisar: no pasa nada
+     * ```
+     * y al completar el cuarto (`v1 == 3`) llama a `TriggerHidden1up()` ($03:C2D9), que
+     * suelta la SETA VERDE (sprite 0x78) saliendo del suelo en la posición del jugador.
+     *
+     * Los bloques NO se consumen: la rutina del juego nunca llama a `GenerateTile`, y
+     * pisar dos veces el mismo tiene que poder distinguirse de romper la secuencia.
+     */
+    private fun touchCheckpoint(index: Int) {
+        if (index == checkpoints1up) {
+            checkpoints1up = index + 1
+            if (index == CHECKPOINTS_1UP_TOTAL - 1) spawnHidden1up()
+        } else if (index + 1 != checkpoints1up && checkpoints1up < CHECKPOINTS_1UP_TOTAL) {
+            checkpoints1up = 0
+        }
+    }
+
+    /** `TriggerHidden1up` ($03:C2D9): la seta verde sale a la altura del jugador. */
+    private fun spawnHidden1up() {
+        items.add(PowerupItem(player.x, player.y - 1f, PowerupKind.ONE_UP))
+        hidden1upEvents++
     }
 
     /**
@@ -1500,6 +1552,10 @@ class PlatformerEngine(
                     PowerupKind.MUSHROOM -> if (!p.big) growPlayer() else { coins++; coinEvents++ }
                     PowerupKind.FIRE_FLOWER -> if (!p.fire) makeFire() else { coins++; coinEvents++ }
                     PowerupKind.CAPE_FEATHER -> if (!p.cape) makeCape() else { coins++; coinEvents++ }
+                    // La seta VERDE no cambia a Mario: es una vida. `GiveMario1Up`
+                    // (`kSprXXX_PowerUps_HandlePowerUpPtrs[5]`, $01:C538) no toca
+                    // `player_current_power_up`.
+                    PowerupKind.ONE_UP -> oneUpEvents++
                 }
             }
         }
@@ -2925,6 +2981,12 @@ class PlatformerEngine(
          * `0x100` ($00:E98C), o sea a 6 px del borde: el mismo número.
          */
         const val SIDE_EXIT_MARGIN = 6f
+
+        /**
+         * Cuántos puntos de control hay que pisar para el 1-UP escondido: cuatro
+         * (`RunPlayerBlockCode_00F28C`, $00:F28C, descarta con `(uint8)(j - 111) >= 4`).
+         */
+        const val CHECKPOINTS_1UP_TOTAL = 4
 
         /** Velocidad del bloque de agarrar al LANZARLO (px/f), estilo SMW. */
         const val GRAB_THROW_SPEED = 4f

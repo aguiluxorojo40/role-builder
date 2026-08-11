@@ -45,6 +45,10 @@ object ProjectPlatformer {
         SmwBlockAction.QUESTION.ordinal -> BlockAction.PRIZE.ordinal
         SmwBlockAction.MOON_3UP.ordinal -> BlockAction.MOON_3UP.ordinal
         SmwBlockAction.MIDWAY_TAPE.ordinal -> BlockAction.MIDWAY.ordinal
+        SmwBlockAction.CHECKPOINT_1UP_1.ordinal -> BlockAction.CHECKPOINT_1UP_1.ordinal
+        SmwBlockAction.CHECKPOINT_1UP_2.ordinal -> BlockAction.CHECKPOINT_1UP_2.ordinal
+        SmwBlockAction.CHECKPOINT_1UP_3.ordinal -> BlockAction.CHECKPOINT_1UP_3.ordinal
+        SmwBlockAction.CHECKPOINT_1UP_4.ordinal -> BlockAction.CHECKPOINT_1UP_4.ordinal
         else -> BlockAction.NONE.ordinal
     }
 

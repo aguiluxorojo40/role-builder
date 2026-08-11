@@ -65,7 +65,10 @@ class SmwBlockBehaviorTest {
         // podia coger.
         assertEquals(SmwBlockAction.MOON_3UP, SmwBlockBehavior.classify(0x6E))
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x6D))
-        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x6F))
+        // El 0x6F NO es "nada", y esta linea llego a decir que si: es el PRIMER punto de
+        // control del 1-UP escondido ($00:F28C empieza justo ahi, `v1 = j - 111`). La luna
+        // y los cuatro puntos son vecinos en la tabla, y ese es todo el limite que hay.
+        assertEquals(SmwBlockAction.CHECKPOINT_1UP_1, SmwBlockBehavior.classify(0x6F))
     }
 
     @Test
