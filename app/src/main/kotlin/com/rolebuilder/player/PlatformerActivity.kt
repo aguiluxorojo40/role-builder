@@ -69,7 +69,6 @@ import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.Tileset
-import com.rolebuilder.core.snes.SmwBlockAction
 import com.rolebuilder.core.snes.SmwBlockBehavior
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SmwPhysicsReader
@@ -571,16 +570,18 @@ class PlatformerActivity : ComponentActivity() {
         val col = SnesGameRecipes.smwLevelCollision(rom, header, level) ?: return null
         val phys = SmwPhysicsReader.read(rom, header) ?: return null
         val start = SmwLevelStartReader.read(rom, header, level) ?: return null
-        // Bloques interactivos REALES del nivel (monedas y bloques `?`): clasifica cada
-        // bloque Map16 del mapa de colisión con la misma rutina que el juego, igualando
-        // esta ruta con la de mapas importados.
+        // Bloques interactivos REALES del nivel (monedas, `?`, moneda dragón, luna 3-UP,
+        // cinta del punto intermedio): clasifica cada bloque Map16 del mapa de colisión con
+        // la misma rutina que el juego, igualando esta ruta con la de mapas importados.
+        //
+        // La traducción va por [ProjectPlatformer.engineAction] y NO por un `when` propio:
+        // este sitio tenía su copia, se quedó corta y por eso jugando desde la ROM no
+        // contaban ni las Dragon Coins.
         var anyAction = false
         val actions = IntArray(col.cols * col.rows) { i ->
-            when (SmwBlockBehavior.classify(col.blocks[i])) {
-                SmwBlockAction.COIN -> BlockAction.COIN.ordinal.also { anyAction = true }
-                SmwBlockAction.QUESTION -> BlockAction.PRIZE.ordinal.also { anyAction = true }
-                else -> BlockAction.NONE.ordinal
-            }
+            val a = ProjectPlatformer.engineAction(SmwBlockBehavior.classify(col.blocks[i]).ordinal)
+            if (a != BlockAction.NONE.ordinal) anyAction = true
+            a
         }
         // Enemigos reales del nivel (lista de sprites de la ROM), recortados al mapa. Se
         // EXCLUYE la meta: la cinta/esfera/cerradura viven en la misma lista de sprites, pero
@@ -588,9 +589,14 @@ class PlatformerActivity : ComponentActivity() {
         val goalIds = com.rolebuilder.core.snes.SmwLevelGoal.GOAL_SPRITES
         // Se usa la vista CON estado: los que el juego coloca aturdidos (0xDA/0xDB de la
         // lista) nacen ya dentro de su caparazón, no andando.
-        val enemySeeds = SnesGameRecipes.smwLevelEnemySeeds(rom, header, level)
+        val sprites = SnesGameRecipes.smwLevelEnemySeeds(rom, header, level)
+        val enemySeeds = sprites
             .filter { it.id !in goalIds && it.xTile in 0 until col.cols && it.yTile in 0 until col.rows }
             .map { EnemySeed(it.xTile * 16, it.yTile * 16, it.id, it.stunned) }
+        // SALIDA DE LADO: no es una propiedad del nivel, la enciende el SPRITE 0x8C
+        // (`Spr08C_SideExitAndFireplace`, $02:F4D5, hace `flag_side_exits = 1`). Es lo único
+        // que deja salir de la CASA DE YOSHI, que no tiene ni meta ni salidas de pantalla.
+        val sideExits = sprites.any { it.id == SIDE_EXIT_SPRITE }
         // META del nivel: con esto tocar la cinta marca el nivel como SUPERADO y el mapa del
         // mundo puede disparar su evento. Los niveles sin meta (castillos, casas) no siembran.
         // Cada meta va con SU tipo de salida: la cerradura siembra GOAL_SECRET (salida secreta),
@@ -650,6 +656,7 @@ class PlatformerActivity : ComponentActivity() {
             slopeOffsetsAt = { c, r ->
                 com.rolebuilder.core.snes.SmwSlopes.floorOffsets(col.slopeShapeAt(c, r))
             },
+            sideExits = sideExits,
         )
     }
 
@@ -662,6 +669,12 @@ class PlatformerActivity : ComponentActivity() {
     }
 
     companion object {
+        /**
+         * Sprite que enciende la SALIDA DE LADO del nivel: `Spr08C_SideExitAndFireplace`
+         * ($02:F4D5), el de la chimenea de la casa de Yoshi, que hace `flag_side_exits = 1`.
+         */
+        private const val SIDE_EXIT_SPRITE = 0x8C
+
         private const val EXTRA_ROM_PATH = "romPath"
         private const val EXTRA_LEVEL = "level"
         private const val EXTRA_PROJECT_PATH = "projectPath"

@@ -69,6 +69,29 @@ class SmwBlockBehaviorTest {
     }
 
     @Test
+    fun `la cinta del punto intermedio es el 0x38 del plano de BLOCK CODE`() {
+        // Los dos extremos de la ROM dicen el mismo plano:
+        //  - la dibuja `ExtObj46_MidwayBar` ($0D:A68E) con
+        //    `SetMap16HighByteForCurrentObject_Page00(...)` + `SetMap16LowByte(v2, 0x38)`;
+        //  - la reconoce `RunPlayerBlockCode_00F2C9` ($00:F2C9, `if (j == 56)`), a la que
+        //    solo se llega desde las ramas con el byte ALTO a 0 (via $00:F2C2).
+        assertEquals(SmwBlockAction.MIDWAY_TAPE, SmwBlockBehavior.classify(0x38))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x37))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x39))
+    }
+
+    @Test
+    fun `el 0x38 del plano de TERRENO es una boca de tuberia, no la cinta`() {
+        // Confundir los planos es exactamente el fallo que hubo con las tuberias: con el
+        // byte alto != 0, el 0x37/0x38 son las dos mitades de una boca VERTICAL
+        // (`RunPlayerBlockCode_00F3E9`, $00:F3E9) y las lleva SmwWarpTiles, no este
+        // clasificador. Si esto diera MIDWAY_TAPE, cada tuberia del juego seria un punto
+        // intermedio: hay 2 casillas asi en YOSHI'S ISLAND 1, 2 en el 2 y 2 en el 3.
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x138))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x137))
+    }
+
+    @Test
     fun `fuera de rango y aire no son interactivos`() {
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x25)) // aire
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(-1))
@@ -85,5 +108,6 @@ class SmwBlockBehaviorTest {
         assertEquals(2, SmwBlockAction.QUESTION.ordinal)
         assertEquals(3, SmwBlockAction.DRAGON_COIN.ordinal)
         assertEquals(4, SmwBlockAction.MOON_3UP.ordinal)
+        assertEquals(5, SmwBlockAction.MIDWAY_TAPE.ordinal)
     }
 }

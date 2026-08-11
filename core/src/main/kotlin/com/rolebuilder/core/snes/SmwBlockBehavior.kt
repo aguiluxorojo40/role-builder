@@ -26,7 +26,7 @@ package com.rolebuilder.core.snes
  * (`platformBlockActions`), así que reordenarlos cambiaría en silencio lo que hace cada
  * bloque de los mapas ya importados.
  */
-enum class SmwBlockAction { NONE, COIN, QUESTION, DRAGON_COIN, MOON_3UP }
+enum class SmwBlockAction { NONE, COIN, QUESTION, DRAGON_COIN, MOON_3UP, MIDWAY_TAPE }
 
 object SmwBlockBehavior {
 
@@ -60,6 +60,30 @@ object SmwBlockBehavior {
      * `flag_collected_moons` del nivel. Da tres vidas.
      */
     private const val MOON_3UP_LO = 0x6E
+
+    /**
+     * Byte bajo de la CINTA DEL PUNTO INTERMEDIO (la "puerta intermedia"). Vive en el
+     * plano de BLOCK CODE, y lo dicen los dos extremos de la ROM:
+     *
+     *  - QUIÉN LA DIBUJA: `ExtObj46_MidwayBar` ($0D:A68E) escribe la cinta con
+     *    `SetMap16HighByteForCurrentObject_Page00(...)` —plano 00, explícito— y
+     *    `SetMap16LowByte(v2, 0x38)`. Y solo la dibuja si aún no tienes el punto
+     *    intermedio (`(ow_level_tile_settings[nivel] & 0x40) == 0 && !flag_got_midpoint`).
+     *  - QUIÉN LA TOCA: `RunPlayerBlockCode_00F2C9` ($00:F2C9), `if (j == 56)`. Y ahí solo
+     *    se llega desde las ramas con el byte ALTO a 0 (`if (!v9) ... F2C2(...)` →
+     *    `RunPlayerBlockCode_00F2C2`, $00:F2C2), o sea el plano de block code.
+     *
+     * Lo que hace al tocarla ($00:F2C9): sustituye la tesela
+     * (`blocks_map16_to_generate = 2; GenerateTile()`), suelta el brillo
+     * (`SpawnGlitterEffectForCoin`), marca el punto intermedio
+     * (`PlayerState00_SetMidpointFlag` → `flag_got_midpoint = 1`, $00:CA2B), **da un
+     * champiñón si vas pequeño** (`if (!player_current_power_up) player_current_power_up = 1`)
+     * y suena (`io_sound_ch1 = 5`).
+     *
+     * OJO con el plano: con el byte alto ≠ 0 el 0x38 NO es esto, es la mitad derecha de una
+     * boca de tubería VERTICAL ([SmwWarpTiles]).
+     */
+    private const val MIDWAY_TAPE_LO = 0x38
 
     /**
      * Rango de bytes bajos de los bloques GOLPEABLES del plano de TERRENO: el `?` de toda
@@ -96,6 +120,7 @@ object SmwBlockBehavior {
             lo in COIN_LO_ALL -> SmwBlockAction.COIN
             lo in DRAGON_COIN_LO -> SmwBlockAction.DRAGON_COIN
             lo == MOON_3UP_LO -> SmwBlockAction.MOON_3UP
+            lo == MIDWAY_TAPE_LO -> SmwBlockAction.MIDWAY_TAPE
             lo in QUESTION_LO -> SmwBlockAction.QUESTION
             else -> SmwBlockAction.NONE
         }

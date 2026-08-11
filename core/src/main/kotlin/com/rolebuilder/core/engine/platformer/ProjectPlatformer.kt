@@ -30,6 +30,25 @@ object ProjectPlatformer {
     private val SOLIDITY_VALUES = SmwSolidity.values()
 
     /**
+     * Traducción ÚNICA de la clasificación de bloques Map16 de SMW ([SmwBlockAction], por
+     * ordinal, que es como se guarda en `Tileset.platformBlockActions`) a la acción de
+     * celda del motor ([BlockAction], también por ordinal).
+     *
+     * Es una sola función a propósito: había DOS copias de este `when` —una aquí y otra en
+     * el reproductor de la ROM— y se habían desincronizado, así que jugando desde la ROM
+     * las Dragon Coins no contaban. Todo lo que clasifique [SmwBlockAction] tiene que
+     * pasar por aquí o el bloque se queda en decorado.
+     */
+    fun engineAction(smwActionOrdinal: Int): Int = when (smwActionOrdinal) {
+        SmwBlockAction.COIN.ordinal -> BlockAction.COIN.ordinal
+        SmwBlockAction.DRAGON_COIN.ordinal -> BlockAction.DRAGON_COIN.ordinal
+        SmwBlockAction.QUESTION.ordinal -> BlockAction.PRIZE.ordinal
+        SmwBlockAction.MOON_3UP.ordinal -> BlockAction.MOON_3UP.ordinal
+        SmwBlockAction.MIDWAY_TAPE.ordinal -> BlockAction.MIDWAY.ordinal
+        else -> BlockAction.NONE.ordinal
+    }
+
+    /**
      * Solidez de la celda (col,row) del mapa. Si el tileset trae la colisión REAL por
      * casilla ([Tileset.platformSolidity], p. ej. de un nivel SMW extraído), la usa tal
      * cual —bordes de un sentido, cuestas y pinchos incluidos—; si no, cae en la
@@ -158,12 +177,7 @@ object ProjectPlatformer {
                 val tile = map.tileAt(layer, c, r)
                 if (tile == EMPTY_TILE) continue
                 val sa = tileset.platformBlockActions.getOrNull(tile) ?: continue
-                val ea = when (sa) {
-                    SmwBlockAction.COIN.ordinal -> BlockAction.COIN.ordinal
-                    SmwBlockAction.DRAGON_COIN.ordinal -> BlockAction.DRAGON_COIN.ordinal
-                    SmwBlockAction.QUESTION.ordinal -> BlockAction.PRIZE.ordinal
-                    else -> BlockAction.NONE.ordinal
-                }
+                val ea = engineAction(sa)
                 if (ea != BlockAction.NONE.ordinal) {
                     grid[r * map.width + c] = ea
                     any = true

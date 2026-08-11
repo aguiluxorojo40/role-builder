@@ -193,8 +193,24 @@ class GrabBlock(var x: Float, var y: Float) {
  *    apiladas); se recoge al tocarla como una moneda enorme y cada 5 dan una vida extra.
  *  - [GRAB]: bloque de AGARRAR (estilo SMW): al montar el nivel se convierte en una
  *    entidad [GrabBlock] que Mario puede coger (botón de correr), llevar y lanzar.
+ *  - [MOON_3UP]: la LUNA 3-UP; se recoge al tocarla y da TRES vidas ([MOON_3UP_LIVES]).
+ *  - [MIDWAY]: la CINTA del punto intermedio; se atraviesa, marca el punto de control
+ *    del nivel y hace crecer al jugador si iba pequeño.
+ *
+ * Los valores NUEVOS van SIEMPRE al final: el ordinal se guarda en el tileset del
+ * proyecto (`platformBlockActions`) y en la rejilla de acciones de los mapas ya
+ * importados, así que reordenarlos cambiaría en silencio lo que hace cada celda.
  */
-enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN, GRAB }
+enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN, GRAB, MOON_3UP, MIDWAY }
+
+/**
+ * Vidas que da una LUNA 3-UP. Son TRES, y sale de seguir el rastro entero:
+ * `RunPlayerBlockCode_00F309` ($00:F309) hace `SpawnScoreSpriteAtPlayerPosition(0xF)`, y
+ * `ProcessScoreSprites` ($02:~3356) reparte las vidas de los sprites de puntuación
+ * 0x0D..0x10 con `misc_1up_handler += kProcessScoreSprites_StuffToGive[id - 13]`, donde
+ * la tabla es `{1, 2, 3, 5, …}`: el 0x0D da 1 vida (la moneda dragón nº 5) y el **0x0F da 3**.
+ */
+const val MOON_3UP_LIVES = 3
 
 private val BLOCK_ACTIONS = BlockAction.values()
 
@@ -500,6 +516,29 @@ class PlatformerEngine(
     private val smwPhysics: SmwPhysics? = null,
     /** Entorno del nivel: en el modo 1:1 elige rozamiento de agua y aceleración de hielo. */
     private val environment: PlatformerEnvironment = PlatformerEnvironment.LAND,
+    /**
+     * SALIDA DE LADO: el nivel se abandona ANDÁNDOSE por el borde, sin meta y sin
+     * superarlo. Es lo que hace la CASA DE YOSHI (y las casas/salas de charla).
+     *
+     * En el juego no es una propiedad del nivel sino de un SPRITE:
+     * `Spr08C_SideExitAndFireplace` ($02:F4D5) hace `flag_side_exits = 1` ($7E:1B96) en
+     * cada fotograma en que está vivo. Con esa bandera, `HandlePlayerLevelColl_00E98C`
+     * ($00:E98C) cambia dos cosas a la vez:
+     *  - **quita las paredes laterales**: la rama que frena al jugador contra el borde
+     *    (`HandlePlayerLevelColl_00E9C8`) es la del `else`, la de los niveles SIN salida
+     *    de lado;
+     *  - y si `player_on_screen_pos_x >= 0xFA` llama a
+     *    `DisplayMessage_ExitToOverworldNoEvent` ($05:B160), que pone
+     *    `misc_exit_level_action = 0` y `misc_game_mode = 11`: se vuelve al mapa **sin
+     *    disparar el evento** del nivel (no cuenta como superado).
+     * La comparación es de 16 bits (`player_on_screen_pos_x` es `uint16`), así que salirse
+     * por la IZQUIERDA (posición negativa) también la cumple: sirve para los dos lados.
+     *
+     * [PROBABLE] Aquí el umbral se toma sobre el BORDE DEL NIVEL en vez de sobre la
+     * posición en pantalla: en el juego son lo mismo en los niveles de una pantalla, que
+     * son los que llevan este sprite, pero en uno con scroll no tienen por qué serlo.
+     */
+    private val sideExits: Boolean = false,
 ) {
     /**
      * Físicas ACTUALES del motor. Son MUTABLES en caliente: el panel de físicas del
@@ -707,6 +746,42 @@ class PlatformerEngine(
 
     /** Contador monótono de vidas extra por juntar 5 Dragon Coins (evento 1-up). */
     var oneUpEvents = 0
+        private set
+
+    /**
+     * Contador monótono de LUNAS 3-UP recogidas. Cada evento vale [MOON_3UP_LIVES] vidas
+     * (no es un 1-up: por eso va aparte de [oneUpEvents], que sí vale una).
+     */
+    var moonEvents = 0
+        private set
+
+    /** Contador monótono de "he pasado por la cinta del punto intermedio". */
+    var midwayEvents = 0
+        private set
+
+    /**
+     * true en cuanto el jugador cruza la CINTA del punto intermedio. Es el equivalente de
+     * `flag_got_midpoint` ($7E:13CE, lo pone `PlayerState00_SetMidpointFlag` $00:CA2B): al
+     * volver a entrar al nivel tras morir, el juego arranca en la entrada intermedia en vez
+     * de en la del principio, y la cinta ya no se dibuja (`ExtObj46_MidwayBar`, $0D:A68E).
+     */
+    var midwayReached = false
+        private set
+
+    /** Celda (columna) donde se cruzó la cinta, o -1. Es donde debe reaparecer el jugador. */
+    var midwayCol = -1
+        private set
+
+    /** Celda (fila) donde se cruzó la cinta, o -1. */
+    var midwayRow = -1
+        private set
+
+    /**
+     * true cuando el jugador ABANDONA el nivel por un lado (solo en niveles con
+     * [sideExits], como la casa de Yoshi). No es ganar ni morir: el juego vuelve al mapa
+     * SIN disparar el evento del nivel (`DisplayMessage_ExitToOverworldNoEvent`, $05:B160).
+     */
+    var leftBySide = false
         private set
 
     /** Input horizontal (-1 izquierda, +1 derecha) y botón de correr. */
@@ -942,7 +1017,9 @@ class PlatformerEngine(
 
     /** Solidez de la celda (col,row), con los bordes del nivel como pared y el fondo abierto. */
     fun solidity(col: Int, row: Int): SmwSolidity {
-        if (col < 0 || col >= cols) return SmwSolidity.SOLID // paredes laterales del nivel
+        // Paredes laterales del nivel… salvo con SALIDA DE LADO: en el juego, la rama que
+        // frena al jugador contra el borde ($00:E9C8) es la de los niveles SIN esa bandera.
+        if (col < 0 || col >= cols) return if (sideExits) SmwSolidity.NONE else SmwSolidity.SOLID
         if (row < 0) return SmwSolidity.NONE                 // cielo abierto por arriba
         if (row >= rows) return SmwSolidity.NONE             // por debajo: hueco (se cae)
         return solidityAt(col, row)
@@ -1183,6 +1260,7 @@ class PlatformerEngine(
         collectPlacedItems()
         tickTimer()
         checkWarps()
+        checkSideExit()
 
         checkDeadly()
         if (p.y > (rows + 2) * tileSize) killPlayer(pop = false) // caído al vacío
@@ -1216,7 +1294,11 @@ class PlatformerEngine(
         }
     }
 
-    /** Recoge las monedas sueltas que solape la caja del jugador. */
+    /**
+     * Recoge lo que se coge AL TOCARLO y solape la caja del jugador: monedas sueltas,
+     * Dragon Coins, la Luna 3-UP y la cinta del punto intermedio. Todas viven en el plano
+     * de "block code" de SMW, que es justo el de las teselas que no son terreno.
+     */
     private fun collectCoins() {
         if (actions == null) return
         val p = player
@@ -1234,9 +1316,56 @@ class PlatformerEngine(
                     coinEvents++
                 }
                 BlockAction.DRAGON_COIN -> collectDragonCoinAt(c, r)
+                BlockAction.MOON_3UP -> collectMoonAt(c, r)
+                BlockAction.MIDWAY -> crossMidwayAt(c, r)
                 else -> {}
             }
         }
+    }
+
+    /**
+     * SALIDA DE LADO: en un nivel con [sideExits], salirse por cualquiera de los dos
+     * bordes abandona el nivel (ver el KDoc del parámetro).
+     *
+     * La condición es la del juego, `player_on_screen_pos_x >= 0xFA` en 16 bits ($00:E98C),
+     * desdoblada en sus dos mitades: por la DERECHA, el borde izquierdo del jugador a
+     * menos de [SIDE_EXIT_MARGIN] del final (0xFA de 0x100 son justo esos 6 px); por la
+     * IZQUIERDA, posición NEGATIVA, que es lo que hace que el `uint16` pase el umbral.
+     */
+    private fun checkSideExit() {
+        if (!sideExits || leftBySide) return
+        val x = player.x
+        if (x >= cols * tileSize - SIDE_EXIT_MARGIN || x < 0f) leftBySide = true
+    }
+
+    /**
+     * Coge la LUNA 3-UP de la celda (c,r): desaparece y cuenta un evento, que vale
+     * [MOON_3UP_LIVES] vidas. Port de `RunPlayerBlockCode_00F309` ($00:F309, `j == 110`):
+     * suelta el sprite de puntuación 3-UP, sube el contador de lunas y quita la tesela
+     * (`blocks_map16_to_generate = 1; GenerateTile()`).
+     */
+    private fun collectMoonAt(c: Int, r: Int) {
+        setAction(c, r, BlockAction.NONE)
+        moonEvents++
+    }
+
+    /**
+     * Cruza la CINTA del punto intermedio en la celda (c,r). Port de
+     * `RunPlayerBlockCode_00F2C9` ($00:F2C9, `j == 56`): quita la cinta, marca el punto de
+     * control (`PlayerState00_SetMidpointFlag`, $00:CA2B) y **hace grande al jugador si iba
+     * pequeño** (`if (!player_current_power_up) player_current_power_up = 1`).
+     *
+     * La cinta ocupa una sola celda pero se atraviesa corriendo: se marca una vez y ya.
+     */
+    private fun crossMidwayAt(c: Int, r: Int) {
+        setAction(c, r, BlockAction.NONE)
+        if (!midwayReached) {
+            midwayReached = true
+            midwayCol = c
+            midwayRow = r
+        }
+        midwayEvents++
+        if (!player.big) growPlayer()
     }
 
     /**
@@ -2789,6 +2918,13 @@ class PlatformerEngine(
          * mando vaya claramente hacia ese lado, no con rozar el eje.
          */
         const val SIDE_WARP_PUSH = 0.3f
+
+        /**
+         * Margen (px) desde el borde del nivel que cuenta como "ya me he ido" en un nivel
+         * con SALIDA DE LADO. El juego dispara con el jugador a `0xFA` de una pantalla de
+         * `0x100` ($00:E98C), o sea a 6 px del borde: el mismo número.
+         */
+        const val SIDE_EXIT_MARGIN = 6f
 
         /** Velocidad del bloque de agarrar al LANZARLO (px/f), estilo SMW. */
         const val GRAB_THROW_SPEED = 4f
