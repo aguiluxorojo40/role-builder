@@ -728,4 +728,32 @@ class PlatformerEngineTest {
         e.run(120)
         assertNull(e.pendingWarp, "en la propia boca el warp no se dispara nunca")
     }
+
+    @Test
+    fun `la pared IZQUIERDA del nivel frena de verdad, no se cuela casi un bloque`() {
+        // `solidity()` devuelve SOLID para col < 0, pero la columna se sacaba con
+        // `(x / 16).toInt()`, que TRUNCA HACIA CERO: con la x entre −16 y 0 la cuenta daba
+        // columna 0 —que existe y no es pared— y la del borde no se consultaba nunca. El
+        // jugador se salía del nivel por la izquierda hasta x = −2.99, medido con sonda.
+        val e = engine(cols = 12, rows = 10, startCol = 1, startRow = 6) { grid ->
+            for (c in 0 until 12) grid[7][c] = SmwSolidity.SOLID
+        }
+        e.moveX = -1f
+        e.run(240)
+        assertTrue(e.player.x >= 0f, "no puede quedarse fuera del nivel: x = ${e.player.x}")
+    }
+
+    @Test
+    fun `modo 1_1 - la pared izquierda tambien frena, que son DOS resolvedores`() {
+        // El mismo fallo estaba en los dos sitios: el resolvedor simple y el 1:1 sacan la
+        // columna cada uno por su cuenta. Arreglar solo uno deja el agujero abierto justo en
+        // el modo con el que se juega desde la ROM, que es el que se ve.
+        val e = engineRom(12, 10, startCol = 1, startRow = 6) { g ->
+            for (c in 0 until 12) g[7][c] = SmwSolidity.SOLID
+        }
+        e.run(20)
+        e.moveX = -1f
+        e.run(240)
+        assertTrue(e.player.x >= 0f, "no puede quedarse fuera del nivel: x = ${e.player.x}")
+    }
 }

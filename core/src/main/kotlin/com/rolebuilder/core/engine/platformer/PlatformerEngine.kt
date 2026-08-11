@@ -6,6 +6,7 @@ import com.rolebuilder.core.snes.SmwSpriteAim
 import com.rolebuilder.core.snes.SmwSlopes
 import com.rolebuilder.core.snes.SmwSolidity
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
@@ -2770,6 +2771,13 @@ class PlatformerEngine(
         return if (upper == lower) intArrayOf(upper) else intArrayOf(upper, lower)
     }
 
+    /**
+     * Columna de la casilla que contiene la x [px], **hacia abajo** y no hacia cero: con
+     * coordenadas negativas (fuera del nivel por la izquierda) `toInt()` redondea al revés
+     * y devuelve la columna 0, que sí existe y normalmente no es pared.
+     */
+    private fun floorDiv(px: Float): Int = floor(px / tileSize).toInt()
+
     /** Resolvedor horizontal por sondas laterales; fija BLOCKED_LEFT/RIGHT y corta la velocidad. */
     private fun smwResolveHorizontal(dx: Float) {
         if (dx == 0f) return
@@ -2796,7 +2804,11 @@ class PlatformerEngine(
             val col = ((nx + w) / tileSize).toInt()
             tryMove(col, col * tileSize - w - 0.01f, BLOCKED_RIGHT)
         } else {
-            val col = (nx / tileSize).toInt()
+            // OJO con el signo: `(nx / tileSize).toInt()` TRUNCA HACIA CERO, así que con la
+            // x entre −16 y 0 daba columna 0 en vez de −1 y no se consultaba nunca la pared
+            // del borde: el jugador se salía casi un bloque entero por la izquierda del nivel
+            // (medido, se quedaba en x = −2.99). Hace falta división ENTERA HACIA ABAJO.
+            val col = floorDiv(nx)
             tryMove(col, (col + 1) * tileSize + 0.01f, BLOCKED_LEFT)
         }
         p.x = nx
@@ -2882,7 +2894,9 @@ class PlatformerEngine(
             val col = ((nx + w) / tileSize).toInt()
             tryMove(col, col * tileSize - w - 0.01f)
         } else {
-            val col = (nx / tileSize).toInt()
+            // División entera HACIA ABAJO, no hacia cero: ver [floorDiv]. Con `toInt()` la
+            // pared izquierda del nivel no se consultaba y el jugador se salía del mapa.
+            val col = floorDiv(nx)
             tryMove(col, (col + 1) * tileSize + 0.01f)
         }
         p.x = nx
