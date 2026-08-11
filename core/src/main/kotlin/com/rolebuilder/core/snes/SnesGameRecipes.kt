@@ -454,7 +454,20 @@ object SnesGameRecipes {
     }
 
     /** Convierte el [level] SMW en un [SmwLevelMap], o null si no es reconstruible. */
-    fun extractSmwLevelAsMap(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = 256): SmwLevelMap? {
+    /**
+     * ⚠ EL TOPE POR DEFECTO ERA 256 Y SE COMÍA EL FINAL DE LOS NIVELES. Un nivel de SMW llega
+     * a 0x20 pantallas de 16 casillas = **512 columnas**, y los hay de 320 y 336: YOSHI'S
+     * ISLAND 1 y 2 miden 320 y su meta está en la columna 302; el 3 mide 336 y la suya en la
+     * 318. Con el tope en 256 el mapa importado se quedaba SIN META — o sea, imposible de
+     * superar, y no por un fallo del motor sino porque el trozo del nivel donde está el poste
+     * nunca llegaba a exportarse.
+     *
+     * El reproductor ya pedía 512 a mano; los que NO lo hacían eran justo los que crean el
+     * proyecto (la importación del editor y [SmwLevelBundle]), así que el recorte solo se
+     * notaba jugando un mapa importado. Poniendo el tope de verdad, todos los caminos sacan
+     * el nivel entero.
+     */
+    fun extractSmwLevelAsMap(rom: ByteArray, header: SnesHeader, level: Int, maxCols: Int = 512): SmwLevelMap? {
         val delta = smwHeaderDelta(header)
         val tm = SmwLayer1.parse(rom, delta, level) ?: return null
         // SALA DE JEFE: cero objetos es lo NORMAL en los modos 9/11/16 —el juego corta el
