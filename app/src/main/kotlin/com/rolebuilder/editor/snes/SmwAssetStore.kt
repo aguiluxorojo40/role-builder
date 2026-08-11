@@ -66,6 +66,12 @@ object SmwAssetStore {
      *       esta subida es de las obligatorias), y el DRY BONES (0x30/0x32) como sprite de
      *       dibujo propio. El Podoboo llevaba fuera desde siempre por "gráficos dinámicos":
      *       ahora se reconstruye desde GFX33, que es de donde el juego los saca por DMA.
+     *  v15: dos columnas más en el atlas (Cheep-Cheep 0x18 y 0x47), cuatro sprites de dibujo
+     *       propio nuevos (isla flotante 0x5D, bola de pinchos 0xA4, pájaro 0x8A, chimenea
+     *       0x8C) y —la razón de peso— TRES que estaban MAL: el puente de bloques giratorios
+     *       (0x59/0x5A) y la plataforma de cadena (0x5F) se horneaban con la rutina de la
+     *       plataforma plana y salían como una barra gris que no es de ningún sprite. Quien
+     *       tenga el almacén de la v14 o anterior tiene esos tres PNG mal.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -74,7 +80,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 14
+    private const val BAKE_VERSION = 15
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
