@@ -173,6 +173,25 @@ object SmwEnemyGraphics {
         // el juego — `Spr014_SpinyEgg` ($01:8C18) al tocar el suelo hace `spr_spriteid = 19`,
         // o sea que el huevo de Spiny se convierte EN ESTE id. Es el Spiny.
         0x13 to "Spiny",
+        // Tanda 11: los dos CHEEP-CHEEP que faltaban. Los cuatro de la familia (0x15, 0x16,
+        // 0x17 y 0x18) comparten la MISMA entrada de la tabla genérica —`TilesOffset` vale
+        // 0x8A para los cuatro—, y el 0x47 también; por eso los cinco se dibujan igual y por
+        // eso, estando ya el 0x15/0x16, estos dos eran gratis. Verificado mirándolos.
+        //
+        //  · 0x18 pasa por `SprXXX_FixedMovementCheepCheep_01B10A` ($01:B10A), el mismo
+        //    ayudante que el 0x15/0x16. Ese ayudante hace algo que conviene tener anotado:
+        //        spr_table15f6 = ((spr_table1602 >> 1) ^ 1) | (spr_table15f6 & 0xFE)
+        //    o sea que FUERZA el bit de página en vez de heredarlo. Con el pez nadando
+        //    (`spr_table1602` = 0 ó 1) el `>>1` da 0 y el `^1` lo deja en **1**. En la ROM
+        //    vanilla el $166E de estos ids ya vale página 1, así que la vía genérica —que la
+        //    saca de $166E— coincide; si alguna vez no coincidiera, manda la rutina.
+        //    (Fuera del agua el pez colea: `spr_table1602 += 2` y entonces la página pasa a 0
+        //    y el gráfico es otro. Ese estado no se guarda.)
+        //  · 0x47 (`Spr047_SwimmingAndJumpingCheepCheep`, $02:E727) llama directamente a
+        //    `GenericGFXRtDraw1Tile16x16` sin tocar nada, y su
+        //    `SprXXX_SuperKoopas_02EB3D(k, 0)` ($02:EB3D) le deja `spr_table1602` en 0/1: el
+        //    mismo par de fotogramas que los demás.
+        0x18 to "Cheep-Cheep saltarin", 0x47 to "Cheep-Cheep nadador",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -542,22 +561,103 @@ object SmwEnemyGraphics {
         // Rex (0xAB): 2 teselas 16×16 apiladas (kSpr0AB_Rex_Tiles/XDisp/YDisp, $03), frame 0.
         // Cabeza 0x8a en (−4,−15) + cuerpo 0xaa en (0,0). Paleta 3 (ppp de Prop=0x07:
         // (0x07 >> 1) & 7 = 3) → fila 8+3 de la CGRAM; es la AZUL de Rex, no la rosa.
-        // ---- PLATAFORMAS de guía (las que sostienen YOSHI'S ISLAND 3) ----
-        // Las cinco (0x55, 0x57, 0x59, 0x5A, 0x5F) comparten rutina de dibujo:
-        // NormalSpritePlatformDraw ($01:B2D1) mira la tabla $01:B2C3 —que para todas
-        // ellas vale 0— y cae en NormalSpritePlatformGFXRt_DrawFlatPlatform ($01:B2DF).
+        // ---- PLATAFORMAS ----
+        // ⚠ AQUÍ HABÍA TRES MAL. Se dio por hecho que 0x55, 0x57, 0x59, 0x5A y 0x5F
+        // compartían `NormalSpritePlatformDraw` ($01:B2D1) y todas salían plataforma plana.
+        // Solo es verdad de DOS. El despacho (`kSprStatus08SpriteNormalPtrs`, banco $01)
+        // manda cada id a una rutina distinta, y hay que mirarlo id a id:
         //
-        // Esa rutina tiene DOS formas según spr_table1602, que se pone en el Init:
+        //   0x55, 0x57 -> Spr058_VerticalRockPlatform ($01:B26C) -> NormalSpritePlatformDraw
+        //   0x59, 0x5A -> SprXXX_TurnBlockBridge_*Entry ($01:B6A5 / $01:B6DA)  ← OTRA rutina
+        //   0x5F       -> Spr05F_BrownChainedPlatform ($01:C773)                ← OTRA rutina
+        //
+        // Y solo para los dos primeros vale la tabla $01:B2C3 (indexada por `id − 0x55`),
+        // que elige entre plana y diagonal. Los otros tres salían como una barra gris que no
+        // es de ningún sprite: son las teselas 0x60-0x62 del banco de ESE nivel, leídas por
+        // la rutina equivocada.
+        //
+        // NormalSpritePlatformGFXRt_DrawFlatPlatform ($01:B2DF) tiene DOS formas según
+        // spr_table1602, que se pone en el Init:
         //   - 0 (por defecto): plataforma ESTRECHA de 3 teselas 16×16 → 0x60, 0x61, 0x62.
         //   - 1: plataforma ANCHA de 5 teselas → 0xEA, 0xEB, 0xEB, 0xEB, 0xEC.
         // De 0x57 SÍ consta que su Init hace ++spr_table1602 (Spr057_Vertical
-        // CheckerboardPlatform_Init, $01:B25E), así que va ANCHA; las demás se quedan
-        // con el valor por defecto y van estrechas.
+        // CheckerboardPlatform_Init, $01:B25E), así que va ANCHA; el 0x55 se queda con el
+        // valor por defecto y va estrecha. Los dos heredan página y paleta de $166E
+        // (`flags = spr_table15f6 | prio`).
         0x55 to CustomEnemy(flatPlatformNarrow()),
-        0x59 to CustomEnemy(flatPlatformNarrow()),
-        0x5A to CustomEnemy(flatPlatformNarrow()),
-        0x5F to CustomEnemy(flatPlatformNarrow()),
         0x57 to CustomEnemy(flatPlatformWide()),
+        // PUENTE DE BLOQUES GIRATORIOS (0x59 el que va en las dos direcciones, 0x5A solo
+        // horizontal), `SprXXX_TurnBlockBridge_Draw` ($01:B710): CINCO teselas 16×16 y las
+        // cinco son la MISMA, la 64 = 0x40, que es el bloque giratorio amarillo con sus dos
+        // puntos. Nada de barra gris.
+        //
+        // El puente se ESTIRA desde el centro: `spr_table151c` (0..BlkBridgeLength = 0x20) da
+        // la separación, y las cinco entradas van a ∓151c y ∓151c/2 alrededor del centro. Se
+        // guarda extendido del todo, que es la pose con la que se ve y por la que se anda.
+        //
+        // Y ojo con la propiedad: `flags = sprites_tile_priority` A SECAS, sin `| 15f6`. Eso
+        // deja el bit 0 (la página) a CERO y los bits de paleta también, así que este es de
+        // los pocos que NO heredan de $166E y van a página 0 / paleta 0. (La entrada 0 lleva
+        // además `| 0x60`, que es prioridad + volteo horizontal, invisible en una tesela
+        // simétrica como el bloque giratorio.)
+        0x59 to CustomEnemy((0..4).map { OamTile(0x40, it * 16, 0, page = 0) }, palRow = (8 + 0) * 16),
+        0x5A to CustomEnemy((0..4).map { OamTile(0x40, it * 16, 0, page = 0) }, palRow = (8 + 0) * 16),
+        // PLATAFORMA MARRÓN DE CADENA (0x5F), `Spr05F_BrownChainedPlatform` ($01:C773). Se
+        // parecía a la plana lo justo para colarse, pero no lo es:
+        //   - son CUATRO teselas, no tres: kSpr05F_BrownChainedPlatform_PlatformTiles =
+        //     {0x60, 0x61, 0x61, 0x62} en XDisp {0xE0, 0xF0, 0x00, 0x10} = −32, −16, 0, +16.
+        //   - y `flags = 49` = 0x31 escrito a mano: página 1 y paleta (0x31>>1)&7 = **0**,
+        //     no la paleta 1 de $166E. Con la paleta del nivel salía gris en vez de MADERA.
+        //
+        // Lo que NO se guarda son los seis ESLABONES de la cadena (tesela 0xA2): sus
+        // posiciones se calculan en vivo con seno/coseno sobre el ángulo del balanceo
+        // (`CalculateCircleCoordinatesForTiltingPlaform`), y este catálogo guarda un
+        // fotograma fijo. Se dibuja la plataforma, que es por lo que se anda.
+        0x5F to CustomEnemy(
+            listOf(0x60, 0x61, 0x61, 0x62).mapIndexed { i, t -> OamTile(t, i * 16, 0, page = 1) },
+            palRow = (8 + 0) * 16,
+        ),
+        // PLATAFORMA FLOTANTE DIAGONAL (0x5D), la isla de hierba de YOSHI'S ISLAND 4 — 22
+        // colocaciones en ese nivel, todas ellas huecos visibles hasta ahora.
+        //
+        // `SprXXX_BuoyantPlatformsAndMine_01B563` ($01:B563) acaba en NormalSpritePlatformDraw,
+        // y ahí la tabla $01:B2C3 vale **1** para el 0x5D (índice 0x5D − 0x55 = 8), o sea que
+        // NO es la plana: es la rama DIAGONAL ($01:B2D1). Esa monta cinco teselas 16×16 con la
+        // x avanzando de 8 en 8 y la y ALTERNANDO entre 0 y +16 (`oam[64]/[66]/[68]` arriba,
+        // `oam[65]/[67]` 16 px más abajo): quedan tres arriba (0, 16, 32) y dos abajo
+        // encajadas en medio (8, 24).
+        //
+        // Teselas de kNormalSpritePlatformGFXRt_DiagPlatTiles[0..4] (el índice arranca en 0
+        // porque el id es ≥ 0x5B; por debajo la rutina suma 9 y coge otras), y luego la propia
+        // rutina PISA las dos últimas con −53 = 0xCB y −28 = 0xE4. El volteo horizontal entra
+        // a partir de la tercera (`if (r1 < r2)`), que es lo que hace la isla simétrica.
+        // Página y paleta SÍ se heredan de $166E (`flags = spr_table15f6 | prio`).
+        0x5D to CustomEnemy(
+            listOf(
+                OamTile(0xCB, 0, 0), OamTile(0xE4, 8, 16), OamTile(0xCC, 16, 0, xflip = true),
+                OamTile(0xE4, 24, 16, xflip = true), OamTile(0xCB, 32, 0, xflip = true),
+            ),
+        ),
+        // BOLA DE PINCHOS / MINA (0xA4), `SprXXX_BuoyantPlatformsAndMine_SpikeBallDraw`
+        // ($01:B666): UNA sola tesela espejada en los cuatro cuadrantes, que es como el juego
+        // dibuja una bola simétrica con 32×32 px de aspecto y 8 bytes de gráficos.
+        //
+        //   charnum = ((counter_local_frames >> 2) & 4) >> 1) − 86  → 0xAA ó 0xAC (el brillo)
+        //   XDisp = {0xF8, 0x08, 0xF8, 0x08}   YDisp = {0xF8, 0xF8, 0x08, 0x08}
+        //   Prop  = {0x31, 0x71, 0xA1, 0xF1}   → 0x40 = volteo H, 0x80 = volteo V
+        //
+        // Las cuatro Prop acaban en 1: página 1 fija. Y los bits 1-3 son 0 en las cuatro
+        // (0x31>>1&7 = 0x71>>1&7 = 0xA1>>1&7 = 0xF1>>1&7 = 0), o sea paleta 0 — otra que no
+        // hereda nada de $166E, que para este id diría paleta 1.
+        0xA4 to CustomEnemy(
+            listOf(
+                OamTile(0xAA, 0, 0, page = 1),
+                OamTile(0xAA, 16, 0, page = 1, xflip = true),
+                OamTile(0xAA, 0, 16, page = 1, vflip = true),
+                OamTile(0xAA, 16, 16, page = 1, xflip = true, vflip = true),
+            ),
+            palRow = (8 + 0) * 16,
+        ),
         0xAB to CustomEnemy(
             listOf(OamTile(0x8a, -4, -15, page = 1), OamTile(0xaa, 0, 0, page = 1)),
             palRow = (8 + 3) * 16,
@@ -871,6 +971,48 @@ object SmwEnemyGraphics {
         // otra vez lleva las dos cosas: pagina 1 (bit 0) y paleta (3>>1)&7 = 1.
         0x30 to CustomEnemy(dryBonesFrame0(), palRow = (8 + 1) * 16),
         0x32 to CustomEnemy(dryBonesFrame0(), palRow = (8 + 1) * 16),
+        // PÁJARO (0x8A), `Spr08A_Bird_Draw` ($02:F3EA). Es de los pocos sprites de UNA tesela
+        // de 8×8 —`sprites_oamtile_size_buffer[v1 >> 2] = 0`, y el 0 es el tamaño pequeño—,
+        // así que dibujarlo como bloque de 16×16 se comería tres teselas ajenas.
+        //
+        //   charnum = kSpr08A_Bird_Tiles[spr_table1602] = {0xD2, 0xD3, 0xD0, 0xD1, 0x9B}
+        //
+        // El fotograma 0 es el de VOLAR: la rama normal de `Spr08A_Bird` ($02:F317) pone
+        // `spr_table1602 = 0` en cada tick mientras cruza. Los 2/3 son el pájaro POSADO y el 4
+        // el de dar la vuelta (`spr_decrementing_table15ac` ≠ 0).
+        //
+        //   flags = kSpr08A_Bird_Direction[157c] | kSpr08A_Bird_Palette[k & 3]
+        //           Direction = {0x71, 0x31}   Palette = {0x8, 0x4, 0x6, 0xA}
+        //
+        // Página 1 fija (bit 0 de 0x71 y de 0x31). Y ojo con la PALETA: no sale del nivel ni
+        // del sprite, sale de `k & 3`, o sea del **slot de sprite** que le haya tocado — así
+        // es como el juego llena el cielo de pájaros de colores distintos con un solo gráfico.
+        // Aquí se guarda la del slot 0 (0x8 → (8>>1)&7 = 4), que es una elección obligada:
+        // no hay "la" paleta del pájaro. Dirección 157c = 1 → 0x31, sin volteo.
+        0x8A to CustomEnemy(
+            listOf(OamTile(0xD2, 0, 0, size16 = false, page = 1)),
+            palRow = (8 + 4) * 16,
+        ),
+        // CHIMENEA de la CASA DE YOSHI (0x8C), `Spr08C_SideExitAndFireplace` ($02:F4D5). Su
+        // trabajo de verdad es poner `flag_side_exits = 1` —por eso se llama SideExit— y de
+        // paso dibuja el fuego. DOS teselas de 8×8 apiladas (`oamtile_size_buffer` = 0 en las
+        // dos), en ypos −80 y −72: 8 px de separación.
+        //
+        //   TopTile    = {0xD4, 0xAB}      BottomTile = {0xBB, 0x9A}
+        //   v3 = spr_table00c2 & 1         (el parpadeo de la llama, que sube al azar)
+        //   flags = 53 = 0x35              → página 1, paleta (0x35>>1)&7 = 2
+        //
+        // ⚠ Sus xpos/ypos son ABSOLUTOS de pantalla (−72, −80), no relativos al sprite: es
+        // decoración clavada en un sitio fijo de la sala, no un enemigo que se mueva. Para el
+        // catálogo eso da igual —lo que importa es el par de teselas—, pero conviene saberlo
+        // antes de intentar colocarlo por la posición del sprite.
+        0x8C to CustomEnemy(
+            listOf(
+                OamTile(0xD4, 0, 0, size16 = false, page = 1),
+                OamTile(0xBB, 0, 8, size16 = false, page = 1),
+            ),
+            palRow = (8 + 2) * 16,
+        ),
     )
 
     /**
@@ -1313,6 +1455,9 @@ object SmwEnemyGraphics {
         // Spiny (0x13): mismo caso que el Goomba —anda por la via generica—, y sus dos
         // fotogramas se diferencian en las PATAS. Visto en los dos PNG.
         0x13,
+        // Los otros dos Cheep-Cheep (0x18, 0x47): comparten entrada con el 0x15/0x16, que ya
+        // animaban, y su 2o byte OAM (0x69) es el pez con la aleta en la otra posicion.
+        0x18, 0x47,
         // Plantas Piraña de TUBO ([PIRANHAS]): abren/cierran la boca con paso 2 (solo la
         // tesela de boca de cada par apilado). Las SALTARINAS animan aparte
         // ([isJumpingPiranha]), no por esta vía.
