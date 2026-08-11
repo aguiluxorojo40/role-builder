@@ -71,7 +71,9 @@ object SmwAssetStore {
      *       0x8C) y —la razón de peso— TRES que estaban MAL: el puente de bloques giratorios
      *       (0x59/0x5A) y la plataforma de cadena (0x5F) se horneaban con la rutina de la
      *       plataforma plana y salían como una barra gris que no es de ningún sprite. Quien
-     *       tenga el almacén de la v14 o anterior tiene esos tres PNG mal.
+     *       tenga el almacén de la v14 o anterior tiene esos tres PNG mal. Y con ellos un
+     *       CUARTO: la plataforma 0x55, que se horneaba ESTRECHA (0x60-0x62) cuando su Init
+     *       es el mismo del 0x57 y va ANCHA (0xEA-0xEC).
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de

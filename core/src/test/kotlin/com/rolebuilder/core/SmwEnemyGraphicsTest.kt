@@ -393,4 +393,24 @@ class SmwEnemyGraphicsTest {
             assertEquals(t[1].dy - 16, t[0].dy, "y 16 px por encima")
         }
     }
+
+    @Test
+    fun `la plataforma 0x55 va ANCHA, igual que la 0x57, porque comparten el Init`() {
+        // El nombre de la rutina solo nombra al 0x57 y eso despista: en la tabla de Init del
+        // banco $01 (`kUnk_1817d`, indexada por id de sprite) las entradas 0x55 y 0x57 apuntan
+        // a la MISMA, `Spr057_VerticalCheckerboardPlatform_Init` ($01:B25E), cuyo cuerpo
+        // entero es `++spr_table1602[k]`. Y `NormalSpritePlatformGFXRt_DrawFlatPlatform`
+        // ($01:B2DF) mira justo ese valor: con 0 dibuja 3 teselas (0x60, 0x61, 0x62) y llama
+        // a FinishOAMWrite con 2; con 1, CINCO (0xEA, 0xEB, 0xEB, 0xEB, 0xEC) y con 4.
+        //
+        // O sea que el 0x55 con teselas 0x60-0x62 no es "la version corta del mismo sprite":
+        // son teselas de OTRO sitio del banco del nivel, la barra gris de siempre.
+        val p55 = SmwEnemyGraphics.customEnemyTilesForTest(0x55, ajuste = 1)
+        val p57 = SmwEnemyGraphics.customEnemyTilesForTest(0x57, ajuste = 1)
+        assertNotNull(p55, "falta la plataforma 0x55")
+        assertNotNull(p57, "falta la plataforma 0x57")
+        assertEquals(listOf(0xEA, 0xEB, 0xEB, 0xEB, 0xEC), p55.map { it.tile }, "la 0x55 es la ANCHA de 5 teselas")
+        assertEquals(p57.map { it.tile }, p55.map { it.tile }, "las dos salen del mismo Init")
+        assertEquals(64, p55.last().dx, "y ocupa los 5 bloques de 16 px, no 3")
+    }
 }

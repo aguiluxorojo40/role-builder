@@ -529,11 +529,16 @@ object SmwEnemyGraphics {
         return c.porAjuste[c.gfxSetting ?: ajuste]?.first ?: c.tiles
     }
 
-    /** Plataforma ESTRECHA: 3 teselas 16×16 seguidas ($01:B2DF, rama sin 1602). */
-    private fun flatPlatformNarrow(): List<OamTile> =
-        listOf(OamTile(0x60, 0, 0), OamTile(0x61, 16, 0), OamTile(0x62, 32, 0))
-
-    /** Plataforma ANCHA: 5 teselas 16×16, con el tramo central repetido. */
+    /**
+     * Plataforma ANCHA: 5 teselas 16×16, con el tramo central repetido.
+     *
+     * No hay hermana estrecha a propósito. `NormalSpritePlatformGFXRt_DrawFlatPlatform`
+     * ($01:B2DF) tiene esa otra rama (3 teselas, 0x60/0x61/0x62, cuando `spr_table1602` es
+     * 0), pero NINGUNO de los sprites del catálogo llega a ella: los dos que usan esta
+     * rutina —0x55 y 0x57— comparten el mismo Init, que hace `++spr_table1602`. Las teselas
+     * 0x60-0x62 son las que salían como barra gris cuando se horneaban por la rutina
+     * equivocada; si algún día hace falta la rama estrecha, va con su sprite, no suelta.
+     */
     private fun flatPlatformWide(): List<OamTile> =
         listOf(
             OamTile(0xEA, 0, 0), OamTile(0xEB, 16, 0), OamTile(0xEB, 32, 0),
@@ -580,11 +585,14 @@ object SmwEnemyGraphics {
         // spr_table1602, que se pone en el Init:
         //   - 0 (por defecto): plataforma ESTRECHA de 3 teselas 16×16 → 0x60, 0x61, 0x62.
         //   - 1: plataforma ANCHA de 5 teselas → 0xEA, 0xEB, 0xEB, 0xEB, 0xEC.
-        // De 0x57 SÍ consta que su Init hace ++spr_table1602 (Spr057_Vertical
-        // CheckerboardPlatform_Init, $01:B25E), así que va ANCHA; el 0x55 se queda con el
-        // valor por defecto y va estrecha. Los dos heredan página y paleta de $166E
+        // Y los DOS van anchos, aunque el nombre de la rutina solo mencione al 0x57: en la
+        // tabla de Init del banco $01 (`kUnk_1817d`, indexada por id de sprite) las entradas
+        // 0x55 y 0x57 apuntan a la MISMA, `Spr057_VerticalCheckerboardPlatform_Init`
+        // ($01:B25E), que es un `++spr_table1602` y nada más. Comprobado con anclas de la
+        // propia tabla (0x33 Podoboo, 0x35 Yoshi, 0x3E P-Switch, 0x54 ClimbingNetDoor caen
+        // en su índice exacto). Los dos heredan página y paleta de $166E
         // (`flags = spr_table15f6 | prio`).
-        0x55 to CustomEnemy(flatPlatformNarrow()),
+        0x55 to CustomEnemy(flatPlatformWide()),
         0x57 to CustomEnemy(flatPlatformWide()),
         // PUENTE DE BLOQUES GIRATORIOS (0x59 el que va en las dos direcciones, 0x5A solo
         // horizontal), `SprXXX_TurnBlockBridge_Draw` ($01:B710): CINCO teselas 16×16 y las
