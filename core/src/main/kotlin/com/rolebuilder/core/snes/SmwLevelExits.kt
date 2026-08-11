@@ -113,7 +113,10 @@ object SmwLevelExits {
         val layer1YPos: Int,
         /** Posición Y de Layer 2 al entrar (0..3). */
         val layer2YPos: Int,
-    )
+    ) {
+        /** [entranceAction] ya clasificada; lo que el motor necesita para animar la llegada. */
+        val entranceActionKind: SmwEntranceAction get() = SmwEntranceAction.of(entranceAction)
+    }
 
     /** Una salida de pantalla: qué pantalla la dispara y a qué nivel/entrada lleva. */
     data class LevelExit(

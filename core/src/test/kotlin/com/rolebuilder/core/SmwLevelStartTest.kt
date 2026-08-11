@@ -1,5 +1,6 @@
 package com.rolebuilder.core
 
+import com.rolebuilder.core.snes.SmwEntranceAction
 import com.rolebuilder.core.snes.SmwLevelStartReader
 import com.rolebuilder.core.snes.SnesDecoder
 import kotlin.test.Test
@@ -26,6 +27,7 @@ class SmwLevelStartTest {
         secHdr1: Int = 0x00,
         mangle: Boolean = false,
         secHdr3: Int = 0x00,
+        secHdr2: Int = 0x9A,
     ): ByteArray {
         val rom = ByteArray(0x50000)
         fun put(addr: Int, vals: IntArray) {
@@ -38,7 +40,7 @@ class SmwLevelStartTest {
         val base = 0x05 * 0x8000
         rom[base + (0xF000 and 0x7FFF) + 0x106] = secHdr0.toByte()
         rom[base + (0xF200 and 0x7FFF) + 0x106] = secHdr1.toByte()
-        rom[base + (0xF400 and 0x7FFF) + 0x106] = 0x9A.toByte()
+        rom[base + (0xF400 and 0x7FFF) + 0x106] = secHdr2.toByte()
         rom[base + (0xF600 and 0x7FFF) + 0x106] = secHdr3.toByte()
         return rom
     }
@@ -80,6 +82,50 @@ class SmwLevelStartTest {
         assertEquals(5, start.entranceScreen)
         assertEquals(0x1E0, start.startPixelX)  // Xidx=7 → D758=1, D750=0xE0: conserva el alto
         assertEquals(0x560, start.startPixelY)  // pantalla 5 + D730[0xB]=0x60
+    }
+
+    @Test
+    fun `la entrada del MIDWAY solo cambia la PANTALLA, no el preset`() {
+        // Rama `else` de la misma comparación de `LoadLevel` ($05:D796):
+        // `HIBYTE(player_xpos) = r2 >> 4` con `r2` = $05:F400[nivel]. Son 4 bits (0..15).
+        // F400=0x9A → pantalla 9; el preset X (Xidx=0 → D750=0x10) y TODA la Y no se tocan.
+        val rom = romWithStart(secHdr3 = 0x05, secHdr2 = 0x9A) // entrada normal en la pantalla 5
+        val start = assertNotNull(SmwLevelStartReader.read(rom, SnesDecoder.parseHeader(rom), 0x106))
+        assertEquals(9, start.midwayScreen)
+        assertEquals(0x910, start.midwayPixelX)  // pantalla 9 + D750[0]=0x10
+        assertEquals(145, start.midwayTileX)
+        assertEquals(352, start.midwayPixelY)    // la Y es la misma que la de la entrada normal
+        assertEquals(22, start.midwayTileY)
+        // Y la entrada NORMAL sigue en su pantalla 5, sin contaminarse.
+        assertEquals(81, start.startTileX)
+    }
+
+    @Test
+    fun `en un nivel VERTICAL el midway no le pone pantalla a la Y`() {
+        // La rama `else` no distingue verticales: mete `F400 >> 4` en la X igual, y deja la Y
+        // en el PRESET crudo — mientras que la entrada normal sí le pone su pantalla a la Y.
+        val rom = romWithStart(secHdr3 = 0x25, secHdr2 = 0x30) // vertical, entrada en pantalla 5
+        val start = assertNotNull(SmwLevelStartReader.read(rom, SnesDecoder.parseHeader(rom), 0x106))
+        assertEquals(true, start.isVertical)
+        assertEquals(3, start.midwayScreen)
+        assertEquals(0x310, start.midwayPixelX)
+        assertEquals(0x160, start.midwayPixelY)  // preset crudo (D740[0xB]=1, D730[0xB]=0x60)
+        assertEquals(0x560, start.startPixelY)   // la normal sí lleva su pantalla 5
+    }
+
+    @Test
+    fun `la accion de entrada se clasifica como en 00A6CC`() {
+        // (F200 & 0x38) >> 3 = 6 → sales DISPARADO HACIA ARRIBA (`player_current_state = 7`).
+        val rom = romWithStart(secHdr1 = 0x30) // 0x30 & 0x38 = 0x30 → >>3 = 6
+        val start = assertNotNull(SmwLevelStartReader.read(rom, SnesDecoder.parseHeader(rom), 0x106))
+        assertEquals(6, start.entranceAction)
+        assertEquals(SmwEntranceAction.SHOT_UP_OUT_OF_PIPE, start.entranceActionKind)
+        // Y las cuatro direcciones de tubería (1..4) caen todas en OUT_OF_PIPE.
+        assertEquals(SmwEntranceAction.WALK_IN, SmwEntranceAction.of(0))
+        assertEquals(SmwEntranceAction.OUT_OF_PIPE, SmwEntranceAction.of(1))
+        assertEquals(SmwEntranceAction.OUT_OF_PIPE, SmwEntranceAction.of(4))
+        assertEquals(SmwEntranceAction.WALK_IN_ICE, SmwEntranceAction.of(5))
+        assertEquals(SmwEntranceAction.OUT_OF_PIPE_UNDERWATER, SmwEntranceAction.of(7))
     }
 
     @Test
