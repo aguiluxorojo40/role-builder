@@ -142,10 +142,45 @@ object SmwBakedAssets {
         // [SmwEnemyGraphics.curatedIds], así que este bucle es la única vía por la que
         // llegan al dispositivo. Sin él solo existían si alguien los horneaba a mano con
         // `extractSnesTileset --custom-enemy`, y en el móvil salían como rectángulo.
+        //
+        // ⚠ Y CADA UNO SE HORNEA EN **SU** NIVEL, no en el de referencia. Esto es lo que
+        // estaba mal y se veía a simple vista en la paleta del editor: el Wiggler, el Blargg,
+        // el Banzai Bill, el Big Boo, Sparky, la bola con cadena… salían como manchas de
+        // colores. Ninguno de ellos aparece en YOSHI'S ISLAND 2, y el banco de GFX y la CGRAM
+        // son DEL NIVEL: pedirle a un nivel de pradera el dibujo de un pez globo devuelve lo
+        // que haya en esa ranura de su banco, que es otro gráfico entero.
+        //
+        // De 37 enemigos de dibujo propio, 16 salían distintos de como se ven jugando. No es
+        // un matiz de color: son teselas de otro sprite.
+        val nivelPropio = nivelesDondeAparecen(rom, header)
         for (id in SmwEnemyGraphics.customEnemyIds) {
             if (id in out) continue
-            val img = runCatching { SmwEnemyGraphics.customEnemyImage(rom, header, level, id) }.getOrNull()
+            // Si el enemigo no está puesto en ningún nivel no hay banco "suyo": queda el de
+            // referencia, que es lo único que se puede hacer, y se sabe que puede no valer.
+            val suyo = nivelPropio[id] ?: level
+            val img = runCatching { SmwEnemyGraphics.customEnemyImage(rom, header, suyo, id) }.getOrNull()
             if (img != null) out[id] = img
+        }
+        return out
+    }
+
+    /**
+     * Para cada enemigo de dibujo propio, el PRIMER nivel de la ROM donde está colocado, o
+     * ausente si no aparece en ninguno. Una sola pasada por las listas de sprites de los 512
+     * niveles: es la forma de saber en qué banco de GFX vive de verdad cada uno.
+     *
+     * Se calcula leyendo la ROM en vez de escribir una tabla a mano porque una tabla fijada
+     * aquí valdría solo para la ROM vanilla y mentiría en cuanto alguien horneara otra.
+     */
+    private fun nivelesDondeAparecen(rom: ByteArray, header: SnesHeader): Map<Int, Int> {
+        val quedan = SmwEnemyGraphics.customEnemyIds.toHashSet()
+        val out = HashMap<Int, Int>()
+        for (lv in 0 until 0x200) {
+            if (quedan.isEmpty()) break
+            val puestos = runCatching { SnesGameRecipes.smwLevelEnemies(rom, header, lv) }.getOrNull().orEmpty()
+            for ((id, _, _) in puestos) {
+                if (quedan.remove(id)) out[id] = lv
+            }
         }
         return out
     }

@@ -56,6 +56,12 @@ object SmwAssetStore {
      *       porque heredaban del nivel una página de tesela que su rutina no hereda, y la
      *       voladora usaba encima el fotograma de andar—. Quien horneó con la v11 o anterior
      *       tiene esos PNG mal. Entra también la 0x72, que ya se puede dibujar bien.
+     *  v13: los sprites de dibujo propio se horneaban TODOS desde el nivel de referencia
+     *       (YOSHI'S ISLAND 2), y 16 de 37 no aparecen en ese nivel: el banco de GFX y la
+     *       CGRAM son DEL NIVEL, así que salían teselas de otro sprite. Era lo que ponía la
+     *       paleta del editor llena de manchas de colores (Wiggler, Blargg, Banzai Bill, Big
+     *       Boo, Sparky, la bola con cadena…). Ahora cada uno se hornea en un nivel donde
+     *       está puesto de verdad.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -64,7 +70,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 12
+    private const val BAKE_VERSION = 13
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
