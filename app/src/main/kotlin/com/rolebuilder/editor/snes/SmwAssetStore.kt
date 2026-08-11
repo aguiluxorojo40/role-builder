@@ -62,6 +62,10 @@ object SmwAssetStore {
      *       paleta del editor llena de manchas de colores (Wiggler, Blargg, Banzai Bill, Big
      *       Boo, Sparky, la bola con cadena…). Ahora cada uno se hornea en un nivel donde
      *       está puesto de verdad.
+     *  v14: el PODOBOO (0x33) y el SPINY (0x13) entran en el atlas (dos columnas MÁS, así que
+     *       esta subida es de las obligatorias), y el DRY BONES (0x30/0x32) como sprite de
+     *       dibujo propio. El Podoboo llevaba fuera desde siempre por "gráficos dinámicos":
+     *       ahora se reconstruye desde GFX33, que es de donde el juego los saca por DMA.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -70,7 +74,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 13
+    private const val BAKE_VERSION = 14
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)

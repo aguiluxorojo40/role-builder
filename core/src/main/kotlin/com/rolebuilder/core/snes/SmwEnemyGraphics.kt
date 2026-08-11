@@ -1,5 +1,7 @@
 package com.rolebuilder.core.snes
 
+import com.rolebuilder.core.snes.compression.LcLz2
+
 /**
  * Gráficos REALES de enemigos de Super Mario World: dado un nivel, devuelve la
  * imagen ARGB de un enemigo tal y como lo dibuja el juego, para que un motor de
@@ -154,6 +156,23 @@ object SmwEnemyGraphics {
         // Tanda 9: los otros dos que el juego dibuja como cuadrado de cuatro teselas y que se
         // han visto correctos al renderizarlos: la bola de pinchos y el Thwimp.
         0x14 to "Huevo de Spiny", 0x27 to "Thwimp",
+        // Tanda 10: el PODOBOO (0x33), el mayor hueco de la ROM entera —81 colocaciones en 15
+        // niveles—. Estaba descartado por "graficos dinamicos", y era verdad a medias: sus
+        // teselas NO estan en el tileset del nivel, pero SI se pueden reconstruir, porque el
+        // buffer del que sale su DMA es GFX33 descomprimida. Ver [DYNAMIC_GFX]. Se dibuja como
+        // cuadrado de cuatro teselas 8x8 igual que el trampolin ([SQUARE_SPRITES]).
+        0x33 to "Podoboo",
+        // Y el SPINY (0x13), 40 colocaciones. No hacia falta portar nada: entra por
+        // SprXXX_Generic_SpinyEntry -> SprXXX_Generic_Spr0to13Gfx ($01:8BC3), que con
+        // Spr0to13Prop[0x13] = 0x00 cae en GenericGFXRtDraw1Tile16x16 — o sea, la tabla
+        // generica de siempre, la misma por la que ya salian el Goomba y el Buzzy. Solo
+        // estaba sin catalogar. Verificado mirando el PNG en los cuatro niveles donde esta
+        // puesto (001, 01C, 121, 136): el mismo bicho de pinchos en los cuatro.
+        //
+        // OJO con el nombre: [SmwSpriteNames] lo llama "KoopaKidBossFight", que no cuadra con
+        // el juego — `Spr014_SpinyEgg` ($01:8C18) al tocar el suelo hace `spr_spriteid = 19`,
+        // o sea que el huevo de Spiny se convierte EN ESTE id. Es el Spiny.
+        0x13 to "Spiny",
     )
 
     /** Ids cubiertos, en orden estable (el mismo que el atlas horneado). */
@@ -356,6 +375,12 @@ object SmwEnemyGraphics {
         0x14 to 2, // Spr014_SpinyEgg            -> Draw4Tiles8x8Square(k, 2)
         0x27 to 1, // Spr027_Thwimp              -> Draw4Tiles8x8Square(k, 1)
         0x2F to 2, // Spr02F_PortableSpringboard -> Entry1(k, 2, ...)
+        0x33 to 1, // Spr033_Podoboo             -> Draw4Tiles8x8Square(k, 1)  ($01:E093)
+        //
+        // El Podoboo es de CUATRO teselas de 8x8 como los de arriba, pero ademas sus teselas
+        // no salen del tileset del nivel sino del DMA por fotograma: ver [DYNAMIC_GFX]. Con
+        // la fila 1 de [SQUARE_PROP] = {0x00, 0x40, 0x00, 0x40} el juego dibuja la MITAD
+        // izquierda de la bola y la refleja: 06 / 06 en espejo / 16 / 16 en espejo.
         //
         // NO se meten aqui, aunque tambien llamen a esa rutina:
         //  · Goomba en PARACAIDAS (0x3F/0x40): su fila de propiedades sale de una tabla POR
@@ -366,6 +391,23 @@ object SmwEnemyGraphics {
         //    estan curados y se dibujan bien por la via de siempre, asi que meterlos aqui
         //    seria ROMPER dos enemigos que funcionan.
     )
+
+    /**
+     * De los sprites de [SQUARE_SPRITES], los que además ANIMAN por esta vía: el fotograma
+     * suma **4** al índice base (`TilesOffset + 4·spr_table1602`), no 1, porque cada
+     * fotograma son cuatro teselas seguidas.
+     *
+     * Solo está el Podoboo, y verificado mirando los dos: el 0 es la llama con el cuerpo
+     * AMARILLO y el 1 el mismo dibujo con el cuerpo ROJO — el parpadeo del fuego, que en el
+     * juego alterna cada pocos ticks (`SetNormalSpriteAnimationFrame` pone `spr_table1602`
+     * a 0/1 mientras SUBE; al caer le suma 2 y pasa a los fotogramas 2/3, que son las mismas
+     * teselas al revés).
+     *
+     * Los otros tres (huevo de Spiny, Thwimp, trampolín) se quedan a 1 a propósito: su
+     * `spr_table1602` no es un ciclo de andar (el del trampolín es el REBOTE y el del huevo
+     * el giro, que no se puede leer con dos cuadros sueltos).
+     */
+    private val SQUARE_ANIMATED = setOf(0x33)
 
     /**
      * Imagen 16×16 de un sprite dibujado como cuadrado de cuatro teselas de 8×8. Port de
@@ -808,6 +850,39 @@ object SmwEnemyGraphics {
             ),
             palRow = (8 + 1) * 16,
         ),
+        // DRY BONES (0x30 el que tira huesos, 0x32 el que se rehace). NO son Bony Beetles:
+        // los tres ids comparten la rutina de MOVIMIENTO (`Spr031_BonyBeetle`, $01:E42B) pero
+        // NO la de dibujo. `Spr030_ThrowingDryBones_03C3DA` ($03:C3DA) bifurca en la primera
+        // linea:
+        //
+        //     if (spr_spriteid[k] == 49)  GenericGFXRtDraw1Tile16x16(k);   // 0x31 Bony Beetle
+        //     else                        ... dibujo propio de DOS teselas ...
+        //
+        // O sea que el 0x31 SI es de la tabla generica (por eso ya estaba curado y salia bien)
+        // y el 0x30/0x32 NO: su entrada de la tabla generica es la del Bony Beetle y por eso
+        // "salian raros de forma unanime". Aqui va el dibujo de verdad.
+        //
+        // El bucle (v2 = 2, 1, ... hasta v2 == DATA_03C3D7[1602]) pinta, en el fotograma 0:
+        //   v2=2 -> Tiles[2] = 0x66 en YDisp[2] = 0x00   (cuerpo)
+        //   v2=1 -> Tiles[1] = 0x64 en YDisp[1] = 0xF0   (cabeza, 16 px mas arriba)
+        // y para en v2 == 0, asi que el Tiles[0] no entra: es del fotograma de TIRAR el hueso.
+        // XDisp/Prop se indexan con 3*spr_table157c (la direccion); con direccion 1 salen
+        // XDisp[5]=0x00 y XDisp[4]=0xF8=-8 y Prop[5]=Prop[4]=0x03, o sea SIN volteo. Ese 3
+        // otra vez lleva las dos cosas: pagina 1 (bit 0) y paleta (3>>1)&7 = 1.
+        0x30 to CustomEnemy(dryBonesFrame0(), palRow = (8 + 1) * 16),
+        0x32 to CustomEnemy(dryBonesFrame0(), palRow = (8 + 1) * 16),
+    )
+
+    /**
+     * Fotograma 0 (de pie/andando) del DRY BONES, de `kSpr030_ThrowingDryBones_DryBonesTiles`
+     * / `_DryBonesTileXDisp` / `_DryBonesTileYDisp` / `_DryBonesGfxProp` ($03). Dos teselas de
+     * 16×16 (`FinishOAMWrite(k, 2, 2)` → tamaño 2 = 16×16): la cabeza medio bloque a la
+     * izquierda y por encima del cuerpo. El fotograma 1 solo cambia el cuerpo (0x66→0x68) y
+     * baja la cabeza 1 px, que es el pasito de andar.
+     */
+    private fun dryBonesFrame0(): List<OamTile> = listOf(
+        OamTile(0x64, -8, 0, page = 1),  // cabeza (YDisp 0xF0 = −16 respecto al cuerpo)
+        OamTile(0x66, 0, 16, page = 1),  // cuerpo (YDisp 0x00)
     )
 
     /**
@@ -856,42 +931,134 @@ object SmwEnemyGraphics {
     /** true si [spriteId] es invisible A PROPÓSITO (ver [INVISIBLE_SPRITES]). */
     fun isIntentionallyInvisible(spriteId: Int): Boolean = spriteId in INVISIBLE_SPRITES
 
+    // ─────────────────────── GRÁFICOS DINÁMICOS (subidos por DMA) ───────────────────────
+    //
+    // Hay sprites cuyas teselas NO están en los cuatro ficheros GFX del nivel: el juego se
+    // las mete en la VRAM de sprites por DMA en CADA fotograma, desde un buffer de RAM.
+    // Dibujarlos desde el tileset estático del nivel no da "algo parecido": da lo que
+    // hubiera en esa ranura del fichero, que en la ranura 0x06 es la FUENTE (letras).
+    //
+    // Durante un tiempo esto se dio por irrecuperable y los ids afectados se dejaron fuera
+    // del catálogo. No lo es: el buffer de RAM del que sale el DMA se puede reconstruir
+    // desde la ROM, porque es GFX33 descomprimida. Abajo está la cadena entera.
+
     /**
-     * Sprites cuyas teselas NO están en los GFX del nivel: el juego se las mete por DMA en
-     * cada fotograma. Dibujarlos desde el tileset estático da SIEMPRE basura, y no es un
-     * fallo que se pueda arreglar afinando la tabla — es que la fuente no está ahí.
-     *
-     * ## Cómo se reconocen
-     *
-     * `UploadPlayerGFX` ($00:A300) copia a la VRAM de sprites, cada fotograma, desde los
-     * punteros `graphics_dynamic_sprite_pointers_top/bottom`:
+     * `UploadPlayerGFX` ($00:A300) copia, cada fotograma, dos bloques de 0x40 bytes por
+     * ranura a la VRAM de sprites:
      *
      * ```c
-     * SmwCopyToVram(0x6000 + v0 * 0x10, g_ram + t, 0x40);   // arriba
-     * SmwCopyToVram(0x6100 + v1 * 0x10, g_ram + t, 0x40);   // abajo
+     * uint16 t = *(uint16 *)&graphics_dynamic_sprite_pointers_top_lo[v0];
+     * SmwCopyToVram(0x6000 + v0 * 0x10, g_ram + t, 0x40);   // fila de ARRIBA
+     * ...
+     * SmwCopyToVram(0x6100 + v1 * 0x10, g_ram + t, 0x40);   // fila de ABAJO
      * ```
      *
-     * Eso ocupa las teselas **0x00-0x09** (arriba) y **0x10-0x19** (abajo) de la página de
-     * sprites. Cualquier sprite cuyas teselas caigan ahí lleva gráficos dinámicos.
-     *
-     * ## El caso comprobado: el Podoboo (0x33)
-     *
-     * Su entrada de la tabla genérica son las teselas `06 06 16 16` —las cuatro dentro de
-     * esa zona— y su rutina ($01:E093) deja escrito de dónde salen de verdad:
-     * `graphics_dynamic_sprite_pointers_top_lo[6] = 0x8600`. Al dibujarlo desde el tileset
-     * del nivel salen **letras**, porque ahí es donde vive la fuente.
-     *
-     * Esto explica un descarte que ya estaba hecho por observación ("salían tiles de fuente
-     * o basura de forma unánime"): ahora hay un criterio en vez de prueba y error. **Ojo**:
-     * el 0x30 y el 0x32, descartados a la vez, NO son de este tipo — sus teselas
-     * (`AC BC AC A6` y `DC EC DE EE`) están fuera de la zona dinámica y su problema es
-     * otro: comparten rutina con el Bony Beetle (0x31), así que su entrada de la tabla
-     * genérica no es su aspecto real.
+     * La VRAM de sprites empieza en la palabra 0x6000 y cada tesela ocupa 0x10 palabras, o
+     * sea que `0x6000 + v0*0x10` es la TESELA `v0` y `0x6100 + v1*0x10` la `0x10 + v1`. Y
+     * 0x40 bytes son DOS teselas de 4bpp, así que la ranura `v0` ocupa las teselas
+     * `v0`,`v0+1` arriba y `0x10+v0`,`0x10+v0+1` abajo. Todas en la página 0 (SP1).
      */
-    val DYNAMIC_GFX_SPRITES: Set<Int> = setOf(0x33)
+    private const val DYNAMIC_TILES_PER_COPY = 2
 
-    /** true si [spriteId] recibe sus gráficos por DMA y no se puede sacar del nivel. */
+    /** Primera tesela de VRAM de la fila de ABAJO de las ranuras dinámicas (`0x6100`). */
+    private const val DYNAMIC_BOTTOM_TILE = 0x10
+
+    /**
+     * Base en g_ram del buffer del que sale ese DMA: **$7E:7D00**, y lo que hay ahí es
+     * GFX33 descomprimida y expandida a 4bpp.
+     *
+     * Sale de `GraphicsDecompressionRoutines_DecompressGFX32And33` ($00:B888): copia GFX33
+     * cruda (3bpp) a `g_ram + 0x2000` y la reexpande a 4bpp escribiendo HACIA ABAJO desde
+     * `g_ram + 0xACFE`, 32 bytes de salida por cada 24 de entrada. Con las 384 teselas de
+     * GFX33 eso son 0x3000 bytes, o sea desde 0xACFF hasta 0x7D00 justo. La versión con el
+     * parche de Lunar Magic lo deja escrito sin rodeos: `memcpy(g_ram + 0x7d00, kGfx33, …)`.
+     *
+     * El mismo 0x7D00 lo usa ya [SnesGameRecipes] para las teselas ANIMADAS (monedas,
+     * bloques `?`, agua), que salen del mismo buffer por la misma cuenta.
+     */
+    private const val GFX33_RAM_BASE = 0x7D00
+
+    /** Bytes por tesela en ese buffer: está expandido a 4bpp, aunque la fuente sea 3bpp. */
+    private const val GFX33_RAM_TILE = 32
+
+    /** Una ranura de gráficos dinámicos: qué punteros de RAM instala la rutina del sprite. */
+    private class DynamicGfx(
+        /** Índice de ranura (`graphics_dynamic_sprite_pointers_*[slot]`) = nº de tesela VRAM. */
+        val slot: Int,
+        /** Puntero g_ram de la fila de ARRIBA. */
+        val topRam: Int,
+        /** Puntero g_ram de la fila de ABAJO. */
+        val bottomRam: Int,
+    )
+
+    /**
+     * Sprites que instalan sus propias teselas dinámicas, con los punteros EXACTOS que deja
+     * escritos su rutina.
+     *
+     * **Podoboo (0x33)**, `Spr033_Podoboo` ($01:E093), rama normal (`spr_table00c2` == 0, la
+     * bola de lava; con 00c2 ≠ 0 es la llamarada de Bowser, que dibuja otra cosa):
+     *
+     * ```c
+     * GenericGFXRtDraw4Tiles8x8Square(k, 1);
+     * *(uint16 *)&graphics_dynamic_sprite_pointers_top_lo[6]    = 0x8600;
+     * *(uint16 *)&graphics_dynamic_sprite_pointers_bottom_lo[6] = 0x8800;
+     * ```
+     *
+     * Ranura 6 → teselas de VRAM 0x06/0x07 (arriba) y 0x16/0x17 (abajo), que es EXACTAMENTE
+     * su entrada de la tabla genérica (`06 06 16 16`). Y las fuentes:
+     * (0x8600 − 0x7D00)/32 = tesela **72** de GFX33 y (0x8800 − 0x7D00)/32 = la **88**
+     * (72 + 16, o sea la de justo debajo en una hoja de 16 de ancho: es un 16×16 partido).
+     */
+    private val DYNAMIC_GFX: Map<Int, DynamicGfx> = mapOf(
+        0x33 to DynamicGfx(slot = 6, topRam = 0x8600, bottomRam = 0x8800),
+    )
+
+    /** Ids que reciben sus gráficos por DMA desde GFX33 en vez de desde el tileset del nivel. */
+    val DYNAMIC_GFX_SPRITES: Set<Int> = DYNAMIC_GFX.keys
+
+    /** true si [spriteId] recibe sus gráficos por DMA (ver [DYNAMIC_GFX]). */
     fun hasDynamicGraphics(spriteId: Int): Boolean = spriteId in DYNAMIC_GFX_SPRITES
+
+    /**
+     * Nº de tesela de VRAM de sprites → nº de tesela dentro de GFX33, para [d]. Es la
+     * traducción literal de las dos copias de `UploadPlayerGFX`.
+     */
+    private fun dynamicTileMap(d: DynamicGfx): Map<Int, Int> {
+        val top = (d.topRam - GFX33_RAM_BASE) / GFX33_RAM_TILE
+        val bottom = (d.bottomRam - GFX33_RAM_BASE) / GFX33_RAM_TILE
+        val m = HashMap<Int, Int>()
+        for (i in 0 until DYNAMIC_TILES_PER_COPY) {
+            m[d.slot + i] = top + i
+            m[DYNAMIC_BOTTOM_TILE + d.slot + i] = bottom + i
+        }
+        return m
+    }
+
+    /**
+     * La traducción de [dynamicTileMap] de un id, expuesta SIN ROM para poder fijarla en un
+     * test: qué tesela de GFX33 acaba en qué tesela de VRAM es la decisión del port, y sin
+     * ROM no hay otra forma de comprobarla. null si el id no lleva gráficos dinámicos.
+     */
+    fun dynamicTileMapForTest(spriteId: Int): Map<Int, Int>? =
+        DYNAMIC_GFX[spriteId]?.let { dynamicTileMap(it) }
+
+    /**
+     * GFX33 descomprimida (3bpp, tal cual está en la ROM: la expansión a 4bpp del juego solo
+     * añade un plano de ceros, así que para leer píxeles da igual). No está en la tabla de
+     * punteros de GFX —que solo llega a GFX31—: va CONTIGUA detrás de GFX32 (Mario), cuyo
+     * puntero sí es fijo ($00:38D8/38D9 lo/hi y $00:3890 el banco). null si no descomprime.
+     */
+    private fun gfx33(rom: ByteArray, delta: Int): ByteArray? {
+        val lo = rom.getOrNull(SnesGameRecipes.SMW_GFX32_LO_PC + delta)?.toInt()?.and(0xFF) ?: return null
+        val hi = rom.getOrNull(SnesGameRecipes.SMW_GFX32_HI_PC + delta)?.toInt()?.and(0xFF) ?: return null
+        val bank = rom.getOrNull(SnesGameRecipes.SMW_GFX32_BANK_PC + delta)?.toInt()?.and(0xFF) ?: return null
+        val addr = lo or (hi shl 8)
+        if (addr < 0x8000) return null
+        val pc = (bank and 0x7F) * 0x8000 + (addr - 0x8000)
+        if (pc < 0x40000 || pc >= rom.size) return null
+        val g32 = runCatching { LcLz2.decompress(rom, pc) }.getOrNull() ?: return null
+        return runCatching { LcLz2.decompress(rom, pc + g32.consumedBytes).data }.getOrNull()
+    }
 
     /** Frame 0 de andar de Super Koopa: cuerpo 16×16 (paleta del sprite) + 3 teselas de capa 8×8. */
     /**
@@ -1026,7 +1193,11 @@ object SmwEnemyGraphics {
         // Sprites de CUADRADO de 4 teselas (trampolin...): su dibujo no es un bloque de
         // 16x16 por byte, sino cuatro teselas de 8x8 seguidas. Sin esta rama saldrian como
         // basura, que es exactamente lo que parecian antes de encontrar la rutina.
-        squareTileImage(rom, header, level, spriteId)?.let { return listOf(it) }
+        if (spriteId in SQUARE_SPRITES) {
+            val n = if (spriteId in SQUARE_ANIMATED) ATLAS_FRAMES else 1
+            val cuadros = (0 until n).mapNotNull { squareTileImage(rom, header, level, spriteId, it) }
+            if (cuadros.isNotEmpty()) return cuadros
+        }
         val art = artFor(rom, header, level, spriteId) ?: return null
         val off = OAM_OFFSET[spriteId]
         val tall = isTall(spriteId)
@@ -1139,6 +1310,9 @@ object SmwEnemyGraphics {
         // Cheep-Cheep (aleteo de aleta), Spike Top (giro), Bony Beetle (mandíbula), Boo
         // (se tapa/destapa la cara), Eerie (ondeo), Rip Van Fish (aletas), Topo (andar).
         0x15, 0x16, 0x2E, 0x31, 0x37, 0x38, 0x39, 0x3D, 0x4D, 0x4E,
+        // Spiny (0x13): mismo caso que el Goomba —anda por la via generica—, y sus dos
+        // fotogramas se diferencian en las PATAS. Visto en los dos PNG.
+        0x13,
         // Plantas Piraña de TUBO ([PIRANHAS]): abren/cierran la boca con paso 2 (solo la
         // tesela de boca de cada par apilado). Las SALTARINAS animan aparte
         // ([isJumpingPiranha]), no por esta vía.
@@ -1151,9 +1325,17 @@ object SmwEnemyGraphics {
     /** Nº de fotogramas que la vía genérica ([spriteFrames]) saca para el id. */
     private fun genericAnimFrames(spriteId: Int): Int = if (spriteId in ANIMATED_2FRAME) 2 else 1
 
-    /** Nº de fotogramas de animación del id en el atlas: 2 si anima (aladas, saltarinas o genéricos), 1 si no. */
-    fun animFrameCount(spriteId: Int): Int =
-        if (isWinged(spriteId) || isJumpingPiranha(spriteId) || genericAnimFrames(spriteId) > 1) ATLAS_FRAMES else 1
+    /**
+     * ¿Anima el id, por cualquiera de las cuatro vías? Cada una suma el fotograma a un sitio
+     * distinto: el ala de las Parakoopa, la hélice de la Piraña saltarina, `+4` por cuadro en
+     * los de cuadrado ([SQUARE_ANIMATED]) y `+1` en la tabla genérica ([ANIMATED_2FRAME]).
+     */
+    private fun anima(spriteId: Int): Boolean =
+        isWinged(spriteId) || isJumpingPiranha(spriteId) ||
+            spriteId in SQUARE_ANIMATED || genericAnimFrames(spriteId) > 1
+
+    /** Nº de fotogramas de animación del id en el atlas: 2 si anima (ver [anima]), 1 si no. */
+    fun animFrameCount(spriteId: Int): Int = if (anima(spriteId)) ATLAS_FRAMES else 1
 
     // Tablas REALES del ala (banco $01, `KoopaWing*`), indexadas por dir*2 + fotograma.
     // Usamos SIEMPRE la dirección 1 (ala a la DERECHA, sin espejo) para hornear el atlas.
@@ -1288,8 +1470,21 @@ object SmwEnemyGraphics {
         private val cgram: IntArray,
         val cgRow: Int,
         val page: Int,
+        /** GFX33 descomprimida, fuente de las teselas DINÁMICAS del nivel (o null si no hay). */
+        private val dynData: ByteArray? = null,
+        /** Nº de tesela de VRAM → nº de tesela en [dynData] (ver [dynamicTileMap]). */
+        private val dynMap: Map<Int, Int> = emptyMap(),
     ) {
         private fun tileIndices(tile9: Int): IntArray? {
+            // Las teselas DINÁMICAS mandan sobre el tileset del nivel: el DMA de cada
+            // fotograma las PISA en la VRAM, así que lo que hubiera en el fichero GFX no se
+            // llega a ver nunca. Si el mapa no cubre esta tesela se sigue por la vía normal.
+            dynMap[tile9]?.let { t ->
+                val data = dynData ?: return null
+                val off = t * FORMAT.bytesPerTile
+                if (off + FORMAT.bytesPerTile > data.size) return null
+                return SnesDecoder.decodeTile(data, off, FORMAT, t).pixelIndices
+            }
             val slot = tile9 / TILES_PER_FILE
             if (slot !in 0..3) return null
             val data = spData[slot] ?: return null
@@ -1391,6 +1586,14 @@ object SmwEnemyGraphics {
         }
 
         val cgram = SnesGameRecipes.assembleSmwCgram(rom, delta, level)
-        return LevelSpriteArt(spData, cgram, cgRow, page)
+        // Si el sprite instala teselas DINÁMICAS, se le añade GFX33 como fuente de ESAS
+        // teselas concretas. Lo demás (paleta, página, los otros ficheros GFX) no cambia:
+        // el DMA solo pisa un puñado de ranuras de la VRAM, no el banco entero.
+        val dyn = DYNAMIC_GFX[spriteId]
+        return if (dyn == null) {
+            LevelSpriteArt(spData, cgram, cgRow, page)
+        } else {
+            LevelSpriteArt(spData, cgram, cgRow, page, gfx33(rom, delta), dynamicTileMap(dyn))
+        }
     }
 }

@@ -119,14 +119,23 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
-    fun `la tanda 1 esta cubierta y los descartados no`() {
+    fun `la tanda 1 esta cubierta, y los tres que se habian descartado ya no lo estan`() {
         for (id in intArrayOf(0x4F, 0x37, 0x3D, 0x15, 0x16, 0x2E, 0x38, 0x39, 0x31)) {
             assertTrue(SmwEnemyGraphics.handles(id), "debería cubrir 0x${id.toString(16)}")
         }
-        // Descartados tras verificación visual: su entrada de la tabla genérica no es
-        // su aspecto real (rutina de dibujo propia; salían fuentes o basura).
-        for (id in intArrayOf(0x33, 0x30, 0x32)) {
-            assertFalse(SmwEnemyGraphics.handles(id), "0x${id.toString(16)} está descartado")
+        // 0x33, 0x30 y 0x32 se descartaron a la vez tras mirarlos ("salían fuentes o basura"),
+        // pero por razones DISTINTAS, y las dos tienen arreglo:
+        //  · el PODOBOO (0x33) sí es de la tabla genérica; lo que no tenía era la FUENTE de sus
+        //    teselas, que llega por DMA desde GFX33 ([SmwEnemyGraphics.DYNAMIC_GFX_SPRITES]).
+        //    Ahora está en el catálogo curado como cualquier otro.
+        assertTrue(SmwEnemyGraphics.handles(0x33), "el Podoboo ya se dibuja")
+        //  · el DRY BONES (0x30/0x32) tiene rutina de dibujo PROPIA —solo el 0x31 Bony Beetle
+        //    cae en la genérica—, así que sigue FUERA del catálogo genérico a propósito y
+        //    entra por el de dibujos propios. Si algún día apareciera en `handles` sería que
+        //    alguien lo ha metido en la tabla genérica, que es justo lo que da basura.
+        for (id in intArrayOf(0x30, 0x32)) {
+            assertFalse(SmwEnemyGraphics.handles(id), "0x${id.toString(16)} va por dibujo propio")
+            assertTrue(id in SmwEnemyGraphics.customEnemyIds, "0x${id.toString(16)} tiene dibujo propio")
         }
     }
 
@@ -326,15 +335,62 @@ class SmwEnemyGraphicsTest {
     }
 
     @Test
-    fun `el Podoboo recibe sus graficos por DMA y no se puede sacar del nivel`() {
+    fun `el Podoboo recibe sus graficos por DMA, y por eso hay que ir a buscarlos a GFX33`() {
         // Sus teselas (06/06/16/16) caen en la zona que UploadPlayerGFX reescribe cada
-        // fotograma, asi que dibujarlo desde el tileset estatico da letras. Marcarlo evita
-        // que alguien "arregle" la tabla a base de prueba y error.
+        // fotograma, asi que dibujarlo desde el tileset ESTATICO del nivel da letras (ahi es
+        // donde vive la fuente). Eso lo tuvo fuera del catalogo mucho tiempo, y era medio
+        // cierto: la fuente no esta en el fichero GFX del nivel, pero SI se puede reconstruir.
         assertTrue(SmwEnemyGraphics.hasDynamicGraphics(0x33), "el Podoboo es de graficos dinamicos")
-        // Y NO vale meter ahi a los que se descartaron por otra razon: el 0x30 y el 0x32
-        // fallan porque comparten rutina con el Bony Beetle, no por el DMA.
+        // Y NO vale meter ahi a cualquiera que se descartara por otra razon: el 0x30 y el 0x32
+        // fallaban por compartir la tabla generica con el Bony Beetle, no por el DMA.
         for (id in intArrayOf(0x30, 0x32, 0x31, 0x00, 0x76)) {
             assertFalse(SmwEnemyGraphics.hasDynamicGraphics(id), "0x%02X no es dinamico".format(id))
+        }
+    }
+
+    @Test
+    fun `la ranura dinamica 6 del Podoboo apunta a las teselas 72 y 88 de GFX33`() {
+        // ESTA es la cuenta que hace posible dibujarlo, y la que hay que poder revisar sin
+        // ROM. Sale de dos sitios que se juntan:
+        //
+        //  · `Spr033_Podoboo` ($01:E093) instala la ranura 6:
+        //        graphics_dynamic_sprite_pointers_top_lo[6]    = 0x8600
+        //        graphics_dynamic_sprite_pointers_bottom_lo[6] = 0x8800
+        //  · `UploadPlayerGFX` ($00:A300) copia 0x40 bytes (= DOS teselas) de cada puntero a
+        //        VRAM 0x6000 + 6*0x10  -> teselas 0x06 y 0x07
+        //        VRAM 0x6100 + 6*0x10  -> teselas 0x16 y 0x17
+        //  · y el buffer fuente es GFX33 expandida a 4bpp en g_ram desde 0x7D00
+        //    (`GraphicsDecompressionRoutines_DecompressGFX32And33`, $00:B888), 32 bytes por
+        //    tesela: (0x8600 − 0x7D00)/32 = 72 y (0x8800 − 0x7D00)/32 = 88.
+        //
+        // Equivocarse en la BASE (0x7D00) o en el paso (32) no rompe nada visible en el
+        // codigo: simplemente pinta OTRA tesela de GFX33, que es un dibujo entero distinto.
+        val mapa = SmwEnemyGraphics.dynamicTileMapForTest(0x33)
+        assertNotNull(mapa, "el Podoboo tiene ranura dinamica")
+        assertEquals(mapOf(0x06 to 72, 0x07 to 73, 0x16 to 88, 0x17 to 89), mapa)
+        // Y las 4 teselas que instala son EXACTAMENTE las 4 de su entrada de la tabla
+        // generica (06 06 16 16): si no coincidieran, la ranura elegida no seria la suya.
+        assertNull(SmwEnemyGraphics.dynamicTileMapForTest(0x31), "el Bony Beetle no es dinamico")
+    }
+
+    @Test
+    fun `el Dry Bones no hereda del nivel ni la pagina ni la paleta`() {
+        // `Spr030_ThrowingDryBones_03C3DA` ($03:C3DA) escribe su propiedad a mano:
+        // `flags = sprites_tile_priority | DryBonesGfxProp[...]`, y esa Prop vale 0x03/0x43.
+        // Ese 3 lleva las DOS cosas a la vez: bit 0 = pagina 1 y bits 1-3 = paleta 1. Sacar
+        // la pagina de $166E pinta la otra mitad de la VRAM de sprites.
+        for (id in intArrayOf(0x30, 0x32)) {
+            val t = SmwEnemyGraphics.customEnemyTilesForTest(id, ajuste = 1)
+            assertNotNull(t, "falta el Dry Bones 0x%02X".format(id))
+            assertEquals(2, t.size, "cabeza + cuerpo, y nada mas (el Tiles[0] es el de tirar el hueso)")
+            assertTrue(t.all { it.page == 1 }, "el Dry Bones fija la pagina 1 en su propiedad OAM")
+            // La CABEZA (0x64) va ARRIBA y medio bloque a la izquierda del cuerpo (0x66):
+            // XDisp[4] = 0xF8 = −8 y YDisp[1] = 0xF0 = −16. Invertirlo deja el craneo en el
+            // suelo, que es el error facil al portar un bucle que va de abajo a arriba.
+            assertEquals(0x64, t[0].tile, "arriba va el craneo")
+            assertEquals(0x66, t[1].tile, "abajo el cuerpo del fotograma 0")
+            assertEquals(t[1].dx - 8, t[0].dx, "la cabeza sobresale 8 px a la izquierda")
+            assertEquals(t[1].dy - 16, t[0].dy, "y 16 px por encima")
         }
     }
 }
