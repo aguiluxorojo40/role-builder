@@ -21,12 +21,14 @@ package com.rolebuilder.core.snes
  * jugador sube y `0x21 <= tile_lo < 0x25`, y entonces llama a `CheckIfBlockWasHit`
  * (que suelta el contenido). Son bloques SÓLIDOS (te apoyas y los cabeceas).
  */
-enum class SmwBlockAction { NONE, COIN, QUESTION, DRAGON_COIN }
+/**
+ * Los valores NUEVOS van SIEMPRE al final: el ordinal se guarda en el tileset del proyecto
+ * (`platformBlockActions`), así que reordenarlos cambiaría en silencio lo que hace cada
+ * bloque de los mapas ya importados.
+ */
+enum class SmwBlockAction { NONE, COIN, QUESTION, DRAGON_COIN, MOON_3UP }
 
 object SmwBlockBehavior {
-
-    /** Byte bajo del bloque Map16 de una moneda suelta (confirmado en $00:F545). */
-    private const val COIN_LO = 0x2B
 
     /** Rango de bytes bajos de los bloques golpeables `?`/premio (confirmado en $00:EBxx). */
     private val QUESTION_LO = 0x21..0x24
@@ -42,16 +44,58 @@ object SmwBlockBehavior {
     private val DRAGON_COIN_LO = 0x2D..0x2E
 
     /**
+     * Bytes bajos de MONEDA SUELTA, los tres. `RunPlayerBlockCode_00F309` ($00:F309) los
+     * despacha juntos: entra con `0x2A <= j < 0x2F` y todo lo que sea `j < 0x2D` llama a
+     * `GiveCoins_OneCoin()`. O sea 0x2A, 0x2B y 0x2C.
+     *
+     * El 0x2A tiene una condición: `if (j != 42 || timer_blue_pswitch)` — con el
+     * interruptor-P AZUL activo NO es moneda (es cuando las monedas se vuelven bloques).
+     * Se clasifica igual, porque el estado por defecto de un nivel es sin interruptor.
+     */
+    private val COIN_LO_ALL = 0x2A..0x2C
+
+    /**
+     * Byte bajo de la LUNA 3-UP. `RunPlayerBlockCode_00F309` ($00:F309): `if (j != 110)
+     * return` — o sea 0x6E, y lo que hace es subir `unusedram_3up_moons_counter` y marcar
+     * `flag_collected_moons` del nivel. Da tres vidas.
+     */
+    private const val MOON_3UP_LO = 0x6E
+
+    /**
+     * Rango de bytes bajos de los bloques GOLPEABLES del plano de TERRENO: el `?` de toda
+     * la vida y sus parientes (bloque de premio, de bonus, el que suelta el huevo de Yoshi).
+     *
+     * ⚠ ESTÁN EN EL PLANO DE TERRENO, NO EN EL DE BLOCK CODE, y por eso no se veía ni uno:
+     * la comprobación vive en `RunPlayerBlockCode` ($00:F160 y su llamador), que primero
+     * exige el byte ALTO distinto de cero (`if (v2)`) y el bajo en `0x11..0x6D`, y solo
+     * entonces llama a `CheckIfBlockWasHit(v3, 0)`; ahí dentro, `a = a - 17; if (a >= 0x1D)`
+     * descarta todo lo que no esté en **0x11..0x2D**.
+     *
+     * Lo que estaba clasificado antes (0x21..0x24 en el plano de block code) no es esto:
+     * ese rango sale de otra rama y dejaba fuera TODOS los `?` de los primeros niveles —
+     * 7 en YOSHI'S ISLAND 1, 17 en el 2, 9 en el 3—, incluido el que suelta el HUEVO DE
+     * YOSHI, que es el motivo de existir de ese nivel.
+     */
+    private val HITTABLE_TERRAIN_LO = 0x11..0x2D
+
+    /**
      * Acción interactiva del bloque Map16 [block] (tal cual lo entrega
-     * [SmwLayer1.SmwLevelTilemap.block]: `alto*0x100 + bajo`, 0x000..0x1FF). Solo el
-     * plano "block code" (byte alto 0) interactúa; el terreno normal es [SmwBlockAction.NONE].
+     * [SmwLayer1.SmwLevelTilemap.block]: `alto*0x100 + bajo`, 0x000..0x1FF).
+     *
+     * **El plano importa**, y confundirlos era el fallo: `RunPlayerBlockCode` bifurca con el
+     * byte ALTO antes de mirar el bajo. Lo que se RECOGE (monedas, moneda dragón, luna) vive
+     * en el plano de block code (alto == 0); lo que se GOLPEA desde abajo vive en el de
+     * terreno (alto != 0), porque son bloques sólidos sobre los que además te apoyas.
      */
     fun classify(block: Int): SmwBlockAction {
-        if (block < 0 || block ushr 8 != 0) return SmwBlockAction.NONE
+        if (block < 0 || block >= 0x200) return SmwBlockAction.NONE
         val lo = block and 0xFF
+        val terreno = block ushr 8 != 0
         return when {
-            lo == COIN_LO -> SmwBlockAction.COIN
+            terreno -> if (lo in HITTABLE_TERRAIN_LO) SmwBlockAction.QUESTION else SmwBlockAction.NONE
+            lo in COIN_LO_ALL -> SmwBlockAction.COIN
             lo in DRAGON_COIN_LO -> SmwBlockAction.DRAGON_COIN
+            lo == MOON_3UP_LO -> SmwBlockAction.MOON_3UP
             lo in QUESTION_LO -> SmwBlockAction.QUESTION
             else -> SmwBlockAction.NONE
         }

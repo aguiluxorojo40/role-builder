@@ -27,16 +27,63 @@ class SmwBlockBehaviorTest {
     fun `la dragon coin son los bytes bajos 0x2D-0x2E apilados`() {
         assertEquals(SmwBlockAction.DRAGON_COIN, SmwBlockBehavior.classify(0x2D)) // mitad abajo
         assertEquals(SmwBlockAction.DRAGON_COIN, SmwBlockBehavior.classify(0x2E)) // mitad arriba
-        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x2C))
+        // El 0x2C NO es "nada": es la tercera MONEDA suelta. `RunPlayerBlockCode_00F309`
+        // ($00:F309) entra con 0x2A <= j < 0x2F y manda a `GiveCoins_OneCoin()` todo lo que
+        // sea j < 0x2D, o sea 0x2A, 0x2B y 0x2C.
+        assertEquals(SmwBlockAction.COIN, SmwBlockBehavior.classify(0x2C))
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x2F))
-        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x12D)) // 0x2D pero plano alto 1
+        // El mismo byte bajo en el plano de TERRENO no es una moneda dragon: ahi 0x2D cae en
+        // el rango de bloques GOLPEABLES (0x11..0x2D, $00:F160).
+        assertEquals(SmwBlockAction.QUESTION, SmwBlockBehavior.classify(0x12D))
     }
 
     @Test
-    fun `el terreno y los bloques del plano alto no son interactivos`() {
+    fun `en el plano de TERRENO lo interactivo son los bloques GOLPEABLES`() {
+        // Esto ANTES daba NONE para todo el plano alto, y era el fallo: los bloques `?` de
+        // SMW viven aqui, no en el de block code. `RunPlayerBlockCode` exige el byte ALTO
+        // distinto de cero (`if (v2)`) y el bajo en 0x11..0x6D antes de llamar a
+        // `CheckIfBlockWasHit` ($00:F160), que se queda con 0x11..0x2D (`a -= 17; if (a >= 0x1D)`).
+        // Con el criterio viejo no se reconocia NI UNO: 7 en YOSHI'S ISLAND 1, 17 en el 2 y
+        // 9 en el 3, incluido el que suelta el HUEVO DE YOSHI.
+        assertEquals(SmwBlockAction.QUESTION, SmwBlockBehavior.classify(0x111)) // primero del rango
+        assertEquals(SmwBlockAction.QUESTION, SmwBlockBehavior.classify(0x124)) // el `?` de YI2/YI3
+        assertEquals(SmwBlockAction.QUESTION, SmwBlockBehavior.classify(0x12D)) // ultimo del rango
+        // Y el rango es EXACTO: fuera de el, el terreno es terreno.
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x110))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x12E))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x100)) // terreno solido
+        // Lo que se RECOGE sigue siendo solo del plano de block code: una moneda del plano
+        // de terreno no existe, ahi ese byte es un bloque golpeable.
+        assertEquals(SmwBlockAction.QUESTION, SmwBlockBehavior.classify(0x12B))
+    }
+
+    @Test
+    fun `la luna 3-UP se recoge, y hasta ahora era decorado`() {
+        // `RunPlayerBlockCode_00F309` ($00:F309): `if (j != 110) return`, y lo que hace es
+        // subir `unusedram_3up_moons_counter` y marcar `flag_collected_moons` del nivel.
+        // Hay una en YOSHI'S ISLAND 1, en (198,4) sobre la fila de nubes: se veia y no se
+        // podia coger.
+        assertEquals(SmwBlockAction.MOON_3UP, SmwBlockBehavior.classify(0x6E))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x6D))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x6F))
+    }
+
+    @Test
+    fun `fuera de rango y aire no son interactivos`() {
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x25)) // aire
-        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x100)) // terreno sólido
-        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x12B)) // 0x2B pero plano alto 1
         assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(-1))
+        assertEquals(SmwBlockAction.NONE, SmwBlockBehavior.classify(0x200))
+    }
+
+    @Test
+    fun `los ordinales NO se pueden reordenar`() {
+        // Se guardan en el tileset del proyecto (`platformBlockActions`), asi que cambiarlos
+        // reinterpretaria en silencio los bloques de todos los mapas ya importados. Los
+        // valores nuevos van al final.
+        assertEquals(0, SmwBlockAction.NONE.ordinal)
+        assertEquals(1, SmwBlockAction.COIN.ordinal)
+        assertEquals(2, SmwBlockAction.QUESTION.ordinal)
+        assertEquals(3, SmwBlockAction.DRAGON_COIN.ordinal)
+        assertEquals(4, SmwBlockAction.MOON_3UP.ordinal)
     }
 }
