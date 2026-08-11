@@ -121,7 +121,9 @@ class ZzEntradasProbe {
     /** Vuelca los bytes crudos de los casos que cita el encargo, para poder comprobarlos. */
     private fun crudoDeLosCitados(rom: ByteArray, header: SnesHeader, delta: Int) {
         println("\n=== CASOS CITADOS: bytes crudos de sus entradas ===")
-        for (lv in intArrayOf(0x1BE, 0x1CB, 0x1CA, 0x1FD, 0x102, 0x105, 0x106, 0x103)) {
+        val citados = (System.getenv("SMW_CRUDOS") ?: "1BE,1CB,1CA,1FD,102,105,106,103")
+            .split(",").map { it.trim().toInt(16) }
+        for (lv in citados) {
             val f000 = rd(rom, delta, 0xF000, lv)
             val f200 = rd(rom, delta, 0xF200, lv)
             val f400 = rd(rom, delta, 0xF400, lv)
