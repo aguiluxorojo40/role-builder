@@ -198,8 +198,26 @@ enum class BlockAction { NONE, COIN, PRIZE, DRAGON_COIN, GRAB }
 
 private val BLOCK_ACTIONS = BlockAction.values()
 
-/** Cómo se entra a un warp: hacia abajo (tubería), arriba (puerta/tubería) o de lado. */
-enum class WarpInput { DOWN, UP, SIDE }
+/**
+ * Cómo se entra a un warp: pulsando ABAJO (tubería que se baja), ARRIBA (puerta o tubería
+ * de techo) o ANDANDO contra la boca de una tubería HORIZONTAL, hacia la izquierda
+ * ([SIDE_LEFT]) o hacia la derecha ([SIDE_RIGHT]).
+ *
+ * La entrada de lado LLEVA LADO a propósito. En el juego, la tubería horizontal no se
+ * entra "moviéndose": se entra EMPUJANDO CONTRA ELLA.
+ * `RunPlayerBlockCode_CheckIfEnteringHorizontalPipe` ($00:F3C4) solo se llama desde la
+ * sonda de PARED y con `player_facing_direction != player_hdir_block_touched` (el jugador
+ * mira al bloque que toca), y luego `sub_F40A` ($00:F40A) exige tener PULSADA esa misma
+ * dirección: `kRunPlayerBlockCode_PIPE_BUTTONS[facing] & io_controller_hold1`, con
+ * `PIPE_BUTTONS[0]=0x02` (Izquierda) y `[1]=0x01` (Derecha), y `player_facing_direction`
+ * vale 1 mirando a la derecha (`player_facing_direction = io_controller_hold1 & 1`,
+ * $00:~C651). Un único valor "de lado" que valiese para cualquier movimiento horizontal
+ * te tragaría al pasar por delante de la tubería andando en sentido contrario.
+ *
+ * Los ordinales son el índice que guarda [com.rolebuilder.core.model.MapWarp.input]:
+ * 0 = abajo, 1 = arriba, 2 = de lado hacia la izquierda, 3 = de lado hacia la derecha.
+ */
+enum class WarpInput { DOWN, UP, SIDE_LEFT, SIDE_RIGHT }
 
 /** Un warp en una celda: al entrar lleva al mapa [destMapId] en la celda ([destX],[destY]). */
 class EngineWarp(
@@ -1185,7 +1203,11 @@ class PlatformerEngine(
             val enter = when (warp.input) {
                 WarpInput.DOWN -> inputDown && p.onGround // baja por la tubería estando de pie
                 WarpInput.UP -> inputUp                   // entra por la puerta / sube por la tubería
-                WarpInput.SIDE -> abs(moveX) > 0.3f       // entra de lado por la tubería horizontal
+                // De lado se entra EMPUJANDO hacia la boca, no con cualquier movimiento: la
+                // dirección tiene que apuntar a la tubería (ver [WarpInput]). Si no, pasar
+                // por delante andando en sentido contrario te tragaría.
+                WarpInput.SIDE_LEFT -> moveX < -SIDE_WARP_PUSH
+                WarpInput.SIDE_RIGHT -> moveX > SIDE_WARP_PUSH
             }
             if (enter) {
                 pendingWarp = WarpTarget(warp.destMapId, warp.destX, warp.destY)
@@ -2759,6 +2781,14 @@ class PlatformerEngine(
         const val BLOCKED_LEFT = 0x2
         const val BLOCKED_UP = 0x4
         const val BLOCKED_DOWN = 0x8
+
+        /**
+         * Cuánto hay que EMPUJAR hacia la boca para entrar en una tubería horizontal
+         * ([WarpInput.SIDE_LEFT]/[WarpInput.SIDE_RIGHT]), en unidades de [moveX] (-1..1).
+         * El juego pide la dirección PULSADA (`sub_F40A`, $00:F40A); aquí basta con que el
+         * mando vaya claramente hacia ese lado, no con rozar el eje.
+         */
+        const val SIDE_WARP_PUSH = 0.3f
 
         /** Velocidad del bloque de agarrar al LANZARLO (px/f), estilo SMW. */
         const val GRAB_THROW_SPEED = 4f

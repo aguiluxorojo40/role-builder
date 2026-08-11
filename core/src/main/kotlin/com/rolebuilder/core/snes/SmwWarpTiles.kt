@@ -76,8 +76,20 @@ enum class WarpTile {
     DOOR,
 }
 
-/** Cómo se dispara un warp: pulsando ABAJO, pulsando ARRIBA o andando de LADO. */
-enum class WarpEnter { DOWN, UP, SIDE }
+/**
+ * Cómo se dispara un warp: pulsando ABAJO, pulsando ARRIBA, o ANDANDO contra la boca de
+ * una tubería horizontal hacia la IZQUIERDA ([SIDE_LEFT], la boca queda a la izquierda del
+ * jugador) o hacia la DERECHA ([SIDE_RIGHT]).
+ *
+ * El lado va en el propio valor porque en el juego también va: `sub_F40A` ($00:F40A) exige
+ * tener PULSADA la dirección hacia la que mira el jugador
+ * (`kRunPlayerBlockCode_PIPE_BUTTONS[facing] & io_controller_hold1`, con
+ * `PIPE_BUTTONS[0]=0x02` Izquierda y `[1]=0x01` Derecha), y a
+ * `RunPlayerBlockCode_CheckIfEnteringHorizontalPipe` ($00:F3C4) solo se llega con
+ * `player_facing_direction != player_hdir_block_touched`, o sea mirando al bloque que se
+ * toca. Pasar por delante de la tubería andando al revés NO te mete en ella.
+ */
+enum class WarpEnter { DOWN, UP, SIDE_LEFT, SIDE_RIGHT }
 
 object SmwWarpTiles {
 
@@ -248,7 +260,9 @@ object SmwWarpTiles {
      *    empuja contra el bloque). La boca es SÓLIDA, así que la casilla disparadora es la
      *    de al lado por el lado ABIERTO: el único vecino horizontal que no es pared
      *    ([SmwBlockCollision.blocksSide]). Si los dos lados son pared, o ninguno, no se
-     *    emite: sin un lado claro sería inventar por dónde se entra.
+     *    emite: sin un lado claro sería inventar por dónde se entra. El gesto lleva el
+     *    sentido ([WarpEnter.SIDE_LEFT]/[WarpEnter.SIDE_RIGHT]) porque el juego exige tener
+     *    pulsada la dirección que apunta a la boca; pasar por delante al revés no entra.
      *  - El destino usa la ENTRADA PRINCIPAL del nivel destino (como [SmwLevelBundle]);
      *    la pantalla absoluta de las entradas secundarias queda para un refinamiento.
      */
@@ -269,13 +283,7 @@ object SmwWarpTiles {
                 warpAt(rom, header, col, exitByScreen, c, r, tileset)?.let { out.add(it) }
             }
         }
-        // ⚠ LAS HORIZONTALES SE QUEDAN FUERA, y no por no saber encontrarlas: se detectan
-        // bien. Es que el motor solo sabe disparar un warp con ARRIBA o con ABAJO
-        // (`WarpInput`), así que una boca de lado acabaría pidiéndole al jugador que pulse
-        // Arriba delante de una tubería en la que en el juego se entra ANDANDO. Preferimos
-        // que falte el warp a que exista con el gesto equivocado — eso es justo la clase de
-        // cosa que parece bien y se comporta mal. Pendiente: entrada de lado en el motor.
-        return out.filterNot { it.enter == WarpEnter.SIDE }
+        return out
     }
 
     /** El warp de la celda ([c],[r]) del mapa de colisión [col], o null si no hay boca ahí. */
@@ -330,7 +338,12 @@ object SmwWarpTiles {
                 else -> (c to (r - 1)) to WarpEnter.DOWN
             }
         }
-        WarpTile.PIPE_HORIZONTAL -> openSideOf(col, c, r)?.let { (it to r) to WarpEnter.SIDE }
+        WarpTile.PIPE_HORIZONTAL -> openSideOf(col, c, r)?.let { open ->
+            // El jugador se pone en el lado abierto y ANDA hacia la boca: si la boca le
+            // queda a la derecha (la columna abierta es la de la izquierda), empuja a la
+            // DERECHA, y al revés.
+            (open to r) to (if (open < c) WarpEnter.SIDE_RIGHT else WarpEnter.SIDE_LEFT)
+        }
     }
 
     /** Columna del ÚNICO vecino horizontal de ([c],[r]) que no es pared, o null si no lo hay. */

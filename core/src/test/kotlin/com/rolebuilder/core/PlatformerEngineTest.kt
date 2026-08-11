@@ -659,4 +659,73 @@ class PlatformerEngineTest {
         assertTrue(k.shell)
     }
 
+    // ------------------------------------------------- tubería HORIZONTAL (entrar de lado)
+
+    /**
+     * Escenario de tubería horizontal: suelo en la fila 8 y una BOCA sólida en (10,7), que
+     * hace de pared. El warp va en la casilla ABIERTA de al lado, la (9,7), que es la que
+     * pisa el jugador cuando llega empujando (la boca es sólida: su caja nunca la solapa).
+     */
+    private fun engineTuberiaLateral(
+        warpCol: Int,
+        input: WarpInput,
+        bocaCol: Int = 10,
+        salidaCol: Int = 4,
+    ): PlatformerEngine {
+        val cols = 14
+        val rows = 10
+        val grid = Array(rows) { Array(cols) { SmwSolidity.NONE } }
+        for (c in 0 until cols) grid[8][c] = SmwSolidity.SOLID
+        grid[7][bocaCol] = SmwSolidity.SOLID
+        return PlatformerEngine(
+            cols, rows,
+            solidityAt = { c, r -> grid[r][c] },
+            startPixelX = salidaCol * 16, startPixelY = 6 * 16,
+            tuning = tuning,
+            warps = listOf(EngineWarp(warpCol, 7, input, destMapId = 9, destX = 5, destY = 6)),
+        )
+    }
+
+    @Test
+    fun `andar contra la boca de una tuberia horizontal activa el warp`() {
+        val e = engineTuberiaLateral(warpCol = 9, input = WarpInput.SIDE_RIGHT)
+        e.moveX = 1f
+        e.run(120)
+        val warp = e.pendingWarp
+        assertNotNull(warp, "empujando a la derecha contra la boca se entra")
+        assertEquals(9, warp.destMapId)
+        assertEquals(5, warp.destX)
+        assertEquals(6, warp.destY)
+    }
+
+    @Test
+    fun `pasar por delante andando al reves NO entra en la tuberia horizontal`() {
+        // En el juego hay que tener PULSADA la dirección hacia la que se mira
+        // (`sub_F40A`, $00:F40A: `PIPE_BUTTONS[facing] & io_controller_hold1`). Un "de lado"
+        // que valiese para cualquier movimiento te tragaría al pasar de largo.
+        val e = engineTuberiaLateral(warpCol = 9, input = WarpInput.SIDE_RIGHT, salidaCol = 9)
+        e.moveX = -1f
+        e.run(30)
+        assertNull(e.pendingWarp, "andando al revés sobre la misma celda no se entra")
+    }
+
+    @Test
+    fun `la tuberia horizontal del otro lado se entra andando a la izquierda`() {
+        val e = engineTuberiaLateral(
+            warpCol = 4, input = WarpInput.SIDE_LEFT, bocaCol = 3, salidaCol = 10,
+        )
+        e.moveX = -1f
+        e.run(120)
+        assertNotNull(e.pendingWarp, "empujando a la izquierda contra la boca se entra")
+    }
+
+    @Test
+    fun `el warp de lado NO va en la boca - la caja del jugador nunca la solapa`() {
+        // La boca es SÓLIDA: el jugador se para pegado a ella y su caja se queda en la
+        // casilla de al lado. Poner el warp en la boca es ponerlo donde no se puede llegar.
+        val e = engineTuberiaLateral(warpCol = 10, input = WarpInput.SIDE_RIGHT)
+        e.moveX = 1f
+        e.run(120)
+        assertNull(e.pendingWarp, "en la propia boca el warp no se dispara nunca")
+    }
 }
