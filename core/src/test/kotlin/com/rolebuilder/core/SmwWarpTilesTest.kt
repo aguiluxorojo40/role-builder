@@ -15,35 +15,46 @@ import kotlin.test.assertNull
 class SmwWarpTilesTest {
 
     @Test
-    fun `las bocas de tuberia vertical son 0x37 y 0x38`() {
-        assertEquals(WarpTile.PIPE_VERTICAL, SmwWarpTiles.pipeOrDoor(0x37))
-        assertEquals(WarpTile.PIPE_VERTICAL, SmwWarpTiles.pipeOrDoor(0x38))
-        assertEquals(WarpTile.PIPE_VERTICAL, SmwWarpTiles.pipeOrDoor(0x037)) // alto 0 explícito
-        assertNull(SmwWarpTiles.pipeOrDoor(0x36))
-        assertNull(SmwWarpTiles.pipeOrDoor(0x39))
+    fun `las bocas de tuberia vertical son 0x37 y 0x38 DEL PLANO DE TERRENO`() {
+        // $00:EB77 solo llega a $00:F3E9 con el byte ALTO != 0 (rama de terreno).
+        assertEquals(WarpTile.PIPE_VERTICAL, SmwWarpTiles.pipeOrDoor(0x137))
+        assertEquals(WarpTile.PIPE_VERTICAL, SmwWarpTiles.pipeOrDoor(0x138))
+        assertNull(SmwWarpTiles.pipeOrDoor(0x136))
+        assertNull(SmwWarpTiles.pipeOrDoor(0x139))
     }
 
     @Test
-    fun `la boca de tuberia horizontal es 0x3F`() {
-        assertEquals(WarpTile.PIPE_HORIZONTAL, SmwWarpTiles.pipeOrDoor(0x3F))
-        assertNull(SmwWarpTiles.pipeOrDoor(0x3E))
-        assertNull(SmwWarpTiles.pipeOrDoor(0x40))
+    fun `la boca de tuberia horizontal es 0x3F DEL PLANO DE TERRENO`() {
+        assertEquals(WarpTile.PIPE_HORIZONTAL, SmwWarpTiles.pipeOrDoor(0x13F))
+        assertNull(SmwWarpTiles.pipeOrDoor(0x13E))
+        assertNull(SmwWarpTiles.pipeOrDoor(0x140))
     }
 
     @Test
-    fun `las puertas siempre-puerta son 0x1F y 0x20`() {
+    fun `en el plano de BLOCK CODE los mismos bytes bajos NO son tuberia`() {
+        // Con el alto a 0, 0x38 es la CINTA DE MIDWAY ($00:F2C9, `if (j == 56)`) y 0x3F es
+        // la TIERRA bajo el borde de hierba (`stdLedge` de SmwLayer1 la pinta con alto 0).
+        // Tomarlas por tuberías inundaba de warps falsos cualquier nivel con suelo.
+        assertNull(SmwWarpTiles.pipeOrDoor(0x37))
+        assertNull(SmwWarpTiles.pipeOrDoor(0x38))
+        assertNull(SmwWarpTiles.pipeOrDoor(0x3F))
+    }
+
+    @Test
+    fun `las puertas siempre-puerta son 0x1F y 0x20 DEL PLANO DE BLOCK CODE`() {
         assertEquals(WarpTile.DOOR, SmwWarpTiles.pipeOrDoor(0x1F))
         assertEquals(WarpTile.DOOR, SmwWarpTiles.pipeOrDoor(0x20))
         assertNull(SmwWarpTiles.pipeOrDoor(0x1E))
         assertNull(SmwWarpTiles.pipeOrDoor(0x21)) // bloque '?' , no puerta
+        assertNull(SmwWarpTiles.pipeOrDoor(0x11F)) // 0x1F pero en el plano de terreno
+        assertNull(SmwWarpTiles.pipeOrDoor(0x120)) // 0x20 pero en el plano de terreno
     }
 
     @Test
-    fun `las teselas no-warp y el plano alto devuelven null`() {
+    fun `las teselas no-warp y lo que se sale del rango devuelven null`() {
         assertNull(SmwWarpTiles.pipeOrDoor(0x2B))  // moneda
         assertNull(SmwWarpTiles.pipeOrDoor(0x00))  // aire
-        assertNull(SmwWarpTiles.pipeOrDoor(0x137)) // 0x37 pero plano alto 1 (terreno gráfico)
-        assertNull(SmwWarpTiles.pipeOrDoor(0x120)) // 0x20 pero plano alto 1
+        assertNull(SmwWarpTiles.pipeOrDoor(0x200)) // fuera de los dos planos de Map16
         assertNull(SmwWarpTiles.pipeOrDoor(-1))
     }
 
