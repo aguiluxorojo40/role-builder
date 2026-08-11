@@ -121,9 +121,9 @@ class SmwWarpTilesTest {
         // yIdx=7 → y=0xE0=224→14. Y el propio SmwLevelStart con esos píxeles da lo mismo.
         val start = SmwLevelStart(
             level = 0x105,
-            secHeader = intArrayOf(0x07, 0x02, 0x00, 0x00), // yIdx=7, xIdx=2
-            startPixelX = 0x000,
-            startPixelY = 0x0E0,
+            secHeader = intArrayOf(0x07, 0x02, 0x00, 0x00), // yIdx=7, xIdx=2, pantalla 0
+            presetPixelX = 0x000,
+            presetPixelY = 0x0E0,
         )
         assertEquals(0 to 14, SmwWarpTiles.mainEntrancePosition(start))
         assertEquals(start.startTileX to start.startTileY, SmwWarpTiles.mainEntrancePosition(start))

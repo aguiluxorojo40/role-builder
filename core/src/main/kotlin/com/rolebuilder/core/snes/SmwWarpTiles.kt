@@ -261,13 +261,19 @@ object SmwWarpTiles {
         val destLevel: Int,
         val destXTile: Int,
         val destYTile: Int,
+        /**
+         * CÓMO aparece el jugador al llegar ($00:A6CC). El motor todavía no lo consume: hasta
+         * que lo haga, un [SmwEntranceAction.SHOT_UP_OUT_OF_PIPE] deja al jugador quieto en la
+         * casilla en vez de salir despedido hacia arriba de la tubería.
+         */
+        val destAction: SmwEntranceAction = SmwEntranceAction.WALK_IN,
     ) {
         /** true = se entra pulsando ABAJO de pie sobre la boca; false = pulsando ARRIBA. */
         val enterDown: Boolean get() = enter == WarpEnter.DOWN
 
         override fun toString(): String =
             "LevelWarp(en=($xTile,$yTile) boca=($mouthXTile,$mouthYTile) $kind $enter " +
-                "-> ${"%03X".format(destLevel)} ($destXTile,$destYTile))"
+                "-> ${"%03X".format(destLevel)} ($destXTile,$destYTile) $destAction)"
     }
 
     /**
@@ -339,7 +345,21 @@ object SmwWarpTiles {
             destLevel = dest,
             destXTile = dx,
             destYTile = dy,
+            destAction = landingActionOf(exit, start),
         )
+    }
+
+    /**
+     * CÓMO aparece el jugador al tomar [exit]: con entrada secundaria, `$05:FE00[n] & 7`; con
+     * la principal, `($05:F200[destino] & 0x38) >> 3`. Los dos acaban en la misma variable
+     * (`misc_level_header_entrance_settings`) y en la misma rutina ($00:A6CC).
+     */
+    private fun landingActionOf(
+        exit: SmwLevelExits.LevelExit,
+        start: SmwLevelStart,
+    ): SmwEntranceAction {
+        val sec = exit.secondaryEntrance
+        return if (exit.isSecondary && sec != null) sec.entranceActionKind else start.entranceActionKind
     }
 
     /**
