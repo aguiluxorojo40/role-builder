@@ -66,7 +66,6 @@ import com.rolebuilder.core.engine.platformer.PlatformerEngine
 import com.rolebuilder.core.engine.platformer.PlatformerTuning
 import com.rolebuilder.core.engine.platformer.ProjectPlatformer
 import com.rolebuilder.core.io.ProjectIo
-import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockBehavior
@@ -423,9 +422,10 @@ class PlatformerActivity : ComponentActivity() {
             platformSlopeShape = m.slopeShapes, animations = m.animations,
             platformBlockActions = m.blockActions,
         )
-        // Capa 0 = fondo (Layer 2) si lo hay; capa 1 = primer plano. Igual que importSmwLevelMap.
-        val layers = if (m.bgTiles.isNotEmpty()) listOf(m.bgTiles, m.tiles)
-            else listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE })
+        // Capa 0 = fondo (Layer 2), capa 1 = primer plano: el orden canónico de
+        // [PlatformLayers], el mismo que usa importSmwLevelMap.
+        val layers = com.rolebuilder.core.model.PlatformLayers
+            .layersOf(m.tiles, m.bgTiles, m.mapWidth, m.mapHeight)
         val map = GameMap(
             id = 0, name = "SMW", width = m.mapWidth, height = m.mapHeight,
             tilesetId = 1, layers = layers,

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.Database
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.PlatformLayers
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tiles
 import java.io.File
@@ -155,6 +156,11 @@ class EditorState(val projectDir: File) {
      * Crea un nivel de plataformas VACÍO con un suelo de [groundTile] en las dos filas
      * inferiores y lo abre como mapa de inicio. Lo usa el Platform Builder al crear un
      * nivel desde cero.
+     *
+     * El suelo va en la capa de PRIMER PLANO ([PlatformLayers.FOREGROUND]), que es donde
+     * lo ponen los niveles importados de la ROM. Antes se sembraba en la capa 0 —el
+     * fondo—, así que un nivel hecho a mano y uno importado guardaban el terreno en capas
+     * distintas y las herramientas del editor pintaban en una u otra según el nivel.
      */
     fun addPlatformLevel(name: String, width: Int, height: Int, tilesetId: Int, groundTile: Int): GameMap {
         val id = (project.mapIds.maxOrNull() ?: 0) + 1
@@ -167,13 +173,34 @@ class EditorState(val projectDir: File) {
             width = width,
             height = height,
             tilesetId = tilesetId,
-            layers = listOf(ground, List(width * height) { com.rolebuilder.core.model.EMPTY_TILE }),
+            layers = PlatformLayers.layersOf(ground, emptyList(), width, height),
         )
         maps[id] = map
         project = project.copy(mapIds = project.mapIds + id, startMapId = id, startX = 2, startY = floorTop - 1)
         currentMapId = id
         dirty = true
         return map
+    }
+
+    /**
+     * Pone TODOS los mapas del proyecto en el orden de capas canónico de plataformas
+     * ([PlatformLayers]): fondo en la 0, primer plano en la 1. Es la reparación de los
+     * proyectos que ya existen —los niveles creados a mano guardaban el terreno en la capa
+     * del fondo— y se aplica al abrir el Platform Builder. Devuelve cuántos mapas cambiaron
+     * (0 = no había nada que arreglar, y entonces tampoco se marca el proyecto como sucio).
+     */
+    fun normalizePlatformLayers(): Int {
+        var changed = 0
+        maps.keys.toList().forEach { id ->
+            val map = maps[id] ?: return@forEach
+            val fixed = PlatformLayers.normalized(map, database.tileset(map.tilesetId))
+            if (fixed != map) {
+                maps[id] = fixed
+                changed++
+            }
+        }
+        if (changed > 0) dirty = true
+        return changed
     }
 
     fun save() {

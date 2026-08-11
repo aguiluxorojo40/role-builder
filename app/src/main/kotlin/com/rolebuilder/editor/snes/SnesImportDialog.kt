@@ -53,12 +53,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
-import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
+import com.rolebuilder.core.model.PlatformLayers
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwGfxLibrary
 import com.rolebuilder.core.snes.SmwLevelBundle
@@ -1594,11 +1594,12 @@ internal fun importSmwLevelMap(
             animations = m.animations, platformBlockActions = m.blockActions,
         ),
     )
-    val layers = if (m.bgTiles.isNotEmpty()) {
-        listOf(m.bgTiles, m.tiles)
-    } else {
-        listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE })
-    }
+    // Capas en el orden CANÓNICO ([PlatformLayers]): fondo detrás, primer plano delante.
+    // Antes esto se decidía aquí a mano y, cuando el nivel no traía fondo, el terreno se
+    // colaba en la capa 0 —la del fondo—, así que dos niveles del mismo proyecto podían
+    // guardar el terreno en capas distintas y las herramientas del editor pintaban en la
+    // capa contraria según qué nivel tuvieras abierto.
+    val layers = PlatformLayers.layersOf(m.tiles, m.bgTiles, m.mapWidth, m.mapHeight)
     state.addImportedMap(
         GameMap(
             id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
@@ -1729,14 +1730,11 @@ private fun aplicarBundleSmw(state: EditorState, name: String, extraido: BundleE
                 animations = m.animations, platformBlockActions = m.blockActions,
             )
         )
-        // Capas del mapa. Si el nivel trae fondo (Layer 2), va DEBAJO (capa 0) y el primer
-        // plano (Layer 1) encima; si no, primer plano en capa 0 + una capa vacía por
-        // compatibilidad. El editor y el motor dibujan las capas en orden (0 = fondo).
-        val layers = if (m.bgTiles.isNotEmpty()) {
-            listOf(m.bgTiles, m.tiles)
-        } else {
-            listOf(m.tiles, List(m.mapWidth * m.mapHeight) { EMPTY_TILE })
-        }
+        // Capas del mapa en el orden CANÓNICO ([PlatformLayers]): el fondo (Layer 2) DEBAJO,
+        // en la capa 0, y el primer plano (Layer 1) encima, en la 1 — tenga fondo el nivel o
+        // no. El editor y el motor dibujan las capas por índice, así que el índice es el que
+        // dice qué es cada cosa.
+        val layers = PlatformLayers.layersOf(m.tiles, m.bgTiles, m.mapWidth, m.mapHeight)
         val stored = state.addImportedMap(
             GameMap(
                 id = 0, name = "SMW ${sub.nombre}", width = m.mapWidth, height = m.mapHeight,

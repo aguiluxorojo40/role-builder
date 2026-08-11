@@ -11,6 +11,43 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 
 ---
 
+## [Sin publicar] — Assets de cualquier nivel, y las dos capas por fin bien puestas
+
+### Corregido
+- **Las capas estaban INTERCAMBIADAS en todos los niveles importados de la ROM.** El
+  importador ponía el fondo en la capa 0 y el terreno en la 1 *solo si el nivel traía
+  fondo*; si no, el terreno se iba a la capa 0. Y los niveles creados desde el editor
+  ("Nuevo") ponían el suelo siempre en la 0. Como los 8 niveles escaparate de la ROM
+  **sí** traen fondo, en la práctica las herramientas "Primer plano" y "Fondo" pintaban
+  cada una en la capa contraria a su nombre, y un nivel hecho a mano y uno importado
+  guardaban el terreno en capas distintas. Ahora el convenio está escrito en un sitio
+  ([`PlatformLayers`](core/src/main/kotlin/com/rolebuilder/core/model/PlatformLayers.kt)):
+  capa 0 = **Capa 2 · fondo**, capa 1 = **Capa 1 · primer plano jugable**, tenga fondo el
+  nivel o no. Los proyectos que ya existen se reparan solos al abrir el editor.
+- **Borrar arrasaba las dos capas a la vez** (y los enemigos y los ítems de la casilla).
+  Ahora borra en la capa activa; los objetos solo se van si estás borrando en el plano
+  jugable, que es donde viven.
+
+### Añadido
+- **Banco de assets: teselas de CUALQUIER nivel del proyecto.** Hasta ahora un nivel solo
+  podía pintar con el tileset que le tocó al importarlo, así que hacer un nivel propio con
+  el castillo de uno y las tuberías de otro era imposible. El nuevo sector **Assets** del
+  menú radial (y su botón en el raíl) abre la lista de niveles del proyecto, deja elegir
+  teselas por categoría —varias de una vez— y las **copia** al tileset del nivel actual con
+  su colisión, su acción de bloque y su animación
+  ([`TilesetMerge`](core/src/main/kotlin/com/rolebuilder/core/model/TilesetMerge.kt)). El
+  atlas crece por filas, así que las teselas que ya usaban los niveles no se mueven, y una
+  tesela repetida se reutiliza en vez de duplicarse.
+- **Nuevo nivel: de qué nivel salen los gráficos.** El diálogo de nivel nuevo ya no hereda a
+  la fuerza el tileset del nivel abierto; se elige, y el suelo de arranque sale de la
+  primera tesela sólida del tileset elegido.
+- **Las dos capas, cubiertas en el menú radial y en el lienzo.** Los sectores se llaman
+  "Capa 1" y "Capa 2", elegir uno cambia la capa activa, y una **barra de capas** flotante
+  permite seleccionar capa, ocultarla (👁) y **enfocar** —atenuar la capa en la que no
+  estás—, que es lo que hacía falta para editar el fondo de un nivel importado sin pintar a
+  ciegas debajo del terreno. Cada capa recuerda **su** pincel y la paleta abre por la
+  categoría que le corresponde (fondo → Decorado).
+
 ## [Sin publicar] — Los ids del Koopa estaban invertidos, y auditoría en CI
 
 ### Corregido

@@ -79,7 +79,9 @@ object ProjectStore {
         val base = ProjectIo.loadMap(dir, mapId)
         val map = base.copy(
             width = w, height = h,
-            layers = listOf(ground0, List(w * h) { EMPTY_TILE }),
+            // El terreno va SIEMPRE en la capa de primer plano ([PlatformLayers]); antes se
+            // sembraba en la 0, que en los niveles importados de la ROM es el fondo.
+            layers = com.rolebuilder.core.model.PlatformLayers.layersOf(ground0, emptyList(), w, h),
             events = emptyList(),
             spawns = emptyList(),
         )

@@ -12,6 +12,12 @@ externos: editor y motor son la misma app.
   plantilla jugable (pradera con NPC, cofre, enemigos y una cabaña con interior).
 - Editor de mapas táctil: pinta tiles en 2 capas con paleta, pan/zoom con dos dedos,
   redimensiona mapas (hasta 200×200), coloca eventos, enemigos y el punto de inicio.
+- **Platform Builder con las dos capas de verdad**: Capa 1 (primer plano jugable) y
+  Capa 2 (fondo) tienen su sector en el menú radial, su pincel propio y una barra para
+  ocultarlas o enfocar la que estás editando; pintar y borrar actúan sobre la capa
+  activa. Y con **Assets** puedes coger teselas de *cualquier* nivel del proyecto —con su
+  colisión, su acción de bloque y su animación— para construir niveles propios mezclando
+  material de varios niveles de la ROM.
 - Editor de eventos tipo RPG Maker: páginas con condiciones (switches, self-switches,
   variables, objetos), sprite y disparador (botón de acción, contacto, automático,
   paralelo), y comandos visuales: mostrar texto, elecciones con ramas, condicionales,

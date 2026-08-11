@@ -88,6 +88,7 @@ import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
+import com.rolebuilder.core.model.PlatformLayers
 import com.rolebuilder.core.model.Project
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwBlockAction
@@ -125,10 +126,10 @@ import kotlin.math.sin
 // Paleta Nintendo (colores de marca de Mario): rojo Nintendo, azul, amarillo
 // moneda y verde Luigi, sobre paneles translúcidos oscuros (efecto glass).
 private val SkyBlue = Color(0xFF5C94FC)
-private val MarioRed = Color(0xFFE60012)    // rojo Nintendo — acento principal
+internal val MarioRed = Color(0xFFE60012)    // rojo Nintendo — acento principal
 private val MarioBlue = Color(0xFF049CD8)   // azul Mario
 private val CoinYellow = Color(0xFFFBD000)  // amarillo moneda/estrella
-private val LuigiGreen = Color(0xFF43B047)  // verde Luigi/tubería
+internal val LuigiGreen = Color(0xFF43B047)  // verde Luigi/tubería
 private val Canvas0 = Color(0xFF0B1220)
 // Paneles translúcidos (glass) que dejan ver el fondo por detrás.
 private val Panel = Color(0xCC10131C)
@@ -138,8 +139,11 @@ private val GlassStroke = Color(0x33FFFFFF)
 /** Herramientas del editor de plataformas. */
 private enum class PTool(val label: String, val short: String = label) {
     SELECT("Seleccionar", "Sel"),
-    TERRAIN("Primer plano", "1er\nplano"),
-    DECOR("Fondo", "Fondo"),
+    // Las dos capas del nivel, con su nombre de SMW: la 1 es el terreno jugable y la 2 el
+    // fondo. Antes se llamaban "Primer plano" y "Fondo" sin decir qué capa era cada una, y
+    // encima pintaban en la capa contraria en todos los niveles importados de la ROM.
+    TERRAIN("Capa 1 · Primer plano", "Capa 1"),
+    DECOR("Capa 2 · Fondo", "Capa 2"),
     ERASE("Borrar", "Borrar"),
     ENEMY("Enemigo", "Enem."),
     COIN("Moneda", "Mon."),
@@ -155,6 +159,7 @@ private enum class RailAction(val label: String) {
     NUEVO("Nuevo"),
     AJUSTES("Ajustes"),
     ROM("ROM"),
+    ASSETS("Assets"),
     BLOQUES("Bloques"),
     AVANZADO("Avanz."),
     GUARDAR("Guard."),
@@ -174,7 +179,7 @@ private data class Fav(val tool: PTool, val tile: Int, val enemyId: Int)
  * importado: [Tileset.platformBlockActions] (moneda / bloque ?) y [Tileset.platformSolidity]
  * (terreno / pinchos). Lo que no encaja es decoración/fondo.
  */
-private enum class TileCat(val label: String) {
+internal enum class TileCat(val label: String) {
     SUELO("Suelo"),
     CUESTAS("Cuestas"),
     PLATAFORMAS("Plataformas"),
@@ -190,7 +195,7 @@ private enum class TileCat(val label: String) {
  * (radial), no teselas. La categoría sale del comportamiento REAL del bloque
  * ([Tileset.platformBlockActions]), igual que lo decide la ROM.
  */
-private fun tileCategory(tileset: Tileset, tile: Int): TileCat {
+internal fun tileCategory(tileset: Tileset, tile: Int): TileCat {
     // 1º lo interactivo (monedas, bloques ?): manda sobre el terreno.
     when (tileset.platformBlockActions.getOrNull(tile)) {
         SmwBlockAction.COIN.ordinal, SmwBlockAction.DRAGON_COIN.ordinal,
@@ -222,7 +227,7 @@ private fun animatedTile(base: Int, anim: Map<Int, List<Int>>, frame: Int): Int 
 }
 
 /** Tablero de transparencia (dos grises), para VER el alpha de sprites/tiles. */
-private fun DrawScope.drawChecker(cell: Float = 6f) {
+internal fun DrawScope.drawChecker(cell: Float = 6f) {
     val a = Color(0xFF3A3F4C)
     val b = Color(0xFF2A2E38)
     drawRect(b)
@@ -426,8 +431,23 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     val state = remember(projectDir) { EditorState(projectDir) }
     val map = state.currentMap
     val tileset = map?.let { state.database.tileset(it.tilesetId) } ?: state.database.tilesets.firstOrNull()
-    val tilesetBitmap = remember(tileset?.image) {
+    // Se relee cuando cambia el archivo, cuando el atlas crece de filas (traer assets de
+    // otro nivel) y cuando el banco de assets avisa de que lo ha reescrito.
+    var assetsReloads by remember { mutableIntStateOf(0) }
+    val tilesetBitmap = remember(tileset?.image, tileset?.rows, assetsReloads) {
         tileset?.let { loadImageBitmap(state.projectDir, it.image) }
+    }
+    // Los proyectos que ya existen pueden traer el terreno en la capa del fondo (el
+    // convenio viejo). Se arregla al abrir el editor, una vez, y se guarda con el resto.
+    LaunchedEffect(state) {
+        val fixed = state.normalizePlatformLayers()
+        if (fixed > 0) {
+            Toast.makeText(
+                context,
+                "Capas ordenadas en $fixed nivel(es): el terreno va en la Capa 1 y el fondo en la Capa 2",
+                Toast.LENGTH_LONG,
+            ).show()
+        }
     }
     // Atlas de enemigos horneado (mismo orden que SmwEnemyGraphics.curatedIds). Se lee del
     // ALMACÉN horneado desde la ROM (SmwAssetStore), NO de assets/ —en el repo no va (Nintendo)—;
@@ -532,7 +552,29 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
     var tool by remember { mutableStateOf(PTool.SELECT) }
     var selected by remember(map?.id) { mutableStateOf<Selected?>(null) }
+    // ---- CAPAS ----
+    // La capa en la que se pinta ahora mismo. Manda sobre pintar, borrar y la vista: antes
+    // cada herramienta escribía en un índice fijo (y en los niveles importados eso era la
+    // capa contraria a la que decía su nombre), y borrar arrasaba las dos a la vez.
+    var paintLayer by remember { mutableIntStateOf(PlatformLayers.FOREGROUND) }
+    // Cada capa tiene SU pincel: al cambiar de capa no se pierde la tesela que tenías
+    // elegida en la otra (pintar el fondo y volver al terreno es constante mientras
+    // construyes). [selectedTile] es el de la capa activa y [stashedTile] el de la otra.
     var selectedTile by remember { mutableIntStateOf(0) }
+    var stashedTile by remember { mutableIntStateOf(0) }
+    // Visibilidad por capa y "enfoque" (atenuar la capa en la que no estás): sin esto,
+    // editar el fondo de un nivel importado es pintar a ciegas debajo del terreno.
+    var showBg by remember { mutableStateOf(true) }
+    var showFg by remember { mutableStateOf(true) }
+    var focusLayer by remember { mutableStateOf(false) }
+    val switchLayer: (Int) -> Unit = { target ->
+        if (target != paintLayer) {
+            val mine = selectedTile
+            selectedTile = stashedTile
+            stashedTile = mine
+            paintLayer = target
+        }
+    }
     var selectedEnemyId by remember {
         mutableIntStateOf(SmwEnemyGraphics.curatedIds.firstOrNull() ?: 0x0F)
     }
@@ -547,6 +589,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
     var showMap16 by remember { mutableStateOf(false) }
+    // Banco de assets: traerse teselas de OTROS niveles del proyecto al que estás haciendo.
+    var showAssets by remember { mutableStateOf(false) }
     // Menú radial (lienzo-primero): la rueda se invoca con el botón flotante; el
     // "modo limpio" oculta el chrome para ver el nivel entero. lastPaint recuerda la
     // última herramienta de pintar para alternar con Seleccionar desde el centro.
@@ -566,8 +610,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             ?.split(",")?.mapNotNull { runCatching { RailAction.valueOf(it) }.getOrNull() }
             ?.takeIf { it.isNotEmpty() }
             ?: listOf(
-                RailAction.NUEVO, RailAction.AJUSTES, RailAction.ROM, RailAction.BLOQUES,
-                RailAction.AVANZADO, RailAction.ZOOM_IN, RailAction.ZOOM_OUT, RailAction.BORRAR,
+                RailAction.NUEVO, RailAction.AJUSTES, RailAction.ROM, RailAction.ASSETS,
+                RailAction.BLOQUES, RailAction.AVANZADO, RailAction.ZOOM_IN, RailAction.ZOOM_OUT,
+                RailAction.BORRAR,
             )
         mutableStateListOf(*init.toTypedArray())
     }
@@ -599,6 +644,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             RailAction.NUEVO -> showNewLevel = true
             RailAction.AJUSTES -> showLevelSettings = true
             RailAction.ROM -> if (!romCargando) romPicker.launch("*/*")
+            RailAction.ASSETS -> showAssets = true
             RailAction.BLOQUES -> showMap16 = true
             RailAction.AVANZADO -> showRomImport = true
             RailAction.GUARDAR -> { state.save(); Toast.makeText(context, "Nivel guardado", Toast.LENGTH_SHORT).show() }
@@ -682,7 +728,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
-                        .pointerInput(map.id, tool, selectedTile, selectedEnemyId, selectedStampName) {
+                        // paintLayer va en las claves: se puede cambiar de capa sin cambiar de
+                        // herramienta (barra de capas), y el gesto tiene que enterarse.
+                        .pointerInput(map.id, tool, paintLayer, selectedTile, selectedEnemyId, selectedStampName) {
                             awaitEachGesture {
                                 val down = awaitFirstDown()
                                 var transform = false
@@ -714,16 +762,26 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                 }
                                             }
                                         }
-                                        PTool.TERRAIN -> state.updateMap(cur.withTile(0, tx, ty, selectedTile))
-                                        PTool.DECOR -> state.updateMap(cur.withTile(1, tx, ty, selectedTile))
+                                        // Cada herramienta de capa pinta en SU capa, con nombre y todo.
+                                        PTool.TERRAIN ->
+                                            state.updateMap(cur.withTile(PlatformLayers.FOREGROUND, tx, ty, selectedTile))
+                                        PTool.DECOR ->
+                                            state.updateMap(cur.withTile(PlatformLayers.BACKGROUND, tx, ty, selectedTile))
                                         PTool.ERASE -> {
+                                            // Borra en la CAPA ACTIVA, no en las dos: borrar un trozo de
+                                            // fondo no puede llevarse por delante el suelo que hay encima.
+                                            // Los objetos (enemigos, monedas, meta) viven en el plano
+                                            // jugable, así que solo se van si estás borrando en él.
+                                            val cleared = cur.withTile(paintLayer, tx, ty, EMPTY_TILE)
                                             state.updateMap(
-                                                cur.withTile(1, tx, ty, EMPTY_TILE)
-                                                    .withTile(0, tx, ty, EMPTY_TILE)
-                                                    .copy(
+                                                if (paintLayer == PlatformLayers.FOREGROUND) {
+                                                    cleared.copy(
                                                         platformEnemies = cur.platformEnemies.filterNot { it.x == tx && it.y == ty },
                                                         platformItems = cur.platformItems.filterNot { it.x == tx && it.y == ty },
-                                                    ),
+                                                    )
+                                                } else {
+                                                    cleared
+                                                },
                                             )
                                         }
                                         PTool.ENEMY -> {
@@ -754,10 +812,11 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                             state.project.copy(startMapId = cur.id, startX = tx, startY = ty),
                                         )
                                         PTool.COLLISION -> {
-                                            // Toma el tile de la celda (primer plano primero) para editar su solidez.
-                                            val t0 = cur.tileAt(0, tx, ty)
-                                            val t1 = cur.tileAt(1, tx, ty)
-                                            val picked = if (t0 != EMPTY_TILE) t0 else t1
+                                            // Toma el tile de la celda para editar su solidez: primero el del
+                                            // primer plano (el que colisiona) y, si ahí no hay nada, el del fondo.
+                                            val fg = cur.tileAt(PlatformLayers.FOREGROUND, tx, ty)
+                                            val bg = cur.tileAt(PlatformLayers.BACKGROUND, tx, ty)
+                                            val picked = if (fg != EMPTY_TILE) fg else bg
                                             if (picked != EMPTY_TILE) selectedTile = picked
                                         }
                                         PTool.WARP -> {
@@ -840,6 +899,17 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         animByBase = animByBase,
                         animFrame = animFrame,
                         coinAtlas = coinAtlas,
+                        // Opacidad por capa: oculta (0), atenuada si estás enfocando la otra,
+                        // o entera. Es lo que permite editar el fondo de un nivel importado
+                        // sin pintar a ciegas debajo del terreno.
+                        layerAlpha = FloatArray(PlatformLayers.COUNT) { layer ->
+                            val visible = if (layer == PlatformLayers.BACKGROUND) showBg else showFg
+                            when {
+                                !visible -> 0f
+                                focusLayer && layer != paintLayer -> 0.3f
+                                else -> 1f
+                            }
+                        },
                         stampRect = if (tool == PTool.STAMP && stampAnchor != null) {
                             val a = stampAnchor!!; val hv = hover
                             if (hv != null) intArrayOf(minOf(a.first, hv.first), minOf(a.second, hv.second), maxOf(a.first, hv.first), maxOf(a.second, hv.second))
@@ -904,8 +974,16 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         tool = tool,
                         enemyAtlas = enemyAtlas,
                         coinAtlas = coinAtlas,
+                        onOpenAssets = { wheelOpen = false; showAssets = true },
                         onPickTool = { picked ->
                             if (picked != PTool.SELECT) lastPaint = picked
+                            // Elegir una herramienta de capa CAMBIA la capa activa: es lo que
+                            // luego usan borrar, la vista y el pincel (uno por capa).
+                            when (picked) {
+                                PTool.TERRAIN -> switchLayer(PlatformLayers.FOREGROUND)
+                                PTool.DECOR -> switchLayer(PlatformLayers.BACKGROUND)
+                                else -> Unit
+                            }
                             tool = picked
                             wheelOpen = false
                         },
@@ -947,6 +1025,13 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 } else {
                                     tool = f.tool
                                     if (f.tool != PTool.SELECT) lastPaint = f.tool
+                                    // Un favorito guarda también EN QUÉ CAPA se pintaba (la que
+                                    // implica su herramienta): restaurarlo deja la capa lista.
+                                    when (f.tool) {
+                                        PTool.TERRAIN -> switchLayer(PlatformLayers.FOREGROUND)
+                                        PTool.DECOR -> switchLayer(PlatformLayers.BACKGROUND)
+                                        else -> Unit
+                                    }
                                     selectedTile = f.tile
                                     selectedEnemyId = f.enemyId
                                 }
@@ -980,21 +1065,47 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     onClick = { cleanMode = !cleanMode },
                     modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 86.dp),
                 )
-                // HORIZONTAL: el selector de nivel flota en la esquina superior izquierda del
-                // lienzo, sin robarle alto a la vista de edición (que en horizontal es lo justo).
-                if (!cleanMode && isLandscape) {
-                    Box(
-                        Modifier.align(Alignment.TopStart).padding(8.dp)
-                            .clip(RoundedCornerShape(12.dp)).background(Glass)
-                            .border(1.dp, GlassStroke, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                // Esquina superior izquierda: en HORIZONTAL el selector de nivel flota aquí (no
+                // le roba alto al lienzo) y debajo, siempre, la BARRA DE CAPAS.
+                if (!cleanMode) {
+                    Column(
+                        Modifier.align(Alignment.TopStart).padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        DropdownField(
-                            label = "Nivel",
-                            options = state.mapList,
-                            selected = map,
-                            optionLabel = { "${it.id}: ${it.name}" },
-                            onSelect = { state.selectMap(it.id) },
+                        if (isLandscape) {
+                            Box(
+                                Modifier.clip(RoundedCornerShape(12.dp)).background(Glass)
+                                    .border(1.dp, GlassStroke, RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                            ) {
+                                DropdownField(
+                                    label = "Nivel",
+                                    options = state.mapList,
+                                    selected = map,
+                                    optionLabel = { "${it.id}: ${it.name}" },
+                                    onSelect = { state.selectMap(it.id) },
+                                )
+                            }
+                        }
+                        LayerBar(
+                            paintLayer = paintLayer,
+                            showBg = showBg,
+                            showFg = showFg,
+                            focus = focusLayer,
+                            onPick = { layer ->
+                                switchLayer(layer)
+                                // Elegir capa deja el pincel de esa capa listo para pintar, salvo
+                                // que estés con una herramienta que no pinta teselas (enemigos,
+                                // warps…), donde cambiar de herramienta sería una sorpresa.
+                                if (tool == PTool.TERRAIN || tool == PTool.DECOR) {
+                                    tool = if (layer == PlatformLayers.BACKGROUND) PTool.DECOR else PTool.TERRAIN
+                                    lastPaint = tool
+                                }
+                            },
+                            onToggleVisible = { layer ->
+                                if (layer == PlatformLayers.BACKGROUND) showBg = !showBg else showFg = !showFg
+                            },
+                            onToggleFocus = { focusLayer = !focusLayer },
                         )
                     }
                 }
@@ -1090,7 +1201,15 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 )
                 else -> {
                     if (tileset != null && tilesetBitmap != null) {
-                        TilePalette(tileset, tilesetBitmap, selectedTile) { selectedTile = it }
+                        // La paleta abre por la categoría que pide la capa activa: pintando el
+                        // fondo lo que quieres ver es decorado, no suelo.
+                        TilePalette(
+                            tileset = tileset,
+                            bitmap = tilesetBitmap,
+                            selected = selectedTile,
+                            preferred = if (paintLayer == PlatformLayers.BACKGROUND) TileCat.DECORADO else TileCat.SUELO,
+                            onSelect = { selectedTile = it },
+                        )
                     } else {
                         Hint("Este nivel no tiene gráficos todavía. Pulsa \"⚡ Cargar ROM\" para importar los niveles de tu ROM de SMW con sus tiles.")
                     }
@@ -1115,6 +1234,32 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
     if (showMap16) {
         Map16EditorDialog(state = state, onDismiss = { showMap16 = false })
+    }
+
+    // Banco de assets: teselas de CUALQUIER otro nivel del proyecto, copiadas a este.
+    if (showAssets) {
+        AssetBankDialog(
+            state = state,
+            map = state.currentMap ?: map,
+            onDone = { added ->
+                showAssets = false
+                if (added.isNotEmpty()) {
+                    // El atlas se ha reescrito: hay que releer la imagen y dejar la primera
+                    // tesela traída como pincel de la capa activa (es lo que vas a pintar).
+                    assetsReloads++
+                    selectedTile = added.first()
+                    if (tool != PTool.TERRAIN && tool != PTool.DECOR) {
+                        tool = if (paintLayer == PlatformLayers.BACKGROUND) PTool.DECOR else PTool.TERRAIN
+                        lastPaint = tool
+                    }
+                    Toast.makeText(
+                        context,
+                        "${added.size} tesela(s) añadidas a este nivel",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+        )
     }
 
     if (showRailConfig) {
@@ -1146,9 +1291,16 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
     if (showNewLevel) {
         NewLevelDialog(
+            state = state,
+            currentTilesetId = map.tilesetId,
             onDismiss = { showNewLevel = false },
-            onCreate = { name, w, h ->
-                state.addPlatformLevel(name, w, h, tilesetId = map.tilesetId, groundTile = selectedTile)
+            onCreate = { name, w, h, tilesetId ->
+                // El suelo de arranque: si el nivel nuevo hereda los gráficos del actual, la
+                // tesela que tienes en la mano; si coges los de OTRO nivel, su primera tesela
+                // sólida (la del pincel es un índice de otro atlas y ahí no significa nada).
+                val ground = if (tilesetId == map.tilesetId) selectedTile
+                else firstSolidTile(state.database.tileset(tilesetId))
+                state.addPlatformLevel(name, w, h, tilesetId = tilesetId, groundTile = ground)
                 showNewLevel = false
             },
         )
@@ -1223,7 +1375,14 @@ private fun SelectionPanel(
 }
 
 @Composable
-private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, onSelect: (Int) -> Unit) {
+private fun TilePalette(
+    tileset: Tileset,
+    bitmap: ImageBitmap,
+    selected: Int,
+    /** Categoría con la que abrir (la que pide la capa activa); si está vacía, la primera. */
+    preferred: TileCat,
+    onSelect: (Int) -> Unit,
+) {
     // Clasifica las teselas por categoría una sola vez por tileset (eficiente).
     val byCat = remember(tileset) {
         val m = linkedMapOf<TileCat, MutableList<Int>>()
@@ -1231,7 +1390,9 @@ private fun TilePalette(tileset: Tileset, bitmap: ImageBitmap, selected: Int, on
         m
     }
     val cats = remember(byCat) { TileCat.entries.filter { !byCat[it].isNullOrEmpty() } }
-    var cat by remember(tileset) { mutableStateOf(cats.firstOrNull() ?: TileCat.SUELO) }
+    var cat by remember(tileset, preferred) {
+        mutableStateOf(preferred.takeIf { it in cats } ?: cats.firstOrNull() ?: TileCat.SUELO)
+    }
     // Reloj + mapa de animación para que las teselas animadas se muevan en la paleta.
     val anim = remember(tileset) { animMap(tileset) }
     var frame by remember { mutableIntStateOf(0) }
@@ -1523,11 +1684,33 @@ private fun solidityLabel(s: SmwSolidity): String = when (s) {
     SmwSolidity.SPIKE -> "Pinchos"
 }
 
+/** Primera tesela SÓLIDA de un tileset (el suelo con el que sembrar un nivel nuevo). */
+private fun firstSolidTile(tileset: Tileset?): Int {
+    if (tileset == null) return 0
+    for (t in 0 until tileset.tileCount) {
+        if (solidityOfTile(tileset, t) == SmwSolidity.SOLID) return t
+    }
+    return 0
+}
+
+/**
+ * Nuevo nivel. Además del tamaño se elige DE QUÉ NIVEL salen los gráficos: antes heredaba
+ * siempre los del nivel abierto y no había forma de empezar uno con los de otro, que es
+ * justo lo que hace falta para construir con material de varios niveles de la ROM. Una vez
+ * creado, el banco de assets permite traerse teselas sueltas de los demás.
+ */
 @Composable
-private fun NewLevelDialog(onDismiss: () -> Unit, onCreate: (String, Int, Int) -> Unit) {
+private fun NewLevelDialog(
+    state: EditorState,
+    currentTilesetId: Int,
+    onDismiss: () -> Unit,
+    onCreate: (String, Int, Int, Int) -> Unit,
+) {
     var name by remember { mutableStateOf("") }
     var width by remember { mutableIntStateOf(48) }
     var height by remember { mutableIntStateOf(15) }
+    var tilesetId by remember { mutableIntStateOf(currentTilesetId) }
+    val tilesets = state.database.tilesets
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nuevo nivel") },
@@ -1538,13 +1721,29 @@ private fun NewLevelDialog(onDismiss: () -> Unit, onCreate: (String, Int, Int) -
                     IntField("Ancho", width, { width = it.coerceIn(8, 400) }, Modifier.weight(1f))
                     IntField("Alto", height, { height = it.coerceIn(8, 60) }, Modifier.weight(1f))
                 }
+                if (tilesets.isNotEmpty()) {
+                    DropdownField(
+                        label = "Gráficos de",
+                        options = tilesets.map { it.id },
+                        selected = tilesetId,
+                        optionLabel = { id ->
+                            val ts = state.database.tileset(id)
+                            val usedBy = state.mapList.filter { it.tilesetId == id }.joinToString(", ") { it.name }
+                            val base = ts?.name ?: "Tileset $id"
+                            if (usedBy.isBlank()) base else "$base · $usedBy"
+                        },
+                        onSelect = { tilesetId = it },
+                    )
+                }
                 Text(
-                    "Se crea con dos filas de suelo (el tile seleccionado) y el inicio a la izquierda.",
+                    "Se crea con dos filas de suelo y el inicio a la izquierda. Los gráficos son " +
+                        "los del nivel que elijas; luego puedes traer teselas de cualquier otro " +
+                        "desde Assets.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
         },
-        confirmButton = { Button(onClick = { onCreate(name, width, height) }) { Text("Crear") } },
+        confirmButton = { Button(onClick = { onCreate(name, width, height, tilesetId) }) { Text("Crear") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     )
 }
@@ -1633,6 +1832,11 @@ private fun DrawScope.drawLevel(
     coinAtlas: ImageBitmap? = null,
     /** Región del sello en curso [x0,y0,x1,y1] en casillas (herramienta SELLO), o null. */
     stampRect: IntArray? = null,
+    /**
+     * Opacidad de cada capa (índice = capa). 0 = no se dibuja. Con ella el editor puede
+     * ocultar o atenuar la capa en la que no estás trabajando; vacío = todas enteras.
+     */
+    layerAlpha: FloatArray = FloatArray(0),
 ) {
     val tilePx = scale
     val minX = floor(-pan.x / tilePx).toInt().coerceAtLeast(0)
@@ -1645,6 +1849,8 @@ private fun DrawScope.drawLevel(
 
     if (tileset != null && tilesetBitmap != null) {
         for (layer in map.layers.indices) {
+            val alpha = layerAlpha.getOrElse(layer) { 1f }
+            if (alpha <= 0f) continue // capa oculta: ni se dibuja
             for (ty in minY..maxY) for (tx in minX..maxX) {
                 val base = map.tileAt(layer, tx, ty)
                 if (base < 0) continue
@@ -1657,6 +1863,7 @@ private fun DrawScope.drawLevel(
                     srcSize = IntSize(tileset.tileSize, tileset.tileSize),
                     dstOffset = IntOffset((pan.x + tx * tilePx).toInt(), (pan.y + ty * tilePx).toInt()),
                     dstSize = IntSize(tilePx.toInt() + 1, tilePx.toInt() + 1),
+                    alpha = alpha,
                 )
             }
         }
@@ -1855,7 +2062,14 @@ private fun toolColor(t: PTool): Color = when (t) {
     PTool.SELECT -> MarioBlue
 }
 
-/** La rueda radial: disco de fondo, centro = Seleccionar, y los sectores en círculo. */
+/**
+ * La rueda radial: disco de fondo, centro = Seleccionar, y los sectores en círculo.
+ *
+ * La rueda cubre las DOS capas del nivel (Capa 1 · primer plano y Capa 2 · fondo) y, además
+ * de las herramientas, tiene su propio sector para el BANCO DE ASSETS: la lista desde la
+ * que traer teselas de cualquier otro nivel del proyecto. Sin ese sector, la rueda se
+ * quedaba a medias —herramientas sin con qué pintarlas más allá del nivel abierto—.
+ */
 @Composable
 private fun RadialWheel(
     tool: PTool,
@@ -1863,17 +2077,21 @@ private fun RadialWheel(
     coinAtlas: ImageBitmap?,
     onPickTool: (PTool) -> Unit,
     onToggleSelect: () -> Unit,
+    onOpenAssets: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val radius = 108f // dp del centro a cada sector
-    Box(modifier.size(300.dp), contentAlignment = Alignment.Center) {
+    val radius = 118f // dp del centro a cada sector
+    // Los sectores son las herramientas MÁS el banco de assets; se reparten el círculo
+    // entre todos para que ninguno quede pisado.
+    val sectors = WHEEL_TOOLS.size + 1
+    Box(modifier.size(320.dp), contentAlignment = Alignment.Center) {
         // disco de fondo (hace que se lea como RUEDA, no sectores sueltos)
         Box(
-            Modifier.size(248.dp).clip(CircleShape).background(Panel)
+            Modifier.size(268.dp).clip(CircleShape).background(Panel)
                 .border(1.dp, GlassStroke, CircleShape),
         )
         WHEEL_TOOLS.forEachIndexed { i, t ->
-            val ang = (-90.0 + i * (360.0 / WHEEL_TOOLS.size)) * PI / 180.0
+            val ang = (-90.0 + i * (360.0 / sectors)) * PI / 180.0
             SectorButton(
                 tool = t,
                 selected = tool == t,
@@ -1881,6 +2099,24 @@ private fun RadialWheel(
                 coinAtlas = coinAtlas,
                 modifier = Modifier.offset(x = (cos(ang) * radius).dp, y = (sin(ang) * radius).dp),
                 onClick = { onPickTool(t) },
+            )
+        }
+        // Sector del banco de assets (el último del círculo).
+        val angAssets = (-90.0 + WHEEL_TOOLS.size * (360.0 / sectors)) * PI / 180.0
+        Box(
+            Modifier
+                .offset(x = (cos(angAssets) * radius).dp, y = (sin(angAssets) * radius).dp)
+                .size(64.dp).clip(CircleShape)
+                .background(Panel)
+                .border(2.dp, CoinYellow.copy(alpha = 0.7f), CircleShape)
+                .clickable { onOpenAssets() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "Assets",
+                color = Color.White,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
         // centro: alterna Dibujar (última de pintar) / Seleccionar
@@ -1975,6 +2211,86 @@ private fun RadialFab(open: Boolean, onClick: () -> Unit, modifier: Modifier = M
             color = Color(0xFF06210D),
             style = MaterialTheme.typography.titleLarge,
         )
+    }
+}
+
+/**
+ * BARRA DE CAPAS: qué capa se está editando, cuál se ve y el "enfoque".
+ *
+ * Un nivel de plataformas tiene dos planos —Capa 1 (primer plano jugable) y Capa 2
+ * (fondo)— y hasta ahora el editor no decía en cuál estabas ni te dejaba mirar solo uno.
+ * En un nivel importado de la ROM, con el fondo entero pintado debajo, eso convierte
+ * editar la Capa 2 en pintar a ciegas. Aquí se toca:
+ *  - el nombre de la capa: la SELECCIONA para pintar y borrar,
+ *  - el ojo: la enseña u oculta,
+ *  - "Enfocar": atenúa la capa en la que NO estás, para verte trabajar.
+ */
+@Composable
+private fun LayerBar(
+    paintLayer: Int,
+    showBg: Boolean,
+    showFg: Boolean,
+    focus: Boolean,
+    onPick: (Int) -> Unit,
+    onToggleVisible: (Int) -> Unit,
+    onToggleFocus: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Glass)
+            .border(1.dp, GlassStroke, RoundedCornerShape(12.dp))
+            .padding(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        // La 1 arriba y la 2 debajo, como se apilan al dibujar: primer plano encima.
+        listOf(PlatformLayers.FOREGROUND, PlatformLayers.BACKGROUND).forEach { layer ->
+            val active = paintLayer == layer
+            val visible = if (layer == PlatformLayers.BACKGROUND) showBg else showFg
+            val color = if (layer == PlatformLayers.BACKGROUND) MarioBlue else LuigiGreen
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Box(
+                    Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(if (active) color else Color.Transparent)
+                        .border(1.dp, if (active) color else GlassStroke, RoundedCornerShape(8.dp))
+                        .clickable { onPick(layer) }
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                ) {
+                    Text(
+                        if (layer == PlatformLayers.BACKGROUND) "Capa 2 · Fondo" else "Capa 1 · Terreno",
+                        color = if (active) Color.Black else Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                    )
+                }
+                Box(
+                    Modifier.size(28.dp).clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, GlassStroke, RoundedCornerShape(8.dp))
+                        .clickable { onToggleVisible(layer) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (visible) "👁" else "🚫",
+                        color = if (visible) Color.White else Color.White.copy(alpha = 0.5f),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        }
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                .border(1.dp, if (focus) CoinYellow else GlassStroke, RoundedCornerShape(8.dp))
+                .clickable { onToggleFocus() }
+                .padding(vertical = 4.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                if (focus) "Enfoque ✓" else "Enfocar capa",
+                color = if (focus) CoinYellow else Color.White,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
     }
 }
 
