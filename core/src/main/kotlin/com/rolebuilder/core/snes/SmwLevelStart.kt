@@ -7,14 +7,24 @@ package com.rolebuilder.core.snes
  * Con la colisión y las físicas ya sabemos cómo es el nivel y cómo se mueve Mario;
  * esto dice DÓNDE aparece. SMW deriva la entrada de la cabecera secundaria (cuatro
  * tablas de 512 bytes en $05:F000/F200/F400/F600, un byte por nivel) y de unas
- * tablas de posiciones preset (`LoadLevel`, $05:xxxx, vía snesrev/smw):
+ * tablas de posiciones preset (`LoadLevel`, $05:D796, vía snesrev/smw):
  *  - Y de entrada = índice `secHdr0 & 0x0F` en las presets de Y ($05:D730/D740).
  *  - X de entrada = índice `secHdr1 & 0x07` en las presets de X ($05:D750/D758).
+ *  - **PANTALLA de entrada = `secHdr3 & 0x1F`** ($05:F600).
  *
- * [startPixelX]/[startPixelY] son la posición preset de entrada en píxeles (para las
- * entradas estándar, relativa a la primera pantalla; una entrada en pantalla
- * avanzada añade el desplazamiento de cámara, que va aparte). [startTileX]/[startTileY]
- * la dan en casillas de 16 px, listas para el motor.
+ * La pantalla no es un adorno ni "encuadre de cámara": es el byte ALTO de la posición.
+ * `LoadLevel` pone primero el preset entero (`player_xpos = PAIR16(D758[xIdx], D750[xIdx])`)
+ * y DESPUÉS, ya fuera del reparto principal/secundaria, hace `r1 &= 0x1F` con
+ * `r1 = $05:F600[nivel]` y `HIBYTE(player_xpos) = r1`, **pisando** el byte alto del preset.
+ * Si el nivel es VERTICAL (`misc_level_layout_flags & 1`, o sea `$05:F600 & 0x20`) ese mismo
+ * valor va a `HIBYTE(player_ypos)` en vez de a la X. Por eso [startPixelX] ya viene ABSOLUTA:
+ * un nivel cuya entrada está en la pantalla 5 empieza en x = 5*256 + preset, no en x = preset.
+ *
+ * (La entrada del MIDWAY es otra: `HIBYTE(player_xpos) = $05:F400[nivel] >> 4`, la rama
+ * `else` de esa misma comparación. Aquí solo se resuelve la entrada NORMAL.)
+ *
+ * [startPixelX]/[startPixelY] son la posición de entrada en píxeles absolutos del nivel;
+ * [startTileX]/[startTileY] la dan en casillas de 16 px, listas para el motor.
  */
 class SmwLevelStart(
     val level: Int,
@@ -26,9 +36,24 @@ class SmwLevelStart(
     val startTileX: Int get() = startPixelX / 16
     val startTileY: Int get() = startPixelY / 16
 
-    /** Preset de posición FG/BG al entrar (`secHeader1 & 0x38 >> 3`): en qué pantalla
-     *  y encuadre arranca la cámara. Las entradas estándar valen 0 (pantalla inicial). */
-    val fgBgPositionSetting: Int get() = (secHeader[1].toInt() and 0x38) shr 3
+    /** PANTALLA de la entrada normal (`$05:F600[nivel] & 0x1F`), ya incluida en la posición. */
+    val entranceScreen: Int get() = secHeader[3] and 0x1F
+
+    /** ¿Nivel VERTICAL? `misc_level_layout_flags & 1`, o sea el bit 0x20 de $05:F600. */
+    val isVertical: Boolean get() = (secHeader[3] and 0x20) != 0
+
+    /**
+     * ACCIÓN de entrada (`secHeader1 & 0x38 >> 3` → `misc_level_header_entrance_settings`,
+     * consumida por `InitializeLevelRAM_00A6CC`, $00:A6CC): 0 andando, 1-4 saliendo de una
+     * tubería, 5 andando + hielo, 6 disparado hacia arriba, 7 nadando.
+     */
+    val entranceAction: Int get() = (secHeader[1].toInt() and 0x38) shr 3
+
+    @Deprecated(
+        "Nombre erróneo: no es una posición FG/BG, es la ACCIÓN de entrada ($00:A6CC)",
+        ReplaceWith("entranceAction"),
+    )
+    val fgBgPositionSetting: Int get() = entranceAction
 }
 
 /**
@@ -51,6 +76,12 @@ object SmwLevelStartReader {
 
     /** Firma de cordura: el segundo preset de Y de la ROM vanilla es 0x30. */
     private const val VANILLA_Y1 = 0x30
+
+    /** Bits 0-4 de $05:F600: PANTALLA de la entrada (`r1 &= 0x1F` de `LoadLevel`). */
+    private const val SCREEN_MASK = 0x1F
+
+    /** Bit 0x20 de $05:F600: nivel VERTICAL (`misc_level_layout_flags & 1`). */
+    private const val VERTICAL_BIT = 0x20
 
     private fun pc(snesAddr: Int, delta: Int): Int = BANK * 0x8000 + (snesAddr and 0x7FFF) + delta
 
@@ -80,8 +111,12 @@ object SmwLevelStartReader {
         val xLo = byteAt(ENTRANCE_X_LO, xIdx) ?: return null
         val xHi = byteAt(ENTRANCE_X_HI, xIdx) ?: return null
 
-        val startY = (yHi shl 8) or yLo
-        val startX = (xHi shl 8) or xLo
+        // La PANTALLA ($05:F600 & 0x1F) pisa el byte alto del preset: a la X si el nivel es
+        // horizontal, a la Y si es vertical ($05:F600 & 0x20). Ver el KDoc de la clase.
+        val screen = secHeader[3] and SCREEN_MASK
+        val vertical = (secHeader[3] and VERTICAL_BIT) != 0
+        val startY = if (vertical) (screen shl 8) or yLo else (yHi shl 8) or yLo
+        val startX = if (vertical) (xHi shl 8) or xLo else (screen shl 8) or xLo
         return SmwLevelStart(level, secHeader, startX, startY)
     }
 }

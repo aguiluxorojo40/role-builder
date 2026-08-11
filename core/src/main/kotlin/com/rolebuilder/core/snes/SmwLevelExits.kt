@@ -33,10 +33,28 @@ package com.rolebuilder.core.snes
  * ── Tablas de ENTRADAS SECUNDARIAS (banco $05, 512 entradas de 1 byte cada una) ──
  *   $05:F800 → nivel destino (byte bajo)                         [SEC_ENTR_DEST_SNES]
  *   $05:FA00 → Y de entrada: bits0-3 preset Y, 4-5 pos Y L1, 6-7 pos Y L2  [SEC_ENTR_YPOS_SNES]
- *   $05:FC00 → X de entrada: bits5-7 preset X                     [SEC_ENTR_XPOS_SNES]
- *   $05:FE00 → ajuste FG/BG (pantalla/encuadre de entrada): bits0-2  [SEC_ENTR_FGBG_SNES]
+ *   $05:FC00 → X de entrada: bits5-7 preset X, **bits0-4 la PANTALLA**   [SEC_ENTR_XPOS_SNES]
+ *   $05:FE00 → ACCIÓN de entrada (cómo apareces): bits0-2         [SEC_ENTR_ACTION_SNES]
  * El nº de entrada secundaria indexa las cuatro tablas; su destino real es
  * `(número & 0x100) | $05F800[número]`.
+ *
+ * ── LA PANTALLA DE LLEGADA, que es el campo que se caía ──
+ * `LoadLevel` ($05:D796) coloca al jugador en dos pasos y el segundo pisa al primero:
+ *   1. `LOBYTE(player_xpos) = D750[r1>>5]; HIBYTE(player_xpos) = D758[r1>>5]` con
+ *      `r1 = $05:FC00[nº]` — el preset DENTRO de la pantalla.
+ *   2. más abajo, ya fuera del `if` de secundaria: `r1 &= 0x1F;` y
+ *      `HIBYTE(player_xpos) = r1` (o `HIBYTE(player_ypos) = r1` si el nivel es VERTICAL,
+ *      `misc_level_layout_flags & 1`) — **la PANTALLA**, que sobrescribe el byte alto del
+ *      preset. En la entrada principal el mismo `r1` sale de `$05:F600[nivel]`.
+ * O sea: sin los bits 0-4 de $05:FC00 toda llegada por entrada secundaria aterriza en la
+ * pantalla 0 del nivel destino, que es "el principio del nivel" en vez de la sala de la que
+ * acabas de salir.
+ *
+ * Y ojo con `$05:FE00 & 7`: NO es una posición FG/BG, es
+ * `misc_level_header_entrance_settings`, o sea la ACCIÓN con la que apareces
+ * (`InitializeLevelRAM_00A6CC`, $00:A6CC): 0 andando, 1-4 saliendo de una tubería en esa
+ * dirección, 5 andando + hielo, 6 disparado hacia ARRIBA por una tubería
+ * (`player_current_state = 7`), 7 nadando.
  *
  * ── MIDWAY ── El punto intermedio/meta es un objeto de Layer 1 (estándar 0x15
  * `StdObj15_MidwayAndGoalPoint`, o extendido 0x46 `ExtObj46_MidwayBar`); su pantalla
@@ -52,8 +70,8 @@ object SmwLevelExits {
     private const val BANK = 0x05
     private const val SEC_ENTR_DEST_SNES = 0xF800 // → PC 0x2F800: destino (byte bajo)
     private const val SEC_ENTR_YPOS_SNES = 0xFA00 // → PC 0x2FA00: Y de entrada
-    private const val SEC_ENTR_XPOS_SNES = 0xFC00 // → PC 0x2FC00: X de entrada
-    private const val SEC_ENTR_FGBG_SNES = 0xFE00 // → PC 0x2FE00: FG/BG (pantalla de entrada)
+    private const val SEC_ENTR_XPOS_SNES = 0xFC00 // → PC 0x2FC00: X de entrada + PANTALLA
+    private const val SEC_ENTR_ACTION_SNES = 0xFE00 // → PC 0x2FE00: acción de entrada
     private const val ENTRANCE_Y_LO_SNES = 0xD730 // presets Y (firma vanilla en +1)
 
     /** Firma de cordura: el segundo preset de Y de la ROM vanilla es 0x30. */
@@ -75,12 +93,22 @@ object SmwLevelExits {
         val number: Int,
         /** Nivel destino completo: `(number and 0x100) or $05F800[number]`. */
         val destinationLevel: Int,
-        /** Preset de X de entrada (0..7), índice en $05:D750/D758. */
+        /** Preset de X de entrada (0..7), índice en $05:D750/D758 (`$05:FC00[n] >> 5`). */
         val entranceXIndex: Int,
-        /** Preset de Y de entrada (0..15), índice en $05:D730/D740. */
+        /** Preset de Y de entrada (0..15), índice en $05:D730/D740 (`$05:FA00[n] & 0xF`). */
         val entranceYIndex: Int,
-        /** Ajuste FG/BG (pantalla/encuadre de entrada, 0..7). */
-        val fgBgPosition: Int,
+        /**
+         * PANTALLA de llegada (0..31): `$05:FC00[n] & 0x1F`, que `LoadLevel` ($05:D796)
+         * mete en `HIBYTE(player_xpos)` (o en `HIBYTE(player_ypos)` si el destino es
+         * vertical) pisando el byte alto del preset. Sin esto se aterriza en la pantalla 0.
+         */
+        val entranceScreen: Int,
+        /**
+         * ACCIÓN de entrada (`$05:FE00[n] & 7` → `misc_level_header_entrance_settings`,
+         * consumida por `InitializeLevelRAM_00A6CC`, $00:A6CC): 0 andando, 1-4 saliendo de
+         * una tubería, 5 andando + hielo, 6 disparado hacia arriba, 7 nadando.
+         */
+        val entranceAction: Int,
         /** Posición Y de Layer 1 al entrar (0..3). */
         val layer1YPos: Int,
         /** Posición Y de Layer 2 al entrar (0..3). */
@@ -140,13 +168,14 @@ object SmwLevelExits {
         val dest = secByte(rom, delta, SEC_ENTR_DEST_SNES, number) ?: return null
         val yb = secByte(rom, delta, SEC_ENTR_YPOS_SNES, number) ?: return null
         val xb = secByte(rom, delta, SEC_ENTR_XPOS_SNES, number) ?: return null
-        val fb = secByte(rom, delta, SEC_ENTR_FGBG_SNES, number) ?: return null
+        val fb = secByte(rom, delta, SEC_ENTR_ACTION_SNES, number) ?: return null
         return SecondaryEntrance(
             number = number,
             destinationLevel = (number and 0x100) or dest,
             entranceXIndex = (xb shr 5) and 0x7,
             entranceYIndex = yb and 0xF,
-            fgBgPosition = fb and 0x7,
+            entranceScreen = xb and 0x1F,
+            entranceAction = fb and 0x7,
             layer1YPos = (yb and 0x30) shr 4,
             layer2YPos = (yb shr 6) and 0x3,
         )

@@ -86,16 +86,28 @@ object SmwLevelBundle {
             val conn = conns[fi] ?: continue
             for (exit in conn.exits) {
                 val ti = index[exit.destinationLevel] ?: continue
-                val (ex, ey) = entryPosition(rom, header, exit.destinationLevel)
+                val (ex, ey) = entryPosition(rom, header, exit)
                 warps.add(Warp(fi, exit.fromScreen, ti, ex, ey, exit.isSecondary))
             }
         }
         return Bundle(startLevel, maps, levels, warps)
     }
 
-    /** Posición de entrada (en teselas de 16px) del nivel destino: su entrada principal. */
-    private fun entryPosition(rom: ByteArray, header: SnesHeader, level: Int): Pair<Int, Int> {
-        val start = SmwLevelStartReader.read(rom, header, level) ?: return 2 to 2
+    /**
+     * Posición de llegada (en teselas de 16px) al tomar [exit], igual que la resuelve
+     * `LoadLevel` ($05:D796): por la ENTRADA SECUNDARIA cuando la salida lo dice (con SU
+     * pantalla, $05:FC00[n] & 0x1F), y si no por la entrada principal del nivel destino.
+     * Antes usaba siempre la principal, así que salir de una sala te dejaba al empezar el
+     * nivel en vez de junto a la tubería por la que habías entrado.
+     */
+    private fun entryPosition(
+        rom: ByteArray,
+        header: SnesHeader,
+        exit: SmwLevelExits.LevelExit,
+    ): Pair<Int, Int> {
+        val start = SmwLevelStartReader.read(rom, header, exit.destinationLevel) ?: return 2 to 2
+        val sec = exit.secondaryEntrance
+        if (exit.isSecondary && sec != null) return SmwWarpTiles.entrancePosition(sec, start.isVertical)
         return (start.startPixelX / 16) to (start.startPixelY / 16)
     }
 

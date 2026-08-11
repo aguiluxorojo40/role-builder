@@ -21,7 +21,12 @@ class SmwLevelStartTest {
     private val xLo = intArrayOf(0x10, 0x80, 0x0, 0xe0, 0x10, 0x70, 0x0, 0xe0)
     private val xHi = intArrayOf(0, 0, 0, 0, 1, 1, 1, 1)
 
-    private fun romWithStart(secHdr0: Int = 0x5B, secHdr1: Int = 0x00, mangle: Boolean = false): ByteArray {
+    private fun romWithStart(
+        secHdr0: Int = 0x5B,
+        secHdr1: Int = 0x00,
+        mangle: Boolean = false,
+        secHdr3: Int = 0x00,
+    ): ByteArray {
         val rom = ByteArray(0x50000)
         fun put(addr: Int, vals: IntArray) {
             val base = 0x05 * 0x8000 + (addr and 0x7FFF)
@@ -34,7 +39,7 @@ class SmwLevelStartTest {
         rom[base + (0xF000 and 0x7FFF) + 0x106] = secHdr0.toByte()
         rom[base + (0xF200 and 0x7FFF) + 0x106] = secHdr1.toByte()
         rom[base + (0xF400 and 0x7FFF) + 0x106] = 0x9A.toByte()
-        rom[base + (0xF600 and 0x7FFF) + 0x106] = 0x00
+        rom[base + (0xF600 and 0x7FFF) + 0x106] = secHdr3.toByte()
         return rom
     }
 
@@ -50,6 +55,31 @@ class SmwLevelStartTest {
         assertEquals(1, start.startTileX)
         assertEquals(22, start.startTileY)
         assertEquals(4, start.secHeader.size)
+    }
+
+    @Test
+    fun `la PANTALLA de la cabecera pisa el byte alto de la X`() {
+        // `LoadLevel` ($05:D796) hace `r1 = $05:F600[nivel]; r1 &= 0x1F;
+        // HIBYTE(player_xpos) = r1` DESPUÉS de cargar el preset entero. Pantalla 5 +
+        // Xidx=0 (D750=0x10) → X = 0x0510 = 1296 px = columna 81, no la 1.
+        val rom = romWithStart(secHdr3 = 0x05)
+        val start = assertNotNull(SmwLevelStartReader.read(rom, SnesDecoder.parseHeader(rom), 0x106))
+        assertEquals(5, start.entranceScreen)
+        assertEquals(1296, start.startPixelX)
+        assertEquals(81, start.startTileX)
+        assertEquals(22, start.startTileY) // la Y no la toca en un nivel horizontal
+    }
+
+    @Test
+    fun `en un nivel VERTICAL la pantalla va a la Y`() {
+        // Bit 0x20 de $05:F600 = `misc_level_layout_flags & 1` = nivel vertical; ahí el
+        // mismo `r1 & 0x1F` va a `HIBYTE(player_ypos)` y la X conserva su preset.
+        val rom = romWithStart(secHdr1 = 0x07, secHdr3 = 0x25) // vertical + pantalla 5
+        val start = assertNotNull(SmwLevelStartReader.read(rom, SnesDecoder.parseHeader(rom), 0x106))
+        assertEquals(true, start.isVertical)
+        assertEquals(5, start.entranceScreen)
+        assertEquals(0x1E0, start.startPixelX)  // Xidx=7 → D758=1, D750=0xE0: conserva el alto
+        assertEquals(0x560, start.startPixelY)  // pantalla 5 + D730[0xB]=0x60
     }
 
     @Test

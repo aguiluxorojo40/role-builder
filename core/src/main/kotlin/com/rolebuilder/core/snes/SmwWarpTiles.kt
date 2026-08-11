@@ -150,10 +150,18 @@ object SmwWarpTiles {
     // (las MISMAS para la entrada principal y para la secundaria, y las MISMAS que lee
     // [SmwLevelStartReader]). Con la entrada secundaria (`flag_use_secondary_entrance`),
     // $05:FA00[n] da el índice Y y $05:FC00[n] el índice X; con la principal salen de la
-    // cabecera secundaria. En ambos casos el píxel es:
+    // cabecera secundaria. En ambos casos el píxel del PRESET es:
     //   yPixel = D740[yIdx]<<8 | D730[yIdx]     (yIdx 0..15)
     //   xPixel = D758[xIdx]<<8 | D750[xIdx]     (xIdx 0..7)
     // Transcrito de `LoadLevel` líneas $05:D7xx (`kLoadLevel_DATA_05D730/40/50/58`).
+    //
+    // PERO EL PRESET NO ES LA POSICIÓN FINAL. Unas líneas más abajo, ya fuera del reparto
+    // principal/secundaria, `LoadLevel` hace `r1 &= 0x1F` y `HIBYTE(player_xpos) = r1`
+    // (o `HIBYTE(player_ypos) = r1` si el nivel es VERTICAL, `misc_level_layout_flags & 1`),
+    // con `r1` = $05:F600[nivel] en la principal y $05:FC00[nº] en la secundaria. O sea que
+    // el byte alto del preset SE PISA con la PANTALLA de la entrada, y D758 solo sobrevive
+    // en los niveles verticales. Eso es [absolutePosition]; [presetPosition] es solo el
+    // trozo de dentro de la pantalla.
     //
     // Valores VANILLA de las tablas (idénticos a los que [SmwLevelStartReader] lee de la
     // ROM; se validan ahí con la firma D731==0x30). Se incrustan como constantes para que
@@ -179,11 +187,9 @@ object SmwWarpTiles {
     private const val TILE = 16 // píxeles por casilla (una pantalla = 16 casillas)
 
     /**
-     * Convierte un par de índices preset ([xIndex] 0..7, [yIndex] 0..15) en la casilla de
-     * aparición `(xTile, yTile)` de 16 px, con la misma cuenta que [SmwLevelStartReader]
-     * (`startPixelX/16`, `startPixelY/16`). Es la posición del PRESET dentro de la vista de
-     * la entrada; el número de PANTALLA base de la entrada (byte alto real de `player_xpos`)
-     * lo aporta el encuadre por separado, igual que [SmwLevelStart.fgBgPositionSetting].
+     * Convierte un par de índices preset ([xIndex] 0..7, [yIndex] 0..15) en la casilla
+     * `(xTile, yTile)` de 16 px del PRESET SOLO, sin la pantalla. Para la posición real de
+     * llegada usa [absolutePosition]: el juego pisa el byte alto con la pantalla.
      */
     fun presetPosition(xIndex: Int, yIndex: Int): Pair<Int, Int> {
         val xi = xIndex and 0x7
@@ -194,12 +200,32 @@ object SmwWarpTiles {
     }
 
     /**
-     * Casilla `(xTile, yTile)` donde reaparece el jugador al llegar por la ENTRADA
-     * SECUNDARIA [secondary] (resuelta por [SmwLevelExits]). Usa sus índices preset
-     * `entranceXIndex`/`entranceYIndex` con [presetPosition].
+     * Casilla `(xTile, yTile)` ABSOLUTA de una entrada: el preset ([xIndex] 0..7,
+     * [yIndex] 0..15) con la [screen] (0..31) pisando el byte alto, como hace `LoadLevel`
+     * ($05:D796) con `r1 &= 0x1F`. En un nivel [vertical] la pantalla va a la Y y el preset
+     * de X conserva su byte alto; en uno horizontal, al revés. Misma cuenta que
+     * [SmwLevelStartReader] (`startPixel/16`).
      */
-    fun entrancePosition(secondary: SmwLevelExits.SecondaryEntrance): Pair<Int, Int> =
-        presetPosition(secondary.entranceXIndex, secondary.entranceYIndex)
+    fun absolutePosition(screen: Int, xIndex: Int, yIndex: Int, vertical: Boolean): Pair<Int, Int> {
+        val xi = xIndex and 0x7
+        val yi = yIndex and 0xF
+        val s = screen and 0x1F
+        val xPixel = if (vertical) (ENTRANCE_X_HI[xi] shl 8) or ENTRANCE_X_LO[xi] else (s shl 8) or ENTRANCE_X_LO[xi]
+        val yPixel = if (vertical) (s shl 8) or ENTRANCE_Y_LO[yi] else (ENTRANCE_Y_HI[yi] shl 8) or ENTRANCE_Y_LO[yi]
+        return (xPixel / TILE) to (yPixel / TILE)
+    }
+
+    /**
+     * Casilla `(xTile, yTile)` donde reaparece el jugador al llegar por la ENTRADA
+     * SECUNDARIA [secondary] (resuelta por [SmwLevelExits]), ya ABSOLUTA: incluye su
+     * `entranceScreen` ($05:FC00[n] & 0x1F). [vertical] es el destino, no el origen.
+     */
+    fun entrancePosition(
+        secondary: SmwLevelExits.SecondaryEntrance,
+        vertical: Boolean = false,
+    ): Pair<Int, Int> = absolutePosition(
+        secondary.entranceScreen, secondary.entranceXIndex, secondary.entranceYIndex, vertical,
+    )
 
     /**
      * Casilla `(xTile, yTile)` de la ENTRADA PRINCIPAL de [start], consistente con
@@ -302,6 +328,7 @@ object SmwWarpTiles {
         if (dest < 0 || dest >= LEVEL_COUNT) return null
         val start = SmwLevelStartReader.read(rom, header, dest) ?: return null
         val (trigger, enter) = triggerCell(col, kind, c, r) ?: return null
+        val (dx, dy) = landingOf(exit, start)
         return LevelWarp(
             xTile = trigger.first,
             yTile = trigger.second,
@@ -310,9 +337,26 @@ object SmwWarpTiles {
             mouthXTile = c,
             mouthYTile = r,
             destLevel = dest,
-            destXTile = start.startTileX,
-            destYTile = start.startTileY,
+            destXTile = dx,
+            destYTile = dy,
         )
+    }
+
+    /**
+     * Casilla `(xTile, yTile)` donde aterriza el jugador al tomar [exit], siendo [start] la
+     * cabecera del nivel destino. Es el reparto de `LoadLevel` ($05:D796): con
+     * `flag_use_secondary_entrance` la posición sale de las tablas de la ENTRADA SECUNDARIA
+     * ($05:FA00/FC00, con su propia PANTALLA); si no, de la cabecera del nivel destino
+     * ($05:F000/F200/F600). Sin lo primero, salir de una sala te devolvía al PRINCIPIO del
+     * nivel en vez de a la tubería por la que entraste.
+     */
+    private fun landingOf(exit: SmwLevelExits.LevelExit, start: SmwLevelStart): Pair<Int, Int> {
+        val sec = exit.secondaryEntrance
+        return if (exit.isSecondary && sec != null) {
+            entrancePosition(sec, start.isVertical)
+        } else {
+            start.startTileX to start.startTileY
+        }
     }
 
     /**

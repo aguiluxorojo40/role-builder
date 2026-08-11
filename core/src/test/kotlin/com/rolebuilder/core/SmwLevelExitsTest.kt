@@ -51,8 +51,8 @@ class SmwLevelExitsTest {
         // Tabla de entradas secundarias, entrada 0x07.
         rom[secBase(0xF800) + 7] = 0x1A            // destino (byte bajo) → nivel 0x1A
         rom[secBase(0xFA00) + 7] = 0xB5.toByte()   // Y: yIdx=5, L1yPos=3, L2yPos=2
-        rom[secBase(0xFC00) + 7] = 0x60            // X: xIdx=3 (bits 5-7)
-        rom[secBase(0xFE00) + 7] = 0x04            // FG/BG: fgBgPosition=4 (bits 0-2)
+        rom[secBase(0xFC00) + 7] = 0x6B            // X: xIdx=3 (bits 5-7), PANTALLA=11 (bits 0-4)
+        rom[secBase(0xFE00) + 7] = 0x04            // acción de entrada = 4 (bits 0-2)
         return rom
     }
 
@@ -81,7 +81,10 @@ class SmwLevelExitsTest {
         assertEquals(0x1A, se.destinationLevel)
         assertEquals(5, se.entranceYIndex)
         assertEquals(3, se.entranceXIndex)
-        assertEquals(4, se.fgBgPosition)
+        // La PANTALLA de llegada vive en los bits 0-4 de $05:FC00, el mismo byte que el
+        // preset de X — es el campo que faltaba y por el que se aterrizaba siempre en la 0.
+        assertEquals(11, se.entranceScreen)
+        assertEquals(4, se.entranceAction)
         assertEquals(3, se.layer1YPos)
         assertEquals(2, se.layer2YPos)
 
