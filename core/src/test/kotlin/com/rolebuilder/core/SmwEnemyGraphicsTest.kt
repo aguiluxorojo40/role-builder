@@ -413,4 +413,66 @@ class SmwEnemyGraphicsTest {
         assertEquals(p57.map { it.tile }, p55.map { it.tile }, "las dos salen del mismo Init")
         assertEquals(64, p55.last().dx, "y ocupa los 5 bloques de 16 px, no 3")
     }
+
+    @Test
+    fun `la burbuja del 0x9D lleva DENTRO un sprite, y sin el no es nada`() {
+        // `Spr09D_BubbleWithSprite` ($02:D8BB) monta DOS dibujos: la burbuja de
+        // $02:D9D6 —cuatro cuartos de circulo espejados con la MISMA tesela 0xA0, mas un 8x8
+        // de brillo— y el bicho que va dentro, que la rutina mete PISANDO el charnum que
+        // acababa de poner la generica. Quedarse solo con la burbuja deja un aro vacio, que
+        // es lo que sale si uno para de leer en el bucle de dibujo.
+        val t = SmwEnemyGraphics.customEnemyTilesForTest(0x9D, ajuste = 1)
+        assertNotNull(t, "falta la burbuja")
+        assertEquals(6, t.size, "cuatro cuartos de burbuja + brillo + contenido")
+        assertEquals(listOf(0xA0, 0xA0, 0xA0, 0xA0), t.take(4).map { it.tile }, "la burbuja es UNA tesela espejada")
+        // Los cuatro cuartos: sin volteo, H, V y los dos. Es lo que hace el circulo.
+        assertEquals(listOf(false, true, false, true), t.take(4).map { it.xflip })
+        assertEquals(listOf(false, false, true, true), t.take(4).map { it.vflip })
+        assertTrue(t.take(5).all { it.page == 1 }, "burbuja y brillo van a pagina 1 (Prop 0x07/0x03)")
+        // El contenido por defecto es el Goomba, y su Prop 0x84 tiene el bit 0 a CERO: es de
+        // los pocos que van a pagina 0 estando el resto del sprite en la 1. Heredarla del
+        // vecino pinta otra mitad de la VRAM.
+        val dentro = t.last()
+        assertEquals(0xA8, dentro.tile, "dentro va el Goomba (BubbleSprTiles1[0])")
+        assertEquals(0, dentro.page, "y su Prop 0x84 lo manda a la pagina 0, no a la 1")
+        assertTrue(dentro.vflip, "el 0x80 de esa Prop es el volteo vertical")
+    }
+
+    @Test
+    fun `la plataforma con cuenta atras lleva el DIGITO, y es un 8x8`() {
+        // `Spr0BA_TimedPlatform_Draw` ($03:8E12): dos teselas 16x16 (la misma, 0xC4, la
+        // segunda en espejo) y una TERCERA de 8x8 con el numero. El tamaño sale de
+        // `kSpr0BA_TimedPlatform_TileSize` = {2, 2, 0}, y confundirlo dibuja el digito como
+        // bloque de 16x16, o sea el numero mas tres teselas ajenas pegadas.
+        val t = SmwEnemyGraphics.customEnemyTilesForTest(0xBA, ajuste = 1)
+        assertNotNull(t, "falta la plataforma con cuenta atras")
+        assertEquals(3, t.size, "dos mitades + digito")
+        assertEquals(listOf(0xC4, 0xC4), t.take(2).map { it.tile }, "la plataforma es UNA tesela espejada")
+        assertTrue(t[1].xflip, "la mitad derecha va en espejo (Prop 0x4B)")
+        assertTrue(t.take(2).all { it.size16 }, "las dos mitades son de 16x16")
+        assertFalse(t[2].size16, "el digito es de 8x8 (TileSize = 0)")
+        // NumberTiles = {0xB6, 0xB5, 0xB4, 0xB3} indexado por 1570>>6, y el Init ($01:8326)
+        // arranca el contador en 0xFF -> indice 3 -> 0xB3, que renderizado es un CUATRO.
+        assertEquals(0xB3, t[2].tile, "nace mostrando el 4")
+        assertTrue(t.all { it.page == 1 }, "Prop 0x0B/0x4B: pagina 1 en las tres")
+    }
+
+    @Test
+    fun `el Fuzzy de guia y el Sparky con ajuste 2 son el mismo bicho`() {
+        // `SprXXX_LineGuided_01DBD4` ($01:DBD4) le pone al 0x68 `charnum = -56` = 0xC8 y
+        // `flags = prio | DATA_01DC09[v2]` con {0x05, 0x45}: pagina 1 y paleta 2.
+        // Y el Sparky (0xA5) en un nivel con ajuste de GFX 2 usa EXACTAMENTE la misma tesela
+        // con la misma propiedad (`kSprXXX_WallFollowers_FuzzyProp`), porque alli tambien es
+        // un Fuzzy. Si alguna vez dejan de coincidir es que alguien ha tocado uno de los dos
+        // sin mirar el otro.
+        val fuzzy = SmwEnemyGraphics.customEnemyTilesForTest(0x68, ajuste = 1)
+        val sparky2 = SmwEnemyGraphics.customEnemyTilesForTest(0xA5, ajuste = 2)
+        assertNotNull(fuzzy, "falta el Fuzzy de guia")
+        assertNotNull(sparky2, "falta la variante Fuzzy del Sparky")
+        assertEquals(1, fuzzy.size, "una sola tesela 16x16")
+        assertEquals(0xC8, fuzzy[0].tile)
+        assertEquals(1, fuzzy[0].page, "el 0x05 de su Prop es la pagina 1")
+        assertEquals(sparky2.map { it.tile }, fuzzy.map { it.tile }, "misma tesela que el Sparky-Fuzzy")
+        assertEquals(sparky2.map { it.page }, fuzzy.map { it.page }, "y misma pagina")
+    }
 }

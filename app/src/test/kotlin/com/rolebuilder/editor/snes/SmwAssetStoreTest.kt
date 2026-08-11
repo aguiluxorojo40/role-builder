@@ -133,7 +133,7 @@ class SmwAssetStoreTest {
         // Este test ata las dos cosas: al cambiar el numero de ids curados hay que subir la
         // version. Si falla, sube BAKE_VERSION y actualiza el numero de aqui.
         val idsEsperados = 41
-        val versionEsperada = 15
+        val versionEsperada = 16
         // JUnit4: el mensaje va PRIMERO.
         assertEquals(
             "cambio el numero de enemigos curados: sube BAKE_VERSION y este numero",
@@ -150,12 +150,12 @@ class SmwAssetStoreTest {
         // uno sin subir BAKE_VERSION no descuadra el atlas, pero deja el sprite nuevo sin
         // hornear en cualquier movil que ya tuviera almacen: el enemigo sigue saliendo
         // como rectangulo aunque el catalogo lo tenga.
-        val idsEsperados = 43
+        val idsEsperados = 46
         assertEquals(
             "cambio el numero de enemigos con dibujo propio: sube BAKE_VERSION y este numero",
             idsEsperados,
             com.rolebuilder.core.snes.SmwEnemyGraphics.customEnemyIds.size,
         )
-        assertEquals(15, SmwAssetStore.bakeVersion())
+        assertEquals(16, SmwAssetStore.bakeVersion())
     }
 }

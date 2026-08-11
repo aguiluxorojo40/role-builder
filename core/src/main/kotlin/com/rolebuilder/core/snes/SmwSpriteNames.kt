@@ -28,7 +28,21 @@ object SmwSpriteNames {
         0x07 to "YellowKoopa", 0x08 to "GreenParakoopa", 0x09 to "RedParakoopa",
         0x0A to "GreenFlyingParakoopa", 0x0B to "BobOmb", 0x0C to "BulletBillGenerator",
         0x0E to "Keyhole", 0x0F to "Goomba", 0x10 to "ParaGoomba",
-        0x11 to "BuzzyBeetle", 0x13 to "KoopaKidBossFight", 0x14 to "SpinyEgg",
+        // 0x13 figuraba como "KoopaKidBossFight" y es el SPINY, el bicho de pinchos. Lo dicen
+        // dos sitios de la recompilación, y ninguno deja margen:
+        //  · la tabla de despacho (`kSprStatus08SpriteNormalPtrs`, banco $01) manda el 0x13 a
+        //    `SprXXX_Generic_SpinyEntry`, la familia andadora genérica — un jefe no va ahí.
+        //  · `Spr014_SpinyEgg` ($01:8C18), el HUEVO de Spiny, al tocar el suelo hace
+        //    `spr_spriteid[k] = 19`, o sea que el huevo se convierte EN ESTE id. Lo que sale
+        //    de un huevo de Spiny es un Spiny.
+        // El nombre falso no era inofensivo: son 40 colocaciones en 4 niveles etiquetadas
+        // como pelea de jefe.
+        0x11 to "BuzzyBeetle", 0x13 to "Spiny", 0x14 to "SpinyEgg",
+        // 0x15: comparte rutina normal con el 0x16 (`Spr016_VerticalCheepCheep`, $01:B033) y
+        // su Init es `SprXXX_FixedMovementCheepCheep_Init_Return` (o sea, ninguno): es el
+        // Cheep-Cheep de movimiento fijo, el que da nombre a toda la familia de ayudantes
+        // `SprXXX_FixedMovementCheepCheep_*` ($01:B10A).
+        0x15 to "FixedMovementCheepCheep",
         0x16 to "VerticalCheepCheep", 0x17 to "GeneratorCheepCheep",
         0x18 to "SurfaceJumpingCheepCheep", 0x19 to "DisplayMessage",
         0x1A to "ClassicPiranhaPlant", 0x1B to "Football", 0x1C to "BulletBill",
@@ -42,10 +56,34 @@ object SmwSpriteNames {
         0x44 to "TorpedoTed", 0x45 to "DirectionalCoins",
         0x46 to "DigginChuck", 0x47 to "SwimmingAndJumpingCheepCheep", 0x48 to "DigginChuckRock",
         0x49 to "ShiftingPipe", 0x4A to "GoalSphere", 0x4B to "PipeLakitu",
-        0x4C to "ExplodingBlock", 0x4E to "LedgeMontyMole", 0x4F to "JumpingPiranhaPlant",
+        // 0x4D y 0x4E comparten rutina (`Spr04E_LedgeMontyMole`, $01:E2CF) y máquina de
+        // estados (`SprXXX_SmallMontyMole_*`), pero NO son el mismo bicho: en
+        // `SprXXX_SmallMontyMole_State01_AboutToEmerge` ($01:E309) el juego los separa a mano,
+        // `if (spr_spriteid[k] == 78)` (0x4E) genera el bloque Map16 al salir —el topo que
+        // rompe el SUELO— y `if (spr_spriteid[k] == 77)` (0x4D) va por otra rama. El nombre
+        // "Ledge" que la recompilación pone a la rutina es el del 0x4E, así que al 0x4D le
+        // queda el de la familia. [PROBABLE]: la recompilación no le da nombre propio al 0x4D.
+        0x4C to "ExplodingBlock", 0x4D to "SmallMontyMole", 0x4E to "LedgeMontyMole",
+        0x4F to "JumpingPiranhaPlant",
         0x51 to "Ninji", 0x52 to "MovingLedgeHole",
-        0x54 to "ClimbingNetDoor", 0x57 to "VerticalCheckerboardPlatform",
-        0x58 to "VerticalRockPlatform", 0x5F to "BrownChainedPlatform",
+        0x54 to "ClimbingNetDoor",
+        // 0x55: su Init es el mismo que el del 0x57 (`Spr057_VerticalCheckerboardPlatform_Init`,
+        // $01:B25E) y su tabla de datos se llama `kSpr055_HorizontalCheckerboardPlatform_
+        // DATA_01B268`: es la de cuadros que va en HORIZONTAL.
+        0x55 to "HorizontalCheckerboardPlatform",
+        0x57 to "VerticalCheckerboardPlatform",
+        0x58 to "VerticalRockPlatform",
+        // 0x59 y 0x5A son el PUENTE DE BLOQUES GIRATORIOS, no plataformas: la tabla de
+        // despacho los manda a `SprXXX_TurnBlockBridge_HorizontalAndVerticalTurnBlockBridge
+        // Entry` ($01:B6A5) y a `..._HorizontalTurnBlockBridgeEntry` ($01:B6DA).
+        0x59 to "HorizontalAndVerticalTurnBlockBridge", 0x5A to "HorizontalTurnBlockBridge",
+        // 0x5D: familia `SprXXX_BuoyantPlatformsAndMine` ($01:B563) con Init
+        // `..._Init_InitFloatingPlat` ($01:B236); lo que lo separa del 0x5B, que comparte los
+        // dos, es que la tabla $01:B2C3 vale 1 para él, o sea que se dibuja DIAGONAL.
+        // [PROBABLE]: la recompilación no le da nombre propio por id, el nombre sale de la
+        // familia más la rama de dibujo.
+        0x5D to "BuoyantFloatingPlatformDiagonal",
+        0x5F to "BrownChainedPlatform",
         0x60 to "FlatPalaceSwitch", 0x61 to "SkullRaft",
         0x6A to "CoinGameCloud", 0x6C to "RightWallSpringboard", 0x6E to "DinoRhino",
         0x6F to "DinoTorch", 0x70 to "Pokey", 0x71 to "RedCapeSuperKoopa",
@@ -59,7 +97,12 @@ object SmwSpriteNames {
         0x99 to "VolcanoLotus", 0x9A to "SumoBro", 0x9B to "HammerBro",
         0x9C to "HammerBroPlatform", 0x9D to "BubbleWithSprite", 0x9E to "BallNChain",
         0x9F to "BanzaiBill", 0xA0 to "ActivateBowserBattle", 0xA1 to "BowserBowlingBall",
-        0xA2 to "MechaKoopa", 0xA3 to "GreyChainedPlatform", 0xA5 to "Sparky", 0xA7 to "IggyBall",
+        // 0xA4: la BOLA DE PINCHOS / mina. Va con las plataformas flotantes en la misma
+        // familia de rutinas, pero tiene entrada propia y dibujo propio:
+        // `SprXXX_BuoyantPlatformsAndMine_SpikeBallEntry` ($01:B559) y
+        // `..._SpikeBallDraw` ($01:B666), con sus tablas `..._SpikeBallXDisp/YDisp/Prop`.
+        0xA2 to "MechaKoopa", 0xA3 to "GreyChainedPlatform", 0xA4 to "SpikeBall",
+        0xA5 to "Sparky", 0xA7 to "IggyBall",
         0xA8 to "Blargg", 0xA9 to "Reznor", 0xAA to "Fishbone", 0xAB to "Rex",
         0xAC to "DownFirstWoodenSpike", 0xAD to "UpDownFirstWoodenSpike", 0xAE to "FishinBoo",
         0xB1 to "CreateEatBlock", 0xB2 to "FallingSpike", 0xB3 to "BowserStatueFire",

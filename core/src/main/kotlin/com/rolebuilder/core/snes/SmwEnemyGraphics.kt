@@ -1021,6 +1021,85 @@ object SmwEnemyGraphics {
             ),
             palRow = (8 + 2) * 16,
         ),
+        // BURBUJA CON UN SPRITE DENTRO (0x9D), `Spr09D_BubbleWithSprite` ($02:D8BB) y su
+        // dibujo ($02:D9D6). Era el hueco más grande que quedaba: 54 colocaciones.
+        //
+        // Son DOS dibujos superpuestos y hay que montar los dos o no se entiende:
+        //
+        //  · LA BURBUJA, cinco entradas (el bucle va de v3 = 4 a 0). Las cuatro primeras son
+        //    la MISMA tesela 0xA0 de 16×16 espejada en los cuatro cuadrantes —
+        //    kSpr09D_BubbleWithSprite_Prop = {0x07, 0x47, 0x87, 0xC7}, o sea 0x40 volteo H y
+        //    0x80 volteo V—, que es como el juego hace un círculo con un cuarto de círculo.
+        //    Página 1 y paleta (7>>1)&7 = 3. La quinta es un 8×8 (TileSize = 0) con la tesela
+        //    0x99 y Prop 0x03 (paleta 1): el BRILLO del cristal.
+        //    Posiciones de XDisp/YDisp con el desplazamiento del fotograma 0
+        //    (`r2 = DATA_02D9D2[(counter_local_frames >> 3) & 3]` = 0). Los otros tres valores
+        //    de esa tabla (5 y 10) son la burbuja RESPIRANDO, un par de píxeles arriba y
+        //    abajo; no cambian el dibujo, así que se guarda el 0.
+        //
+        //  · LO QUE LLEVA DENTRO. La rutina llama primero a `GenericGFXRtDraw1Tile16x16` y
+        //    acto seguido PISA charnum y flags con `BubbleSprTiles1[00c2]` /
+        //    `BubbleSprGfxProp1[00c2]`. Esa llamada genérica no aporta nada —el id 0x9D está
+        //    fuera de las 84 entradas de la tabla— y por eso la burbuja no salía por ahí.
+        //
+        // ⚠ Y QUÉ lleva dentro NO es fijo: `Spr09D_BubbleWithSprite_Init` ($01:8564) hace
+        // `00c2 = Spr04C_ExplodingBlock_Init(k)` = `(spr_xpos_lo >> 4) & 3`, o sea que lo
+        // decide el NIBBLE ALTO DE LA X de la colocación. Los cuatro son
+        // `kSpr09D_BubbleWithSprite_BubbleSprites` = {0x0F Goomba, 0x0D Bob-omb,
+        // 0x15 Cheep-Cheep, 0x74 seta}, con teselas {0xA8, 0xCA, 0x67, 0x24} y Prop
+        // {0x84, 0x85, 0x05, 0x08}. Este catálogo guarda UN fotograma por id, así que va el
+        // 0 (el Goomba, Prop 0x84 → página 0, paleta 2 y volteo vertical). Los otros tres se
+        // renderizaron y salen: el Bob-omb negro, el Cheep-Cheep y la seta — de hecho el
+        // Cheep-Cheep de aquí usa la tesela 0x67, la misma que la tabla genérica da al 0x15,
+        // que es una confirmación por otra puerta de que esa tesela impar era la buena.
+        0x9D to CustomEnemy(
+            listOf(
+                OamTile(0xA0, -8, -10, page = 1, palRow = (8 + 3) * 16),
+                OamTile(0xA0, 8, -10, page = 1, xflip = true, palRow = (8 + 3) * 16),
+                OamTile(0xA0, -8, 2, page = 1, vflip = true, palRow = (8 + 3) * 16),
+                OamTile(0xA0, 8, 2, page = 1, xflip = true, vflip = true, palRow = (8 + 3) * 16),
+                OamTile(0x99, -1, -4, size16 = false, page = 1, palRow = (8 + 1) * 16),
+                // el contenido por defecto: Goomba (Prop 0x84 = página 0, paleta 2, volteo V)
+                OamTile(0xA8, 0, 0, page = 0, vflip = true, palRow = (8 + 2) * 16),
+            ),
+        ),
+        // FUZZY DE GUÍA (0x68), `SprXXX_LineGuided_LineFuzzyPlats` ($01:D74A). El id 0x68 =
+        // 104 entra por `if (v1 == 104) SprXXX_LineGuided_01DBD4(k)` ($01:DBD4), que otra vez
+        // llama a la genérica y PISA lo que hace falta:
+        //
+        //     oam[64].charnum = -56;                                   // 0xC8
+        //     oam[64].flags = prio | kSprXXX_LineGuided_DATA_01DC09[v2];  // {0x05, 0x45}
+        //
+        // Una sola tesela 16×16 (`FinishOAMWrite(k, 2, 0)`), página 1 y paleta (5>>1)&7 = 2;
+        // el 0x45 del segundo valor es el mismo dibujo VOLTEADO, que es el parpadeo del bicho.
+        //
+        // La tesela 0xC8 con paleta 2 es exactamente la que ya usaba el Sparky (0xA5) en su
+        // variante `porAjuste[2]`, y no es casualidad: allí también es el Fuzzy.
+        0x68 to CustomEnemy(listOf(OamTile(0xC8, 0, 0, page = 1)), palRow = (8 + 2) * 16),
+        // PLATAFORMA CON CUENTA ATRÁS (0xBA), `Spr0BA_TimedPlatform_Draw` ($03:8E12). Tres
+        // entradas, y la tercera es la gracia del sprite:
+        //
+        //   v2=0  (0, 0)   tesela 0xC4  16×16  Prop 0x0B
+        //   v2=1  (16, 0)  tesela 0xC4  16×16  Prop 0x4B   ← la misma en espejo
+        //   v2=2  (12, 4)  DÍGITO       8×8    Prop 0x0B   (TileSize = 0)
+        //
+        // Prop 0x0B = página 1 y paleta (0x0B>>1)&7 = 5 en las tres; el 0x40 del 0x4B es el
+        // espejo, que es como el juego hace una plataforma simétrica con media.
+        //
+        // El dígito sale de `kSpr0BA_TimedPlatform_NumberTiles[spr_table1570 >> 6]` =
+        // {0xB6, 0xB5, 0xB4, 0xB3}, o sea 1, 2, 3 y 4 — verificado renderizando los cuatro.
+        // El Init ($01:8326) arranca el contador en 0xFF o en 63 según `spr_xpos_lo & 0x10`,
+        // así que la plataforma nace mostrando el 4 (0xFF>>6 = 3) o el 1 (63>>6 = 0). Se
+        // guarda el CUATRO, que es la cuenta entera y la pose con la que aparece la variante
+        // normal. (Cuando `1570 < 8` el bucle arranca en v2 = 1 y el dígito ya no se dibuja.)
+        0xBA to CustomEnemy(
+            listOf(
+                OamTile(0xC4, 0, 0, page = 1),
+                OamTile(0xC4, 16, 0, page = 1, xflip = true),
+                OamTile(0xB3, 12, 4, size16 = false, page = 1),
+            ),
+            palRow = (8 + 5) * 16,
+        ),
     )
 
     /**

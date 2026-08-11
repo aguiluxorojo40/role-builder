@@ -74,6 +74,10 @@ object SmwAssetStore {
      *       tenga el almacén de la v14 o anterior tiene esos tres PNG mal. Y con ellos un
      *       CUARTO: la plataforma 0x55, que se horneaba ESTRECHA (0x60-0x62) cuando su Init
      *       es el mismo del 0x57 y va ANCHA (0xEA-0xEC).
+     *  v16: los tres huecos más grandes que quedaban por colocaciones, los tres de dibujo
+     *       propio: la burbuja con un sprite dentro (0x9D, 54 colocaciones), el Fuzzy de guía
+     *       (0x68, 37) y la plataforma con cuenta atrás (0xBA, 34). No tocan el atlas, pero
+     *       sin subir la versión el almacén viejo no se re-hornea y se quedarían sin fichero.
      *
      * ⚠ El v3 NO es opcional, y conviene entender por qué para no repetirlo: el atlas de
      * enemigos tiene UNA COLUMNA POR ID de `curatedIds`, y el renderer calcula el ancho de
@@ -82,7 +86,7 @@ object SmwAssetStore {
      * columnas de las que el renderer da por hechas: se desplazan TODAS y todos los enemigos
      * salen cortados, no solo los nuevos.
      */
-    private const val BAKE_VERSION = 15
+    private const val BAKE_VERSION = 16
 
     /** Carpeta del almacén (se crea al hornear). */
     fun dir(context: Context): File = File(context.filesDir, DIR)
