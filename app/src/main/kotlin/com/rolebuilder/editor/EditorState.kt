@@ -18,6 +18,9 @@ import java.io.File
  */
 class EditorState(val projectDir: File) {
 
+    /** Cuántos pasos de deshacer se guardan (por gesto, no por celda). */
+    private val MAX_UNDO = 40
+
     var project by mutableStateOf(ProjectIo.loadProject(projectDir))
         private set
     var database by mutableStateOf(ProjectIo.loadDatabase(projectDir))
@@ -180,6 +183,85 @@ class EditorState(val projectDir: File) {
         currentMapId = id
         dirty = true
         return map
+    }
+
+    // ================================================================================
+    //  DESHACER / REHACER
+    //
+    //  Un editor táctil sin deshacer da miedo de usar: un dedo que resbala pinta un
+    //  reguero de teselas y la única salida era repintarlo a mano. Con el relleno por
+    //  rectángulo, un toque mal dado ya no ensucia tres casillas, sino media pantalla.
+    //
+    //  Lo barato aquí es que [GameMap], [Project] y [Database] son inmutables: guardar un
+    //  estado anterior es guardar TRES REFERENCIAS, no copiar nada. Y como `withTile`
+    //  reemplaza solo la lista de la capa tocada, dos instantáneas seguidas comparten todo
+    //  lo demás.
+    //
+    //  El paso se agrupa por GESTO, no por celda: el editor llama a [beginEdit] cuando el
+    //  dedo toca y a [commitEdit] cuando lo levanta, así un trazo entero (o un relleno) se
+    //  deshace de una vez, que es lo que uno espera.
+    // ================================================================================
+
+    private class Snapshot(
+        val mapId: Int,
+        val map: GameMap?,
+        val project: Project,
+        val database: Database,
+    )
+
+    private val undoStack = ArrayDeque<Snapshot>()
+    private val redoStack = ArrayDeque<Snapshot>()
+    private var pending: Snapshot? = null
+
+    /** ¿Hay algo que deshacer/rehacer? (observable: pinta los botones del editor). */
+    var canUndo by mutableStateOf(false)
+        private set
+    var canRedo by mutableStateOf(false)
+        private set
+
+    private fun snapshot() = Snapshot(currentMapId, maps[currentMapId], project, database)
+
+    /** Empieza un paso deshacible (el editor lo llama al empezar un gesto). */
+    fun beginEdit() {
+        if (pending == null) pending = snapshot()
+    }
+
+    /**
+     * Cierra el paso empezado en [beginEdit]. Si el gesto no cambió nada —un toque en el
+     * aire, repintar la misma tesela— no apila un paso que no deshace nada.
+     */
+    fun commitEdit() {
+        val before = pending ?: return
+        pending = null
+        val now = snapshot()
+        if (before.map === now.map && before.project === now.project && before.database === now.database) return
+        undoStack.addLast(before)
+        while (undoStack.size > MAX_UNDO) undoStack.removeFirst()
+        redoStack.clear()
+        refreshUndoFlags()
+    }
+
+    fun undo(): Boolean = step(undoStack, redoStack)
+
+    fun redo(): Boolean = step(redoStack, undoStack)
+
+    /** Saca el último estado de [from], guarda el actual en [to] y lo restaura. */
+    private fun step(from: ArrayDeque<Snapshot>, to: ArrayDeque<Snapshot>): Boolean {
+        val target = from.removeLastOrNull() ?: return false
+        pending = null // un gesto a medias no sobrevive a un deshacer
+        to.addLast(snapshot())
+        currentMapId = target.mapId
+        if (target.map != null) maps[target.mapId] = target.map else maps.remove(target.mapId)
+        project = target.project
+        database = target.database
+        dirty = true
+        refreshUndoFlags()
+        return true
+    }
+
+    private fun refreshUndoFlags() {
+        canUndo = undoStack.isNotEmpty()
+        canRedo = redoStack.isNotEmpty()
     }
 
     /**

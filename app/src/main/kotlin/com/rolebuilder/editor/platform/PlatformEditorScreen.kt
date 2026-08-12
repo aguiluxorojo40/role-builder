@@ -35,6 +35,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
@@ -84,6 +86,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.MapEdits
 import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
@@ -144,6 +147,11 @@ private enum class PTool(val label: String, val short: String = label) {
     // encima pintaban en la capa contraria en todos los niveles importados de la ROM.
     TERRAIN("Capa 1 · Primer plano", "Capa 1"),
     DECOR("Capa 2 · Fondo", "Capa 2"),
+    // Rellenos: pintar un suelo de 128 columnas casilla a casilla es lo que hacía lento
+    // construir un nivel en el móvil. Los dos trabajan en la CAPA ACTIVA con el pincel de
+    // esa capa, igual que el resto.
+    RECT("Rectángulo", "Rect."),
+    BUCKET("Cubo", "Cubo"),
     ERASE("Borrar", "Borrar"),
     ENEMY("Enemigo", "Enem."),
     COIN("Moneda", "Mon."),
@@ -167,6 +175,10 @@ private enum class RailAction(val label: String) {
     ZOOM_IN("Zoom +"),
     ZOOM_OUT("Zoom −"),
     BORRAR("Borrar"),
+    // También están fijos en la barra de arriba; aquí para quien prefiera tenerlos
+    // al alcance del pulgar mientras dibuja.
+    DESHACER("Deshacer"),
+    REHACER("Rehacer"),
 }
 
 /** Un favorito de la hotbar: una instantánea del pincel actual (herramienta + tile
@@ -585,6 +597,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // esquina marcada al definir (dos toques: esquina 1 → esquina 2 = guardar).
     var selectedStampName by remember { mutableStateOf<String?>(null) }
     var stampAnchor by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
+    // Esquina donde empezó el rectángulo de relleno (null = no se está arrastrando uno).
+    var rectAnchor by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
     var showLevelSettings by remember { mutableStateOf(false) }
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
@@ -655,6 +669,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             RailAction.ZOOM_IN -> scale = (scale * 1.25f).coerceIn(8f, 96f)
             RailAction.ZOOM_OUT -> scale = (scale / 1.25f).coerceIn(8f, 96f)
             RailAction.BORRAR -> tool = PTool.ERASE
+            RailAction.DESHACER -> if (!state.undo()) {
+                Toast.makeText(context, "No hay nada que deshacer", Toast.LENGTH_SHORT).show()
+            }
+            RailAction.REHACER -> if (!state.redo()) {
+                Toast.makeText(context, "No hay nada que rehacer", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -681,6 +701,23 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     }
                 },
                 actions = {
+                    // Deshacer/rehacer van FIJOS en la barra, no en el raíl configurable: son
+                    // la red de seguridad de todo lo demás (un relleno mal dado tapa media
+                    // pantalla) y no pueden depender de cómo tengas montado el raíl.
+                    IconButton(enabled = state.canUndo, onClick = { state.undo() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Undo,
+                            contentDescription = "Deshacer",
+                            tint = if (state.canUndo) Color.White else Color.White.copy(alpha = 0.3f),
+                        )
+                    }
+                    IconButton(enabled = state.canRedo, onClick = { state.redo() }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Redo,
+                            contentDescription = "Rehacer",
+                            tint = if (state.canRedo) Color.White else Color.White.copy(alpha = 0.3f),
+                        )
+                    }
                     IconButton(onClick = {
                         state.save()
                         Toast.makeText(context, "Nivel guardado", Toast.LENGTH_SHORT).show()
@@ -738,6 +775,14 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 // Estado del modo Seleccionar durante este gesto.
                                 var didHitTest = false
                                 var selDrag: Selected? = null
+                                // Un gesto = UN paso de deshacer: el trazo entero (o el
+                                // relleno) se deshace de una vez, no celda a celda.
+                                state.beginEdit()
+
+                                /** Celda bajo un punto de la pantalla, esté o no dentro del mapa. */
+                                fun cellAt(position: Offset): Pair<Int, Int> =
+                                    floor((position.x - pan.x) / scale).toInt() to
+                                        floor((position.y - pan.y) / scale).toInt()
 
                                 fun applyAt(position: Offset) {
                                     val tx = floor((position.x - pan.x) / scale).toInt()
@@ -767,6 +812,13 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                             state.updateMap(cur.withTile(PlatformLayers.FOREGROUND, tx, ty, selectedTile))
                                         PTool.DECOR ->
                                             state.updateMap(cur.withTile(PlatformLayers.BACKGROUND, tx, ty, selectedTile))
+                                        // El cubo: un toque rellena la zona contigua de la capa activa.
+                                        PTool.BUCKET -> state.updateMap(
+                                            MapEdits.floodFill(cur, paintLayer, tx, ty, selectedTile),
+                                        )
+                                        // El rectángulo no pinta al tocar: marca la esquina y rellena
+                                        // al levantar el dedo (abajo, al cerrar el gesto).
+                                        PTool.RECT -> Unit
                                         PTool.ERASE -> {
                                             // Borra en la CAPA ACTIVA, no en las dos: borrar un trozo de
                                             // fondo no puede llevarse por delante el suelo que hay encima.
@@ -860,13 +912,21 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
                                 val dragTool = tool == PTool.TERRAIN || tool == PTool.DECOR ||
                                     tool == PTool.ERASE || tool == PTool.SELECT
+                                // El rectángulo se dibuja arrastrando: la esquina se marca al
+                                // tocar, el recuadro sigue al dedo y se rellena al soltar.
+                                val rectTool = tool == PTool.RECT
                                 if (dragTool) applyAt(down.position)
+                                if (rectTool) {
+                                    rectAnchor = cellAt(down.position)
+                                    hover = rectAnchor
+                                }
                                 var tapPos: Offset? = down.position
                                 while (true) {
                                     val ev = awaitPointerEvent()
                                     val pressed = ev.changes.filter { it.pressed }
                                     if (pressed.size >= 2) {
                                         transform = true; tapPos = null
+                                        rectAnchor = null // pellizcar para hacer zoom no es dibujar
                                         val zoom = ev.calculateZoom()
                                         val panDelta = ev.calculatePan()
                                         val centroid = ev.calculateCentroid()
@@ -874,14 +934,35 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                         pan = (pan - centroid) * (newScale / scale) + centroid + panDelta
                                         scale = newScale
                                         ev.changes.forEach { it.consume() }
-                                    } else if (pressed.size == 1 && !transform && dragTool) {
-                                        applyAt(pressed[0].position); pressed[0].consume()
+                                    } else if (pressed.size == 1 && !transform) {
+                                        if (dragTool) {
+                                            applyAt(pressed[0].position); pressed[0].consume()
+                                        } else if (rectTool) {
+                                            hover = cellAt(pressed[0].position); pressed[0].consume()
+                                        }
                                     }
                                     if (ev.changes.none { it.pressed }) {
-                                        if (!transform && !dragTool) tapPos?.let { applyAt(it) }
+                                        val anchor = rectAnchor
+                                        if (rectTool && !transform && anchor != null) {
+                                            val (ex, ey) = hover ?: anchor
+                                            state.currentMap?.let { cur ->
+                                                state.updateMap(
+                                                    MapEdits.fillRect(
+                                                        cur, paintLayer,
+                                                        anchor.first, anchor.second, ex, ey,
+                                                        selectedTile,
+                                                    ),
+                                                )
+                                            }
+                                        } else if (!transform && !dragTool && !rectTool) {
+                                            tapPos?.let { applyAt(it) }
+                                        }
+                                        rectAnchor = null
                                         break
                                     }
                                 }
+                                // Cierra el paso: si el gesto no cambió nada, no apila nada.
+                                state.commitEdit()
                             }
                         },
                 ) {
@@ -910,11 +991,21 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 else -> 1f
                             }
                         },
-                        stampRect = if (tool == PTool.STAMP && stampAnchor != null) {
-                            val a = stampAnchor!!; val hv = hover
-                            if (hv != null) intArrayOf(minOf(a.first, hv.first), minOf(a.second, hv.second), maxOf(a.first, hv.first), maxOf(a.second, hv.second))
-                            else intArrayOf(a.first, a.second, a.first, a.second)
-                        } else null,
+                        // Recuadro en curso: el de definir un sello y, ahora, el del relleno
+                        // por rectángulo mientras arrastras (ver antes de soltar es la mitad
+                        // de la herramienta).
+                        stampRect = (stampAnchor.takeIf { tool == PTool.STAMP }
+                            ?: rectAnchor.takeIf { tool == PTool.RECT })?.let { a ->
+                            val hv = hover
+                            if (hv != null) {
+                                intArrayOf(
+                                    minOf(a.first, hv.first), minOf(a.second, hv.second),
+                                    maxOf(a.first, hv.first), maxOf(a.second, hv.second),
+                                )
+                            } else {
+                                intArrayOf(a.first, a.second, a.first, a.second)
+                            }
+                        },
                     )
                 }
 
@@ -2046,14 +2137,16 @@ private fun DrawScope.drawLevel(
 
 /** Herramientas que forman los sectores de la rueda (Seleccionar es el centro). */
 private val WHEEL_TOOLS = listOf(
-    PTool.TERRAIN, PTool.DECOR, PTool.ENEMY, PTool.COIN, PTool.GOAL,
-    PTool.START, PTool.WARP, PTool.STAMP, PTool.COLLISION, PTool.ERASE,
+    PTool.TERRAIN, PTool.DECOR, PTool.RECT, PTool.BUCKET, PTool.ENEMY, PTool.COIN,
+    PTool.GOAL, PTool.START, PTool.WARP, PTool.STAMP, PTool.COLLISION, PTool.ERASE,
 )
 
 /** Color de marca por herramienta (para leer la rueda de un vistazo). */
 private fun toolColor(t: PTool): Color = when (t) {
     PTool.TERRAIN -> LuigiGreen
     PTool.DECOR -> MarioBlue
+    PTool.RECT -> Color(0xFF7ED957)
+    PTool.BUCKET -> Color(0xFF00B894)
     PTool.ENEMY -> Color(0xFFB5651D)
     PTool.COIN -> CoinYellow
     PTool.GOAL -> Color(0xFF35C759)
