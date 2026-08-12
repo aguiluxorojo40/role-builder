@@ -1655,7 +1655,14 @@ private fun CollisionPanel(
             }
         }
         if (tileset != null && bitmap != null) {
-            TilePalette(tileset, bitmap, selectedTile, onSelectTile)
+            // Editando colisión lo que interesa es el terreno: la paleta abre por Suelo.
+            TilePalette(
+                tileset = tileset,
+                bitmap = bitmap,
+                selected = selectedTile,
+                preferred = TileCat.SUELO,
+                onSelect = onSelectTile,
+            )
         }
     }
 }
