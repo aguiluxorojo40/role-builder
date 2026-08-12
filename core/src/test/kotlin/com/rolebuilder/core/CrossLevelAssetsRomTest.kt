@@ -134,6 +134,48 @@ class CrossLevelAssetsRomTest {
         }
     }
 
+    @Test
+    fun `se puede traer de un nivel y despues de otro, y sobreviven los dos`() {
+        val rom = findRom() ?: return skip()
+        val destino = assertNotNull(importar(rom, 0x105, 1))
+        val castillo = assertNotNull(importar(rom, 0x101, 2))
+        val otro = assertNotNull(importar(rom, 0x106, 3))
+
+        val delCastillo = castillo.map.layers[PlatformLayers.FOREGROUND].filter { it >= 0 }.distinct().take(5)
+        val delOtro = otro.map.layers[PlatformLayers.FOREGROUND].filter { it >= 0 }.distinct().take(5)
+
+        // Primer viaje: del castillo.
+        val paso1 = TilesetMerge.append(
+            destino.tileset, destino.atlas, castillo.tileset, castillo.atlas, delCastillo,
+        )
+        // Segundo viaje: de otro nivel distinto, SOBRE el resultado del primero.
+        val paso2 = TilesetMerge.append(
+            paso1.tileset, paso1.pixels, otro.tileset, otro.atlas, delOtro,
+        )
+
+        // Lo traído en el primer viaje sigue donde estaba y con su colisión.
+        paso1.added.forEachIndexed { i, t ->
+            assertEquals(
+                castillo.tileset.platformSolidity[delCastillo[i]],
+                paso2.tileset.platformSolidity[t],
+                "la tesela del primer nivel traído no se toca en el segundo viaje",
+            )
+        }
+        // Y lo del segundo viaje llega entero.
+        assertEquals(delOtro.size, paso2.added.size)
+        paso2.added.forEachIndexed { i, t ->
+            assertEquals(
+                otro.tileset.platformSolidity[delOtro[i]],
+                paso2.tileset.platformSolidity[t],
+                "la colisión del segundo nivel también viaja",
+            )
+        }
+        assertTrue(
+            paso2.tileset.tileCount >= paso1.tileset.tileCount,
+            "el atlas acumula los dos viajes",
+        )
+    }
+
     private fun skip() = Assume.assumeTrue("sin ROM de SMW: se salta", false)
 
     private fun findRom(): ByteArray? {

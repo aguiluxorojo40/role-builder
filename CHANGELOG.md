@@ -14,6 +14,21 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 ## [Sin publicar] — Assets de cualquier nivel, y las dos capas por fin bien puestas
 
 ### Corregido
+- **El banco de assets se cerraba en cada viaje**, así que parecía que solo se podía
+  absorber material de UN nivel: para traer de un segundo había que volver a abrirlo, y no
+  se veía por ningún sitio. Ahora se queda abierto, dice cuántas teselas lleva traídas y
+  puedes cambiar de nivel de origen y seguir. Además el desplegable ya no salta al primer
+  nivel después de cada viaje (se recuerda por id, no por objeto).
+- **Traer teselas podía no hacer nada, en silencio**: si faltaba el PNG del nivel de origen
+  o el atlas no cuadraba, la operación devolvía "cero teselas" y el diálogo se cerraba sin
+  decir palabra — indistinguible de "esto no funciona". Ahora el motivo se ve en el diálogo.
+- **El copiado bloqueaba el hilo principal.** Traerse un nivel entero son cientos de teselas
+  y volver a codificar un PNG grande; ahora esa parte va en `Dispatchers.IO` con su aviso de
+  progreso, y solo el alta del tileset vuelve al hilo de interfaz.
+
+### Añadido
+- **"Traer el nivel entero"** y **"Toda la categoría"** en el banco de assets: absorber todo
+  el material de otro nivel es un botón, no ir picando 150 teselas de decorado una a una.
 - **Las capas estaban INTERCAMBIADAS en todos los niveles importados de la ROM.** El
   importador ponía el fondo en la capa 0 y el terreno en la 1 *solo si el nivel traía
   fondo*; si no, el terreno se iba a la capa 0. Y los niveles creados desde el editor

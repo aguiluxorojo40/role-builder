@@ -128,7 +128,7 @@ import kotlin.math.sin
 private val SkyBlue = Color(0xFF5C94FC)
 internal val MarioRed = Color(0xFFE60012)    // rojo Nintendo — acento principal
 private val MarioBlue = Color(0xFF049CD8)   // azul Mario
-private val CoinYellow = Color(0xFFFBD000)  // amarillo moneda/estrella
+internal val CoinYellow = Color(0xFFFBD000)  // amarillo moneda/estrella
 internal val LuigiGreen = Color(0xFF43B047)  // verde Luigi/tubería
 private val Canvas0 = Color(0xFF0B1220)
 // Paneles translúcidos (glass) que dejan ver el fondo por detrás.
@@ -1241,8 +1241,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         AssetBankDialog(
             state = state,
             map = state.currentMap ?: map,
-            onDone = { added ->
-                showAssets = false
+            // Se llama en CADA tanda: el diálogo sigue abierto para traer de más niveles.
+            onBrought = { added ->
                 if (added.isNotEmpty()) {
                     // El atlas se ha reescrito: hay que releer la imagen y dejar la primera
                     // tesela traída como pincel de la capa activa (es lo que vas a pintar).
@@ -1252,13 +1252,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         tool = if (paintLayer == PlatformLayers.BACKGROUND) PTool.DECOR else PTool.TERRAIN
                         lastPaint = tool
                     }
-                    Toast.makeText(
-                        context,
-                        "${added.size} tesela(s) añadidas a este nivel",
-                        Toast.LENGTH_SHORT,
-                    ).show()
                 }
             },
+            onClose = { showAssets = false },
         )
     }
 
