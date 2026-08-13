@@ -14,6 +14,19 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 ## [Sin publicar] — Assets de cualquier nivel, y las dos capas por fin bien puestas
 
 ### Corregido
+- **Un sello pegado en un nivel más bajo entraba "solo por arriba"**, que parecía un fallo del
+  pegado y no lo era: un sello de un nivel de SMW mide 27 filas y un nivel nuevo nacía con 15,
+  así que el pegado recortaba. Ahora el nivel nuevo nace con **27 filas** (el alto real de un
+  nivel horizontal de SMW) y, cuando algo no cabe, se **dice** en vez de dejarte adivinando.
+- **Lo pegado no se podía mover**: pegar con la herramienta Sello no dejaba nada marcado, así
+  que no había forma de agarrarlo. Ahora lo pegado **queda marcado** —con Área se mueve,
+  voltea o vuelve a copiar— y el panel del Sello lo explica.
+- **El tamaño del nivel estaba escondido** dentro de "Ajustes": no había manera de dar con él.
+  Ahora el `48 × 15` de la esquina del lienzo **se toca** y abre el tamaño, y hay una acción
+  "Tamaño" para el raíl.
+- **Arrastrar el marco de selección se habría cortado al primer movimiento**: `areaSel` estaba
+  entre las claves del gesto, y cambiarla lo reinicia. Se lee del estado capturado, como ya
+  hacían `pan` y `scale`.
 - **El banco de assets se cerraba en cada viaje**, así que parecía que solo se podía
   absorber material de UN nivel: para traer de un segundo había que volver a abrirlo, y no
   se veía por ningún sitio. Ahora se queda abierto, dice cuántas teselas lleva traídas y

@@ -184,6 +184,7 @@ private enum class RailAction(val label: String) {
     // al alcance del pulgar mientras dibuja.
     DESHACER("Deshacer"),
     REHACER("Rehacer"),
+    TAMANO("Tamaño"),
 }
 
 /**
@@ -706,6 +707,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             RailAction.ZOOM_IN -> scale = (scale * 1.25f).coerceIn(8f, 96f)
             RailAction.ZOOM_OUT -> scale = (scale / 1.25f).coerceIn(8f, 96f)
             RailAction.BORRAR -> tool = PTool.ERASE
+            RailAction.TAMANO -> showLevelSettings = true
             RailAction.DESHACER -> if (!state.undo()) {
                 Toast.makeText(context, "No hay nada que deshacer", Toast.LENGTH_SHORT).show()
             }
@@ -850,7 +852,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         .fillMaxSize()
                         // paintLayer va en las claves: se puede cambiar de capa sin cambiar de
                         // herramienta (barra de capas), y el gesto tiene que enterarse.
-                        .pointerInput(map.id, tool, paintLayer, selectedTile, selectedEnemyId, selectedStampName, areaSel, areaBoth) {
+                        //
+                        // areaSel y areaBoth NO van: como pan y scale, se leen del estado
+                        // capturado, que siempre da el valor de ahora. Ponerlos de clave
+                        // REINICIARÍA el gesto en cuanto el marco se mueve una casilla —es
+                        // decir, arrastrar la selección se cortaría al primer movimiento—.
+                        .pointerInput(map.id, tool, paintLayer, selectedTile, selectedEnemyId, selectedStampName) {
                             awaitEachGesture {
                                 val down = awaitFirstDown()
                                 var transform = false
@@ -973,6 +980,24 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                             if (held != null) {
                                                 // Sello EN MANO: un toque lo PEGA con su esquina aquí.
                                                 state.updateMap(held.pasteInto(cur, tx, ty))
+                                                // Lo pegado queda MARCADO: así se puede mover
+                                                // (arrastrando o con las flechas) sin tener que
+                                                // volver a rodearlo a mano con el marco.
+                                                areaSel = MapRegion.Area(tx, ty, held.width, held.height)
+                                                clip = held
+                                                // Y si no cabía, se dice: pegar recorta en el
+                                                // borde, y un sello más alto que el nivel entra
+                                                // "solo por arriba", que parece un fallo y no lo es.
+                                                if (tx + held.width > cur.width || ty + held.height > cur.height) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "El sello es ${held.width}×${held.height} y aquí no cabe " +
+                                                            "entero (el nivel mide ${cur.width}×${cur.height}): se ha " +
+                                                            "pegado recortado. Toca el tamaño, abajo a la derecha, " +
+                                                            "para agrandar el nivel.",
+                                                        Toast.LENGTH_LONG,
+                                                    ).show()
+                                                }
                                             } else {
                                                 // Modo DEFINIR: 1er toque marca esquina, 2º guarda la región.
                                                 val a = stampAnchor
@@ -1192,11 +1217,18 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
+                // El tamaño del nivel se TOCA: es donde uno mira para saber cuánto mide, así
+                // que es donde tiene que estar el botón de cambiarlo (antes había que
+                // adivinar que vivía dentro de "Ajustes").
                 Text(
-                    "${map.width} × ${map.height}",
-                    color = Color.White.copy(alpha = 0.6f),
+                    "${map.width} × ${map.height}  ✎",
+                    color = Color.White.copy(alpha = 0.75f),
                     style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Glass)
+                        .clickable { showLevelSettings = true }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
 
                 // Primer arranque: proyecto sin gráficos → invita a importar de la ROM.
@@ -1524,6 +1556,18 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     state.beginEdit()
                                     state.updateMap(MapRegion.paste(actual, listo, sel.x, sel.y))
                                     state.commitEdit()
+                                    areaSel = MapRegion.Area(sel.x, sel.y, listo.width, listo.height)
+                                    if (sel.x + listo.width > actual.width ||
+                                        sel.y + listo.height > actual.height
+                                    ) {
+                                        Toast.makeText(
+                                            context,
+                                            "El trozo es ${listo.width}×${listo.height} y aquí no cabe entero: " +
+                                                "se ha pegado recortado. Toca el tamaño, abajo a la derecha, " +
+                                                "para agrandar el nivel.",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                    }
                                 }
                             }
                         },
@@ -2171,7 +2215,9 @@ private fun StampPanel(
             }
         }
         val hint = when {
-            selected != null -> "Sello \"$selected\" en mano: toca el nivel para PEGARLO."
+            selected != null ->
+                "Sello \"$selected\" en mano: toca el nivel para PEGARLO. Lo pegado queda marcado: " +
+                    "con la herramienta Área lo puedes mover, voltear o volver a copiar."
             defining -> "Toca la 2ª esquina para GUARDAR esa región como sello."
             else -> "Toca 2 esquinas del nivel para crear un sello, o elige uno de arriba para pegarlo."
         }
@@ -2300,7 +2346,10 @@ private fun NewLevelDialog(
 ) {
     var name by remember { mutableStateOf("") }
     var width by remember { mutableIntStateOf(48) }
-    var height by remember { mutableIntStateOf(15) }
+    // 27 filas: el alto de un nivel horizontal de SMW. Con 15 (lo de antes) un sello copiado
+    // de la ROM no cabe y al pegarlo solo entra la parte de arriba, que parece un fallo del
+    // pegado y no lo es.
+    var height by remember { mutableIntStateOf(27) }
     var tilesetId by remember { mutableIntStateOf(currentTilesetId) }
     val tilesets = state.database.tilesets
     AlertDialog(
