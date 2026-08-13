@@ -37,6 +37,34 @@ object MapRegion {
     }
 
     /**
+     * Ancho de una PANTALLA de Super Mario World, en casillas. Un nivel de SMW no es una
+     * cuadrícula cualquiera: está hecho de pantallas de 16 columnas (27 filas en los
+     * horizontales), y las entradas, las salidas y los warps se cuentan POR PANTALLA. Por eso
+     * mover material de a pantallas es la unidad natural para recolocar un nivel.
+     */
+    const val SCREEN_COLS = 16
+
+    /**
+     * Ajusta [area] a la rejilla de trozos de [chunkW]×[chunkH] casillas, creciendo hasta
+     * cubrir enteros los trozos que toque, y recortando al mapa. Con [chunkH] mayor o igual
+     * que el alto del mapa sale la COLUMNA entera: seleccionar "pantallas" de un nivel
+     * horizontal es exactamente eso.
+     *
+     * Un tamaño de trozo de 1 deja el área tal cual (selección libre).
+     */
+    fun snapped(area: Area, chunkW: Int, chunkH: Int, mapWidth: Int, mapHeight: Int): Area {
+        val cw = chunkW.coerceAtLeast(1)
+        val ch = chunkH.coerceAtLeast(1)
+        val x0 = (area.x.coerceIn(0, maxOf(0, mapWidth - 1)) / cw) * cw
+        val y0 = (area.y.coerceIn(0, maxOf(0, mapHeight - 1)) / ch) * ch
+        // El borde derecho/inferior sube al final del trozo que toca (el -1 es porque el
+        // área incluye su última casilla).
+        val xEnd = ((area.x + area.w - 1).coerceIn(0, mapWidth - 1) / cw + 1) * cw
+        val yEnd = ((area.y + area.h - 1).coerceIn(0, mapHeight - 1) / ch + 1) * ch
+        return Area(x0, y0, minOf(xEnd, mapWidth) - x0, minOf(yEnd, mapHeight) - y0)
+    }
+
+    /**
      * Copia la región [area] (recortada al mapa) en las capas [layers]. Las capas que no estén
      * en [layers] salen vacías. Con [withObjects], los enemigos e ítems de la región viajan
      * también, con coordenadas relativas a la esquina.

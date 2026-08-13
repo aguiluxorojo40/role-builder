@@ -126,6 +126,58 @@ class MapRegionTest {
         assertTrue(r.layers[bg].all { it == 40 })
     }
 
+    // ---- Selección por trozos (pantallas de SMW) ----
+
+    @Test
+    fun `tocar una pantalla selecciona la pantalla entera`() {
+        // Nivel de 4 pantallas: 64 columnas, 27 filas. Un toque suelto dentro de la 2ª.
+        val r = MapRegion.snapped(
+            MapRegion.Area(20, 5, 1, 1), MapRegion.SCREEN_COLS, 27, 64, 27,
+        )
+        assertEquals(16, r.x)
+        assertEquals(0, r.y)
+        assertEquals(16, r.w)
+        assertEquals(27, r.h, "la pantalla es la columna entera")
+    }
+
+    @Test
+    fun `un arrastre a caballo de dos pantallas coge las dos`() {
+        val r = MapRegion.snapped(
+            MapRegion.Area(14, 3, 6, 4), MapRegion.SCREEN_COLS, 27, 64, 27,
+        )
+        assertEquals(0, r.x)
+        assertEquals(32, r.w, "de la pantalla 0 a la 1, enteras")
+    }
+
+    @Test
+    fun `el ajuste se recorta al mapa aunque el nivel no sea multiplo`() {
+        // 40 columnas = dos pantallas y media: la última se queda corta, no se sale.
+        val r = MapRegion.snapped(
+            MapRegion.Area(38, 0, 1, 1), MapRegion.SCREEN_COLS, 27, 40, 27,
+        )
+        assertEquals(32, r.x)
+        assertEquals(8, r.w)
+    }
+
+    @Test
+    fun `trozos cuadrados para los niveles verticales`() {
+        val r = MapRegion.snapped(MapRegion.Area(3, 20, 2, 2), 16, 16, 16, 64)
+        assertEquals(0, r.x)
+        assertEquals(16, r.y)
+        assertEquals(16, r.w)
+        assertEquals(16, r.h)
+    }
+
+    @Test
+    fun `un trozo de 1 deja la seleccion libre tal cual`() {
+        val libre = MapRegion.Area(3, 4, 5, 6)
+        val r = MapRegion.snapped(libre, 1, 1, 64, 27)
+        assertEquals(libre.x, r.x)
+        assertEquals(libre.y, r.y)
+        assertEquals(libre.w, r.w)
+        assertEquals(libre.h, r.h)
+    }
+
     @Test
     fun `una region fuera del mapa no da portapapeles`() {
         assertNull(MapRegion.copy(map(), MapRegion.Area(9, 9, 2, 2), listOf(fg), withObjects = false))

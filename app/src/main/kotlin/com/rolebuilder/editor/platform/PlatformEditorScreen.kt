@@ -610,6 +610,11 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var clip by remember { mutableStateOf<com.rolebuilder.core.model.MapStamp?>(null) }
     // Alcance: solo la capa en la que estás, o las dos a la vez.
     var areaBoth by remember { mutableStateOf(false) }
+    // AJUSTE POR TROZOS. Un nivel de SMW está hecho de pantallas de 16 columnas, y las
+    // entradas y los warps se cuentan por pantalla: poder coger pantallas enteras es la
+    // unidad natural para recolocar un nivel. 1×1 = selección libre.
+    var snapW by remember { mutableIntStateOf(1) }
+    var snapH by remember { mutableIntStateOf(1) }
     // Sello EN MANO, ya traducido a las teselas de este nivel. Es lo que hace que un sello
     // hecho en otro nivel se pueda pegar aquí: no se pega el original (sus índices son de
     // otro atlas), se pega esta versión traducida.
@@ -1061,10 +1066,14 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                             val (ex, ey) = hover ?: anchor
                                             if (tool == PTool.AREA) {
                                                 // Seleccionar no cambia el nivel: solo marca el trozo
-                                                // sobre el que actúan copiar/cortar/pegar.
-                                                areaSel = MapRegion.Area.between(
-                                                    anchor.first, anchor.second, ex, ey,
-                                                )
+                                                // sobre el que actúan copiar/cortar/pegar. Con el
+                                                // ajuste puesto, el trozo cuadra a pantallas.
+                                                state.currentMap?.let { cur ->
+                                                    areaSel = MapRegion.snapped(
+                                                        MapRegion.Area.between(anchor.first, anchor.second, ex, ey),
+                                                        snapW, snapH, cur.width, cur.height,
+                                                    )
+                                                }
                                             } else {
                                                 state.currentMap?.let { cur ->
                                                     state.updateMap(
@@ -1122,14 +1131,21 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             ?.let { intArrayOf(it.x, it.y, it.x + it.w - 1, it.y + it.h - 1) },
                         stampRect = (stampAnchor.takeIf { tool == PTool.STAMP }
                             ?: rectAnchor.takeIf { tool == PTool.RECT || tool == PTool.AREA })?.let { a ->
-                            val hv = hover
-                            if (hv != null) {
+                            val hv = hover ?: a
+                            if (tool == PTool.AREA) {
+                                // Con ajuste por trozos, la vista previa enseña YA la pantalla
+                                // entera que se va a coger: ver una cosa y llevarte otra es
+                                // peor que no tener vista previa.
+                                val s = MapRegion.snapped(
+                                    MapRegion.Area.between(a.first, a.second, hv.first, hv.second),
+                                    snapW, snapH, map.width, map.height,
+                                )
+                                intArrayOf(s.x, s.y, s.x + s.w - 1, s.y + s.h - 1)
+                            } else {
                                 intArrayOf(
                                     minOf(a.first, hv.first), minOf(a.second, hv.second),
                                     maxOf(a.first, hv.first), maxOf(a.second, hv.second),
                                 )
-                            } else {
-                                intArrayOf(a.first, a.second, a.first, a.second)
                             }
                         },
                     )
@@ -1436,7 +1452,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         selection = areaSel,
                         clip = clip,
                         bothLayers = areaBoth,
-                        onNudge = moverSeleccion,
+                        // Con pantallas marcadas, las flechas mueven de pantalla en pantalla:
+                        // recolocar un nivel es "esta pantalla, dos más allá", no 32 toques.
+                        onNudge = { dx, dy -> moverSeleccion(dx * snapW, dy * snapH) },
+                        snapW = snapW,
+                        onSnap = { w, h -> snapW = w; snapH = h; areaSel = null },
+                        levelHeight = map.height,
                         layerName = if (paintLayer == PlatformLayers.BACKGROUND) "Capa 2" else "Capa 1",
                         onScope = { areaBoth = it },
                         onCopy = {
@@ -1890,8 +1911,12 @@ private fun AreaPanel(
     selection: MapRegion.Area?,
     clip: com.rolebuilder.core.model.MapStamp?,
     bothLayers: Boolean,
-    /** Mueve el trozo marcado (dx, dy) casillas: el arrastre fino que el dedo no da. */
+    /** Mueve el trozo marcado (dx, dy) unidades de ajuste: el arrastre fino que el dedo no da. */
     onNudge: (Int, Int) -> Unit,
+    /** Ancho del trozo de ajuste (1 = libre, 16 = pantalla de SMW). */
+    snapW: Int,
+    onSnap: (Int, Int) -> Unit,
+    levelHeight: Int,
     layerName: String,
     onScope: (Boolean) -> Unit,
     onCopy: () -> Unit,
@@ -1928,6 +1953,24 @@ private fun AreaPanel(
                 label = { Text("Las dos capas") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                ),
+            )
+            // Ajuste por trozos: libre, pantallas de SMW (16 columnas de alto entero) o
+            // bloques de 16×16 (la pantalla de los niveles verticales).
+            FilterChip(
+                selected = snapW == 1,
+                onClick = { onSnap(1, 1) },
+                label = { Text("Libre") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = CoinYellow, selectedLabelColor = Color.Black,
+                ),
+            )
+            FilterChip(
+                selected = snapW == MapRegion.SCREEN_COLS,
+                onClick = { onSnap(MapRegion.SCREEN_COLS, levelHeight) },
+                label = { Text("Pantallas") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = CoinYellow, selectedLabelColor = Color.Black,
                 ),
             )
             Text(
