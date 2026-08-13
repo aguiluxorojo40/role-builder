@@ -597,6 +597,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var showBg by remember { mutableStateOf(true) }
     var showFg by remember { mutableStateOf(true) }
     var focusLayer by remember { mutableStateOf(false) }
+    // ¿Barra de capas desplegada? Se recuerda por proyecto: desplegada tapa el arranque del
+    // raíl de la izquierda, y quien no esté tocando capas prefiere tenerla plegada.
+    var layerBarOpen by remember { mutableStateOf(true) }
     val switchLayer: (Int) -> Unit = { target ->
         if (target != paintLayer) {
             val mine = selectedTile
@@ -669,6 +672,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
         mutableStateListOf(*init.toTypedArray())
     }
     var showRailConfig by remember { mutableStateOf(false) }
+    LaunchedEffect(uiPrefs) { layerBarOpen = uiPrefs.getBoolean("layerbar", true) }
     // Hotbar de favoritos (abajo-centro): instantáneas del pincel actual, editable.
     val favs = remember {
         val init = uiPrefs.getString("favs", null)?.split(";")?.mapNotNull { s ->
@@ -1315,7 +1319,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         active = railActions,
                         onAct = onRail,
                         onConfig = { showRailConfig = true },
-                        modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+                        // El hueco de arriba está RESERVADO para la barra de capas: el raíl
+                        // crece hacia arriba según cuántas acciones tengas y llegaba a meterse
+                        // debajo de ella, dejando "Nuevo" sin poder tocarse.
+                        modifier = Modifier.align(Alignment.BottomStart)
+                            .padding(12.dp)
+                            .padding(top = 56.dp),
                     )
                 }
                 // Hotbar de favoritos (abajo-centro), oculta en modo limpio.
@@ -1403,6 +1412,11 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             showBg = showBg,
                             showFg = showFg,
                             focus = focusLayer,
+                            open = layerBarOpen,
+                            onToggleOpen = {
+                                layerBarOpen = !layerBarOpen
+                                uiPrefs.edit().putBoolean("layerbar", layerBarOpen).apply()
+                            },
                             onPick = { layer ->
                                 switchLayer(layer)
                                 // Elegir capa deja el pincel de esa capa listo para pintar, salvo
@@ -2974,11 +2988,34 @@ private fun LayerBar(
     showBg: Boolean,
     showFg: Boolean,
     focus: Boolean,
+    /** Plegada = una sola pastilla con la capa activa, para no tapar el raíl de la izquierda. */
+    open: Boolean,
+    onToggleOpen: () -> Unit,
     onPick: (Int) -> Unit,
     onToggleVisible: (Int) -> Unit,
     onToggleFocus: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val activa = if (paintLayer == PlatformLayers.BACKGROUND) "Capa 2" else "Capa 1"
+    if (!open) {
+        // PLEGADA: ocupa lo mínimo y sigue diciendo en qué capa estás, que es el dato que
+        // no puede faltar mientras pintas.
+        Box(
+            modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(Glass)
+                .border(1.dp, GlassStroke, RoundedCornerShape(12.dp))
+                .clickable { onToggleOpen() }
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        ) {
+            Text(
+                "$activa ▸",
+                color = if (paintLayer == PlatformLayers.BACKGROUND) MarioBlue else LuigiGreen,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+        return
+    }
     Column(
         modifier
             .clip(RoundedCornerShape(12.dp))
@@ -3021,18 +3058,29 @@ private fun LayerBar(
                 }
             }
         }
-        Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                .border(1.dp, if (focus) CoinYellow else GlassStroke, RoundedCornerShape(8.dp))
-                .clickable { onToggleFocus() }
-                .padding(vertical = 4.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                if (focus) "Enfoque ✓" else "Enfocar capa",
-                color = if (focus) CoinYellow else Color.White,
-                style = MaterialTheme.typography.labelSmall,
-            )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, if (focus) CoinYellow else GlassStroke, RoundedCornerShape(8.dp))
+                    .clickable { onToggleFocus() }
+                    .padding(vertical = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (focus) "Enfoque ✓" else "Enfocar capa",
+                    color = if (focus) CoinYellow else Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+            // Plegar: la barra tapaba el arranque del raíl (el botón "Nuevo" quedaba debajo).
+            Box(
+                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, GlassStroke, RoundedCornerShape(8.dp))
+                    .clickable { onToggleOpen() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("▾", color = Color.White, style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
