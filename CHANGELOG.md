@@ -27,6 +27,11 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   progreso, y solo el alta del tileset vuelve al hilo de interfaz.
 
 ### Añadido
+- **Un nivel nuevo se lleva SU COPIA de los gráficos.** Antes compartía el tileset del nivel
+  del que los tomaba, así que traer teselas o retocar una colisión en el nivel nuevo le
+  cambiaba la paleta también al original. Ahora se duplica el atlas (PNG y metadatos) con id
+  propio: cada nivel es dueño de sus gráficos. El precio, dicho: un PNG más en el proyecto y
+  que los arreglos hechos en uno no se propagan al otro.
 - **Mover lo seleccionado.** El marco de selección se arrastra: si el dedo baja DENTRO del
   marco se mueve su contenido (se recorta una vez y se va pegando sobre el mapa limpio, así
   que arrastrar no deja copias por el camino); fuera del marco, se marca una selección

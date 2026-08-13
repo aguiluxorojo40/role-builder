@@ -1643,13 +1643,39 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             currentTilesetId = map.tilesetId,
             onDismiss = { showNewLevel = false },
             onCreate = { name, w, h, tilesetId ->
-                // El suelo de arranque: si el nivel nuevo hereda los gráficos del actual, la
+                // El suelo de arranque: si el nivel nuevo parte de los gráficos del actual, la
                 // tesela que tienes en la mano; si coges los de OTRO nivel, su primera tesela
                 // sólida (la del pincel es un índice de otro atlas y ahí no significa nada).
                 val ground = if (tilesetId == map.tilesetId) selectedTile
                 else firstSolidTile(state.database.tileset(tilesetId))
-                state.addPlatformLevel(name, w, h, tilesetId = tilesetId, groundTile = ground)
+                val base = state.database.tileset(tilesetId)
+                val nombre = name.ifBlank { "Nivel ${(state.project.mapIds.maxOrNull() ?: 0) + 1}" }
                 showNewLevel = false
+                if (base == null) {
+                    state.addPlatformLevel(nombre, w, h, tilesetId = tilesetId, groundTile = ground)
+                } else {
+                    // El nivel nuevo se lleva SU COPIA de los gráficos: lo que retoque aquí
+                    // (colisión, teselas traídas) no le cambia la paleta al nivel de origen.
+                    scope.launch {
+                        val nuevoId = state.nextTilesetId()
+                        val copia = withContext(Dispatchers.IO) {
+                            duplicarTileset(projectDir, base, nuevoId, nombre)
+                        }
+                        if (copia != null) {
+                            state.addTileset(copia)
+                            state.addPlatformLevel(nombre, w, h, tilesetId = copia.id, groundTile = ground)
+                        } else {
+                            // Sin copia (falta el PNG del origen) es mejor un nivel que
+                            // comparte gráficos que ningún nivel; pero se dice.
+                            state.addPlatformLevel(nombre, w, h, tilesetId = tilesetId, groundTile = ground)
+                            Toast.makeText(
+                                context,
+                                "No se pudo copiar el atlas: el nivel comparte los gráficos con «${base.name}»",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    }
+                }
             },
         )
     }
@@ -2221,9 +2247,10 @@ private fun NewLevelDialog(
                     )
                 }
                 Text(
-                    "Se crea con dos filas de suelo y el inicio a la izquierda. Los gráficos son " +
-                        "los del nivel que elijas; luego puedes traer teselas de cualquier otro " +
-                        "desde Assets.",
+                    "Se crea con dos filas de suelo y el inicio a la izquierda. Se lleva SU PROPIA " +
+                        "COPIA de los gráficos del nivel que elijas, así que lo que retoques aquí no " +
+                        "le cambia la paleta a ese nivel. Luego puedes traer teselas de cualquier " +
+                        "otro desde Assets.",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

@@ -154,6 +154,29 @@ internal fun prepararTeselas(
     return TilesPreparadas(merged.tileset, merged.added)
 }
 
+/**
+ * DUPLICA un tileset del proyecto: mismos gráficos y mismos metadatos, pero con id y archivo
+ * PNG propios. Lo usa el nivel nuevo para arrancar con **su copia** de los gráficos en vez de
+ * compartir el tileset del nivel del que los toma.
+ *
+ * La diferencia importa: compartiendo, traer teselas o retocar una colisión desde el nivel
+ * nuevo se le aparecía también al nivel original —y su paleta crecía sin que nadie la
+ * tocara—. Con copia, cada nivel es dueño de sus gráficos; el precio es un PNG más en el
+ * proyecto, y que los arreglos hechos en uno no se propagan al otro.
+ *
+ * Es E/S (copia un archivo): fuera del hilo principal. Devuelve null si no se pudo copiar,
+ * para que quien llame decida qué hacer en vez de quedarse con un tileset sin imagen.
+ */
+internal fun duplicarTileset(projectDir: File, src: Tileset, newId: Int, levelName: String): Tileset? {
+    val origen = ProjectIo.imageFile(projectDir, src.image)
+    if (!origen.exists()) return null
+    val nombreArchivo = com.rolebuilder.editor.snes.SnesImport.sanitizeFileName("${levelName}_$newId")
+    val destino = ProjectIo.imageFile(projectDir, nombreArchivo)
+    destino.parentFile?.mkdirs()
+    runCatching { origen.copyTo(destino, overwrite = true) }.getOrElse { return null }
+    return src.copy(id = newId, name = "$levelName (gráficos)", image = nombreArchivo)
+}
+
 /** Un asset traído al nivel: el trozo ya traducido a SUS teselas, o el motivo del fallo. */
 internal class AssetTraido(
     val clip: MapStamp?,
