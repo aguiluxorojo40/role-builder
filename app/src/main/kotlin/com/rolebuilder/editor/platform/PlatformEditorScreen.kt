@@ -600,6 +600,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // ¿Barra de capas desplegada? Se recuerda por proyecto: desplegada tapa el arranque del
     // raíl de la izquierda, y quien no esté tocando capas prefiere tenerla plegada.
     var layerBarOpen by remember { mutableStateOf(true) }
+    // Ver u ocultar los OBJETOS (enemigos, monedas, meta, warps, inicio). Trabajar un fondo
+    // con medio nivel de Koopas por encima es imposible; esto los quita de la vista (no del
+    // nivel).
+    var showObjects by remember { mutableStateOf(true) }
     val switchLayer: (Int) -> Unit = { target ->
         if (target != paintLayer) {
             val mine = selectedTile
@@ -630,8 +634,11 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // AJUSTE POR TROZOS. Un nivel de SMW está hecho de pantallas de 16 columnas, y las
     // entradas y los warps se cuentan por pantalla: poder coger pantallas enteras es la
     // unidad natural para recolocar un nivel. 1×1 = selección libre.
-    var snapW by remember { mutableIntStateOf(1) }
-    var snapH by remember { mutableIntStateOf(1) }
+    // Se guarda el MODO, no los números: el alto de una pantalla es el del nivel abierto, y
+    // guardándolo como número se quedaba con el del nivel anterior al cambiar de nivel.
+    var snapScreens by remember { mutableStateOf(false) }
+    val snapW = if (snapScreens) MapRegion.SCREEN_COLS else 1
+    val snapH = if (snapScreens) (map?.height ?: 1) else 1
     // Movimiento recién hecho que toca tuberías: el trozo YA se movió, y esto es lo que
     // queda por decidir. Se pregunta en vez de reapuntar solo, porque una tubería que
     // cambia de destino sin que lo pidas es de los fallos que cuesta encontrar jugando.
@@ -991,7 +998,6 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                 // (arrastrando o con las flechas) sin tener que
                                                 // volver a rodearlo a mano con el marco.
                                                 areaSel = MapRegion.Area(tx, ty, held.width, held.height)
-                                                clip = held
                                                 // Y si no cabía, se dice: pegar recorta en el
                                                 // borde, y un sello más alto que el nivel entra
                                                 // "solo por arriba", que parece un fallo y no lo es.
@@ -1014,8 +1020,21 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                     val x0 = minOf(a.first, tx); val y0 = minOf(a.second, ty)
                                                     val w = kotlin.math.abs(tx - a.first) + 1
                                                     val h = kotlin.math.abs(ty - a.second) + 1
-                                                    val s = com.rolebuilder.core.model.MapStamp.fromRegion(
-                                                        cur, x0, y0, w, h, "Sello ${state.project.stamps.size + 1}",
+                                                    // MISMO ALCANCE que el marco de selección: si
+                                                    // estás en "solo esta capa", el sello sale solo
+                                                    // con esa capa. Antes se llevaba siempre las dos
+                                                    // y no había ni forma de saberlo.
+                                                    val capasSello = if (areaBoth) {
+                                                        listOf(PlatformLayers.BACKGROUND, PlatformLayers.FOREGROUND)
+                                                    } else {
+                                                        listOf(paintLayer)
+                                                    }
+                                                    val s = MapRegion.copy(
+                                                        cur,
+                                                        MapRegion.Area(x0, y0, w, h),
+                                                        capasSello,
+                                                        withObjects = areaBoth || paintLayer == PlatformLayers.FOREGROUND,
+                                                        name = "Sello ${state.project.stamps.size + 1}",
                                                     )
                                                     stampAnchor = null
                                                     if (s != null) {
@@ -1189,6 +1208,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         // Opacidad por capa: oculta (0), atenuada si estás enfocando la otra,
                         // o entera. Es lo que permite editar el fondo de un nivel importado
                         // sin pintar a ciegas debajo del terreno.
+                        showObjects = showObjects,
                         layerAlpha = FloatArray(PlatformLayers.COUNT) { layer ->
                             val visible = if (layer == PlatformLayers.BACKGROUND) showBg else showFg
                             when {
@@ -1226,29 +1246,36 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     )
                 }
 
-                hover?.let { (hx, hy) ->
+                // Arriba-derecha: coordenadas y TAMAÑO del nivel, apilados. El tamaño estaba
+                // abajo-derecha, justo debajo del botón flotante de la rueda, que lo tapaba: el
+                // sitio para tocarlo tenía que estar despejado.
+                Column(
+                    Modifier.align(Alignment.TopEnd).padding(8.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    hover?.let { (hx, hy) ->
+                        Text(
+                            "x $hx  y $hy",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier
+                                .background(Color(0xCC0B1E12), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                    }
                     Text(
-                        "x $hx  y $hy",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
-                            .background(Color(0xCC0B1E12), RoundedCornerShape(8.dp))
+                        "${map.width} × ${map.height}  ✎",
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xCC0B1E12))
+                            .clickable { showLevelSettings = true }
                             .padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
-                // El tamaño del nivel se TOCA: es donde uno mira para saber cuánto mide, así
-                // que es donde tiene que estar el botón de cambiarlo (antes había que
-                // adivinar que vivía dentro de "Ajustes").
-                Text(
-                    "${map.width} × ${map.height}  ✎",
-                    color = Color.White.copy(alpha = 0.75f),
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Glass)
-                        .clickable { showLevelSettings = true }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                )
+
 
                 // Primer arranque: proyecto sin gráficos → invita a importar de la ROM.
                 if (tileset == null) {
@@ -1281,40 +1308,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     }
                 }
 
-                // ---------- MENÚ RADIAL (lienzo-primero) ----------
-                if (wheelOpen) {
-                    // scrim: tocar fuera cierra la rueda
-                    Box(Modifier.fillMaxSize().clickable { wheelOpen = false })
-                    RadialWheel(
-                        tool = tool,
-                        enemyAtlas = enemyAtlas,
-                        coinAtlas = coinAtlas,
-                        onOpenAssets = { wheelOpen = false; showAssets = true },
-                        onPickTool = { picked ->
-                            if (picked != PTool.SELECT) lastPaint = picked
-                            // Elegir una herramienta de capa CAMBIA la capa activa: es lo que
-                            // luego usan borrar, la vista y el pincel (uno por capa).
-                            when (picked) {
-                                PTool.TERRAIN -> switchLayer(PlatformLayers.FOREGROUND)
-                                PTool.DECOR -> switchLayer(PlatformLayers.BACKGROUND)
-                                else -> Unit
-                            }
-                            tool = picked
-                            wheelOpen = false
-                        },
-                        onToggleSelect = {
-                            if (tool == PTool.SELECT) {
-                                tool = lastPaint
-                            } else {
-                                lastPaint = tool
-                                tool = PTool.SELECT
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-                // Raíl configurable (abajo-izquierda), oculto en modo limpio.
-                if (!cleanMode) {
+                // Raíl configurable (abajo-izquierda), oculto en modo limpio y MIENTRAS LA
+                // RUEDA ESTÁ ABIERTA: si no, el raíl se dibuja encima de los sectores de la
+                // izquierda de la rueda y no hay forma de tocarlos.
+                if (!cleanMode && !wheelOpen) {
                     EditableRail(
                         active = railActions,
                         onAct = onRail,
@@ -1327,8 +1324,8 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             .padding(top = 56.dp),
                     )
                 }
-                // Hotbar de favoritos (abajo-centro), oculta en modo limpio.
-                if (!cleanMode) {
+                // Hotbar de favoritos (abajo-centro), oculta en modo limpio y con la rueda abierta.
+                if (!cleanMode && !wheelOpen) {
                     Row(
                         Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp)
                             .clip(RoundedCornerShape(14.dp)).background(Glass)
@@ -1413,6 +1410,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                             showFg = showFg,
                             focus = focusLayer,
                             open = layerBarOpen,
+                            showObjects = showObjects,
+                            onToggleObjects = { showObjects = !showObjects },
+                            bothLayers = areaBoth,
+                            onScope = { areaBoth = it },
                             onToggleOpen = {
                                 layerBarOpen = !layerBarOpen
                                 uiPrefs.edit().putBoolean("layerbar", layerBarOpen).apply()
@@ -1435,6 +1436,38 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     }
                 }
 
+                // ---------- MENÚ RADIAL (lienzo-primero) ----------
+                if (wheelOpen) {
+                    // scrim: tocar fuera cierra la rueda
+                    Box(Modifier.fillMaxSize().clickable { wheelOpen = false })
+                    RadialWheel(
+                        tool = tool,
+                        enemyAtlas = enemyAtlas,
+                        coinAtlas = coinAtlas,
+                        onOpenAssets = { wheelOpen = false; showAssets = true },
+                        onPickTool = { picked ->
+                            if (picked != PTool.SELECT) lastPaint = picked
+                            // Elegir una herramienta de capa CAMBIA la capa activa: es lo que
+                            // luego usan borrar, la vista y el pincel (uno por capa).
+                            when (picked) {
+                                PTool.TERRAIN -> switchLayer(PlatformLayers.FOREGROUND)
+                                PTool.DECOR -> switchLayer(PlatformLayers.BACKGROUND)
+                                else -> Unit
+                            }
+                            tool = picked
+                            wheelOpen = false
+                        },
+                        onToggleSelect = {
+                            if (tool == PTool.SELECT) {
+                                tool = lastPaint
+                            } else {
+                                lastPaint = tool
+                                tool = PTool.SELECT
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+                }
                 // AVISO DE PROGRESO de la carga de la ROM. Ahora que el trabajo pesado ya no
                 // bloquea la interfaz, sin esto el usuario tocaría "ROM", vería la pantalla
                 // tan campante y pensaría que no ha pasado nada. Va el ÚLTIMO dentro del Box
@@ -1552,11 +1585,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         // recolocar un nivel es "esta pantalla, dos más allá", no 32 toques.
                         onNudge = { dx, dy -> moverSeleccion(dx * snapW, dy * snapH) },
                         onClearSel = { areaSel = null },
-                        snapW = snapW,
-                        onSnap = { w, h -> snapW = w; snapH = h; areaSel = null },
-                        levelHeight = map.height,
+                        snapScreens = snapScreens,
+                        onSnap = { screens -> snapScreens = screens; areaSel = null },
                         layerName = if (paintLayer == PlatformLayers.BACKGROUND) "Capa 2" else "Capa 1",
-                        onScope = { areaBoth = it },
                         onCopy = {
                             val sel = areaSel ?: return@AreaPanel
                             val cur = state.currentMap ?: return@AreaPanel
@@ -1630,6 +1661,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                 }
                 PTool.STAMP -> StampPanel(
                     stamps = state.project.stamps,
+                    scopeLabel = if (areaBoth) "las dos capas"
+                    else if (paintLayer == PlatformLayers.BACKGROUND) "solo Capa 2 · Fondo"
+                    else "solo Capa 1 · Terreno",
                     selected = selectedStampName,
                     defining = stampAnchor != null,
                     onDefine = { selectedStampName = null; heldStamp = null; stampAnchor = null },
@@ -2097,12 +2131,10 @@ private fun AreaPanel(
     /** Suelta la marca: con algo marcado, arrastrar dentro MUEVE, así que sin esto no se
      *  podría marcar una zona más pequeña dentro de otra. */
     onClearSel: () -> Unit,
-    /** Ancho del trozo de ajuste (1 = libre, 16 = pantalla de SMW). */
-    snapW: Int,
-    onSnap: (Int, Int) -> Unit,
-    levelHeight: Int,
+    /** ¿Ajustando a PANTALLAS de SMW (16 columnas, alto entero) o selección libre? */
+    snapScreens: Boolean,
+    onSnap: (Boolean) -> Unit,
     layerName: String,
-    onScope: (Boolean) -> Unit,
     onCopy: () -> Unit,
     onCut: () -> Unit,
     onDelete: () -> Unit,
@@ -2123,35 +2155,27 @@ private fun AreaPanel(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            FilterChip(
-                selected = !bothLayers,
-                onClick = { onScope(false) },
-                label = { Text("Solo $layerName") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
-                ),
-            )
-            FilterChip(
-                selected = bothLayers,
-                onClick = { onScope(true) },
-                label = { Text("Las dos capas") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
-                ),
+            // El ALCANCE se elige en la barra de capas (arriba, sobre el lienzo); aquí solo
+            // se recuerda con qué estás trabajando, para no tener el mismo interruptor en dos
+            // sitios y no saber cuál manda.
+            Text(
+                if (bothLayers) "Las dos capas" else "Solo $layerName",
+                color = MarioRed,
+                style = MaterialTheme.typography.labelMedium,
             )
             // Ajuste por trozos: libre, pantallas de SMW (16 columnas de alto entero) o
             // bloques de 16×16 (la pantalla de los niveles verticales).
             FilterChip(
-                selected = snapW == 1,
-                onClick = { onSnap(1, 1) },
+                selected = !snapScreens,
+                onClick = { onSnap(false) },
                 label = { Text("Libre") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = CoinYellow, selectedLabelColor = Color.Black,
                 ),
             )
             FilterChip(
-                selected = snapW == MapRegion.SCREEN_COLS,
-                onClick = { onSnap(MapRegion.SCREEN_COLS, levelHeight) },
+                selected = snapScreens,
+                onClick = { onSnap(true) },
                 label = { Text("Pantallas") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = CoinYellow, selectedLabelColor = Color.Black,
@@ -2220,6 +2244,8 @@ private fun StampPanel(
     stamps: List<MapStamp>,
     selected: String?,
     defining: Boolean,
+    /** Qué capas se llevará el sello, dicho con todas las letras. */
+    scopeLabel: String,
     onDefine: () -> Unit,
     onSelect: (String) -> Unit,
     onDelete: (String) -> Unit,
@@ -2253,8 +2279,10 @@ private fun StampPanel(
             selected != null ->
                 "Sello \"$selected\" en mano: toca el nivel para PEGARLO. Lo pegado queda marcado: " +
                     "con la herramienta Área lo puedes mover, voltear o volver a copiar."
-            defining -> "Toca la 2ª esquina para GUARDAR esa región como sello."
-            else -> "Toca 2 esquinas del nivel para crear un sello, o elige uno de arriba para pegarlo."
+            defining -> "Toca la 2ª esquina para GUARDAR esa región como sello ($scopeLabel)."
+            else ->
+                "Toca 2 esquinas del nivel para crear un sello ($scopeLabel, se cambia en la barra de " +
+                    "capas), o elige uno de arriba para pegarlo."
         }
         Text(
             hint,
@@ -2574,6 +2602,12 @@ private fun DrawScope.drawLevel(
      * ocultar o atenuar la capa en la que no estás trabajando; vacío = todas enteras.
      */
     layerAlpha: FloatArray = FloatArray(0),
+    /**
+     * ¿Se dibujan los OBJETOS (enemigos, monedas, meta, warps y el inicio)? Apagarlos es lo
+     * que permite trabajar un fondo viendo solo teselas: con medio nivel lleno de Koopas
+     * encima, mirar el decorado es imposible.
+     */
+    showObjects: Boolean = true,
 ) {
     val tilePx = scale
     val minX = floor(-pan.x / tilePx).toInt().coerceAtLeast(0)
@@ -2647,6 +2681,33 @@ private fun DrawScope.drawLevel(
             drawLine(grid, Offset(pan.x + minX * tilePx, y), Offset(pan.x + (maxX + 1) * tilePx, y))
         }
     }
+
+    // Marco de la región del SELLO en curso (violeta, semitransparente relleno + borde).
+    stampRect?.let { r ->
+        val x0 = r[0]; val y0 = r[1]; val x1 = r[2]; val y1 = r[3]
+        val topLeft = Offset(pan.x + x0 * tilePx, pan.y + y0 * tilePx)
+        val sz = Size((x1 - x0 + 1) * tilePx, (y1 - y0 + 1) * tilePx)
+        drawRect(Color(0x33B388FF), topLeft = topLeft, size = sz)
+        drawRect(Color(0xFFB388FF), topLeft = topLeft, size = sz, style = Stroke(width = 3f))
+    }
+
+    // Marco de selección fijado: apenas tiñe (hay que VER lo que has seleccionado) y marca
+    // las cuatro esquinas, que es lo que lo distingue de una vista previa a medio hacer.
+    areaRect?.let { r ->
+        val topLeft = Offset(pan.x + r[0] * tilePx, pan.y + r[1] * tilePx)
+        val sz = Size((r[2] - r[0] + 1) * tilePx, (r[3] - r[1] + 1) * tilePx)
+        drawRect(Color(0x18FFFFFF), topLeft = topLeft, size = sz)
+        drawRect(CoinYellow, topLeft = topLeft, size = sz, style = Stroke(width = 2f))
+        val corner = minOf(tilePx * 0.6f, 14f)
+        listOf(
+            topLeft,
+            Offset(topLeft.x + sz.width - corner, topLeft.y),
+            Offset(topLeft.x, topLeft.y + sz.height - corner),
+            Offset(topLeft.x + sz.width - corner, topLeft.y + sz.height - corner),
+        ).forEach { drawRect(CoinYellow, topLeft = it, size = Size(corner, corner)) }
+    }
+
+    if (!showObjects) return   // fondo limpio: teselas y nada más
 
     // Enemigos: el atlas guarda cada uno ENTERO en una celda cuadrada (ATLAS_CELL)
     // anclada por los pies y centrada, con ATLAS_FRAMES fotogramas apilados en vertical
@@ -2762,30 +2823,6 @@ private fun DrawScope.drawLevel(
         drawRect(CoinYellow, topLeft = topLeft, size = Size(tilePx, tilePx), style = Stroke(width = 3f))
     }
 
-    // Marco de la región del SELLO en curso (violeta, semitransparente relleno + borde).
-    stampRect?.let { r ->
-        val x0 = r[0]; val y0 = r[1]; val x1 = r[2]; val y1 = r[3]
-        val topLeft = Offset(pan.x + x0 * tilePx, pan.y + y0 * tilePx)
-        val sz = Size((x1 - x0 + 1) * tilePx, (y1 - y0 + 1) * tilePx)
-        drawRect(Color(0x33B388FF), topLeft = topLeft, size = sz)
-        drawRect(Color(0xFFB388FF), topLeft = topLeft, size = sz, style = Stroke(width = 3f))
-    }
-
-    // Marco de selección fijado: apenas tiñe (hay que VER lo que has seleccionado) y marca
-    // las cuatro esquinas, que es lo que lo distingue de una vista previa a medio hacer.
-    areaRect?.let { r ->
-        val topLeft = Offset(pan.x + r[0] * tilePx, pan.y + r[1] * tilePx)
-        val sz = Size((r[2] - r[0] + 1) * tilePx, (r[3] - r[1] + 1) * tilePx)
-        drawRect(Color(0x18FFFFFF), topLeft = topLeft, size = sz)
-        drawRect(CoinYellow, topLeft = topLeft, size = sz, style = Stroke(width = 2f))
-        val corner = minOf(tilePx * 0.6f, 14f)
-        listOf(
-            topLeft,
-            Offset(topLeft.x + sz.width - corner, topLeft.y),
-            Offset(topLeft.x, topLeft.y + sz.height - corner),
-            Offset(topLeft.x + sz.width - corner, topLeft.y + sz.height - corner),
-        ).forEach { drawRect(CoinYellow, topLeft = it, size = Size(corner, corner)) }
-    }
 }
 
 // ============================================================================
@@ -2991,6 +3028,17 @@ private fun LayerBar(
     /** Plegada = una sola pastilla con la capa activa, para no tapar el raíl de la izquierda. */
     open: Boolean,
     onToggleOpen: () -> Unit,
+    /** Objetos (enemigos, monedas, meta, warps, inicio) a la vista o escondidos. */
+    showObjects: Boolean,
+    onToggleObjects: () -> Unit,
+    /**
+     * ALCANCE de las operaciones de trozo (marcar, copiar, sellar, borrar): solo la capa
+     * activa o las dos. Vive aquí, con las capas, y no dentro del panel de Área, porque lo
+     * usan tanto el marco como el sello: es lo que decide si estás trabajando "solo el
+     * fondo" o el nivel entero.
+     */
+    bothLayers: Boolean,
+    onScope: (Boolean) -> Unit,
     onPick: (Int) -> Unit,
     onToggleVisible: (Int) -> Unit,
     onToggleFocus: () -> Unit,
@@ -3054,6 +3102,48 @@ private fun LayerBar(
                         if (visible) "👁" else "🚫",
                         color = if (visible) Color.White else Color.White.copy(alpha = 0.5f),
                         style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        }
+        // Objetos: enemigos, monedas, meta, warps e inicio, todos de una vez. Es la fila que
+        // faltaba para poder trabajar un fondo sin medio nivel de bichos por encima.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, GlassStroke, RoundedCornerShape(8.dp))
+                    .clickable { onToggleObjects() }
+                    .padding(horizontal = 8.dp, vertical = 5.dp),
+            ) {
+                Text(
+                    if (showObjects) "Objetos 👁" else "Objetos 🚫",
+                    color = if (showObjects) Color.White else Color.White.copy(alpha = 0.5f),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                )
+            }
+        }
+        // ALCANCE: qué capas tocan el marco de selección y el sello. Aquí, con las capas, y
+        // no escondido dentro de un panel: es lo que decide si trabajas solo el fondo.
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            listOf(false to "Solo esta capa", true to "Las dos").forEach { (valor, etiqueta) ->
+                Box(
+                    Modifier.weight(1f).clip(RoundedCornerShape(8.dp))
+                        .background(if (bothLayers == valor) MarioRed else Color.Transparent)
+                        .border(
+                            1.dp,
+                            if (bothLayers == valor) MarioRed else GlassStroke,
+                            RoundedCornerShape(8.dp),
+                        )
+                        .clickable { onScope(valor) }
+                        .padding(vertical = 5.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        etiqueta,
+                        color = if (bothLayers == valor) Color.Black else Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
                     )
                 }
             }
