@@ -89,6 +89,7 @@ import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.MapEdits
 import com.rolebuilder.core.model.MapRegion
 import com.rolebuilder.core.model.MapWarp
+import com.rolebuilder.core.model.MapWarps
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
 import com.rolebuilder.core.model.PlatformItemType
@@ -184,6 +185,18 @@ private enum class RailAction(val label: String) {
     DESHACER("Deshacer"),
     REHACER("Rehacer"),
 }
+
+/**
+ * Un movimiento de trozo que toca tuberías, a la espera de que el usuario diga qué hacer con
+ * ellas. Guarda DE DÓNDE salió el trozo y cuánto se ha corrido, que es lo que hace falta para
+ * mover las bocas y reapuntar los destinos ([MapWarps]).
+ */
+private class MovimientoConWarps(
+    val origen: MapRegion.Area,
+    val dx: Int,
+    val dy: Int,
+    val afectados: MapWarps.Afectados,
+)
 
 /** Un favorito de la hotbar: una instantánea del pincel actual (herramienta + tile
  *  o enemigo seleccionado). Al tocarlo se restaura esa selección. */
@@ -615,6 +628,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // unidad natural para recolocar un nivel. 1×1 = selección libre.
     var snapW by remember { mutableIntStateOf(1) }
     var snapH by remember { mutableIntStateOf(1) }
+    // Movimiento recién hecho que toca tuberías: el trozo YA se movió, y esto es lo que
+    // queda por decidir. Se pregunta en vez de reapuntar solo, porque una tubería que
+    // cambia de destino sin que lo pidas es de los fallos que cuesta encontrar jugando.
+    var warpPregunta by remember(map?.id) { mutableStateOf<MovimientoConWarps?>(null) }
     // Sello EN MANO, ya traducido a las teselas de este nivel. Es lo que hace que un sello
     // hecho en otro nivel se pueda pegar aquí: no se pega el original (sus índices son de
     // otro atlas), se pega esta versión traducida.
@@ -1085,6 +1102,20 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                     )
                                                 }
                                             }
+                                        } else if (moveTool && !transform) {
+                                            // El trozo ya está movido; lo que queda son sus
+                                            // tuberías, y eso se pregunta.
+                                            val fin = areaSel
+                                            if (sel != null && fin != null &&
+                                                (fin.x != sel.x || fin.y != sel.y)
+                                            ) {
+                                                val af = MapWarps.afectados(state.mapList, map.id, sel)
+                                                if (af.hay) {
+                                                    warpPregunta = MovimientoConWarps(
+                                                        sel, fin.x - sel.x, fin.y - sel.y, af,
+                                                    )
+                                                }
+                                            }
                                         } else if (!transform && !dragTool && !rectTool && !moveTool) {
                                             tapPos?.let { applyAt(it) }
                                         }
@@ -1445,6 +1476,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 state.updateMap(MapRegion.paste(limpio, trozo, sel.x + dx, sel.y + dy))
                                 state.commitEdit()
                                 areaSel = MapRegion.Area(sel.x + dx, sel.y + dy, sel.w, sel.h)
+                                // Mismo trato que al arrastrar: si el trozo llevaba o recibía
+                                // tuberías, se pregunta qué hacer con ellas.
+                                val af = MapWarps.afectados(state.mapList, cur.id, sel)
+                                if (af.hay) warpPregunta = MovimientoConWarps(sel, dx, dy, af)
                             }
                         }
                     }
@@ -1676,6 +1711,52 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         }
                     }
                 }
+            },
+        )
+    }
+
+    // ¿Y las tuberías? Se pregunta DESPUÉS de mover (el trozo ya está donde lo dejaste) y
+    // solo cuando de verdad hay warps en juego: si no los hay, ni te enteras de que existe
+    // este diálogo.
+    warpPregunta?.let { mov ->
+        AlertDialog(
+            onDismissRequest = { warpPregunta = null },
+            title = { Text("Este trozo tiene tuberías") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (mov.afectados.bocas > 0) {
+                        Text(
+                            "· ${mov.afectados.bocas} boca(s) de tubería estaban dentro del trozo. " +
+                                "Si no las muevo, se quedan donde estaban, separadas de su dibujo.",
+                        )
+                    }
+                    if (mov.afectados.entrantes > 0) {
+                        Text(
+                            "· ${mov.afectados.entrantes} tubería(s) llevaban a este trozo. Si no las " +
+                                "reapunto, seguirán soltando al jugador donde estaba antes.",
+                        )
+                    }
+                    Text(
+                        "¿Las ajusto al sitio nuevo?",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    state.beginEdit()
+                    MapWarps.ajustados(state.mapList, map.id, mov.origen, mov.dx, mov.dy)
+                        .forEach { state.updateMap(it) }
+                    state.commitEdit()
+                    warpPregunta = null
+                    Toast.makeText(
+                        context, "Tuberías ajustadas (${mov.afectados.total})", Toast.LENGTH_SHORT,
+                    ).show()
+                }) { Text("Ajustar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { warpPregunta = null }) { Text("Dejarlas como están") }
             },
         )
     }

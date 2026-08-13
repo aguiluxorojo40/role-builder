@@ -32,6 +32,16 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   cambiaba la paleta también al original. Ahora se duplica el atlas (PNG y metadatos) con id
   propio: cada nivel es dueño de sus gráficos. El precio, dicho: un PNG más en el proyecto y
   que los arreglos hechos en uno no se propagan al otro.
+- **Las tuberías al mover un trozo, preguntando**
+  ([`MapWarps`](core/src/main/kotlin/com/rolebuilder/core/model/MapWarps.kt)). Un warp tiene
+  la **boca** en una casilla de este mapa y el **destino** en unas coordenadas fijas; mover
+  el trozo no cambiaba ni una cosa ni la otra, así que la boca se quedaba separada de su
+  dibujo y las tuberías que llevaban ahí seguían soltando al jugador en el sitio viejo. Al
+  mover un trozo con tuberías en juego, el editor **pregunta** —con el trozo ya movido— si
+  ajustarlas: las bocas se van con él y los destinos se reapuntan. Una boca que se saldría
+  del mapa se descarta (a una tubería fuera de la rejilla no se puede entrar); un destino
+  que se saldría se recorta, porque suelta un poco desviado pero deja la sala alcanzable.
+  Si el trozo no tiene tuberías, no hay pregunta.
 - **Mover lo seleccionado.** El marco de selección se arrastra: si el dedo baja DENTRO del
   marco se mueve su contenido (se recorta una vez y se va pegando sobre el mapa limpio, así
   que arrastrar no deja copias por el camino); fuera del marco, se marca una selección
