@@ -701,7 +701,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
      */
     val conGraficos: (com.rolebuilder.core.model.MapStamp, (com.rolebuilder.core.model.MapStamp) -> Unit) -> Unit =
         { asset, onReady ->
-            val destino = state.database.tileset((state.currentMap ?: map).tilesetId)
+            // Ojo: aquí `map` todavía puede ser nulo (el corte por "proyecto sin niveles" va
+            // más abajo), así que el destino sale del mapa abierto AHORA o de nada.
+            val destino = state.currentMap?.let { state.database.tileset(it.tilesetId) }
             val origen = state.database.tileset(asset.tilesetId)
             when {
                 destino == null -> Toast.makeText(
