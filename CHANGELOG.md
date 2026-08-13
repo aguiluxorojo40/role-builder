@@ -37,6 +37,14 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   se deshace de una vez. Botones fijos en la barra superior, no en el raíl configurable,
   porque son la red de seguridad de todo lo demás. Es barato porque el modelo es inmutable:
   guardar el estado anterior son tres referencias, no una copia del nivel.
+- **Biblioteca de assets: cualquier trozo del proyecto sirve en cualquier mapa.** Un sello o
+  un trozo copiado no guarda dibujos, guarda **índices a un atlas concreto**; pegarlo en otro
+  nivel pintaba teselas al azar, y sin avisar. Ahora, al traerlo, sus teselas se copian al
+  tileset del nivel de destino y el trozo se reescribe con los índices nuevos
+  ([`MapRegion.remapped`](core/src/main/kotlin/com/rolebuilder/core/model/MapRegion.kt)). El
+  diálogo de Assets pasa a tener dos pestañas —**Teselas** y **Sellos**, con vista previa
+  dibujada con el atlas de su nivel— y lo mismo se aplica al pegar en la herramienta Área y
+  al elegir un sello: si hace falta, los gráficos viajan solos.
 - **Marco de selección** ([`MapRegion`](core/src/main/kotlin/com/rolebuilder/core/model/MapRegion.kt)):
   marcas un trozo del nivel y lo copias, cortas, borras, pegas, **duplicas al lado** (para
   extender un fondo a lo largo del nivel tocando repetido) o lo **volteas** en horizontal y

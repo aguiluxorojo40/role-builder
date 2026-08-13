@@ -610,6 +610,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     var clip by remember { mutableStateOf<com.rolebuilder.core.model.MapStamp?>(null) }
     // Alcance: solo la capa en la que estás, o las dos a la vez.
     var areaBoth by remember { mutableStateOf(false) }
+    // Sello EN MANO, ya traducido a las teselas de este nivel. Es lo que hace que un sello
+    // hecho en otro nivel se pueda pegar aquí: no se pega el original (sus índices son de
+    // otro atlas), se pega esta versión traducida.
+    var heldStamp by remember { mutableStateOf<com.rolebuilder.core.model.MapStamp?>(null) }
     var showLevelSettings by remember { mutableStateOf(false) }
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
@@ -688,6 +692,50 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
             }
         }
     }
+
+    /**
+     * Deja [asset] listo para usarlo EN ESTE NIVEL. Si viene de otro tileset, se traen sus
+     * teselas y se reescriben sus índices ([traerAssetAlNivel]); si ya es de aquí, pasa tal
+     * cual. Es lo que convierte cualquier trozo del proyecto en material utilizable en un
+     * mapa nuevo, en vez de un puñado de índices que allí significan otra cosa.
+     */
+    val conGraficos: (com.rolebuilder.core.model.MapStamp, (com.rolebuilder.core.model.MapStamp) -> Unit) -> Unit =
+        { asset, onReady ->
+            val destino = state.database.tileset((state.currentMap ?: map).tilesetId)
+            val origen = state.database.tileset(asset.tilesetId)
+            when {
+                destino == null -> Toast.makeText(
+                    context, "Este nivel no tiene gráficos todavía: carga una ROM o asígnale un tileset.",
+                    Toast.LENGTH_LONG,
+                ).show()
+                asset.tilesetId == destino.id -> onReady(asset)
+                origen == null -> Toast.makeText(
+                    context, "El nivel del que salió ese trozo ya no está en el proyecto",
+                    Toast.LENGTH_LONG,
+                ).show()
+                else -> scope.launch {
+                    val r = withContext(Dispatchers.IO) {
+                        traerAssetAlNivel(projectDir, asset, origen, destino)
+                    }
+                    r.tileset?.let { state.updateTileset(it); assetsReloads++ }
+                    val listo = r.clip
+                    if (listo != null) {
+                        onReady(listo)
+                        if (r.tileset != null) {
+                            Toast.makeText(
+                                context,
+                                "Traídos los gráficos de ese trozo a este nivel",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    } else {
+                        Toast.makeText(
+                            context, r.error ?: "No se pudo traer ese trozo", Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+            }
+        }
 
     DisposableEffect(state) { onDispose { if (state.dirty) state.save() } }
 
@@ -893,7 +941,11 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                             }
                                         }
                                         PTool.STAMP -> {
-                                            val held = state.project.stamps.firstOrNull { it.name == selectedStampName }
+                                            // El sello en mano es el YA TRADUCIDO a las teselas de este
+                                            // nivel; el del proyecto solo vale directo si es de aquí.
+                                            val held = heldStamp
+                                                ?: state.project.stamps
+                                                    .firstOrNull { it.name == selectedStampName && it.tilesetId == cur.tilesetId }
                                             if (held != null) {
                                                 // Sello EN MANO: un toque lo PEGA con su esquina aquí.
                                                 state.updateMap(held.pasteInto(cur, tx, ty))
@@ -1313,22 +1365,6 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         listOf(paintLayer)
                     }
                     val areaObjects = areaBoth || paintLayer == PlatformLayers.FOREGROUND
-                    // Un trozo copiado en OTRO nivel solo encaja si comparte tileset: las
-                    // teselas son índices a un atlas concreto. Pegarlo igualmente pintaría
-                    // gráficos aleatorios, así que se avisa en vez de dejar el estropicio.
-                    val clipEncaja = { c: com.rolebuilder.core.model.MapStamp ->
-                        val ok = c.tilesetId == (state.currentMap ?: map).tilesetId
-                        if (!ok) {
-                            Toast.makeText(
-                                context,
-                                "Ese trozo es de un nivel con otros gráficos: sus teselas no " +
-                                    "significan lo mismo aquí. Copia dentro de este nivel, o trae " +
-                                    "sus gráficos desde Assets.",
-                                Toast.LENGTH_LONG,
-                            ).show()
-                        }
-                        ok
-                    }
                     AreaPanel(
                         selection = areaSel,
                         clip = clip,
@@ -1359,24 +1395,28 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         onPaste = {
                             val sel = areaSel ?: return@AreaPanel
                             val c = clip ?: return@AreaPanel
-                            val cur = state.currentMap ?: return@AreaPanel
-                            if (!clipEncaja(c)) return@AreaPanel
-                            state.beginEdit()
-                            state.updateMap(MapRegion.paste(cur, c, sel.x, sel.y))
-                            state.commitEdit()
+                            conGraficos(c) { listo ->
+                                state.currentMap?.let { actual ->
+                                    state.beginEdit()
+                                    state.updateMap(MapRegion.paste(actual, listo, sel.x, sel.y))
+                                    state.commitEdit()
+                                }
+                            }
                         },
                         // Duplicar pega el trozo JUSTO al lado y mueve el marco allí: tocando
                         // repetido, un trozo de fondo se extiende a lo largo del nivel.
                         onDuplicate = {
                             val sel = areaSel ?: return@AreaPanel
                             val c = clip ?: return@AreaPanel
-                            val cur = state.currentMap ?: return@AreaPanel
-                            if (!clipEncaja(c)) return@AreaPanel
                             val nx = sel.x + c.width
-                            state.beginEdit()
-                            state.updateMap(MapRegion.paste(cur, c, nx, sel.y))
-                            state.commitEdit()
-                            areaSel = MapRegion.Area(nx, sel.y, c.width, c.height)
+                            conGraficos(c) { listo ->
+                                state.currentMap?.let { actual ->
+                                    state.beginEdit()
+                                    state.updateMap(MapRegion.paste(actual, listo, nx, sel.y))
+                                    state.commitEdit()
+                                    areaSel = MapRegion.Area(nx, sel.y, listo.width, listo.height)
+                                }
+                            }
                         },
                         onFlipH = { clip = clip?.let { MapRegion.flippedH(it) } },
                         onFlipV = { clip = clip?.let { MapRegion.flippedV(it) } },
@@ -1394,8 +1434,18 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     stamps = state.project.stamps,
                     selected = selectedStampName,
                     defining = stampAnchor != null,
-                    onDefine = { selectedStampName = null; stampAnchor = null },
-                    onSelect = { selectedStampName = it; stampAnchor = null },
+                    onDefine = { selectedStampName = null; heldStamp = null; stampAnchor = null },
+                    onSelect = { nombre ->
+                        stampAnchor = null
+                        selectedStampName = nombre
+                        // Si el sello viene de otro nivel, sus teselas se traen aquí y se
+                        // reescriben sus índices ANTES de poder pegarlo (antes se pegaba con
+                        // los índices de su nivel: teselas al azar y sin aviso).
+                        state.project.stamps.firstOrNull { it.name == nombre }?.let { s ->
+                            heldStamp = null
+                            conGraficos(s) { listo -> heldStamp = listo }
+                        }
+                    },
                     onDelete = { name ->
                         state.deleteStamp(name)
                         if (selectedStampName == name) selectedStampName = null
@@ -1455,6 +1505,17 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         lastPaint = tool
                     }
                 }
+            },
+            // Un sello de la biblioteca llega YA traducido a este nivel: se queda en mano
+            // y basta con tocar el lienzo para pegarlo.
+            onPickStamp = { listo ->
+                heldStamp = listo
+                selectedStampName = listo.name
+                tool = PTool.STAMP
+                lastPaint = PTool.STAMP
+                Toast.makeText(
+                    context, "«${listo.name}» en mano: toca el nivel para pegarlo", Toast.LENGTH_SHORT,
+                ).show()
             },
             onClose = { showAssets = false },
         )

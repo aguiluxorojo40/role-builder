@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -38,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -46,6 +48,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.io.ProjectIo
 import com.rolebuilder.core.model.GameMap
+import com.rolebuilder.core.model.MapRegion
+import com.rolebuilder.core.model.MapStamp
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.model.TilesetMerge
 import com.rolebuilder.editor.EditorState
@@ -150,6 +154,50 @@ internal fun prepararTeselas(
     return TilesPreparadas(merged.tileset, merged.added)
 }
 
+/** Un asset traído al nivel: el trozo ya traducido a SUS teselas, o el motivo del fallo. */
+internal class AssetTraido(
+    val clip: MapStamp?,
+    val tileset: Tileset?,
+    val error: String? = null,
+)
+
+/**
+ * TRAERSE UN ASSET ENTERO (un sello, un trozo copiado) A ESTE NIVEL, con sus gráficos.
+ *
+ * Esta es la pieza que faltaba para que el material del proyecto sirva en cualquier mapa.
+ * Un sello no guarda dibujos: guarda ÍNDICES al atlas del nivel donde se hizo. Pegarlo en
+ * otro nivel pintaba teselas al azar —sin avisar— porque el índice 37 allí es otra cosa.
+ *
+ * Aquí se hace lo único que lo arregla de verdad: se copian al tileset del nivel de destino
+ * las teselas que el asset usa ([TilesetMerge]) y se reescribe el asset con los índices
+ * nuevos ([MapRegion.remapped]). A partir de ahí el trozo significa lo mismo aquí que allí.
+ *
+ * Es la mitad cara (lee dos atlas y reescribe un PNG): va en `Dispatchers.IO`. Quien llame
+ * se queda con dar de alta el tileset en el editor, que es estado de Compose.
+ */
+internal fun traerAssetAlNivel(
+    projectDir: File,
+    clip: MapStamp,
+    src: Tileset,
+    dest: Tileset,
+): AssetTraido {
+    if (src.id == dest.id) return AssetTraido(clip, null) // mismo atlas: no hay nada que traer
+    if (src.tileSize != dest.tileSize) {
+        return AssetTraido(
+            null, null,
+            "Ese asset usa teselas de ${src.tileSize}px y este nivel las tiene de ${dest.tileSize}px",
+        )
+    }
+    val usadas = MapRegion.usedTiles(clip)
+    if (usadas.isEmpty()) return AssetTraido(clip.copy(tilesetId = dest.id), null)
+
+    val r = prepararTeselas(projectDir, dest, src, usadas)
+    val nuevo = r.tileset ?: return AssetTraido(null, null, r.error)
+    // prepararTeselas devuelve dónde cayó cada tesela pedida, en el mismo orden.
+    val mapping = usadas.zip(r.added).toMap()
+    return AssetTraido(MapRegion.remapped(clip, mapping, nuevo.id), nuevo)
+}
+
 /**
  * Diálogo del banco de assets: elige nivel de origen, categoría y teselas —o el nivel
  * entero de un botón— y las trae al nivel actual.
@@ -165,8 +213,14 @@ internal fun AssetBankDialog(
     state: EditorState,
     map: GameMap,
     onBrought: (List<Int>) -> Unit,
+    /** Un sello elegido de la biblioteca: el editor lo pone EN MANO para pegarlo. */
+    onPickStamp: (MapStamp) -> Unit,
     onClose: () -> Unit,
 ) {
+    // Dos familias de material: teselas sueltas y trozos enteros (sellos). Los sellos son la
+    // parte que hasta ahora no cruzaba de nivel: se pegaban con los índices del nivel donde
+    // se hicieron, pintando cualquier cosa.
+    var tab by remember { mutableStateOf(0) }
     val dest = state.database.tileset(map.tilesetId)
     val sources = remember(state.database.tilesets, map.tilesetId) {
         assetSources(state, map.tilesetId, dest?.tileSize ?: 16)
@@ -208,10 +262,82 @@ internal fun AssetBankDialog(
         }
     }
 
+    /** Trae un SELLO entero al nivel, con sus gráficos, y lo deja en mano para pegarlo. */
+    fun traerSello(sello: MapStamp) {
+        val destino = state.database.tileset(map.tilesetId) ?: return
+        val origen = state.database.tileset(sello.tilesetId)
+        if (working) return
+        if (origen == null && sello.tilesetId != destino.id) {
+            error = "El nivel de donde salió ese sello ya no está en el proyecto"
+            return
+        }
+        working = true
+        error = null
+        scope.launch {
+            val r = withContext(Dispatchers.IO) {
+                if (origen == null) AssetTraido(sello, null)
+                else traerAssetAlNivel(state.projectDir, sello, origen, destino)
+            }
+            working = false
+            r.tileset?.let {
+                state.updateTileset(it)
+                brought += MapRegion.usedTiles(sello).size
+                onBrought(emptyList()) // el atlas cambió: que el editor lo relea
+            }
+            val listo = r.clip
+            if (listo == null) {
+                error = r.error ?: "No se pudo traer ese sello"
+            } else {
+                onPickStamp(listo)
+                onClose()
+            }
+        }
+    }
+
     AlertDialog(
         onDismissRequest = { if (!working) onClose() },
-        title = { Text("Assets de otros niveles") },
+        title = { Text("Biblioteca de assets") },
         text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FilterChip(
+                    selected = tab == 0,
+                    onClick = { tab = 0 },
+                    label = { Text("Teselas") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                    ),
+                )
+                FilterChip(
+                    selected = tab == 1,
+                    onClick = { tab = 1 },
+                    label = { Text("Sellos ${state.project.stamps.size}") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                    ),
+                )
+            }
+            if (tab == 1) {
+                StampLibrary(
+                    stamps = state.project.stamps,
+                    database = state.database,
+                    projectDir = state.projectDir,
+                    currentTilesetId = map.tilesetId,
+                    enabled = !working && dest != null,
+                    onPick = { traerSello(it) },
+                )
+                if (working) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text("Trayendo el sello y sus gráficos…", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MarioRed) }
+                return@Column
+            }
             when {
                 dest == null -> Text(
                     "Este nivel todavía no tiene tileset propio. Carga una ROM o asígnale uno " +
@@ -272,12 +398,15 @@ internal fun AssetBankDialog(
                     }
                 }
             }
+            } // cierra la columna de las dos pestañas
         },
         confirmButton = {
-            Button(
-                enabled = dest != null && source != null && picked.isNotEmpty() && !working,
-                onClick = { traer(picked.toList()) },
-            ) { Text(if (picked.isEmpty()) "Traer" else "Traer ${picked.size}") }
+            if (tab == 0) {
+                Button(
+                    enabled = dest != null && source != null && picked.isNotEmpty() && !working,
+                    onClick = { traer(picked.toList()) },
+                ) { Text(if (picked.isEmpty()) "Traer" else "Traer ${picked.size}") }
+            }
         },
         dismissButton = {
             TextButton(enabled = !working, onClick = onClose) {
@@ -285,6 +414,108 @@ internal fun AssetBankDialog(
             }
         },
     )
+}
+
+/**
+ * BIBLIOTECA DE SELLOS: los trozos guardados del proyecto, vengan del nivel que vengan.
+ *
+ * Cada sello dice de qué nivel salió y si sus gráficos ya están aquí. Al elegirlo, si viene
+ * de otro tileset, sus teselas se copian a este nivel y el sello se reescribe con los
+ * índices nuevos: por eso se puede usar en un mapa nuevo, que es justo lo que antes no se
+ * podía. Se dibuja una vista previa de verdad —con el atlas de SU nivel—, porque un sello
+ * llamado "Sello 7" no le dice nada a nadie.
+ */
+@Composable
+private fun StampLibrary(
+    stamps: List<MapStamp>,
+    database: com.rolebuilder.core.model.Database,
+    projectDir: File,
+    currentTilesetId: Int,
+    enabled: Boolean,
+    onPick: (MapStamp) -> Unit,
+) {
+    if (stamps.isEmpty()) {
+        Text(
+            "Todavía no hay sellos. Marca un trozo con la herramienta Área y pulsa «Guardar " +
+                "sello», o usa la herramienta Sello: desde aquí podrás pegarlo en cualquier " +
+                "otro nivel, aunque no comparta gráficos.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        return
+    }
+    Column(
+        Modifier.fillMaxWidth().height(260.dp).verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        stamps.forEach { s ->
+            val origen = database.tileset(s.tilesetId)
+            Row(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(10.dp))
+                    .clickable(enabled = enabled) { onPick(s) }
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StampThumb(s, origen, projectDir)
+                Column(Modifier.weight(1f)) {
+                    Text(s.name, color = Color.White, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        "${s.width}×${s.height} · de ${origen?.name ?: "un nivel que ya no está"}",
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+                Text(
+                    if (s.tilesetId == currentTilesetId) "Usar" else "Traer gráficos",
+                    color = if (s.tilesetId == currentTilesetId) LuigiGreen else CoinYellow,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
+    }
+}
+
+/** Vista previa de un sello, dibujada con el atlas del nivel del que salió. */
+@Composable
+private fun StampThumb(stamp: MapStamp, source: Tileset?, projectDir: File) {
+    val bmp = remember(stamp.name, source?.image) {
+        source?.let { loadTilesetBitmap(projectDir, it)?.asImageBitmap() }
+    }
+    Box(
+        Modifier.size(64.dp).clip(RoundedCornerShape(6.dp)).border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bmp == null || source == null) {
+            Text("?", color = Color.White.copy(alpha = 0.5f))
+            return@Box
+        }
+        Canvas(Modifier.size(64.dp)) {
+            drawChecker()
+            // El sello se encaja entero en el cuadro, conservando proporción.
+            val cell = minOf(size.width / stamp.width, size.height / stamp.height)
+            val ox = (size.width - cell * stamp.width) / 2f
+            val oy = (size.height - cell * stamp.height) / 2f
+            for (li in stamp.layers.indices) {
+                val layer = stamp.layers[li]
+                for (y in 0 until stamp.height) for (x in 0 until stamp.width) {
+                    val t = layer[y * stamp.width + x]
+                    if (t < 0) continue
+                    drawImage(
+                        image = bmp,
+                        srcOffset = IntOffset(
+                            (t % source.columns) * source.tileSize,
+                            (t / source.columns) * source.tileSize,
+                        ),
+                        srcSize = IntSize(source.tileSize, source.tileSize),
+                        dstOffset = IntOffset((ox + x * cell).toInt(), (oy + y * cell).toInt()),
+                        dstSize = IntSize(cell.toInt() + 1, cell.toInt() + 1),
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**

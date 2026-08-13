@@ -162,6 +162,31 @@ object MapRegion {
         )
     }
 
+    /**
+     * Las teselas DISTINTAS que usa [clip] (sin el vacío). Es lo que hay que traerse al
+     * tileset del nivel de destino para que el trozo signifique lo mismo allí.
+     */
+    fun usedTiles(clip: MapStamp): List<Int> =
+        clip.layers.flatten().filter { it != EMPTY_TILE }.distinct().sorted()
+
+    /**
+     * El mismo trozo pero con sus teselas TRADUCIDAS por [mapping] (tesela del tileset de
+     * origen → tesela del de destino) y apuntando a [tilesetId].
+     *
+     * Esto es lo que hace que un asset sea portable. Un sello, o un trozo copiado, no
+     * guarda gráficos: guarda ÍNDICES a un atlas. Llevarlo a un nivel con otro tileset sin
+     * traducir sus índices pinta teselas al azar —que es lo que pasaba—, así que el camino
+     * bueno es copiar sus teselas al tileset del destino y reescribir el trozo con los
+     * índices nuevos. Lo que no esté en [mapping] queda vacío, que es preferible a dejar un
+     * índice mintiendo.
+     */
+    fun remapped(clip: MapStamp, mapping: Map<Int, Int>, tilesetId: Int): MapStamp = clip.copy(
+        tilesetId = tilesetId,
+        layers = clip.layers.map { layer ->
+            layer.map { if (it == EMPTY_TILE) EMPTY_TILE else mapping[it] ?: EMPTY_TILE }
+        },
+    )
+
     /** El trozo espejado en horizontal (para arcadas, laderas y simetrías del fondo). */
     fun flippedH(clip: MapStamp): MapStamp = clip.copy(
         layers = clip.layers.map { layer ->

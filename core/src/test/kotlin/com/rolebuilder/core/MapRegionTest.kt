@@ -92,6 +92,41 @@ class MapRegionTest {
     }
 
     @Test
+    fun `un trozo sabe que teselas necesita`() {
+        val clip = assertNotNull(
+            MapRegion.copy(map(), MapRegion.Area(0, 0, 4, 3), listOf(bg, fg), withObjects = false),
+        )
+        // Fondo todo a 8 y una fila de suelo a 1: dos teselas distintas, sin contar el vacío.
+        assertEquals(listOf(1, 8), MapRegion.usedTiles(clip))
+    }
+
+    @Test
+    fun `traducir un trozo a otro tileset reescribe sus indices`() {
+        val clip = assertNotNull(
+            MapRegion.copy(map(), MapRegion.Area(0, 0, 4, 3), listOf(bg, fg), withObjects = false),
+        )
+        // Las teselas 8 y 1 del origen han caído en la 40 y la 41 del nivel de destino.
+        val r = MapRegion.remapped(clip, mapOf(8 to 40, 1 to 41), tilesetId = 9)
+
+        assertEquals(9, r.tilesetId)
+        assertTrue(r.layers[bg].all { it == 40 }, "el fondo apunta a su tesela nueva")
+        assertEquals(List(4) { 41 }, r.layers[fg].subList(8, 12), "y el suelo a la suya")
+        assertTrue(r.layers[fg].subList(0, 8).all { it == EMPTY_TILE }, "el vacío sigue vacío")
+    }
+
+    @Test
+    fun `una tesela sin traduccion se queda vacia en vez de mentir`() {
+        val clip = assertNotNull(
+            MapRegion.copy(map(), MapRegion.Area(0, 0, 4, 3), listOf(bg, fg), withObjects = false),
+        )
+        // Solo se pudo traer el fondo: el suelo no tiene equivalente y NO puede quedarse
+        // apuntando al índice viejo, que en el destino es otra cosa.
+        val r = MapRegion.remapped(clip, mapOf(8 to 40), tilesetId = 9)
+        assertTrue(r.layers[fg].all { it == EMPTY_TILE })
+        assertTrue(r.layers[bg].all { it == 40 })
+    }
+
+    @Test
     fun `una region fuera del mapa no da portapapeles`() {
         assertNull(MapRegion.copy(map(), MapRegion.Area(9, 9, 2, 2), listOf(fg), withObjects = false))
     }
