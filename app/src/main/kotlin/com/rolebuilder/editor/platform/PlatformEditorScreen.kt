@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.dp
 import com.rolebuilder.core.model.EMPTY_TILE
 import com.rolebuilder.core.model.GameMap
 import com.rolebuilder.core.model.MapEdits
+import com.rolebuilder.core.model.MapRegion
 import com.rolebuilder.core.model.MapWarp
 import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
@@ -152,6 +153,9 @@ private enum class PTool(val label: String, val short: String = label) {
     // esa capa, igual que el resto.
     RECT("Rectángulo", "Rect."),
     BUCKET("Cubo", "Cubo"),
+    // Marco de selección: marcas un trozo y lo copias, cortas, pegas, duplicas o volteas.
+    // Es la herramienta de MONTAR fondos (hacer un buen trozo y repetirlo), no de pintarlos.
+    AREA("Selección", "Área"),
     ERASE("Borrar", "Borrar"),
     ENEMY("Enemigo", "Enem."),
     COIN("Moneda", "Mon."),
@@ -597,8 +601,15 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
     // esquina marcada al definir (dos toques: esquina 1 → esquina 2 = guardar).
     var selectedStampName by remember { mutableStateOf<String?>(null) }
     var stampAnchor by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
-    // Esquina donde empezó el rectángulo de relleno (null = no se está arrastrando uno).
+    // Esquina donde empezó el rectángulo (relleno o selección; null = no se arrastra ninguno).
     var rectAnchor by remember(map?.id) { mutableStateOf<Pair<Int, Int>?>(null) }
+    // Marco de selección vivo y PORTAPAPELES. El portapapeles no se ata al nivel: copiar un
+    // trozo de fondo en un nivel y pegarlo en otro es media herramienta (los dos niveles
+    // tienen que compartir tileset, cosa que ahora se puede arreglar desde Assets).
+    var areaSel by remember(map?.id) { mutableStateOf<MapRegion.Area?>(null) }
+    var clip by remember { mutableStateOf<com.rolebuilder.core.model.MapStamp?>(null) }
+    // Alcance: solo la capa en la que estás, o las dos a la vez.
+    var areaBoth by remember { mutableStateOf(false) }
     var showLevelSettings by remember { mutableStateOf(false) }
     var showRomImport by remember { mutableStateOf(false) }
     var showNewLevel by remember { mutableStateOf(false) }
@@ -816,9 +827,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                         PTool.BUCKET -> state.updateMap(
                                             MapEdits.floodFill(cur, paintLayer, tx, ty, selectedTile),
                                         )
-                                        // El rectángulo no pinta al tocar: marca la esquina y rellena
-                                        // al levantar el dedo (abajo, al cerrar el gesto).
-                                        PTool.RECT -> Unit
+                                        // Ni el rectángulo ni la selección hacen nada al tocar: marcan
+                                        // la esquina y se resuelven al levantar el dedo (más abajo).
+                                        PTool.RECT, PTool.AREA -> Unit
                                         PTool.ERASE -> {
                                             // Borra en la CAPA ACTIVA, no en las dos: borrar un trozo de
                                             // fondo no puede llevarse por delante el suelo que hay encima.
@@ -912,9 +923,10 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
                                 val dragTool = tool == PTool.TERRAIN || tool == PTool.DECOR ||
                                     tool == PTool.ERASE || tool == PTool.SELECT
-                                // El rectángulo se dibuja arrastrando: la esquina se marca al
-                                // tocar, el recuadro sigue al dedo y se rellena al soltar.
-                                val rectTool = tool == PTool.RECT
+                                // Rectángulo y selección se dibujan arrastrando: la esquina se
+                                // marca al tocar, el recuadro sigue al dedo y al soltar se
+                                // rellena (rectángulo) o queda marcado (selección).
+                                val rectTool = tool == PTool.RECT || tool == PTool.AREA
                                 if (dragTool) applyAt(down.position)
                                 if (rectTool) {
                                     rectAnchor = cellAt(down.position)
@@ -945,14 +957,22 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                         val anchor = rectAnchor
                                         if (rectTool && !transform && anchor != null) {
                                             val (ex, ey) = hover ?: anchor
-                                            state.currentMap?.let { cur ->
-                                                state.updateMap(
-                                                    MapEdits.fillRect(
-                                                        cur, paintLayer,
-                                                        anchor.first, anchor.second, ex, ey,
-                                                        selectedTile,
-                                                    ),
+                                            if (tool == PTool.AREA) {
+                                                // Seleccionar no cambia el nivel: solo marca el trozo
+                                                // sobre el que actúan copiar/cortar/pegar.
+                                                areaSel = MapRegion.Area.between(
+                                                    anchor.first, anchor.second, ex, ey,
                                                 )
+                                            } else {
+                                                state.currentMap?.let { cur ->
+                                                    state.updateMap(
+                                                        MapEdits.fillRect(
+                                                            cur, paintLayer,
+                                                            anchor.first, anchor.second, ex, ey,
+                                                            selectedTile,
+                                                        ),
+                                                    )
+                                                }
                                             }
                                         } else if (!transform && !dragTool && !rectTool) {
                                             tapPos?.let { applyAt(it) }
@@ -994,8 +1014,12 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         // Recuadro en curso: el de definir un sello y, ahora, el del relleno
                         // por rectángulo mientras arrastras (ver antes de soltar es la mitad
                         // de la herramienta).
+                        // Con la selección ya marcada (nadie arrastrando) el marco se queda
+                        // puesto: es lo que dice sobre qué actúan copiar, cortar y pegar.
+                        areaRect = areaSel.takeIf { tool == PTool.AREA && rectAnchor == null }
+                            ?.let { intArrayOf(it.x, it.y, it.x + it.w - 1, it.y + it.h - 1) },
                         stampRect = (stampAnchor.takeIf { tool == PTool.STAMP }
-                            ?: rectAnchor.takeIf { tool == PTool.RECT })?.let { a ->
+                            ?: rectAnchor.takeIf { tool == PTool.RECT || tool == PTool.AREA })?.let { a ->
                             val hv = hover
                             if (hv != null) {
                                 intArrayOf(
@@ -1279,6 +1303,93 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                     currentShape = tileset?.platformSlopeShape?.getOrNull(selectedTile)
                         ?: com.rolebuilder.core.snes.SmwSlopes.NO_SLOPE,
                 )
+                PTool.AREA -> {
+                    // Alcance de las operaciones: la capa activa o las dos. Los objetos
+                    // (enemigos, monedas, meta) viven en el plano jugable, así que viajan
+                    // cuando ese plano entra en el alcance.
+                    val areaLayers = if (areaBoth) {
+                        listOf(PlatformLayers.BACKGROUND, PlatformLayers.FOREGROUND)
+                    } else {
+                        listOf(paintLayer)
+                    }
+                    val areaObjects = areaBoth || paintLayer == PlatformLayers.FOREGROUND
+                    // Un trozo copiado en OTRO nivel solo encaja si comparte tileset: las
+                    // teselas son índices a un atlas concreto. Pegarlo igualmente pintaría
+                    // gráficos aleatorios, así que se avisa en vez de dejar el estropicio.
+                    val clipEncaja = { c: com.rolebuilder.core.model.MapStamp ->
+                        val ok = c.tilesetId == (state.currentMap ?: map).tilesetId
+                        if (!ok) {
+                            Toast.makeText(
+                                context,
+                                "Ese trozo es de un nivel con otros gráficos: sus teselas no " +
+                                    "significan lo mismo aquí. Copia dentro de este nivel, o trae " +
+                                    "sus gráficos desde Assets.",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                        ok
+                    }
+                    AreaPanel(
+                        selection = areaSel,
+                        clip = clip,
+                        bothLayers = areaBoth,
+                        layerName = if (paintLayer == PlatformLayers.BACKGROUND) "Capa 2" else "Capa 1",
+                        onScope = { areaBoth = it },
+                        onCopy = {
+                            val sel = areaSel ?: return@AreaPanel
+                            val cur = state.currentMap ?: return@AreaPanel
+                            clip = MapRegion.copy(cur, sel, areaLayers, areaObjects)
+                            Toast.makeText(context, "Copiado ${sel.w}×${sel.h}", Toast.LENGTH_SHORT).show()
+                        },
+                        onCut = {
+                            val sel = areaSel ?: return@AreaPanel
+                            val cur = state.currentMap ?: return@AreaPanel
+                            clip = MapRegion.copy(cur, sel, areaLayers, areaObjects)
+                            state.beginEdit()
+                            state.updateMap(MapRegion.clear(cur, sel, areaLayers, areaObjects))
+                            state.commitEdit()
+                        },
+                        onDelete = {
+                            val sel = areaSel ?: return@AreaPanel
+                            val cur = state.currentMap ?: return@AreaPanel
+                            state.beginEdit()
+                            state.updateMap(MapRegion.clear(cur, sel, areaLayers, areaObjects))
+                            state.commitEdit()
+                        },
+                        onPaste = {
+                            val sel = areaSel ?: return@AreaPanel
+                            val c = clip ?: return@AreaPanel
+                            val cur = state.currentMap ?: return@AreaPanel
+                            if (!clipEncaja(c)) return@AreaPanel
+                            state.beginEdit()
+                            state.updateMap(MapRegion.paste(cur, c, sel.x, sel.y))
+                            state.commitEdit()
+                        },
+                        // Duplicar pega el trozo JUSTO al lado y mueve el marco allí: tocando
+                        // repetido, un trozo de fondo se extiende a lo largo del nivel.
+                        onDuplicate = {
+                            val sel = areaSel ?: return@AreaPanel
+                            val c = clip ?: return@AreaPanel
+                            val cur = state.currentMap ?: return@AreaPanel
+                            if (!clipEncaja(c)) return@AreaPanel
+                            val nx = sel.x + c.width
+                            state.beginEdit()
+                            state.updateMap(MapRegion.paste(cur, c, nx, sel.y))
+                            state.commitEdit()
+                            areaSel = MapRegion.Area(nx, sel.y, c.width, c.height)
+                        },
+                        onFlipH = { clip = clip?.let { MapRegion.flippedH(it) } },
+                        onFlipV = { clip = clip?.let { MapRegion.flippedV(it) } },
+                        onSaveStamp = {
+                            val c = clip ?: return@AreaPanel
+                            val nombre = "Sello ${state.project.stamps.size + 1}"
+                            state.beginEdit()
+                            state.addStamp(c.copy(name = nombre))
+                            state.commitEdit()
+                            Toast.makeText(context, "Guardado como $nombre", Toast.LENGTH_SHORT).show()
+                        },
+                    )
+                }
                 PTool.STAMP -> StampPanel(
                     stamps = state.project.stamps,
                     selected = selectedStampName,
@@ -1638,6 +1749,107 @@ private fun EnemyPalette(
  * toques) y un chip por sello guardado (nombre · tamaño); al elegir uno queda "en mano" para
  * pegarlo tocando el nivel. La línea de ayuda dice siempre qué toca hacer ahora.
  */
+/**
+ * Panel del MARCO DE SELECCIÓN: lo que se puede hacer con el trozo marcado.
+ *
+ * Está pensado para montar fondos: marcas una arcada, la copias y la vas duplicando a lo
+ * largo del nivel; o la volteas para cerrar el otro lado. El alcance por capas es lo que
+ * hace que se pueda tocar el fondo sin arrastrar el suelo que tiene delante.
+ */
+@Composable
+private fun AreaPanel(
+    selection: MapRegion.Area?,
+    clip: com.rolebuilder.core.model.MapStamp?,
+    bothLayers: Boolean,
+    layerName: String,
+    onScope: (Boolean) -> Unit,
+    onCopy: () -> Unit,
+    onCut: () -> Unit,
+    onDelete: () -> Unit,
+    onPaste: () -> Unit,
+    onDuplicate: () -> Unit,
+    onFlipH: () -> Unit,
+    onFlipV: () -> Unit,
+    onSaveStamp: () -> Unit,
+) {
+    val hasSel = selection != null
+    val hasClip = clip != null
+    Column(
+        Modifier.fillMaxWidth().background(Panel).padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FilterChip(
+                selected = !bothLayers,
+                onClick = { onScope(false) },
+                label = { Text("Solo $layerName") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                ),
+            )
+            FilterChip(
+                selected = bothLayers,
+                onClick = { onScope(true) },
+                label = { Text("Las dos capas") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MarioRed, selectedLabelColor = Color.Black,
+                ),
+            )
+            Text(
+                when {
+                    selection != null -> "Marcado ${selection.w}×${selection.h}"
+                    else -> "Arrastra en el nivel para marcar un trozo"
+                },
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.labelSmall,
+            )
+            if (clip != null) {
+                Text(
+                    "· portapapeles ${clip.width}×${clip.height}",
+                    color = CoinYellow,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AreaButton("Copiar", hasSel, onCopy)
+            AreaButton("Cortar", hasSel, onCut)
+            AreaButton("Borrar", hasSel, onDelete)
+            AreaButton("Pegar aquí", hasSel && hasClip, onPaste)
+            AreaButton("Duplicar →", hasSel && hasClip, onDuplicate)
+            AreaButton("Voltear ⇄", hasClip, onFlipH)
+            AreaButton("Voltear ⇅", hasClip, onFlipV)
+            AreaButton("Guardar sello", hasClip, onSaveStamp)
+        }
+    }
+}
+
+/** Botón compacto del panel de selección (se apaga cuando su acción no aplica). */
+@Composable
+private fun AreaButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.clip(RoundedCornerShape(9.dp))
+            .border(1.dp, if (enabled) GlassStroke else Color(0x22FFFFFF), RoundedCornerShape(9.dp))
+            .clickable(enabled = enabled) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            label,
+            color = if (enabled) Color.White else Color.White.copy(alpha = 0.35f),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+        )
+    }
+}
+
 @Composable
 private fun StampPanel(
     stamps: List<MapStamp>,
@@ -1927,6 +2139,12 @@ private fun DrawScope.drawLevel(
     /** Región del sello en curso [x0,y0,x1,y1] en casillas (herramienta SELLO), o null. */
     stampRect: IntArray? = null,
     /**
+     * Marco de SELECCIÓN ya fijado [x0,y0,x1,y1], o null. Se dibuja distinto del recuadro en
+     * curso —línea clara y esquinas marcadas— porque no es una vista previa: es el trozo
+     * sobre el que van a actuar copiar, cortar y pegar, y tiene que verse aunque sueltes.
+     */
+    areaRect: IntArray? = null,
+    /**
      * Opacidad de cada capa (índice = capa). 0 = no se dibuja. Con ella el editor puede
      * ocultar o atenuar la capa en la que no estás trabajando; vacío = todas enteras.
      */
@@ -2127,6 +2345,22 @@ private fun DrawScope.drawLevel(
         drawRect(Color(0x33B388FF), topLeft = topLeft, size = sz)
         drawRect(Color(0xFFB388FF), topLeft = topLeft, size = sz, style = Stroke(width = 3f))
     }
+
+    // Marco de selección fijado: apenas tiñe (hay que VER lo que has seleccionado) y marca
+    // las cuatro esquinas, que es lo que lo distingue de una vista previa a medio hacer.
+    areaRect?.let { r ->
+        val topLeft = Offset(pan.x + r[0] * tilePx, pan.y + r[1] * tilePx)
+        val sz = Size((r[2] - r[0] + 1) * tilePx, (r[3] - r[1] + 1) * tilePx)
+        drawRect(Color(0x18FFFFFF), topLeft = topLeft, size = sz)
+        drawRect(CoinYellow, topLeft = topLeft, size = sz, style = Stroke(width = 2f))
+        val corner = minOf(tilePx * 0.6f, 14f)
+        listOf(
+            topLeft,
+            Offset(topLeft.x + sz.width - corner, topLeft.y),
+            Offset(topLeft.x, topLeft.y + sz.height - corner),
+            Offset(topLeft.x + sz.width - corner, topLeft.y + sz.height - corner),
+        ).forEach { drawRect(CoinYellow, topLeft = it, size = Size(corner, corner)) }
+    }
 }
 
 // ============================================================================
@@ -2137,8 +2371,9 @@ private fun DrawScope.drawLevel(
 
 /** Herramientas que forman los sectores de la rueda (Seleccionar es el centro). */
 private val WHEEL_TOOLS = listOf(
-    PTool.TERRAIN, PTool.DECOR, PTool.RECT, PTool.BUCKET, PTool.ENEMY, PTool.COIN,
-    PTool.GOAL, PTool.START, PTool.WARP, PTool.STAMP, PTool.COLLISION, PTool.ERASE,
+    PTool.TERRAIN, PTool.DECOR, PTool.RECT, PTool.BUCKET, PTool.AREA, PTool.ENEMY,
+    PTool.COIN, PTool.GOAL, PTool.START, PTool.WARP, PTool.STAMP, PTool.COLLISION,
+    PTool.ERASE,
 )
 
 /** Color de marca por herramienta (para leer la rueda de un vistazo). */
@@ -2147,6 +2382,7 @@ private fun toolColor(t: PTool): Color = when (t) {
     PTool.DECOR -> MarioBlue
     PTool.RECT -> Color(0xFF7ED957)
     PTool.BUCKET -> Color(0xFF00B894)
+    PTool.AREA -> Color(0xFFB388FF)
     PTool.ENEMY -> Color(0xFFB5651D)
     PTool.COIN -> CoinYellow
     PTool.GOAL -> Color(0xFF35C759)

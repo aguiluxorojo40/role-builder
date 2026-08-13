@@ -12,6 +12,11 @@ externos: editor y motor son la misma app.
   plantilla jugable (pradera con NPC, cofre, enemigos y una cabaña con interior).
 - Editor de mapas táctil: pinta tiles en 2 capas con paleta, pan/zoom con dos dedos,
   redimensiona mapas (hasta 200×200), coloca eventos, enemigos y el punto de inicio.
+- **Herramientas de construcción de verdad**: relleno por rectángulo (arrastrando, con
+  vista previa) y cubo, **deshacer/rehacer** de 40 pasos agrupados por gesto, y un **marco
+  de selección** para copiar, cortar, pegar, duplicar al lado y voltear trozos del nivel,
+  con alcance por capas — que es como se montan los fondos: haces un trozo bueno y lo
+  repites, lo espejas o lo guardas como sello.
 - **Platform Builder con las dos capas de verdad**: Capa 1 (primer plano jugable) y
   Capa 2 (fondo) tienen su sector en el menú radial, su pincel propio y una barra para
   ocultarlas o enfocar la que estás editando; pintar y borrar actúan sobre la capa

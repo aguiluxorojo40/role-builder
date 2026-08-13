@@ -29,6 +29,21 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 ### Añadido
 - **"Traer el nivel entero"** y **"Toda la categoría"** en el banco de assets: absorber todo
   el material de otro nivel es un botón, no ir picando 150 teselas de decorado una a una.
+- **Relleno por rectángulo y cubo** ([`MapEdits`](core/src/main/kotlin/com/rolebuilder/core/model/MapEdits.kt)):
+  pintar un suelo de 128 columnas casilla a casilla era el cuello de botella real del editor
+  en un móvil. El rectángulo se arrastra con vista previa; el cubo rellena la zona contigua
+  (4 vecinos, sin colarse en diagonal) sin recursión, que un nivel entero son 8640 celdas.
+- **Deshacer / rehacer**, 40 pasos, agrupados **por gesto**: un trazo entero —o un relleno—
+  se deshace de una vez. Botones fijos en la barra superior, no en el raíl configurable,
+  porque son la red de seguridad de todo lo demás. Es barato porque el modelo es inmutable:
+  guardar el estado anterior son tres referencias, no una copia del nivel.
+- **Marco de selección** ([`MapRegion`](core/src/main/kotlin/com/rolebuilder/core/model/MapRegion.kt)):
+  marcas un trozo del nivel y lo copias, cortas, borras, pegas, **duplicas al lado** (para
+  extender un fondo a lo largo del nivel tocando repetido) o lo **volteas** en horizontal y
+  vertical. Con **alcance por capas**: recortar un fondo sin llevarte el suelo que tiene
+  delante es justo lo que hacía falta para construir fondos. Una selección buena se guarda
+  como sello con un botón, y pegar un trozo de un nivel con otros gráficos avisa en vez de
+  pintar teselas aleatorias.
 - **Las capas estaban INTERCAMBIADAS en todos los niveles importados de la ROM.** El
   importador ponía el fondo en la capa 0 y el terreno en la 1 *solo si el nivel traía
   fondo*; si no, el terreno se iba a la capa 0. Y los niveles creados desde el editor

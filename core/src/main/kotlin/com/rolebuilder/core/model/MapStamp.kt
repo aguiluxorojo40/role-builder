@@ -17,7 +17,7 @@ data class MapStamp(
     val width: Int,
     val height: Int,
     val tilesetId: Int,
-    /** Capas alineadas con [GameMap.layers] (0 = primer plano, 1 = fondo): width*height índices. */
+    /** Capas alineadas con [GameMap.layers] (ver [PlatformLayers]): width*height índices cada una. */
     val layers: List<List<Int>>,
     val enemies: List<PlatformEnemyMark> = emptyList(),
     val items: List<PlatformItemMark> = emptyList(),
