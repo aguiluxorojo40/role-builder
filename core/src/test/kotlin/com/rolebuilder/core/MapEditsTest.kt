@@ -6,6 +6,7 @@ import com.rolebuilder.core.model.MapEdits
 import com.rolebuilder.core.model.PlatformLayers
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import org.junit.Test
 
 /**
@@ -99,6 +100,60 @@ class MapEditsTest {
     fun `el cubo sobre su propia tesela no hace nada`() {
         val m = map()
         assertSame(m, MapEdits.floodFill(m, PlatformLayers.FOREGROUND, 0, 0, EMPTY_TILE))
+    }
+
+    // ---- Redimensionar con anclaje ----
+
+    /** Nivel 4×3 con el suelo en la fila de abajo y un enemigo encima. */
+    private fun conSuelo(): GameMap {
+        val suelo = MutableList(12) { EMPTY_TILE }
+        for (x in 0 until 4) suelo[2 * 4 + x] = 1
+        return GameMap(
+            id = 1, name = "n", width = 4, height = 3,
+            layers = listOf(List(12) { EMPTY_TILE }, suelo),
+            platformEnemies = listOf(com.rolebuilder.core.model.PlatformEnemyMark(0x0F, 1, 1)),
+            platformWarps = listOf(com.rolebuilder.core.model.MapWarp(3, 2, 0, 2, 0, 0)),
+        )
+    }
+
+    @Test
+    fun `crecer hacia arriba deja el suelo abajo`() {
+        val r = MapEdits.resized(conSuelo(), 4, 5, anchorY = MapEdits.Anchor.END)
+        assertEquals(2, r.dy)
+        val fg = r.map.layers[PlatformLayers.FOREGROUND]
+        assertEquals(List(4) { 1 }, fg.subList(4 * 4, 4 * 5), "el suelo sigue en la última fila")
+        assertTrue(fg.subList(0, 8).all { it == EMPTY_TILE }, "lo nuevo es aire, y va arriba")
+    }
+
+    @Test
+    fun `crecer anclado al principio deja el hueco abajo`() {
+        val r = MapEdits.resized(conSuelo(), 4, 5)
+        assertEquals(0, r.dy)
+        val fg = r.map.layers[PlatformLayers.FOREGROUND]
+        assertEquals(List(4) { 1 }, fg.subList(2 * 4, 3 * 4), "el suelo se queda donde estaba")
+    }
+
+    @Test
+    fun `los objetos y los warps se mueven con el contenido`() {
+        val r = MapEdits.resized(conSuelo(), 4, 5, anchorY = MapEdits.Anchor.END)
+        assertEquals(3, r.map.platformEnemies.single().y, "el enemigo baja con su suelo")
+        assertEquals(4, r.map.platformWarps.single().y, "y la boca del warp también")
+    }
+
+    @Test
+    fun `lo que se sale al encoger se descarta`() {
+        val r = MapEdits.resized(conSuelo(), 2, 2)
+        assertEquals(2 * 2, r.map.layers[PlatformLayers.FOREGROUND].size)
+        assertTrue(r.map.platformWarps.isEmpty(), "el warp estaba en la esquina que se ha ido")
+        assertEquals(1, r.map.platformEnemies.size, "el enemigo estaba dentro y se queda")
+    }
+
+    @Test
+    fun `no cambiar el tamano devuelve el mismo mapa`() {
+        val m = conSuelo()
+        val r = MapEdits.resized(m, 4, 3, anchorY = MapEdits.Anchor.END)
+        assertSame(m, r.map)
+        assertEquals(0, r.dx)
     }
 
     @Test

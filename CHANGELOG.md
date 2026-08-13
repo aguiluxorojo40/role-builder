@@ -27,6 +27,25 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   progreso, y solo el alta del tileset vuelve al hilo de interfaz.
 
 ### Añadido
+- **Mover lo seleccionado.** El marco de selección se arrastra: si el dedo baja DENTRO del
+  marco se mueve su contenido (se recorta una vez y se va pegando sobre el mapa limpio, así
+  que arrastrar no deja copias por el camino); fuera del marco, se marca una selección
+  nueva. Y cuatro flechas en el panel para cuadrarlo casilla a casilla, que en una pantalla
+  pequeña es más fiable que apuntar con el dedo.
+- **Redimensionar el nivel con ANCLAJE**
+  ([`MapEdits.resized`](core/src/main/kotlin/com/rolebuilder/core/model/MapEdits.kt)): el
+  redimensionado de siempre anclaba arriba-izquierda, así que hacer un nivel de plataformas
+  más alto dejaba el suelo flotando con un agujero debajo. Ahora se elige dónde se queda lo
+  construido (por defecto, abajo: el alto nuevo se añade por arriba), el punto de inicio se
+  mueve con él, y el ancho llega a 512 columnas —lo que traen los niveles largos de la ROM—
+  y el alto a 120.
+
+### Corregido (bis)
+- **Redimensionar dejaba warps fuera del mapa**: `GameMap.resized` recortaba eventos,
+  enemigos e ítems pero no los warps, así que quedaban bocas de tubería invisibles fuera de
+  la rejilla. El nuevo redimensionado los mueve y descarta como a todo lo demás.
+
+### Añadido (bis)
 - **"Traer el nivel entero"** y **"Toda la categoría"** en el banco de assets: absorber todo
   el material de otro nivel es un botón, no ir picando 150 teselas de decorado una a una.
 - **Relleno por rectángulo y cubo** ([`MapEdits`](core/src/main/kotlin/com/rolebuilder/core/model/MapEdits.kt)):

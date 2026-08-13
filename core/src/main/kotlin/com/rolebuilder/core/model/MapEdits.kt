@@ -18,6 +18,78 @@ package com.rolebuilder.core.model
  */
 object MapEdits {
 
+    /** Dónde se queda el contenido al cambiar el tamaño del nivel. */
+    enum class Anchor { START, CENTER, END }
+
+    /** Un nivel redimensionado, con el desplazamiento que sufrió su contenido. */
+    class Resized(val map: GameMap, val dx: Int, val dy: Int)
+
+    /**
+     * Cambia el tamaño del nivel a [newWidth]×[newHeight] colocando el contenido según el
+     * ANCLAJE. Es lo que faltaba: `GameMap.resized` siempre ancla arriba-izquierda, así que
+     * agrandar un nivel de plataformas por abajo era imposible —el suelo se quedaba pegado
+     * arriba y aparecía aire debajo— y añadir espacio por la izquierda, tampoco.
+     *
+     * Se mueve TODO lo que va por celdas: teselas, eventos, enemigos, ítems y también los
+     * warps, que `GameMap.resized` se dejaba (quedaban bocas de tubería fuera del mapa,
+     * invisibles y activas). Lo que cae fuera del nuevo tamaño se descarta.
+     *
+     * Devuelve además el desplazamiento aplicado, para que quien llame pueda mover con él
+     * lo que vive fuera del mapa —el punto de inicio del jugador, sin ir más lejos—.
+     */
+    fun resized(
+        map: GameMap,
+        newWidth: Int,
+        newHeight: Int,
+        anchorX: Anchor = Anchor.START,
+        anchorY: Anchor = Anchor.START,
+    ): Resized {
+        val dx = offset(newWidth - map.width, anchorX)
+        val dy = offset(newHeight - map.height, anchorY)
+        if (newWidth == map.width && newHeight == map.height) return Resized(map, 0, 0)
+
+        val layers = map.layers.map { layer ->
+            List(newWidth * newHeight) { i ->
+                val sx = i % newWidth - dx
+                val sy = i / newWidth - dy
+                if (map.inBounds(sx, sy)) layer[sy * map.width + sx] else EMPTY_TILE
+            }
+        }
+        fun dentro(x: Int, y: Int) = x in 0 until newWidth && y in 0 until newHeight
+        return Resized(
+            map.copy(
+                width = newWidth,
+                height = newHeight,
+                layers = layers,
+                events = map.events.mapNotNull { e ->
+                    e.copy(x = e.x + dx, y = e.y + dy).takeIf { dentro(it.x, it.y) }
+                },
+                spawns = map.spawns.mapNotNull { s ->
+                    s.copy(x = s.x + dx, y = s.y + dy).takeIf { dentro(it.x, it.y) }
+                },
+                platformEnemies = map.platformEnemies.mapNotNull { e ->
+                    e.copy(x = e.x + dx, y = e.y + dy).takeIf { dentro(it.x, it.y) }
+                },
+                platformItems = map.platformItems.mapNotNull { i ->
+                    i.copy(x = i.x + dx, y = i.y + dy).takeIf { dentro(it.x, it.y) }
+                },
+                // Los warps también viven en celdas de ESTE mapa (su destino no se toca).
+                platformWarps = map.platformWarps.mapNotNull { w ->
+                    w.copy(x = w.x + dx, y = w.y + dy).takeIf { dentro(it.x, it.y) }
+                },
+            ),
+            dx,
+            dy,
+        )
+    }
+
+    /** Cuánto se corre el contenido cuando el nivel crece (o mengua) [delta] casillas. */
+    private fun offset(delta: Int, anchor: Anchor): Int = when (anchor) {
+        Anchor.START -> 0
+        Anchor.CENTER -> delta / 2
+        Anchor.END -> delta
+    }
+
     /**
      * Rellena con [tile] el rectángulo que va de ([x0],[y0]) a ([x1],[y1]) —en cualquier
      * orden: se normalizan— en la capa [layer], recortado al mapa.

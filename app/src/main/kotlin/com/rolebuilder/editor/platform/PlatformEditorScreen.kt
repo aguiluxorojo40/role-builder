@@ -828,7 +828,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         .fillMaxSize()
                         // paintLayer va en las claves: se puede cambiar de capa sin cambiar de
                         // herramienta (barra de capas), y el gesto tiene que enterarse.
-                        .pointerInput(map.id, tool, paintLayer, selectedTile, selectedEnemyId, selectedStampName) {
+                        .pointerInput(map.id, tool, paintLayer, selectedTile, selectedEnemyId, selectedStampName, areaSel, areaBoth) {
                             awaitEachGesture {
                                 val down = awaitFirstDown()
                                 var transform = false
@@ -977,10 +977,42 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
 
                                 val dragTool = tool == PTool.TERRAIN || tool == PTool.DECOR ||
                                     tool == PTool.ERASE || tool == PTool.SELECT
+                                // MOVER lo seleccionado: si el dedo baja DENTRO del marco, el
+                                // gesto no marca nada nuevo — arrastra el contenido, como en
+                                // cualquier editor. Fuera del marco, se selecciona.
+                                val sel = areaSel
+                                val downCell = cellAt(down.position)
+                                val dentroDelMarco = tool == PTool.AREA && sel != null &&
+                                    downCell.first in sel.x until (sel.x + sel.w) &&
+                                    downCell.second in sel.y until (sel.y + sel.h)
+                                // El trozo se recorta UNA vez al empezar; a partir de ahí cada
+                                // movimiento pega sobre el mapa ya limpio, así que arrastrar no
+                                // va dejando copias por el camino.
+                                var moveBase: GameMap? = null
+                                var moveClip: com.rolebuilder.core.model.MapStamp? = null
+                                var grabDx = 0
+                                var grabDy = 0
+                                if (dentroDelMarco && sel != null) {
+                                    val cur0 = state.currentMap
+                                    if (cur0 != null) {
+                                        val capas = if (areaBoth) {
+                                            listOf(PlatformLayers.BACKGROUND, PlatformLayers.FOREGROUND)
+                                        } else {
+                                            listOf(paintLayer)
+                                        }
+                                        val objetos = areaBoth || paintLayer == PlatformLayers.FOREGROUND
+                                        moveClip = MapRegion.copy(cur0, sel, capas, objetos)
+                                        moveBase = MapRegion.clear(cur0, sel, capas, objetos)
+                                        grabDx = downCell.first - sel.x
+                                        grabDy = downCell.second - sel.y
+                                    }
+                                }
+                                val moveTool = moveClip != null && moveBase != null
+
                                 // Rectángulo y selección se dibujan arrastrando: la esquina se
                                 // marca al tocar, el recuadro sigue al dedo y al soltar se
                                 // rellena (rectángulo) o queda marcado (selección).
-                                val rectTool = tool == PTool.RECT || tool == PTool.AREA
+                                val rectTool = (tool == PTool.RECT || tool == PTool.AREA) && !moveTool
                                 if (dragTool) applyAt(down.position)
                                 if (rectTool) {
                                     rectAnchor = cellAt(down.position)
@@ -1003,6 +1035,22 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     } else if (pressed.size == 1 && !transform) {
                                         if (dragTool) {
                                             applyAt(pressed[0].position); pressed[0].consume()
+                                        } else if (moveTool) {
+                                            // Arrastre del trozo: sobre el mapa YA limpio se
+                                            // pega en la posición de ahora, y el marco lo sigue.
+                                            val c = cellAt(pressed[0].position)
+                                            hover = c
+                                            val nx = c.first - grabDx
+                                            val ny = c.second - grabDy
+                                            val base = moveBase
+                                            val clipMov = moveClip
+                                            if (base != null && clipMov != null &&
+                                                (areaSel?.x != nx || areaSel?.y != ny)
+                                            ) {
+                                                state.updateMap(MapRegion.paste(base, clipMov, nx, ny))
+                                                areaSel = MapRegion.Area(nx, ny, clipMov.width, clipMov.height)
+                                            }
+                                            pressed[0].consume()
                                         } else if (rectTool) {
                                             hover = cellAt(pressed[0].position); pressed[0].consume()
                                         }
@@ -1028,7 +1076,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                                     )
                                                 }
                                             }
-                                        } else if (!transform && !dragTool && !rectTool) {
+                                        } else if (!transform && !dragTool && !rectTool && !moveTool) {
                                             tapPos?.let { applyAt(it) }
                                         }
                                         rectAnchor = null
@@ -1367,10 +1415,28 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         listOf(paintLayer)
                     }
                     val areaObjects = areaBoth || paintLayer == PlatformLayers.FOREGROUND
+                    // Mover el trozo marcado una casilla: recortar y volver a pegar corrido.
+                    // Con el dedo se arrastra, pero para cuadrar al píxel las flechas son
+                    // mucho más fiables que apuntar en una pantalla pequeña.
+                    val moverSeleccion: (Int, Int) -> Unit = { dx, dy ->
+                        val sel = areaSel
+                        val cur = state.currentMap
+                        if (sel != null && cur != null) {
+                            val trozo = MapRegion.copy(cur, sel, areaLayers, areaObjects)
+                            if (trozo != null) {
+                                val limpio = MapRegion.clear(cur, sel, areaLayers, areaObjects)
+                                state.beginEdit()
+                                state.updateMap(MapRegion.paste(limpio, trozo, sel.x + dx, sel.y + dy))
+                                state.commitEdit()
+                                areaSel = MapRegion.Area(sel.x + dx, sel.y + dy, sel.w, sel.h)
+                            }
+                        }
+                    }
                     AreaPanel(
                         selection = areaSel,
                         clip = clip,
                         bothLayers = areaBoth,
+                        onNudge = moverSeleccion,
                         layerName = if (paintLayer == PlatformLayers.BACKGROUND) "Capa 2" else "Capa 1",
                         onScope = { areaBoth = it },
                         onCopy = {
@@ -1824,6 +1890,8 @@ private fun AreaPanel(
     selection: MapRegion.Area?,
     clip: com.rolebuilder.core.model.MapStamp?,
     bothLayers: Boolean,
+    /** Mueve el trozo marcado (dx, dy) casillas: el arrastre fino que el dedo no da. */
+    onNudge: (Int, Int) -> Unit,
     layerName: String,
     onScope: (Boolean) -> Unit,
     onCopy: () -> Unit,
@@ -1883,6 +1951,11 @@ private fun AreaPanel(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Mover: arrastrando dentro del marco, o de casilla en casilla con las flechas.
+            AreaButton("←", hasSel) { onNudge(-1, 0) }
+            AreaButton("→", hasSel) { onNudge(1, 0) }
+            AreaButton("↑", hasSel) { onNudge(0, -1) }
+            AreaButton("↓", hasSel) { onNudge(0, 1) }
             AreaButton("Copiar", hasSel, onCopy)
             AreaButton("Cortar", hasSel, onCut)
             AreaButton("Borrar", hasSel, onDelete)
@@ -2087,8 +2160,8 @@ private fun NewLevelDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    IntField("Ancho", width, { width = it.coerceIn(8, 400) }, Modifier.weight(1f))
-                    IntField("Alto", height, { height = it.coerceIn(8, 60) }, Modifier.weight(1f))
+                    IntField("Ancho", width, { width = it.coerceIn(8, 512) }, Modifier.weight(1f))
+                    IntField("Alto", height, { height = it.coerceIn(8, 120) }, Modifier.weight(1f))
                 }
                 if (tilesets.isNotEmpty()) {
                     DropdownField(
@@ -2138,6 +2211,11 @@ private fun LevelSettingsDialog(
     var height by remember(map.id) { mutableIntStateOf(map.height) }
     var tilesetId by remember(map.id) { mutableIntStateOf(map.tilesetId) }
     var sky by remember(map.id) { mutableStateOf(map.skyColor ?: SKY_PRESETS.first().second) }
+    // Dónde se queda lo que ya hay al cambiar el tamaño. Por defecto, ABAJO-IZQUIERDA: en un
+    // nivel de plataformas, hacerlo más alto es dar aire por arriba, no dejar el suelo
+    // flotando con un agujero debajo (que es lo que hacía el redimensionado de siempre).
+    var anchorY by remember(map.id) { mutableStateOf(MapEdits.Anchor.END) }
+    var anchorX by remember(map.id) { mutableStateOf(MapEdits.Anchor.START) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Ajustes del nivel") },
@@ -2148,8 +2226,42 @@ private fun LevelSettingsDialog(
             ) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nombre") }, singleLine = true)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    IntField("Ancho", width, { width = it.coerceIn(8, 400) }, Modifier.weight(1f))
-                    IntField("Alto", height, { height = it.coerceIn(8, 60) }, Modifier.weight(1f))
+                    IntField("Ancho", width, { width = it.coerceIn(8, 512) }, Modifier.weight(1f))
+                    IntField("Alto", height, { height = it.coerceIn(8, 120) }, Modifier.weight(1f))
+                }
+                if (width != map.width || height != map.height) {
+                    // Solo aparece cuando de verdad vas a cambiar el tamaño: el resto del
+                    // tiempo es ruido.
+                    Text(
+                        "Al cambiar el tamaño, ¿dónde se queda lo que ya has construido?",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    DropdownField(
+                        label = "Anclar en vertical",
+                        options = listOf(MapEdits.Anchor.END, MapEdits.Anchor.START, MapEdits.Anchor.CENTER),
+                        selected = anchorY,
+                        optionLabel = {
+                            when (it) {
+                                MapEdits.Anchor.END -> "Abajo (el alto nuevo va arriba)"
+                                MapEdits.Anchor.START -> "Arriba (el alto nuevo va abajo)"
+                                MapEdits.Anchor.CENTER -> "Centrado"
+                            }
+                        },
+                        onSelect = { anchorY = it },
+                    )
+                    DropdownField(
+                        label = "Anclar en horizontal",
+                        options = listOf(MapEdits.Anchor.START, MapEdits.Anchor.END, MapEdits.Anchor.CENTER),
+                        selected = anchorX,
+                        optionLabel = {
+                            when (it) {
+                                MapEdits.Anchor.START -> "Izquierda (el ancho nuevo va a la derecha)"
+                                MapEdits.Anchor.END -> "Derecha (el ancho nuevo va a la izquierda)"
+                                MapEdits.Anchor.CENTER -> "Centrado"
+                            }
+                        },
+                        onSelect = { anchorX = it },
+                    )
                 }
                 DropdownField(
                     label = "Tileset",
@@ -2175,9 +2287,24 @@ private fun LevelSettingsDialog(
         },
         confirmButton = {
             Button(onClick = {
+                state.beginEdit() // redimensionar es deshacible como cualquier otra cosa
                 var updated = (state.map(map.id) ?: map).copy(name = name, tilesetId = tilesetId, skyColor = sky)
-                if (width != map.width || height != map.height) updated = updated.resized(width, height)
+                if (width != map.width || height != map.height) {
+                    val r = MapEdits.resized(updated, width, height, anchorX, anchorY)
+                    updated = r.map
+                    // El punto de inicio vive en el proyecto, no en el mapa: se mueve a mano
+                    // con el mismo desplazamiento, o el jugador aparecería descolocado.
+                    if (state.project.startMapId == map.id && (r.dx != 0 || r.dy != 0)) {
+                        state.updateProject(
+                            state.project.copy(
+                                startX = (state.project.startX + r.dx).coerceIn(0, width - 1),
+                                startY = (state.project.startY + r.dy).coerceIn(0, height - 1),
+                            ),
+                        )
+                    }
+                }
                 state.updateMap(updated)
+                state.commitEdit()
                 onDismiss()
             }) { Text("Aplicar") }
         },
