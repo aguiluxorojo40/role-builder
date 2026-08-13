@@ -862,6 +862,9 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                 val down = awaitFirstDown()
                                 var transform = false
                                 var lastCell: Pair<Int, Int>? = null
+                                // Cómo estaba el nivel al posar el dedo. Sirve para CANCELAR un
+                                // movimiento a medias si aparece un segundo dedo (ver abajo).
+                                val mapaAlTocar = state.currentMap
                                 // Estado del modo Seleccionar durante este gesto.
                                 var didHitTest = false
                                 var selDrag: Selected? = null
@@ -1070,6 +1073,18 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                                     val ev = awaitPointerEvent()
                                     val pressed = ev.changes.filter { it.pressed }
                                     if (pressed.size >= 2) {
+                                        // UN GESTO ES DE UN DEDO (editar) O DE DOS (mover la
+                                        // vista), nunca las dos cosas. En cuanto aparece el
+                                        // segundo dedo, lo que estuviera a medias se CANCELA:
+                                        // si no, un pellizco para hacer zoom —o un pulgar
+                                        // apoyado sin querer— dejaba el trozo tirado a mitad de
+                                        // camino, que es un estropicio difícil de ver y de
+                                        // deshacer a ojo. Cancelar es siempre recuperable:
+                                        // vuelves a arrastrar y ya está.
+                                        if (!transform && moveTool) {
+                                            mapaAlTocar?.let { state.updateMap(it) }
+                                            areaSel = sel // la marca vuelve a donde estaba
+                                        }
                                         transform = true; tapPos = null
                                         rectAnchor = null // pellizcar para hacer zoom no es dibujar
                                         val zoom = ev.calculateZoom()
@@ -1522,6 +1537,7 @@ fun PlatformEditorScreen(projectDir: File, onBack: () -> Unit) {
                         // Con pantallas marcadas, las flechas mueven de pantalla en pantalla:
                         // recolocar un nivel es "esta pantalla, dos más allá", no 32 toques.
                         onNudge = { dx, dy -> moverSeleccion(dx * snapW, dy * snapH) },
+                        onClearSel = { areaSel = null },
                         snapW = snapW,
                         onSnap = { w, h -> snapW = w; snapH = h; areaSel = null },
                         levelHeight = map.height,
@@ -2064,6 +2080,9 @@ private fun AreaPanel(
     bothLayers: Boolean,
     /** Mueve el trozo marcado (dx, dy) unidades de ajuste: el arrastre fino que el dedo no da. */
     onNudge: (Int, Int) -> Unit,
+    /** Suelta la marca: con algo marcado, arrastrar dentro MUEVE, así que sin esto no se
+     *  podría marcar una zona más pequeña dentro de otra. */
+    onClearSel: () -> Unit,
     /** Ancho del trozo de ajuste (1 = libre, 16 = pantalla de SMW). */
     snapW: Int,
     onSnap: (Int, Int) -> Unit,
@@ -2126,7 +2145,8 @@ private fun AreaPanel(
             )
             Text(
                 when {
-                    selection != null -> "Marcado ${selection.w}×${selection.h}"
+                    selection != null ->
+                        "Marcado ${selection.w}×${selection.h} · arrastra DENTRO para moverlo, fuera para marcar otro"
                     else -> "Arrastra en el nivel para marcar un trozo"
                 },
                 color = Color.White.copy(alpha = 0.8f),
@@ -2158,6 +2178,7 @@ private fun AreaPanel(
             AreaButton("Voltear ⇄", hasClip, onFlipH)
             AreaButton("Voltear ⇅", hasClip, onFlipV)
             AreaButton("Guardar sello", hasClip, onSaveStamp)
+            AreaButton("Quitar marca", hasSel, onClearSel)
         }
     }
 }
