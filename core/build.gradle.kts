@@ -3,6 +3,22 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
+    alias(libs.plugins.pitest)
+}
+
+// Mutation testing: "tests que testean los tests". Pitest muta el bytecode de
+// :core (invierte condiciones, borra llamadas...) y re-ejecuta la suite; cada
+// mutante que sobrevive es una zona donde los tests pasan aunque el código
+// esté roto. Informe en core/build/reports/pitest (lo publica el CI).
+pitest {
+    targetClasses.set(listOf("com.rolebuilder.core.*"))
+    // El generador de assets usa AWT y no lo cubre la suite: fuera del análisis.
+    excludedClasses.set(listOf("com.rolebuilder.core.tools.*"))
+    threads.set(4)
+    outputFormats.set(listOf("HTML", "XML"))
+    timestampedReports.set(false)
+    // Medimos sin bloquear el build: el umbral se decidirá con datos reales.
+    failWhenNoMutations.set(false)
 }
 
 // Análisis estático (detekt): audita el código sin necesidad de la ROM. Se apoya en la
