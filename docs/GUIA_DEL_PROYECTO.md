@@ -82,10 +82,11 @@ No la borres: es el único sitio donde vive ese trabajo.
 ./gradlew :core:pitest
 ```
 
-Sin ordenador: cada push a `main` compila en GitHub Actions y publica el APK en
-la release **`apk-latest`** (o como artefacto del workflow, en cualquier rama).
-Para congelar una versión, empuja su etiqueta y el CI publica una release aparte
-que ya no se sobrescribe:
+Sin ordenador: cada push compila en GitHub Actions y sube el APK como **artefacto
+del workflow**, en cualquier rama — útil para probar un commit concreto.
+
+El APK **publicado** sale solo de las versiones. Empuja la etiqueta y el CI crea
+su release, que ya no se sobrescribe nunca:
 
 ```bash
 git tag v0.13.0 && git push origin v0.13.0

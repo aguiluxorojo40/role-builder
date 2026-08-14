@@ -60,10 +60,11 @@ No necesitas ordenador ni Android Studio: cada cambio se compila solo en la nube
 (GitHub Actions) y genera un **APK instalable**.
 
 1. Entra en la sección **Releases** del repositorio y descarga el APK de la
-   release **`apk-latest`** (archivo `role-builder-debug.apk`), que se
-   regenera en cada push a `main`.
-   - Alternativa: en la pestaña **Actions**, abre la última ejecución verde de tu
-     rama y descarga el artefacto `role-builder-debug-apk` (viene en un .zip).
+   versión más reciente — la de arriba del todo, con su número (`v0.13.0`,
+   `v0.14.0`…). El archivo se llama `role-builder-<versión>-debug.apk`.
+   - Alternativa, si quieres probar algo recién hecho que aún no tiene versión:
+     en la pestaña **Actions**, abre la última ejecución verde de tu rama y
+     descarga el artefacto `role-builder-debug-apk` (viene en un .zip).
 2. Pásalo a tu móvil Android e instálalo. La primera vez te pedirá permitir
    "instalar apps de orígenes desconocidos": acéptalo solo para esta instalación.
 3. Ábrela. Es una *debug build*, perfecta para probar.

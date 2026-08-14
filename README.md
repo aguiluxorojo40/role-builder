@@ -196,8 +196,9 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
   (pitest: muta el código y re-ejecuta la suite, para cazar tests que pasan aunque
   el código esté roto), análisis estático (detekt, con SARIF a Code Scanning),
   tests JVM de `app` y compilación del APK de depuración. Hay además workflows de
-  CodeQL y un informe de deuda técnica. Cada push a `main` refresca la release
-  **`apk-latest`**; empujar una etiqueta `v*` congela una release de esa versión.
+  CodeQL y un informe de deuda técnica. El APK se publica **solo por versión**:
+  empujar una etiqueta `v*` congela su release. Para probar un commit suelto, el
+  workflow sube el APK como artefacto en cualquier rama.
   Lo que CI **no** puede comprobar es la extracción desde la ROM: en el
   repositorio no hay ROM, así que esas sondas se saltan solas. Ver
   [AUDITORIA.md](AUDITORIA.md).

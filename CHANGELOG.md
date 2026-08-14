@@ -11,6 +11,19 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 
 ---
 
+## [Sin publicar]
+
+### Cambiado
+- **Se retiran los releases rodantes.** Hasta ahora `apk-latest` se sobrescribía en cada
+  push a `main` y servía de enlace de descarga estable. Se quita a propósito: un enlace
+  que devuelve algo distinto cada día no dice **qué** estás instalando, y desde que cada
+  versión publica su propio APK congelado (`v0.13.0`…) dejó de tener sentido mantener las
+  dos vías. Para probar un commit concreto sigue estando el **artefacto del workflow**,
+  que se sube en cualquier rama. Las guías y el README dejan de apuntar a `apk-latest` y
+  mandan a la release de la última versión.
+- Las etiquetas `apk-latest` y `apk-snes-latest` quedan como restos históricos: si alguien
+  las empuja, el CI avisa de que ya no publican nada.
+
 ## [0.13.0] — 2026-08-14 — Mezcla de niveles, el caparazón real y un CI que vigila
 
 Tres frentes. En el editor, por fin se puede construir un nivel con material de

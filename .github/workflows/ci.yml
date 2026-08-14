@@ -30,7 +30,8 @@ jobs:
           T='${{ github.ref_name }}'
           case "$T" in
             apk-latest|apk-snes-latest)
-              echo "Etiqueta rodante ($T): no publica release de versión."; exit 0 ;;
+              echo "::warning::'$T' es una etiqueta rodante HISTÓRICA: los releases rodantes se retiraron y ya no se publica nada bajo ese nombre. El APK sale de las etiquetas de versión (v0.13.0, ...)."
+              exit 0 ;;
             v[0-9]*)
               echo "Etiqueta de versión correcta: $T"; exit 0 ;;
             V[0-9]*)
@@ -233,33 +234,13 @@ jobs:
           name: role-builder-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
-      # Release rodante con enlace de descarga estable: 'apk-latest' siempre
-      # apunta a la última compilación de 'main'.
-      - name: Leer versión de la app
-        id: appver
-        run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+      # Aquí hubo un "release rodante" (apk-latest) que se sobrescribía en cada
+      # push a main. Se retiró a propósito: una descarga que cambia bajo el
+      # mismo enlace no dice qué versión es, y con el APK de cada versión
+      # publicado abajo ya no hacía falta. Para probar un commit suelto está el
+      # artefacto del workflow, que se sube en CUALQUIER rama (paso anterior).
 
-      - name: Preparar APK con nombre
-        if: github.ref_name == 'main'
-        run: cp app/build/outputs/apk/debug/app-debug.apk role-builder-debug.apk
-
-      - name: Actualizar release rodante
-        if: github.ref_name == 'main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: apk-latest
-          name: Role Builder ${{ steps.appver.outputs.name }} — APK de depuración
-          prerelease: true
-          body: |
-            APK de depuración compilada automáticamente desde el último push de la rama `${{ github.ref_name }}`.
-
-            **Versión:** ${{ steps.appver.outputs.name }} · commit [`${{ github.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
-
-            Detalle de novedades en el [CHANGELOG](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md).
-          files: role-builder-debug.apk
-
-      # Release de versión CONGELADA. 'apk-latest' se sobrescribe en cada push a
-      # main; esto, en cambio, deja un APK fijo por versión. Se dispara al
+      # Release de versión CONGELADA: el único APK publicado. Se dispara al
       # empujar una etiqueta v* (los nombres en clave están en CHANGELOG.md):
       #     git tag v0.13.0 && git push origin v0.13.0
       - name: Preparar APK de versión
