@@ -4,8 +4,8 @@ Estado de TODO lo construido alrededor de Super Mario World: qué está hecho en
 `core`, qué está cableado de verdad en la app, y qué queda. Este documento es el
 mapa; la guía de uso y compilación está en [GUIA_DEL_PROYECTO.md](GUIA_DEL_PROYECTO.md).
 
-**Rama de trabajo:** `claude/snes-sprite-color-automation-918asc` (desde el merge
-de `…-59ybqy`, esta rama contiene TODO el trabajo SMW).
+**Rama de trabajo:** `main` (contiene TODO el trabajo SMW; absorbió las ramas
+`…-59ybqy` y `…-918asc`, ya retiradas).
 
 ## Los dos oficios de la app: JUGAR y EDITAR
 

@@ -25,9 +25,10 @@ Regla de oro: la lógica vive en `core` y se prueba con tests JVM rápidos;
 
 ## 2. Ramas
 
-- **`claude/snes-sprite-color-automation-918asc`** ← rama de trabajo con TODO
-  el pipeline SMW (tras fusionar la hermana `…-59ybqy`).
-- `claude/work-continuation-thread-5jf5kz` — línea HD-2D/diorama del editor ARPG.
+- **`main`** ← única rama de trabajo. Contiene el pipeline SMW completo y la
+  línea HD-2D/diorama del editor ARPG, ya fusionados.
+- Las ramas `claude/*` que quedan son históricas: cuelgan de una línea de
+  commits paralela, anterior, que `main` ya supersede. No trabajes sobre ellas.
 
 ## 3. Requisitos y ROM
 
@@ -47,8 +48,8 @@ Regla de oro: la lógica vive en `core` y se prueba con tests JVM rápidos;
 ./gradlew :app:assembleDebug
 ```
 
-Sin ordenador: cada push compila en GitHub Actions y publica el APK en la
-release **`apk-snes-latest`** (o como artefacto del workflow).
+Sin ordenador: cada push a `main` compila en GitHub Actions y publica el APK en
+la release **`apk-latest`** (o como artefacto del workflow, en cualquier rama).
 
 ## 5. El extractor por línea de comandos
 
