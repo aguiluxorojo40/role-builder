@@ -46,10 +46,19 @@ Regla de oro: la lógica vive en `core` y se prueba con tests JVM rápidos;
 
 # APK de depuración (requiere Android SDK)
 ./gradlew :app:assembleDebug
+
+# ¿Los tests detectan código roto? Muta el motor y re-ejecuta la suite
+./gradlew :core:pitest
 ```
 
 Sin ordenador: cada push a `main` compila en GitHub Actions y publica el APK en
 la release **`apk-latest`** (o como artefacto del workflow, en cualquier rama).
+Para congelar una versión, empuja su etiqueta y el CI publica una release aparte
+que ya no se sobrescribe:
+
+```bash
+git tag v0.13.0 && git push origin v0.13.0
+```
 
 ## 5. El extractor por línea de comandos
 

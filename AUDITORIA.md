@@ -6,17 +6,17 @@ con evidencia ejecutable.
 
 ## Procedencia de este documento
 
-El informe original se hizo en la rama `claude/app-audit-7ad6z9`, que está en **otra
-línea de historia** (la del diorama; sin base común con esta). Al traerlo aquí no se
-copió tal cual: **cada afirmación se ha vuelto a comprobar contra esta rama**, y
-varias habían dejado de ser ciertas. Lo que cambió respecto al informe original está
+El informe original se hizo en una **línea de historia distinta** (la del diorama,
+sin base común con la actual), en una rama ya retirada. Al traerlo aquí no se copió
+tal cual: **cada afirmación se volvió a comprobar contra este código**, y varias
+habían dejado de ser ciertas. Lo que cambió respecto al informe original está
 marcado con ⚠️ ACTUALIZADO.
 
 ## 1. Afirmaciones vs realidad
 
 | Afirmación | Veredicto |
 |---|---|
-| README: "124 tests" | ❌ Falso: son 535 en `core`. Cifra sin mantener, igual que el "34 tests" que decía el README original. ✅ CORREGIDO, y de paso el README ahora dice cómo sacar la cifra de verdad en vez de fiarse del número. |
+| README: "124 tests" | ❌ Falso: eran 535 en `core` cuando se auditó, y hoy son **690**. Cifra sin mantener, igual que el "34 tests" que decía el README original. ✅ CORREGIDO, y de paso el README ahora dice cómo sacar la cifra de verdad en vez de fiarse del número. |
 | "Rechaza rutas maliciosas (zip-slip)" en `ZipIo` | ✔️ Cierto: comprobación canónica real (`target.canonicalFile.toPath().startsWith(canonicalDest.toPath())`) y test que la verifica. |
 | "Validación: debe poder cargarse como proyecto completo" (importar zip) | ⚠️ Engañoso: solo validaba que el JSON deserializara. Un mapa con capas del tamaño equivocado importaba "bien" y reventaba después al dibujar. ✅ CORREGIDO: `GameMap` valida dimensiones y capas en `init`. |
 | Aviso de "mapas huérfanos" | ❌ Con bug: `MapReachability` seguía solo `TransferPlayer` e ignoraba las conexiones por bordes. ✅ CORREGIDO + tests. |
@@ -24,7 +24,7 @@ marcado con ⚠️ ACTUALIZADO.
 | Mapas "hasta 200×200" | ✔️ Cierto (`coerceIn(5, 200)` en el editor de mapas). |
 | "3 ranuras de guardado" | ✔️ Cierto (`SLOT_COUNT = 3`). |
 | "5 pistas de música" | ✔️ Cierto (`MusicTracks.ALL` tiene 5). |
-| "`:app` no tiene ni un test" | ⚠️ ACTUALIZADO: ya no es cierto del todo. Aquí hay 11 tests en `app/src/test`, y CI ejecuta `:app:testDebugUnitTest` antes de compilar. Pero el desequilibrio sigue siendo real: ~160 líneas de test para ~13.900 de código. |
+| "`:app` no tiene ni un test" | ⚠️ ACTUALIZADO: ya no es cierto del todo. Hoy hay **23 tests** en `app/src/test` (sesión de ROM, almacén de assets SMW y deshacer del editor), y CI ejecuta `:app:testDebugUnitTest` antes de compilar. Pero el desequilibrio sigue siendo real: ~380 líneas de test para ~16.700 de código, frente a las ~15.500 / ~26.700 de `core`. |
 
 ## 2. Los siete bugs, y dónde están arreglados aquí
 
@@ -62,9 +62,11 @@ niveles de SMW con posiciones exactas y no solo recuentos.
 
 Lo malo, y sigue siéndolo:
 
-- **El desequilibrio `:app`**: ~13.900 líneas (renderer GL, activities, editor
-  completo, audio) contra ~160 de test. Tres de los siete bugs de arriba —los dos de
+- **El desequilibrio `:app`**: ~16.700 líneas (renderer GL, activities, editor
+  completo, audio) contra ~380 de test. Tres de los siete bugs de arriba —los dos de
   sonido y el path traversal— vivían exactamente ahí, donde casi ningún test mira.
+  El módulo ha crecido más deprisa que su suite: cuando se auditó eran ~13.900
+  líneas contra ~160.
 - **Tests que pasan sin probar lo que prometen**: el contrato core↔app de nombres de
   sonido no lo verifica nadie (el core prueba su cola; la app no prueba su tabla).
   El mismo punto ciego se repitió en reachability: 7 tests, todos de transfers,
@@ -79,9 +81,10 @@ rama no existía:
 
 **CI no puede comprobar nada de la extracción desde la ROM.** En el repositorio no hay
 ni un byte de Nintendo —y así debe seguir—, así que todo lo que mide contra ella se
-salta solo. En números: 19 ficheros de test consultan `SMW_ROM`, y los 6 tests de las
-sondas `Zz*` no ejercitan absolutamente nada sin ROM (los demás sí corren, pero se
-saltan la parte que la necesita).
+salta solo. En números: **37 ficheros de test consultan `SMW_ROM`**, y los **25 tests
+de las 24 sondas `Zz*`** no ejercitan absolutamente nada sin ROM (los demás sí
+corren, pero se saltan la parte que la necesita). El punto ciego no ha dejado de
+crecer: cuando se auditó eran 19 ficheros y 6 sondas.
 
 Lo que CI sí verifica es lo **sintético**: los tests de objetos de Layer 1 y Layer 2
 plantan un nivel mínimo en una ROM vacía y comprueban posiciones exactas, sin un solo
@@ -122,12 +125,14 @@ Mitigaciones que sí funcionan y conviene mantener:
 - **Botón atrás en el juego**: sale de la actividad sin confirmación ni autoguardado.
 - **`MusicPlayer.stopInternal`**: el `join(300)` puede expirar con el hilo aún
   escribiendo en el `AudioTrack`.
-- **Sin *mutation testing***: la rama original añadió un job de pitest para medir si
-  la suite detecta código roto. Aquí no está montado. Sería la forma honesta de poner
-  número a lo del §3 en vez de opinar.
+- ~~**Sin *mutation testing***~~ ✅ RESUELTO: el job de pitest que solo existía en la
+  rama original ya está montado aquí (`:core:pitest`, informe publicado por CI). Es
+  la forma honesta de poner número a lo del §3 en vez de opinar. Corre sin umbral a
+  propósito: primero medir, y decidir el listón con datos reales.
 
 ## 5. Verificación
 
-Lo que corre en GitHub Actions: tests de `:core`, tests JVM de `:app`, análisis
-estático (detekt), CodeQL y la compilación del APK. Lo que **no** corre ahí, y hay que
-hacer con la ROM delante, está en el §3.
+Lo que corre en GitHub Actions: tests de `:core` con cobertura (kover), **mutación
+de `:core` (pitest)**, análisis estático (detekt, con SARIF a Code Scanning), tests
+JVM de `:app`, CodeQL, un informe de deuda técnica y la compilación del APK. Lo que
+**no** corre ahí, y hay que hacer con la ROM delante, está en el §3.

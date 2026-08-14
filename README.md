@@ -1,9 +1,14 @@
 # Role Builder
 
-**Motor de RPG estilo RPG Maker, 100% aplicación Android.** Crea tu RPG de acción
-2D (mapas de tiles, eventos visuales, combate en el mapa estilo Zelda) directamente
-en tu móvil o tablet, y juégalo en el mismo dispositivo. Sin PC, sin motores
-externos: editor y motor son la misma app.
+**Motor de juegos 2D estilo RPG Maker, 100% aplicación Android.** Crea tu juego
+directamente en el móvil o la tablet y juégalo en el mismo dispositivo, sin PC y
+sin motores externos: editor y motor son la misma app. Dos oficios en una:
+
+- **RPG de acción** — mapas de tiles, eventos visuales y combate en el mapa
+  estilo Zelda.
+- **Plataformas** — un *Platform Builder* de dos capas que se nutre de assets
+  extraídos de ROMs de SNES (el pipeline de Super Mario World está verificado
+  contra el desensamblado: gráficos, niveles, físicas, enemigos, música y SFX).
 
 ## Características
 
@@ -71,27 +76,34 @@ core/   Kotlin JVM puro, sin dependencias de Android
   model/    Datos serializables del proyecto (mapas, tilesets, base de datos,
             eventos y comandos como jerarquía sellada)
   engine/   RpgEngine.tick(dt): movimiento, colisiones, combate, intérprete
+    platformer/  Motor de plataformas a 60 fps: AABB, enemigos, monedas,
+            bloques ?, powerups y warps
   io/       Carga/guardado de proyectos y partidas (kotlinx.serialization)
-  snes/     Extracción de assets de ROMs de SNES: decodificador planar
-            (2/4/8bpp), lectura de cabecera y paletas, composición de hojas de
-            tiles ARGB, autodetección de gráficos por coherencia y framework de
-            descompresión conectable (compression/: LC_LZ2 + autodetección)
+  snes/     Lectura de ROMs de SNES: decodificador planar (2/3/4/8bpp),
+            cabecera y paletas CGRAM, composición de hojas ARGB, autodetección
+            de gráficos por coherencia y descompresión conectable
+            (compression/: LC_LZ2 + autodetección). Para SMW llega hasta los
+            niveles, la colisión, las físicas, los enemigos, la música y los
+            SFX, con cada offset verificado contra el desensamblado
+  tools/    CLI de escritorio: extractor de assets y horneado de la plantilla
 
 app/    Aplicación Android (solo UI y render)
-  editor/   Editor Compose: mapas, eventos, base de datos, ajustes
-  player/   GLSurfaceView + renderer GLES 3.0, controles, HUD, sonido
+  editor/   Editor Compose: mapas, eventos, base de datos, ajustes y el
+            diálogo de importación SNES (galería, crear mapa, jugar nivel)
+  player/   GLSurfaceView + renderer GLES 3.0, controles, HUD, sonido; incluye
+            el runtime del platformer y el overworld además del RPG
   project/  Gestor de proyectos en filesDir
 ```
 
 La regla de oro: **toda la lógica del juego vive en `core`** y se prueba con tests
-JVM rápidos (566: serialización, movimiento, intérprete, combate, extracción de
-assets de SNES y el proyecto demo completo). `app` solo dibuja el estado del motor
-y le pasa el input.
+JVM rápidos (690: serialización, movimiento, intérprete, combate, físicas del
+platformer, lectura de la ROM de SMW y el proyecto demo completo). `app` solo
+dibuja el estado del motor y le pasa el input.
 
 La cifra de arriba se queda vieja enseguida; para sacarla de verdad, `./gradlew
 :core:test` y mirar el informe. Lo que sí conviene saber es cómo está repartida:
-`core` tiene ~10.600 líneas de test para ~23.600 de código, y `app` solo ~160 para
-~13.900. Ese desequilibrio está medido y explicado en [AUDITORIA.md](AUDITORIA.md).
+`core` tiene ~15.500 líneas de test para ~26.700 de código, y `app` solo ~380 para
+~16.700. Ese desequilibrio está medido y explicado en [AUDITORIA.md](AUDITORIA.md).
 
 ## Formato de proyecto
 
@@ -136,9 +148,13 @@ activa automáticamente cuando hay SDK disponible (`ANDROID_HOME` o
 
 - minSdk 26 (Android 8.0), target 34, OpenGL ES 3.0.
 - El juego se ejecuta en apaisado; el editor en cualquier orientación.
-- CI en GitHub Actions: tests de `core`, tests JVM de `app`, análisis estático
-  (detekt) y compilación del APK de depuración (descargable como artefacto del
-  workflow). Lo que CI **no** puede comprobar es la extracción desde la ROM: en el
+- CI en GitHub Actions: tests de `core` con cobertura (kover), **mutation testing**
+  (pitest: muta el código y re-ejecuta la suite, para cazar tests que pasan aunque
+  el código esté roto), análisis estático (detekt, con SARIF a Code Scanning),
+  tests JVM de `app` y compilación del APK de depuración. Hay además workflows de
+  CodeQL y un informe de deuda técnica. Cada push a `main` refresca la release
+  **`apk-latest`**; empujar una etiqueta `v*` congela una release de esa versión.
+  Lo que CI **no** puede comprobar es la extracción desde la ROM: en el
   repositorio no hay ROM, así que esas sondas se saltan solas. Ver
   [AUDITORIA.md](AUDITORIA.md).
 
