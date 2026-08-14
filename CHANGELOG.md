@@ -211,6 +211,12 @@ compilar a vigilar.
 - **Releases de versión por etiqueta**: empujar `v*` publica una release congelada con su
   APK, mientras `apk-latest` se sigue sobrescribiendo. Y `workflow_dispatch` para lanzar el
   CI a mano.
+- **Un guardián para los nombres de etiqueta.** La primera versión de lo anterior fallaba en
+  silencio: si la etiqueta no encajaba con `v*` —por ejemplo `0.13.0`, o `V0.13.0` con la V
+  que autocapitaliza el teclado del móvil— el workflow ni se disparaba, y la release se
+  quedaba sin APK sin un solo mensaje. Ahora el CI escucha **todas** las etiquetas y un job
+  las clasifica: la correcta pasa, la mayúscula publica pero avisa, y una que parece versión
+  sin la `v` **falla en rojo** diciendo cómo debería llamarse.
 - **Social preview del repositorio** y sus fuentes en [`design/`](design/): el PNG se
   genera con un programa, no se retoca a mano.
 - Se deja escrito en la guía que **`claude/hd2d-3d-fase10` está aparcada, no olvidada**:

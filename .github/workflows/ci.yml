@@ -3,8 +3,11 @@ name: CI
 on:
   push:
     branches: ["**"]
-    # Empujar una etiqueta v* congela una release de versión con su APK.
-    tags: ["v*"]
+    # Escuchamos TODAS las etiquetas, no solo v*, para poder AVISAR cuando
+    # alguien empuja uno que parece una versión pero no publicará nada.
+    # Antes el filtro era v* y una etiqueta mal escrita no disparaba el
+    # workflow: ni error ni release, solo silencio (ver job "etiqueta").
+    tags: ["*"]
   pull_request:
   # Permite lanzar el CI a mano desde la pestaña Actions (auditorías, re-runs).
   workflow_dispatch:
@@ -14,6 +17,34 @@ permissions:
   security-events: write # subir el SARIF de detekt a Code Scanning
 
 jobs:
+  # Una etiqueta mal nombrada no publica release. Sin este job eso ocurría en
+  # SILENCIO —ni error, ni aviso, solo una release sin APK—, que es la peor
+  # forma de fallar: te enteras diez minutos después mirando una lista vacía.
+  etiqueta:
+    name: Nombre de la etiqueta
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar que publicará lo que crees
+        run: |
+          T='${{ github.ref_name }}'
+          case "$T" in
+            apk-latest|apk-snes-latest)
+              echo "Etiqueta rodante ($T): no publica release de versión."; exit 0 ;;
+            v[0-9]*)
+              echo "Etiqueta de versión correcta: $T"; exit 0 ;;
+            V[0-9]*)
+              echo "::warning::La etiqueta '$T' lleva la V en MAYÚSCULA. Publicará igual, pero las demás del repo son minúsculas (v0.10.0, v0.9.2...) y el orden por versión se rompe. Suele ser la autocapitalización del teclado del móvil: escribe primero el número y añade la 'v' al principio después."
+              exit 0 ;;
+          esac
+          if printf '%s' "$T" | grep -qE '^[0-9]+\.[0-9]+'; then
+            echo "::error::La etiqueta '$T' parece una versión pero NO va a publicar ninguna release: le falta la 'v' inicial."
+            echo "::error::Las etiquetas de versión se llaman v<MAYOR>.<MENOR>.<PARCHE> en minúscula. Para esta: v$T"
+            echo "::error::Bórrala y vuelve a crearla con el nombre correcto; si no, la release se queda sin APK."
+            exit 1
+          fi
+          echo "Etiqueta sin relación con versiones ($T): no se publica nada."
+
   core-tests:
     name: Tests del motor (:core)
     runs-on: ubuntu-latest
