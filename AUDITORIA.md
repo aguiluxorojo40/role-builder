@@ -128,7 +128,8 @@ Mitigaciones que sí funcionan y conviene mantener:
 - ~~**Sin *mutation testing***~~ ✅ RESUELTO: el job de pitest que solo existía en la
   rama original ya está montado aquí (`:core:pitest`, informe publicado por CI). Es
   la forma honesta de poner número a lo del §3 en vez de opinar. Corre sin umbral a
-  propósito: primero medir, y decidir el listón con datos reales.
+  propósito: primero medir, y decidir el listón con datos reales. La primera medida
+  está en el §6.
 
 ## 5. Verificación
 
@@ -136,3 +137,33 @@ Lo que corre en GitHub Actions: tests de `:core` con cobertura (kover), **mutaci
 de `:core` (pitest)**, análisis estático (detekt, con SARIF a Code Scanning), tests
 JVM de `:app`, CodeQL, un informe de deuda técnica y la compilación del APK. Lo que
 **no** corre ahí, y hay que hacer con la ROM delante, está en el §3.
+
+## 6. Primera medida de mutación
+
+Ejecución completa de `:core:pitest` **sin ROM** (las mismas condiciones que CI),
+11 min 38 s, 16.840 mutantes generados contra 543 clases de test:
+
+| Paquete | Mutantes | Cazados | % |
+|---|---:|---:|---:|
+| `core.snes` | 11.386 | 3.206 | **28,2 %** |
+| `core.engine` | 3.665 | 1.900 | 51,8 % |
+| `core.model` | 1.753 | 1.116 | 63,7 % |
+| `core.io` | 36 | 21 | 58,3 % |
+| **TOTAL** | **16.840** | **6.243** | **37,1 %** |
+
+**El 37 % global no se lee como "la suite es mala": se lee como el §3, medido.** El
+grueso de `core` es lectura de la ROM, y sus tests se saltan solos sin ella, así que
+esos mutantes son incazables por construcción en este entorno. Se ve clase a clase:
+`SmwTitleScreen`, `SmwOverworldAnim`, `SmwMode7Boss` y `SmwBakedAssets` marcan **0 %**;
+`SmwMusicRenderer` 3,3 %; `SmwDsp` 7,4 %; `SmwEnemyGraphics` 9,5 %. Ese es el punto
+ciego del §3 con un número encima, no una sorpresa.
+
+Donde la lógica es pura y los tests pueden morder, la suite aguanta bien:
+`Interpreter` 86,8 %, `SmwBlockBehavior` 91,7 %, `SmwBlockCollision` 91,4 %,
+`SmwLevelStart` 89,2 %, `GameState` 89,3 %, `MapReachability` 85,7 %,
+`snes.compression` 68,5 %.
+
+Lo accionable, entonces, no es "subir el 37 %" —que premiaría escribir tests de ROM
+imposibles de ejecutar en CI— sino mirar los supervivientes **dentro de los paquetes
+que sí se ejercitan**: `core.engine` al 51,8 % es el objetivo honesto, y encaja con
+lo que ya decía el §3 sobre las aserciones blandas del RPG.
