@@ -30,6 +30,37 @@ Regla de oro: la lógica vive en `core` y se prueba con tests JVM rápidos;
 - Las ramas `claude/*` que quedan son históricas: cuelgan de una línea de
   commits paralela, anterior, que `main` ya supersede. No trabajes sobre ellas.
 
+### Una excepción: `claude/hd2d-3d-fase10` está APARCADA, no olvidada
+
+Es la única rama histórica con trabajo que **no está en `main`**: un renderer 3D
+en perspectiva real con z-buffer para el diorama del ARPG (commit `230b79c`).
+Sustituye la proyección ortográfica con keystone falso por una cámara de verdad.
+
+Lo que trae, y es código sólido: `Camera3D` con `lookAt` y perspectiva, distancia
+derivada del FOV, ejes de cámara sacados de las filas de la matriz de vista para
+orientar billboards, `discard` del alfa para que los fondos transparentes no
+escriban profundidad, y un renderbuffer de profundidad en el FBO de post-procesado.
+
+**Por qué no se ha traído** (revisado en agosto de 2026):
+
+1. **Sería una regresión.** No dibuja parallax ni clima —su propio commit los deja
+   "pendientes para M2"— y `main` sí los dibuja. Ganas perspectiva, pierdes la
+   Fase 8 y el tiempo atmosférico.
+2. **Rompería el platformer.** Reescribe `SpriteBatch` para emitir quads en el
+   plano del suelo (Y=0) y borra `Camera2D`; `PlatformerRenderer` usa ambos. Nota:
+   `draw()` conserva la firma exacta, así que **compilaría** y fallaría solo al
+   dibujar — el nivel saldría tumbado en el suelo visto en picado.
+3. **El ARPG está en pausa**, que es lo único a lo que sirve este renderer.
+
+**Si algún día se retoma**, el trabajo está a favor: los cuatro ficheros del
+renderer (`GameRenderer`, `SpriteBatch`, `PostProcessor`, `Camera2D`) siguen
+**idénticos byte a byte** entre el punto de fork y `main`, porque el renderer del
+ARPG lleva congelado desde el 4 de julio de 2026. El camino sería añadir
+`Camera3D` y una variante `SpriteBatch3D` **al lado** de las 2D en vez de
+sustituirlas, y recuperar parallax y clima antes de darlo por bueno.
+
+No la borres: es el único sitio donde vive ese trabajo.
+
 ## 3. Requisitos y ROM
 
 - JDK 17+ y (solo para el APK) un Android SDK. Sin SDK, `:app` se omite solo y
