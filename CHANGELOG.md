@@ -11,9 +11,16 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 
 ---
 
-## [Sin publicar] — Assets de cualquier nivel, y las dos capas por fin bien puestas
+## [0.13.0] — 2026-08-14 — Mezcla de niveles, el caparazón real y un CI que vigila
 
-### Corregido
+Tres frentes. En el editor, por fin se puede construir un nivel con material de
+varios niveles de la ROM. En la lectura de la ROM, los ids del Koopa estaban
+invertidos y por eso el caparazón no aparecía por ninguna parte. Y el CI pasa de
+compilar a vigilar.
+
+### El Platform Builder
+
+#### Corregido
 - **Un sello pegado en un nivel más bajo entraba "solo por arriba"**, que parecía un fallo del
   pegado y no lo era: un sello de un nivel de SMW mide 27 filas y un nivel nuevo nacía con 15,
   así que el pegado recortaba. Ahora el nivel nuevo nace con **27 filas** (el alto real de un
@@ -39,7 +46,7 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   y volver a codificar un PNG grande; ahora esa parte va en `Dispatchers.IO` con su aviso de
   progreso, y solo el alta del tileset vuelve al hilo de interfaz.
 
-### Añadido
+#### Añadido
 - **Un nivel nuevo se lleva SU COPIA de los gráficos.** Antes compartía el tileset del nivel
   del que los tomaba, así que traer teselas o retocar una colisión en el nivel nuevo le
   cambiaba la paleta también al original. Ahora se duplica el atlas (PNG y metadatos) con id
@@ -68,12 +75,12 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   mueve con él, y el ancho llega a 512 columnas —lo que traen los niveles largos de la ROM—
   y el alto a 120.
 
-### Corregido (bis)
+#### Corregido (bis)
 - **Redimensionar dejaba warps fuera del mapa**: `GameMap.resized` recortaba eventos,
   enemigos e ítems pero no los warps, así que quedaban bocas de tubería invisibles fuera de
   la rejilla. El nuevo redimensionado los mueve y descarta como a todo lo demás.
 
-### Añadido (bis)
+#### Añadido (bis)
 - **"Traer el nivel entero"** y **"Toda la categoría"** en el banco de assets: absorber todo
   el material de otro nivel es un botón, no ir picando 150 teselas de decorado una a una.
 - **Relleno por rectángulo y cubo** ([`MapEdits`](core/src/main/kotlin/com/rolebuilder/core/model/MapEdits.kt)):
@@ -113,7 +120,7 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   Ahora borra en la capa activa; los objetos solo se van si estás borrando en el plano
   jugable, que es donde viven.
 
-### Añadido
+#### Añadido
 - **Banco de assets: teselas de CUALQUIER nivel del proyecto.** Hasta ahora un nivel solo
   podía pintar con el tileset que le tocó al importarlo, así que hacer un nivel propio con
   el castillo de uno y las tuberías de otro era imposible. El nuevo sector **Assets** del
@@ -133,9 +140,9 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   ciegas debajo del terreno. Cada capa recuerda **su** pincel y la paleta abre por la
   categoría que le corresponde (fondo → Decorado).
 
-## [Sin publicar] — Los ids del Koopa estaban invertidos, y auditoría en CI
+### La ROM y el CI
 
-### Corregido
+#### Corregido
 - **Los ids del Koopa estaban INVERTIDOS**, y era la causa raíz de que el caparazón no
   apareciera por ninguna parte. Los Koopa **con** caparazón son `0x04-0x07`; los `0x00-0x03`
   son los que van **sin** él (el "beach koopa" naranja con los pies de color). Verificado
@@ -151,7 +158,7 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
 - **Gracia de contacto al salir del caparazón** (`spr_decrementing_table154c` = 16): el Koopa
   desnudo nace bajo los pies de Mario y sin ella lo mataba en el mismo fotograma del pisotón.
 
-### Añadido
+#### Añadido
 - **El gráfico REAL del caparazón**, en vez del domo de color plano: `SmwEnemyGraphics.
   shellImage()` lo saca de la ROM con la paleta del nivel (port de `StunnedShellGFXRt_01980F`
   + `GenericGFXRtDraw1Tile16x16`), con el fotograma quieto (6) y el ciclo de giro `{6,7,8,7}`.
@@ -171,10 +178,44 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   partida medido: **52.9% de líneas** de `:core`.
 - **CodeQL** (`java-kotlin`) y **Dependabot** (Gradle + acciones, agrupado y mensual).
 
-### Notas de investigación
+#### Notas de investigación
 - Se documenta que el **overworld se lee entero pero no se edita**: 6 lectores en `:core` y
   solo consumo de lectura en la app (previsualizar, exportar, recorrer). Es el hueco
   principal para el objetivo de editar el overworld.
+
+### El repositorio
+
+#### Corregido
+- **La rama por defecto llevaba parada desde el 5 de julio**, así que la portada enseñaba
+  código de hace seis semanas mientras el trabajo real vivía enterrado en una rama. El
+  repositorio tenía además **dos historias sin ancestro común**; `main` es ahora la línea
+  viva y la rama por defecto.
+- **El APK descargable estaba congelado**: la condición del workflow que publica
+  `apk-latest` listaba cinco ramas y **ninguna era en la que se trabajaba**. Ahora sale de
+  `main` en cada push.
+- **El README contaba lo que el proyecto fue, no lo que es.** Vendía "motor de RPG estilo
+  RPG Maker" y ponía el editor ARPG por delante, cuando `core/snes` son ~19.000 líneas
+  frente a las ~1.600 del motor ARPG. Reescrito: lidera leer la ROM, enumera las tres
+  puertas reales y marca el ARPG **en pausa**. Las cifras de tests y líneas de `README` y
+  `AUDITORIA` estaban todas desfasadas y se han vuelto a medir.
+- **`AUDITORIA.md` afirmaba que exportar un proyecto no reparte material con copyright.**
+  Es falso: `SnesImport` guarda el atlas del nivel importado en `images/` y `ZipIo`
+  empaqueta la carpeta entera. Ahora se dice con todas las letras.
+
+#### Añadido
+- **Mutation testing con pitest** (`:core:pitest`), con su job, resumen y artefacto en CI.
+  Primera medida, sin ROM y en condiciones de CI: **16.840 mutantes, 37,1% cazados**. El
+  reparto confirma medido lo que la auditoría solo intuía — `core.snes` se queda en 28,2%
+  porque sus tests se saltan solos sin la ROM, mientras `Interpreter` llega al 86,8%.
+  Detalle en [AUDITORIA.md](AUDITORIA.md) §6.
+- **Releases de versión por etiqueta**: empujar `v*` publica una release congelada con su
+  APK, mientras `apk-latest` se sigue sobrescribiendo. Y `workflow_dispatch` para lanzar el
+  CI a mano.
+- **Social preview del repositorio** y sus fuentes en [`design/`](design/): el PNG se
+  genera con un programa, no se retoca a mano.
+- Se deja escrito en la guía que **`claude/hd2d-3d-fase10` está aparcada, no olvidada**:
+  guarda un renderer 3D con z-buffer que no está en `main`, con lo que costaría traerlo y
+  por qué hoy sería una regresión.
 
 ## [0.12.0] — 2026-07-15 — Audio fiel, casa fantasma y nombres reales
 
