@@ -177,7 +177,7 @@ object DefaultProjectFactory {
                     sprite = SpriteRef("chest.png", Direction.DOWN),
                     trigger = EventTrigger.ACTION_BUTTON,
                     commands = listOf(
-                        EventCommand.PlaySound("chest"),
+                        EventCommand.PlaySound(SoundEffects.CHEST),
                         EventCommand.ChangeItems(itemId = 1, delta = 1),
                         EventCommand.ShowText("¡Has encontrado una Poción!"),
                         EventCommand.SetSelfSwitch("A", true),
@@ -207,7 +207,7 @@ object DefaultProjectFactory {
                 EventPage(
                     trigger = EventTrigger.PLAYER_TOUCH,
                     commands = listOf(
-                        EventCommand.PlaySound("select"),
+                        EventCommand.PlaySound(SoundEffects.SELECT),
                         EventCommand.TransferPlayer(mapId = 2, x = 4, y = 6, direction = Direction.UP),
                     ),
                     // Farolillo de la entrada: luz cálida de muestra del estilo HD-2D.
@@ -286,7 +286,7 @@ object DefaultProjectFactory {
                     sprite = SpriteRef("chest.png", Direction.DOWN),
                     trigger = EventTrigger.ACTION_BUTTON,
                     commands = listOf(
-                        EventCommand.PlaySound("chest"),
+                        EventCommand.PlaySound(SoundEffects.CHEST),
                         EventCommand.ChangeItems(itemId = 1, delta = 1),
                         EventCommand.ShowText("¡Has encontrado una Poción!"),
                         EventCommand.SetSelfSwitch("A", true),

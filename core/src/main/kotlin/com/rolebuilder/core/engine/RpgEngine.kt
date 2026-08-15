@@ -9,6 +9,7 @@ import com.rolebuilder.core.model.Item
 import com.rolebuilder.core.model.ItemEffect
 import com.rolebuilder.core.model.Skill
 import com.rolebuilder.core.model.SkillKind
+import com.rolebuilder.core.model.SoundEffects
 import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.model.event.Direction
 import com.rolebuilder.core.model.event.EventCommand
@@ -679,7 +680,7 @@ class RpgEngine(
             ItemEffect.NONE, ItemEffect.KEY -> return
         }
         if (item.consumable) state.addItem(itemId, -1)
-        soundQueue.add("heal")
+        soundQueue.add(SoundEffects.HEAL)
     }
 
     // =========================================================================
@@ -735,7 +736,7 @@ class RpgEngine(
         if (state.level >= actor.maxLevel) state.exp = 0
         if (leveled) {
             syncMaxHp()
-            soundQueue.add("levelup")
+            soundQueue.add(SoundEffects.LEVELUP)
             notice = "¡Nivel ${state.level}!"
         }
     }
@@ -809,7 +810,7 @@ class RpgEngine(
         val item = data.database.item(itemId) ?: return
         state.gold -= item.price
         state.addItem(itemId, 1)
-        soundQueue.add("coin")
+        soundQueue.add(SoundEffects.COIN)
     }
 
     /**
@@ -826,7 +827,7 @@ class RpgEngine(
         val item = data.database.item(itemId) ?: return
         state.addItem(itemId, -1)
         state.gold += item.price / 2
-        soundQueue.add("coin")
+        soundQueue.add(SoundEffects.COIN)
     }
 
     // =========================================================================
@@ -841,7 +842,7 @@ class RpgEngine(
                 p.attackCooldown = skill.cooldownSeconds
                 p.attackFlash = ATTACK_SWING_SECONDS
                 p.attackDir = p.dir
-                soundQueue.add("attack")
+                soundQueue.add(SoundEffects.ATTACK)
                 val reach = skill.range
                 val cx = p.x + p.dir.dx * (0.5f + reach / 2f)
                 val cy = p.y + p.dir.dy * (0.5f + reach / 2f)
@@ -859,7 +860,7 @@ class RpgEngine(
             SkillKind.PROJECTILE -> {
                 if (p.secondaryCooldown > 0f) return
                 p.secondaryCooldown = skill.cooldownSeconds
-                soundQueue.add("shoot")
+                soundQueue.add(SoundEffects.SHOOT)
                 projectiles.add(
                     Projectile(
                         x = p.x + p.dir.dx * 0.6f,
@@ -884,10 +885,10 @@ class RpgEngine(
         enemy.knockbackVx = knockDx * knockback / 0.15f
         enemy.knockbackVy = knockDy * knockback / 0.15f
         effects.add(HitEffect(enemy.x, enemy.y, damage, HitEffect.Kind.DAMAGE_ENEMY))
-        soundQueue.add("hit")
+        soundQueue.add(SoundEffects.HIT)
         if (enemy.hp <= 0) {
             enemy.alive = false
-            soundQueue.add("defeat")
+            soundQueue.add(SoundEffects.DEFEAT)
             gainExp(enemy.def.expReward)
             gainGold(enemy.def.goldReward)
             val dropId = enemy.def.dropItemId
@@ -909,7 +910,7 @@ class RpgEngine(
         player.knockbackVx = dx / len * 3f
         player.knockbackVy = dy / len * 3f
         effects.add(HitEffect(player.x, player.y, damage, HitEffect.Kind.DAMAGE_PLAYER))
-        soundQueue.add("hurt")
+        soundQueue.add(SoundEffects.HURT)
     }
 
     private fun updateEnemies(dt: Float) {
@@ -1021,7 +1022,7 @@ class RpgEngine(
                 drop.alive = false
                 state.addItem(drop.itemId, 1)
                 effects.add(HitEffect(drop.x, drop.y, 1, HitEffect.Kind.ITEM))
-                soundQueue.add("pickup")
+                soundQueue.add(SoundEffects.PICKUP)
             }
         }
         drops.removeAll { !it.alive }
@@ -1235,7 +1236,7 @@ class RpgEngine(
         choices = null
         choiceOwner?.onChoiceSelected(index)
         choiceOwner = null
-        soundQueue.add("select")
+        soundQueue.add(SoundEffects.SELECT)
     }
 }
 
