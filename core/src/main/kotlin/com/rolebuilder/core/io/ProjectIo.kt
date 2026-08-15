@@ -28,6 +28,14 @@ object ProjectIo {
     const val MAPS_DIR = "maps"
     const val IMAGES_DIR = "images"
 
+    /**
+     * Sufijo del temporal de la escritura atómica ([writeTextAtomic]). Es constante
+     * y no un literal repetido porque hay más de un sitio que necesita reconocer
+     * estos ficheros: el que los crea y el exportador de zips, que debe dejarlos
+     * fuera del archivo (ver `ZipIo.exportable`).
+     */
+    const val TMP_SUFFIX = ".tmp"
+
     fun mapFileName(mapId: Int): String = "map_$mapId.json"
 
     /**
@@ -36,7 +44,7 @@ object ProjectIo {
      * en lugar de un JSON truncado (partida o proyecto corruptos).
      */
     internal fun File.writeTextAtomic(text: String) {
-        val tmp = File(parentFile, "$name.tmp")
+        val tmp = File(parentFile, "$name$TMP_SUFFIX")
         tmp.writeText(text)
         if (!tmp.renameTo(this)) {
             // Fallback (p. ej. sistemas de archivos sin rename sobre destino).

@@ -26,6 +26,9 @@ data class MessageBox(val text: String, val speaker: String)
 /** Tienda abierta (la UI la muestra y llama a buyItem/sellItem/closeShop). */
 class ShopSession(val itemIds: List<Int>)
 
+/** Una línea del inventario publicado para la UI (ver [RpgEngine.inventory]). */
+data class InventoryEntry(val itemId: Int, val count: Int)
+
 /**
  * Motor de juego completo e independiente del renderizado. La app Android
  * llama a [tick] cada frame, alimenta el input (joystick + botones) y dibuja
@@ -144,9 +147,103 @@ class RpgEngine(
     val uiBlocked: Boolean
         get() = mainInterpreter.running || message != null || choices != null || shop != null
 
+    /**
+     * Inventario publicado para la UI: copia inmutable de `state.items`
+     * ordenada por id. La UI **no puede recorrer `state.items`**: es un mapa
+     * normal que el motor muta al recoger objetos, al ejecutar un evento o al
+     * aplicar una orden, y recorrerlo desde otro hilo es la
+     * ConcurrentModificationException que este diseño viene a evitar. El motor
+     * publica aquí la foto y la UI lee siempre la última completa.
+     *
+     * **Se declara aquí arriba a propósito**: el `init` de abajo publica la
+     * primera foto, y en Kotlin las propiedades se inicializan en orden de
+     * declaración. Con esto más abajo, `publishInventory()` la leía todavía a
+     * null y el motor no llegaba a construirse.
+     */
+    @Volatile
+    var inventory: List<InventoryEntry> = emptyList()
+        private set
+
     init {
         loadMap(state.mapId, state.x, state.y, state.dir)
         syncMaxHp()
+        publishInventory()
+    }
+
+    // =========================================================================
+    // Órdenes de la UI (cola de comandos UI -> motor)
+    // =========================================================================
+
+    /**
+     * Órdenes pendientes de aplicar. La UI las encola desde su hilo y el motor
+     * las ejecuta en el suyo al principio de [tick]: así el estado del juego lo
+     * escribe siempre un único hilo. El detalle de por qué está en
+     * [EngineCommand].
+     */
+    private val pendingCommands = java.util.concurrent.ConcurrentLinkedQueue<EngineCommand>()
+
+    /** Monitor del drenaje: dos drenajes nunca se solapan (ver [drainCommands]). */
+    private val drainLock = Any()
+
+    /**
+     * Hilo dueño del motor: el último que ejecutó [tick] (el de render en la
+     * app, el del test en la suite). Arranca siendo el que construye el motor,
+     * que es quien manda mientras nadie tickea.
+     */
+    @Volatile
+    private var engineThread: Thread = Thread.currentThread()
+
+    /**
+     * Encola [command] y devuelve si la petición era válida al pedirla. Ojo con
+     * lo que significa ese true desde el hilo de UI: "aceptada", no "ya está
+     * hecha" —la aplica el motor en su siguiente tick, y puede descartarla si
+     * para entonces dejó de ser válida—. Desde el propio hilo del motor (la
+     * suite de tests, o la UI antes del primer frame) se drena en el acto, así
+     * que ahí sí equivale a "hecha".
+     */
+    private fun submit(command: EngineCommand): Boolean {
+        if (!command.isValid(this)) return false
+        pendingCommands.add(command)
+        if (Thread.currentThread() === engineThread) drainCommands()
+        return true
+    }
+
+    /**
+     * Aplica las órdenes pendientes. Va dentro de un monitor porque hay un
+     * instante en que dos hilos pueden creerse dueños del motor: el de UI, que
+     * leyó [engineThread] antes del primer frame, y el de render, que acaba de
+     * empezar a tickear. Sin el monitor volveríamos a tener dos hilos mutando
+     * el estado, que es justo lo que esto viene a impedir.
+     */
+    private fun drainCommands() {
+        synchronized(drainLock) {
+            while (true) {
+                val command = pendingCommands.poll() ?: break
+                // Re-validar: entre encolar y aplicar el mundo pudo cambiar.
+                if (command.isValid(this)) apply(command)
+            }
+            publishInventory()
+        }
+    }
+
+    private fun apply(command: EngineCommand) {
+        when (command) {
+            is EngineCommand.UseItem -> applyUseItem(command.itemId)
+            is EngineCommand.Equip -> applyEquip(command.slot, command.itemId)
+            is EngineCommand.Buy -> applyBuy(command.itemId)
+            is EngineCommand.Sell -> applySell(command.itemId)
+            EngineCommand.CloseShop -> applyCloseShop()
+            EngineCommand.DismissMessage -> applyDismissMessage()
+            is EngineCommand.SelectChoice -> applySelectChoice(command.index)
+        }
+    }
+
+    /** Re-publica [inventory] si cambió. Solo lo llama el hilo del motor. */
+    private fun publishInventory() {
+        val items = state.items
+        val unchanged = inventory.size == items.size && inventory.all { items[it.itemId] == it.count }
+        if (unchanged) return
+        inventory = items.entries.sortedBy { it.key }.map { InventoryEntry(it.key, it.value) }
     }
 
     // =========================================================================
@@ -214,6 +311,16 @@ class RpgEngine(
     // =========================================================================
 
     fun tick(dt: Float) {
+        // Quien tickea es el dueño del motor: a partir de aquí, las órdenes que
+        // lleguen de cualquier otro hilo se encolan en vez de aplicarse solas.
+        val self = Thread.currentThread()
+        if (engineThread !== self) engineThread = self
+
+        // Las órdenes de la UI se aplican SIEMPRE, incluso en pausa: el menú de
+        // pausa es justo donde se usan objetos y se equipa, y si el drenaje
+        // viviera detrás del return de abajo esas órdenes se quedarían colgadas
+        // hasta cerrar el menú (o para siempre, si el jugador sale desde él).
+        drainCommands()
         if (gameOver || paused) return
         state.playTimeSeconds += dt
 
@@ -246,6 +353,9 @@ class RpgEngine(
         effects.removeAll { effect -> effect.timer -= dt; effect.timer <= 0f }
 
         syncStateFromPlayer()
+        // El tick también toca el inventario (drops, ChangeItems de un evento):
+        // la foto para la UI se rehace aquí, no solo al drenar órdenes.
+        publishInventory()
         if (state.hp <= 0) gameOver = true
     }
 
@@ -550,20 +660,26 @@ class RpgEngine(
         }
     }
 
-    /** Usa un objeto del inventario (desde el menú). Devuelve true si se usó. */
-    fun useItem(itemId: Int): Boolean {
-        val item = data.database.item(itemId) ?: return false
-        if (state.itemCount(itemId) <= 0) return false
+    /**
+     * Usa un objeto del inventario (desde el menú). Devuelve true si la
+     * petición era válida —el objeto existe, queda alguno y su efecto se puede
+     * aplicar—; false si no, y entonces no pasa nada en absoluto.
+     *
+     * Desde el hilo de UI el true significa "aceptada y encolada": la cura y el
+     * gasto los hace el motor en su siguiente tick (ver [EngineCommand]). Si
+     * para entonces la orden dejó de tener sentido, se descarta en silencio;
+     * por eso el true no promete el efecto, solo que la petición era buena.
+     */
+    fun useItem(itemId: Int): Boolean = submit(EngineCommand.UseItem(itemId))
+
+    private fun applyUseItem(itemId: Int) {
+        val item = data.database.item(itemId) ?: return
         when (item.effect) {
-            ItemEffect.HEAL_HP -> {
-                if (state.hp >= state.maxHp) return false
-                changePlayerHp(item.power)
-            }
-            ItemEffect.NONE, ItemEffect.KEY -> return false
+            ItemEffect.HEAL_HP -> changePlayerHp(item.power)
+            ItemEffect.NONE, ItemEffect.KEY -> return
         }
         if (item.consumable) state.addItem(itemId, -1)
         soundQueue.add("heal")
-        return true
     }
 
     // =========================================================================
@@ -638,13 +754,14 @@ class RpgEngine(
      * del inventario y devuelve al inventario lo que estuviera equipado.
      * Devuelve false si el item no existe, no está en el inventario o su
      * equipSlot no coincide con [slot].
+     *
+     * Como [useItem], desde el hilo de UI el true significa "aceptada y
+     * encolada", no "ya equipado": el cambio lo hace el motor en su siguiente
+     * tick (ver [EngineCommand]).
      */
-    fun equip(slot: EquipSlot, itemId: Int?): Boolean {
-        if (itemId != null) {
-            val item = data.database.item(itemId) ?: return false
-            if (item.equipSlot != slot) return false
-            if (state.itemCount(itemId) <= 0) return false
-        }
+    fun equip(slot: EquipSlot, itemId: Int?): Boolean = submit(EngineCommand.Equip(slot, itemId))
+
+    private fun applyEquip(slot: EquipSlot, itemId: Int?) {
         val previous = when (slot) {
             EquipSlot.WEAPON -> state.weaponItemId
             EquipSlot.ARMOR -> state.armorItemId
@@ -656,7 +773,6 @@ class RpgEngine(
             EquipSlot.ARMOR -> state.armorItemId = itemId
         }
         syncMaxHp()
-        return true
     }
 
     // =========================================================================
@@ -673,35 +789,44 @@ class RpgEngine(
 
     /** La UI cierra la tienda; el intérprete que la abrió continúa. */
     fun closeShop() {
-        if (shop == null) return
+        submit(EngineCommand.CloseShop)
+    }
+
+    private fun applyCloseShop() {
         shop = null
         shopOwner?.onShopClosed()
         shopOwner = null
     }
 
-    /** Compra 1 unidad de [itemId]. Devuelve false si no existe o falta oro. */
-    fun buyItem(itemId: Int): Boolean {
-        val item = data.database.item(itemId) ?: return false
-        if (state.gold < item.price) return false
+    /**
+     * Compra 1 unidad de [itemId]. Devuelve false si no existe o falta oro; el
+     * true, como en [useItem], es "aceptada": el cobro y el alta en inventario
+     * los hace el motor en su siguiente tick.
+     */
+    fun buyItem(itemId: Int): Boolean = submit(EngineCommand.Buy(itemId))
+
+    private fun applyBuy(itemId: Int) {
+        val item = data.database.item(itemId) ?: return
         state.gold -= item.price
         state.addItem(itemId, 1)
         soundQueue.add("coin")
-        return true
     }
 
     /**
      * Vende 1 unidad de [itemId] a mitad de precio (redondeando abajo).
      * Solo si hay existencias en el inventario y el precio es > 0; el equipo
      * equipado está fuera del inventario, así que no puede venderse.
+     *
+     * El true es "aceptada", como en [useItem]: la venta la ejecuta el motor
+     * en su siguiente tick.
      */
-    fun sellItem(itemId: Int): Boolean {
-        val item = data.database.item(itemId) ?: return false
-        if (item.price <= 0) return false
-        if (state.itemCount(itemId) <= 0) return false
+    fun sellItem(itemId: Int): Boolean = submit(EngineCommand.Sell(itemId))
+
+    private fun applySell(itemId: Int) {
+        val item = data.database.item(itemId) ?: return
         state.addItem(itemId, -1)
         state.gold += item.price / 2
         soundQueue.add("coin")
-        return true
     }
 
     // =========================================================================
@@ -1092,7 +1217,10 @@ class RpgEngine(
 
     /** La UI cierra la caja de mensaje actual. */
     fun dismissMessage() {
-        if (message == null) return
+        submit(EngineCommand.DismissMessage)
+    }
+
+    private fun applyDismissMessage() {
         message = null
         messageOwner?.onMessageDismissed()
         messageOwner = null
@@ -1100,7 +1228,10 @@ class RpgEngine(
 
     /** La UI selecciona una opción del menú de elecciones. */
     fun selectChoice(index: Int) {
-        if (choices == null) return
+        submit(EngineCommand.SelectChoice(index))
+    }
+
+    private fun applySelectChoice(index: Int) {
         choices = null
         choiceOwner?.onChoiceSelected(index)
         choiceOwner = null
