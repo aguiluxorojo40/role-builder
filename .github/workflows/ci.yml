@@ -50,16 +50,16 @@ jobs:
     name: Tests del motor (:core)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Ejecutar tests de core (con cobertura)
         run: |
@@ -75,14 +75,14 @@ jobs:
 
       - name: Publicar informe de tests
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: informe-tests-core
           path: core/build/reports/tests/test
 
       - name: Publicar informe de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: informe-cobertura-core
           path: core/build/reports/kover/html
@@ -109,16 +109,16 @@ jobs:
     name: Mutación de :core (¿los tests detectan código roto?)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # Pitest muta el código de core y re-ejecuta la suite: los mutantes
       # supervivientes señalan tests que pasan aunque el código esté roto.
@@ -139,7 +139,7 @@ jobs:
 
       - name: Publicar informe de mutación
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: informe-mutacion-core
           path: core/build/reports/pitest
@@ -148,16 +148,16 @@ jobs:
     name: Análisis estático (detekt)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # La baseline (config/detekt/baseline.xml) tiene la deuda YA existente, así que
       # esto solo se pone rojo con problemas NUEVOS.
@@ -182,7 +182,7 @@ jobs:
 
       - name: Publicar informe de detekt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: informe-detekt
           path: core/build/reports/detekt
@@ -191,16 +191,16 @@ jobs:
     name: Compilar APK (:app)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       # ubuntu-latest trae el Android SDK preinstalado (ANDROID_HOME),
       # así que settings.gradle.kts activa el módulo :app automáticamente.
@@ -229,7 +229,7 @@ jobs:
           exit 1
 
       - name: Publicar APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: role-builder-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
@@ -249,7 +249,7 @@ jobs:
 
       - name: Publicar release de versión
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: Role Builder ${{ github.ref_name }}
