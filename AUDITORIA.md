@@ -173,8 +173,17 @@ qué es la parte que sirve para la próxima vez.
   son parámetros para que los tests los ejerciten sin fabricar medio giga: el central
   monta una zip-bomba de verdad y comprueba primero que el archivo comprimido **cabe**
   bajo el tope, que es lo que hace que la prueba demuestre algo.
-- **Botón atrás en el juego**: sale de la actividad sin confirmación ni autoguardado.
-  Sigue pendiente.
+- **Botón atrás en el juego**: ⚠️ A MEDIAS, y conviene decir qué mitad. Ya **no sale sin
+  avisar**: pide confirmación, y el botón destacado es "Seguir jugando", porque quien
+  llega a ese diálogo casi siempre ha rozado el atrás sin querer y lo que no puede estar
+  a un toque es perder la partida.
+
+  Lo que sigue sin haber es **autoguardado**, y no por olvido: guardar solo tiene
+  sentido sobre una ranura concreta, y no existe la noción de "ranura actual". Elegir
+  una por su cuenta —la 1, la última cargada— arriesga pisar una partida del jugador,
+  que es exactamente la pérdida de datos que este punto viene a evitar. Hace falta antes
+  decidir el modelo (ranura de autoguardado aparte, o recordar la ranura en uso); es una
+  decisión de diseño, no una línea de código.
 - ~~**`MusicPlayer.stopInternal`**~~ ✅ CORREGIDO: el `join(300)` expiraba y se liberaba
   el `AudioTrack` con el hilo aún escribiendo —un uso-después-de-liberar sobre un
   recurso nativo, que no lanza excepción: corrompe memoria fuera de la JVM—. Ahora cada

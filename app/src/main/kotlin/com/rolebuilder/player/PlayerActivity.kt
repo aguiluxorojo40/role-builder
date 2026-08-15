@@ -6,6 +6,7 @@ import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -218,6 +220,41 @@ private fun PlayerRoot(
             onExit = onExit,
         )
     } else {
+        // Botón atrás (AUDITORIA §4): salía de la actividad en el acto, y con ella se
+        // iba todo lo jugado desde el último guardado. Sin aviso y sin vuelta atrás,
+        // que es la peor forma de perder el trabajo de alguien.
+        var confirmarSalida by remember { mutableStateOf(false) }
+        BackHandler { confirmarSalida = true }
+
+        if (confirmarSalida) {
+            AlertDialog(
+                onDismissRequest = { confirmarSalida = false },
+                title = { Text("¿Dejar la partida?") },
+                text = {
+                    Text(
+                        "Se perderá todo lo jugado desde el último guardado. " +
+                            "Si prefieres conservarlo, sigue jugando y guarda en una " +
+                            "ranura desde el menú.",
+                    )
+                },
+                // "Seguir jugando" es el botón de confirmación —el destacado— a
+                // propósito: quien llega aquí casi siempre ha rozado el atrás sin
+                // querer, y lo que no debe estar a un toque de distancia es perder
+                // la partida.
+                confirmButton = {
+                    TextButton(onClick = { confirmarSalida = false }) { Text("Seguir jugando") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            confirmarSalida = false
+                            onExit()
+                        },
+                    ) { Text("Salir") }
+                },
+            )
+        }
+
         GameScreen(
             engine = current,
             projectDir = data.dir,
