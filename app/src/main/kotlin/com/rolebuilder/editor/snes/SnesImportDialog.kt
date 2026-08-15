@@ -1619,30 +1619,19 @@ private fun aplicarBundleSmw(state: EditorState, name: String, extraido: BundleE
     for (sub in extraido.subniveles) {
         val m = sub.mapa
         val tsId = state.nextTilesetId()
-        state.addTileset(
-            Tileset(
-                id = tsId, name = "${sub.nombre} (SMW)", image = sub.atlasFile,
-                tileSize = 16, columns = m.columns, rows = m.rows,
-                passable = m.passable, platformSolidity = m.solidity,
-                platformSlopeShape = m.slopeShapes,
-                animations = m.animations, platformBlockActions = m.blockActions,
-            )
-        )
-        // Capas del mapa en el orden CANÓNICO ([PlatformLayers]): el fondo (Layer 2) DEBAJO,
-        // en la capa 0, y el primer plano (Layer 1) encima, en la 1 — tenga fondo el nivel o
-        // no. El editor y el motor dibujan las capas por índice, así que el índice es el que
-        // dice qué es cada cosa.
-        val layers = PlatformLayers.layersOf(m.tiles, m.bgTiles, m.mapWidth, m.mapHeight)
+        // Tileset y mapa los construye :core, que es donde vive el criterio: el sufijo
+        // y el prefijo del nombre, y sobre todo el orden CANÓNICO de las capas (el fondo
+        // debajo, el primer plano encima, tenga fondo el nivel o no). Ese orden se
+        // decidía antes en cada sitio de importación por su cuenta, y cuando el nivel no
+        // traía fondo el terreno acababa en la capa equivocada.
+        state.addTileset(SmwLevelImport.tilesetOf(tsId, sub.nombre, sub.atlasFile, m))
         val stored = state.addImportedMap(
-            GameMap(
-                id = 0, name = "SMW ${sub.nombre}", width = m.mapWidth, height = m.mapHeight,
+            SmwLevelImport.gameMapOf(
+                name = sub.nombre,
+                map = m,
                 tilesetId = tsId,
-                layers = layers,
-                platformEnemies = m.enemies.map {
-                    PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
-                },
-                platformItems = sub.metas,
-                platformMusicIndex = sub.musica,
+                items = sub.metas,
+                musicIndex = sub.musica,
             )
         )
         mapIdByLevel[sub.level] = stored.id
@@ -1653,22 +1642,7 @@ private fun aplicarBundleSmw(state: EditorState, name: String, extraido: BundleE
     // proyecto. Puertas, tuberías verticales y horizontales (los criterios de levelWarps).
     var warpCount = 0
     for ((sub, stored) in created) {
-        val warps = sub.warps.mapNotNull { w ->
-            mapIdByLevel[w.destLevel]?.let { destMapId ->
-                MapWarp(
-                    x = w.xTile, y = w.yTile,
-                    // 0=abajo (tubería), 1=arriba (puerta), 2/3=de lado (tubería horizontal,
-                    // hacia la izquierda / hacia la derecha). Son los ordinales de WarpInput.
-                    input = when (w.enter) {
-                        WarpEnter.DOWN -> 0
-                        WarpEnter.UP -> 1
-                        WarpEnter.SIDE_LEFT -> 2
-                        WarpEnter.SIDE_RIGHT -> 3
-                    },
-                    destMapId = destMapId, destX = w.destXTile, destY = w.destYTile,
-                )
-            }
-        }
+        val warps = SmwLevelImport.warpsOf(sub.warps, mapIdByLevel)
         if (warps.isNotEmpty()) {
             state.updateMap(stored.copy(platformWarps = warps))
             warpCount += warps.size
