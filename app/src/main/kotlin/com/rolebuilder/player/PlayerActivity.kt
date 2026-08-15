@@ -78,7 +78,6 @@ data class SaveSlot(val index: Int, val file: File, val savedAt: Long?)
 /** Ejecuta un proyecto RPG: pantalla de título, partida y guardado en ranuras. */
 class PlayerActivity : ComponentActivity() {
 
-    private lateinit var data: LoadedProject
     private lateinit var projectDir: File
     private lateinit var soundFx: SoundFx
     private val musicPlayer = MusicPlayer()
@@ -106,7 +105,7 @@ class PlayerActivity : ComponentActivity() {
         // de plantilla que falten (espada, haz de corte...).
         runCatching { com.rolebuilder.project.ProjectStore.ensureDefaultImages(this, projectDir) }
 
-        data = try {
+        val cargado = try {
             ProjectIo.loadFull(projectDir)
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo cargar el proyecto: ${e.message}", Toast.LENGTH_LONG).show()
@@ -117,6 +116,13 @@ class PlayerActivity : ComponentActivity() {
         soundFx = SoundFx(this)
 
         setContent {
+            // Estado OBSERVABLE, no un campo de la actividad: antes "Guardar estilo
+            // visual" hacía `data = data.copy(...)` sobre un campo normal, que Compose
+            // no observa, así que la interfaz no se recomponía nunca. No se notaba
+            // porque el renderer lee sus valores en vivo y disimulaba el fallo, pero
+            // todo lo que se dibujara desde `data` seguía enseñando lo viejo.
+            var data by remember { mutableStateOf(cargado) }
+
             PlayerRoot(
                 data = data,
                 slots = { saveSlots() },
@@ -589,7 +595,11 @@ private fun PauseMenu(
                 fontSize = 13.sp,
             )
 
-            val items = engine.state.items.toList()
+            // La foto que publica el motor, NO `state.items`: ese mapa lo muta el hilo
+            // del motor al recoger objetos o aplicar una orden, y recorrerlo desde el
+            // hilo de UI es la ConcurrentModificationException que la cola de comandos
+            // viene a evitar (ver RpgEngine.inventory).
+            val items = engine.inventory
             val equippedIds = listOfNotNull(engine.state.weaponItemId, engine.state.armorItemId)
             if (items.isEmpty() && equippedIds.isEmpty()) {
                 Text("No llevas objetos.", color = Color.White.copy(alpha = 0.7f))
@@ -701,7 +711,8 @@ private fun ShopDialog(engine: RpgEngine, session: ShopSession) {
                     }
                 }
 
-                val sellable = engine.state.items.keys.mapNotNull { engine.data.database.item(it) }
+                // Igual que en el inventario: se lee la foto publicada, no `state.items`.
+                val sellable = engine.inventory.mapNotNull { engine.data.database.item(it.itemId) }
                     .filter { it.price > 0 }
                 if (sellable.isNotEmpty()) {
                     Text("Vender (a mitad de precio):", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
