@@ -46,8 +46,29 @@ jobs:
               | awk '{printf "| `%s` | %s |\n", $2, $1}'
             echo ""
             echo "### Cobertura de tests"
-            echo "- core: $(ls core/src/test/kotlin/com/rolebuilder/core/*.kt 2>/dev/null | wc -l) ficheros"
-            echo "- app:  $(find app/src/test -name '*.kt' 2>/dev/null | wc -l) ficheros"
+            echo ""
+            echo "Se cuentan LÍNEAS además de ficheros: el recuento de ficheros a secas"
+            echo "sube igual con un test de una línea que con una suite entera."
+            echo ""
+            echo '| Módulo | Ficheros de test | Líneas de test | Líneas de código |'
+            echo '|---|---:|---:|---:|'
+            for m in core app; do
+              tf=$(find "$m/src/test" -name '*.kt' 2>/dev/null | wc -l)
+              tl=$(find "$m/src/test" -name '*.kt' -exec cat {} + 2>/dev/null | wc -l)
+              cl=$(find "$m/src/main" -name '*.kt' -exec cat {} + 2>/dev/null | wc -l)
+              echo "| \`:$m\` | $tf | $tl | $cl |"
+            done
+            echo ""
+            echo "> Las sondas de auditoría (\`core/src/sondas\`) **no** se cuentan aquí, y es"
+            echo "> a propósito: llevan \`@Test\` pero ni un solo assert, así que sumarlas"
+            echo "> inflaba la cifra con verde que no verifica nada. Se lanzan a mano con"
+            echo "> \`SMW_ROM=... ./gradlew :core:sondas\`."
+            echo ""
+            echo "| Sondas (no son tests) | Ficheros | Líneas |"
+            echo '|---|---:|---:|'
+            sf=$(find core/src/sondas -name '*.kt' 2>/dev/null | wc -l)
+            sl=$(find core/src/sondas -name '*.kt' -exec cat {} + 2>/dev/null | wc -l)
+            echo "| \`core/src/sondas\` | $sf | $sl |"
             echo ""
             echo "> Lo que necesita la ROM (auditoría de fondos, trazas de enemigos) NO se puede"
             echo "> hacer aquí: se ejecuta en el dispositivo desde la app, y la ROM nunca sale de él."
