@@ -24,7 +24,7 @@ marcado con ⚠️ ACTUALIZADO.
 | Mapas "hasta 200×200" | ✔️ Cierto (`coerceIn(5, 200)` en el editor de mapas). |
 | "3 ranuras de guardado" | ✔️ Cierto (`SLOT_COUNT = 3`). |
 | "5 pistas de música" | ✔️ Cierto (`MusicTracks.ALL` tiene 5). |
-| "`:app` no tiene ni un test" | ⚠️ ACTUALIZADO: ya no es cierto del todo. Hoy hay **23 tests** en `app/src/test` (sesión de ROM, almacén de assets SMW y deshacer del editor), y CI ejecuta `:app:testDebugUnitTest` antes de compilar. Pero el desequilibrio sigue siendo real: ~380 líneas de test para ~16.700 de código, frente a las ~15.500 / ~26.700 de `core`. |
+| "`:app` no tiene ni un test" | ⚠️ ACTUALIZADO (dos veces): ya no es cierto del todo. Hoy hay **28 tests** en `app/src/test` (sesión de ROM, almacén de assets SMW, deshacer del editor y el contrato de sonido con `:core`), y CI ejecuta `:app:testDebugUnitTest` antes de compilar. El desequilibrio sigue siendo real —461 líneas de test para 16.821 de código, frente a 13.091 / 27.432 de `core`—, pero **el ratio es la métrica equivocada** y perseguirlo lleva a escribir tests de Compose de bajo valor. El problema de verdad era que había lógica de dominio dentro de ficheros de UI, donde ninguna suite podía mirarla: `SnesImportDialog.kt` tenía 1.788 líneas y **2** `@Composable`. Lo puro se ha bajado a `:core` y ahí sí se prueba. El objetivo no es subir el ratio de `:app`: es que `:app` adelgace hasta que su ratio no signifique nada. |
 
 ## 2. Los siete bugs, y dónde están arreglados aquí
 
@@ -71,6 +71,16 @@ Lo malo, y sigue siéndolo:
   sonido no lo verifica nadie (el core prueba su cola; la app no prueba su tabla).
   El mismo punto ciego se repitió en reachability: 7 tests, todos de transfers,
   ninguno de bordes — la suite había heredado la ceguera del código.
+
+  ✅ CORREGIDO el de los sonidos, y conviene decir **cómo**, porque el arreglo obvio no
+  servía: un test que compare dos listas se desincroniza igual que las listas. Ahora hay
+  una sola lista, `SoundEffects` en `:core`; el motor y el proyecto por defecto usan sus
+  constantes en vez de literales, y la tabla de `:app` **es** esa lista. Desincronizarse
+  dejó de ser detectable porque dejó de ser posible. Lo que sí queda como test
+  (`AudioContractTest`) es el hueco que una lista compartida no cierra: que cada nombre
+  tenga su propia forma de onda y no caiga en el pitido genérico, que un nombre libre
+  desconocido suene a algo en vez de enmudecer, y que la cabecera del WAV cuadre —un WAV
+  desalineado no carga, y enmudece el efecto igual que el bug original—.
 - **Aserciones blandas** en la parte de RPG: cotas del tipo `hp < hp0` detectan
   catástrofes, no regresiones finas.
 
@@ -82,9 +92,23 @@ rama no existía:
 **CI no puede comprobar nada de la extracción desde la ROM.** En el repositorio no hay
 ni un byte de Nintendo —y así debe seguir—, así que todo lo que mide contra ella se
 salta solo. En números: **37 ficheros de test consultan `SMW_ROM`**, y los **25 tests
-de las 24 sondas `Zz*`** no ejercitan absolutamente nada sin ROM (los demás sí
+de las 24 sondas `Zz*`** no ejercitaban absolutamente nada sin ROM (los demás sí
 corren, pero se saltan la parte que la necesita). El punto ciego no ha dejado de
 crecer: cuando se auditó eran 19 ficheros y 6 sondas.
+
+⚠️ ACTUALIZADO: lo de las sondas era peor de lo que decía este párrafo. No es solo que
+no ejercitaran nada sin ROM: **no tenían un solo `assert`**. 2.862 líneas —el 18% de
+todas las líneas de test de `:core`— con 25 `@Test` y 211 `println`, corriendo en cada
+`:core:test` y saliendo en verde pasara lo que pasara. Como herramienta valen, y por eso
+no se han tirado: son para MIRAR, que es justo lo que este documento defiende dos
+párrafos más abajo. Pero estaban disfrazadas de suite. ✅ CORREGIDO: viven en un source
+set propio (`core/src/sondas`) y se lanzan a mano con
+`SMW_ROM=... ./gradlew :core:sondas`. Se siguen compilando en cada `:core:test` —fuera
+de la compilación se pudrirían en silencio con el primer refactor, que es peor que el
+problema de partida— pero ya no se ejecutan ni cuentan.
+
+La suite de `:core` baja así de 714 a **689 tests**, y su tamaño honesto es de **13.091
+líneas de test** para 27.432 de código, no las ~15.500 que este documento venía citando.
 
 Lo que CI sí verifica es lo **sintético**: los tests de objetos de Layer 1 y Layer 2
 plantan un nivel mínimo en una ROM vacía y comprueban posiciones exactas, sin un solo
@@ -108,23 +132,55 @@ Mitigaciones que sí funcionan y conviene mantener:
   que hace el juego falla contra el código correcto; pasó con los travesaños del
   lienzo grande, que los tapices ocultan casi enteros.
 
-## 4. Deuda conocida (no corregida)
+## 4. Deuda conocida
 
-- **Modelo de hilos del motor**: `@Volatile` arregla visibilidad, no atomicidad. Las
-  compras en tienda, `equip()` y `useItem()` mutan `state.items` desde el hilo de UI
-  mientras el hilo GL puede iterar lo mismo. Lo correcto sería una cola de comandos
-  UI→motor drenada al principio de `tick()`. Es un cambio de diseño y merece rama
-  propia.
-- **`PlayerActivity.data` sin estado observable**: tras "Guardar estilo visual" el
-  `copy()` no recompone; los valores en vivo del renderer lo disimulan.
+⚠️ ACTUALIZADO: esta sección se llamaba "(no corregida)" y ya no le pega. De los seis
+puntos que quedaban vivos se han cerrado cuatro —el modelo de hilos, el estado
+observable, el tope del zip y el `AudioTrack`—; siguen abiertos el soft-lock de AUTORUN
+y el botón atrás. Lo corregido se deja tachado y explicado, no borrado: qué falló y por
+qué es la parte que sirve para la próxima vez.
+
+- ~~**Modelo de hilos del motor**~~ ✅ CORREGIDO: era el más grave de los que quedaban.
+  `@Volatile` arreglaba visibilidad, no atomicidad, y las compras, `equip()` y
+  `useItem()` mutaban `state.items` desde el hilo de UI mientras el hilo GL iteraba lo
+  mismo. Está montada la cola de comandos UI→motor que este documento proponía
+  (`EngineCommand`, drenada al principio de `tick()`): las siete entradas públicas
+  encolan, y **solo el hilo del motor escribe el estado**. Validar y aplicar quedan
+  separados a propósito —validar es una lectura pura que responde en el acto a quien
+  pide; aplicar es del motor, que re-valida porque entre encolar y aplicar el mundo
+  cambia—, así que el `Boolean` que devuelven pasa a significar "aceptada", no "hecha",
+  y así está escrito en su KDoc.
+
+  Faltaba la otra mitad, y se hizo después: **la UI seguía recorriendo `state.items`**
+  a pelo en el menú de inventario y en la tienda. Encolar las escrituras no sirve de
+  nada si las lecturas entran directas, así que el motor publica una foto inmutable
+  (`RpgEngine.inventory`) y la UI lee de ahí.
+
+  Lo vigilan 7 tests en `EngineCommandQueueTest`, y —siguiendo lo que pide el §3— se
+  comprobó que **no son verdes de adorno**: mutando `submit()` para que aplicara en el
+  acto, como el código de antes, los dos que fijan el aplazamiento fallan.
+- ~~**`PlayerActivity.data` sin estado observable**~~ ✅ CORREGIDO: era un campo normal
+  de la actividad, así que el `copy()` tras "Guardar estilo visual" no recomponía. Pasa
+  a ser estado observable dentro de la composición. Lo difícil de este fallo era verlo:
+  los valores en vivo del renderer lo disimulaban.
 - **Autorun sin condiciones = soft-lock**: una página AUTORUN que no cambia sus
   propias condiciones se relanza cada tick para siempre (fiel a RPG Maker, pero el
   editor no avisa).
-- **Zip sin límite de tamaño**: un zip-bomba compartido puede llenar el
-  almacenamiento al importar. Falta tope de bytes descomprimidos.
+- ~~**Zip sin límite de tamaño**~~ ✅ CORREGIDO: hay tope de bytes descomprimidos y de
+  entradas, contados **según se leen** y no sobre el `size` de la cabecera, que lo
+  escribe quien manda el zip. Ante cualquier fallo se borra el destino, porque un
+  import a medias deja una carpeta que la app enseña como proyecto sin serlo. Los topes
+  son parámetros para que los tests los ejerciten sin fabricar medio giga: el central
+  monta una zip-bomba de verdad y comprueba primero que el archivo comprimido **cabe**
+  bajo el tope, que es lo que hace que la prueba demuestre algo.
 - **Botón atrás en el juego**: sale de la actividad sin confirmación ni autoguardado.
-- **`MusicPlayer.stopInternal`**: el `join(300)` puede expirar con el hilo aún
-  escribiendo en el `AudioTrack`.
+  Sigue pendiente.
+- ~~**`MusicPlayer.stopInternal`**~~ ✅ CORREGIDO: el `join(300)` expiraba y se liberaba
+  el `AudioTrack` con el hilo aún escribiendo —un uso-después-de-liberar sobre un
+  recurso nativo, que no lanza excepción: corrompe memoria fuera de la JVM—. Ahora cada
+  hilo posee su `AudioTrack` y lo suelta él en su `finally`, avisando por un latch; el
+  que para espera esa señal en vez de un plazo a ojo. Subir el timeout no habría
+  arreglado nada, solo estrechado la ventana.
 - ~~**Sin *mutation testing***~~ ✅ RESUELTO: el job de pitest que solo existía en la
   rama original ya está montado aquí (`:core:pitest`, informe publicado por CI). Es
   la forma honesta de poner número a lo del §3 en vez de opinar. Corre sin umbral a
