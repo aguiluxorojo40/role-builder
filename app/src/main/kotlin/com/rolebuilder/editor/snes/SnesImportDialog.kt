@@ -54,17 +54,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.layout.ContentScale
 import com.rolebuilder.core.model.GameMap
-import com.rolebuilder.core.model.MapWarp
-import com.rolebuilder.core.model.PlatformEnemyMark
 import com.rolebuilder.core.model.PlatformItemMark
-import com.rolebuilder.core.model.PlatformItemType
-import com.rolebuilder.core.model.PlatformLayers
-import com.rolebuilder.core.model.Tileset
 import com.rolebuilder.core.snes.SmwGfxLibrary
 import com.rolebuilder.core.snes.SmwLevelBundle
-import com.rolebuilder.core.snes.SmwLevelGoal
+import com.rolebuilder.core.snes.SmwLevelImport
 import com.rolebuilder.core.snes.SmwWarpTiles
-import com.rolebuilder.core.snes.WarpEnter
 import com.rolebuilder.core.snes.SnesHeader
 import com.rolebuilder.core.snes.SnesAssetExtractor
 import com.rolebuilder.core.snes.SnesAutoExtractor
@@ -73,8 +67,7 @@ import com.rolebuilder.core.snes.SnesGameRecipes
 import com.rolebuilder.core.snes.SnesGraphicFormat
 import com.rolebuilder.core.snes.SnesGraphicsScanner
 import com.rolebuilder.core.snes.SnesPalette
-import com.rolebuilder.core.snes.SnesPaletteMatcher
-import com.rolebuilder.core.snes.compression.CompressionCodecs
+import com.rolebuilder.core.snes.SnesPreview
 import com.rolebuilder.core.snes.compression.LcLz2
 import com.rolebuilder.editor.EditorState
 import com.rolebuilder.player.PlatformerMusic
@@ -93,9 +86,12 @@ import kotlin.math.floor
  */
 private data class PaletteOption(val index: Int, val label: String)
 
-private const val PALETTE_DEFAULT = -1
-private const val PALETTE_GRAYSCALE = -2
-private const val PALETTE_AUTO = -3
+// Alias locales de los índices especiales de paleta: la REGLA (qué hace cada uno al
+// componer la vista previa) vive en :core, en [SnesPreview]; aquí solo se nombran para
+// que el desplegable y los avisos de la pantalla se lean bien.
+private const val PALETTE_DEFAULT = SnesPreview.PALETTE_DEFAULT
+private const val PALETTE_GRAYSCALE = SnesPreview.PALETTE_GRAYSCALE
+private const val PALETTE_AUTO = SnesPreview.PALETTE_AUTO
 
 private val FORMAT_LABELS = mapOf(
     SnesGraphicFormat.SNES_2BPP to "SNES 2bpp (4 colores)",
@@ -105,18 +101,6 @@ private val FORMAT_LABELS = mapOf(
     SnesGraphicFormat.GB_2BPP to "Game Boy 2bpp",
     SnesGraphicFormat.NES_2BPP to "NES 2bpp",
 )
-
-// Colores vivos de respaldo (índice 0 transparente) para cuando no hay una paleta
-// de la ROM: así los gráficos SIEMPRE salen en color, no en gris.
-private val VIVID_16 = intArrayOf(
-    0x00000000, 0xFFE53935.toInt(), 0xFF43A047.toInt(), 0xFF1E88E5.toInt(),
-    0xFFFDD835.toInt(), 0xFF8E24AA.toInt(), 0xFF00ACC1.toInt(), 0xFFF5F5F5.toInt(),
-    0xFF6D4C41.toInt(), 0xFFFF7043.toInt(), 0xFF9CCC65.toInt(), 0xFF5C6BC0.toInt(),
-    0xFFFFB300.toInt(), 0xFFEC407A.toInt(), 0xFF26A69A.toInt(), 0xFF212121.toInt(),
-)
-
-private fun defaultColorPalette(colorCount: Int): IntArray =
-    IntArray(colorCount) { i -> if (i < VIVID_16.size) VIVID_16[i] else 0xFF000000.toInt() }
 
 /**
  * Lo que se saca de una ROM recién elegida SIN tocar la interfaz: sus bytes, su nombre y
@@ -134,89 +118,18 @@ private data class PreviewData(
 
 /**
  * Calcula la VISTA PREVIA (hoja de tiles, o atlas si se agrupan sprites) con los parámetros
- * actuales. Vive FUERA del composable a propósito: descomprime, decodifica y monta un mapa de
- * bits, y eso se rehace con cada cambio de parámetro — incluida **cada letra** que se teclea en
- * el offset. Suelta aquí, se puede llamar desde `Dispatchers.IO` y la interfaz sigue viva
- * mientras tanto. Devuelve null si en ese offset/formato no hay datos válidos.
+ * actuales. El CÁLCULO entero —descomprimir, elegir paleta y componer los píxeles— vive en
+ * [SnesPreview] (`:core`), donde se puede probar sin dispositivo; aquí queda solo la FRONTERA
+ * con Android: pasar la hoja de píxeles ARGB a un `Bitmap`.
+ *
+ * Sigue fuera del composable a propósito: se rehace con cada cambio de parámetro —incluida
+ * **cada letra** que se teclea en el offset—, así que se llama desde `Dispatchers.IO` y la
+ * interfaz sigue viva mientras tanto. Devuelve null si en ese offset/formato no hay datos.
  */
-@Suppress("LongParameterList", "ReturnCount", "CyclomaticComplexMethod")
-private fun calcularPreview(
-    rom: ByteArray,
-    format: SnesGraphicFormat,
-    offsetText: String,
-    columns: Int,
-    tiles: Int,
-    paletteIndex: Int,
-    decompressMode: Int,
-    spriteTiles: Int,
-    detected: List<SnesPalette>,
-): PreviewData? = runCatching {
-    val offset = parseOffset(offsetText)
-    // Descompresión opcional: los tiles salen del bloque descomprimido,
-    // pero la paleta se sigue leyendo de la ROM original.
-    val tileRom: ByteArray
-    val tileOffset: Int
-    when (decompressMode) {
-        1 -> {
-            val auto = CompressionCodecs.autoDecompress(rom, offset, format)
-                ?: return@runCatching null
-            tileRom = auto.result.data; tileOffset = 0
-        }
-        2 -> {
-            val res = runCatching { LcLz2.decompress(rom, offset) }.getOrNull()
-                ?: return@runCatching null
-            tileRom = res.data; tileOffset = 0
-        }
-        else -> { tileRom = rom; tileOffset = offset }
+private fun calcularPreview(rom: ByteArray, req: SnesPreview.Request): PreviewData? =
+    SnesPreview.compute(rom, req)?.let {
+        PreviewData(SnesImport.toBitmap(it.sheet.image).asImageBitmap(), it.sheet, it.autoPalette)
     }
-    val available = SnesAssetExtractor.availableTiles(tileRom.size, tileOffset, format)
-    if (available <= 0) return@runCatching null
-    val count = tiles.coerceIn(1, minOf(available, 1024))
-    var autoPalette: String? = null
-    val palette = when {
-        paletteIndex == PALETTE_GRAYSCALE -> SnesDecoder.grayscalePalette(format.colorCount)
-        paletteIndex == PALETTE_AUTO -> {
-            // El emparejador puntúa cada paleta detectada CONTRA estos
-            // tiles y se queda con la que mejor les sienta (y su sub-paleta).
-            val match = SnesPaletteMatcher
-                .rankPalettes(tileRom, tileOffset, format, count, detected)
-                .firstOrNull()
-            if (match != null) {
-                autoPalette = match.source.name + if (match.window > 0) {
-                    " · colores ${match.window}-${match.window + format.colorCount - 1}"
-                } else ""
-                match.colors
-            } else defaultColorPalette(format.colorCount)
-        }
-        paletteIndex >= 0 -> detected.getOrNull(paletteIndex)?.colors
-            ?: defaultColorPalette(format.colorCount)
-        else -> defaultColorPalette(format.colorCount)
-    }
-    val sheet = if (spriteTiles > 1) {
-        // Agrupa bloques de spriteTiles×spriteTiles tiles en sprites enteros.
-        val availSprites = SnesAssetExtractor.availableSprites(
-            tileRom.size, tileOffset, format, spriteTiles, spriteTiles,
-        )
-        if (availSprites <= 0) return@runCatching null
-        val spriteCount = (count / (spriteTiles * spriteTiles))
-            .coerceIn(1, minOf(availSprites, 1024))
-        SnesAssetExtractor.extractSpriteAtlas(
-            tileRom, tileOffset, format, palette, spriteCount,
-            spriteTiles, spriteTiles, columns.coerceAtLeast(1),
-        )
-    } else {
-        SnesAssetExtractor.extractTileSheet(
-            tileRom, tileOffset, format, palette, count, columns.coerceAtLeast(1),
-        )
-    }
-    PreviewData(SnesImport.toBitmap(sheet.image).asImageBitmap(), sheet, autoPalette)
-}.getOrNull()
-
-private fun parseOffset(text: String): Int {
-    val s = text.trim()
-    val value = if (s.startsWith("0x", true)) s.substring(2).toIntOrNull(16) else s.toIntOrNull()
-    return (value ?: 0).coerceAtLeast(0)
-}
 
 /**
  * Diálogo para importar una hoja de tiles desde una ROM de Super Nintendo. Deja
@@ -407,7 +320,12 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
         calculandoPreview = true
         preview = withContext(Dispatchers.IO) {
             calcularPreview(
-                rom, format, offsetText, columns, tiles, paletteIndex, decompressMode, spriteTiles, detected,
+                rom,
+                SnesPreview.Request(
+                    format = format, offsetText = offsetText, columns = columns, tiles = tiles,
+                    paletteIndex = paletteIndex, decompressMode = decompressMode,
+                    spriteTiles = spriteTiles, detected = detected,
+                ),
             )
         }
         calculandoPreview = false
@@ -1171,13 +1089,13 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                         // Detecta el bpp por sí solo sobre los bytes actuales (descomprimidos
                         // si toca): elige el formato con mejor aptitud normalizada.
                         val rom = romBytes ?: return@Button
-                        val offset = parseOffset(offsetText)
-                        val data = when (decompressMode) {
-                            1 -> CompressionCodecs.autoDecompress(rom, offset, format)?.result?.data?.let { it to 0 }
-                            2 -> runCatching { LcLz2.decompress(rom, offset) }.getOrNull()?.data?.let { it to 0 }
-                            else -> rom to offset
-                        }
-                        val guess = data?.let { (bytes, off) -> SnesGraphicsScanner.detectBestFormat(bytes, off) }
+                        // MISMOS bytes que mira la vista previa: se resuelven con la misma
+                        // función de :core, para que "detectar bpp" no pueda opinar sobre un
+                        // bloque distinto del que se está enseñando.
+                        val src = SnesPreview.tileSource(
+                            rom, SnesPreview.parseOffset(offsetText), format, decompressMode,
+                        )
+                        val guess = src?.let { SnesGraphicsScanner.detectBestFormat(it.data, it.offset) }
                         if (guess != null) format = guess.format
                     }) { Text("Detectar bpp") }
                     Text(
@@ -1186,11 +1104,13 @@ fun SnesImportDialog(state: EditorState, onDismiss: () -> Unit) {
                     )
                 }
 
+                // Los números son los modos de [SnesPreview]: nombrarlos evita que la lista
+                // de la pantalla y lo que hace el cálculo se puedan desincronizar.
                 val decompressOptions = remember {
                     listOf(
-                        0 to "Ninguna (datos crudos)",
-                        1 to "Auto-detectar códec",
-                        2 to LcLz2.name,
+                        SnesPreview.DECOMPRESS_NONE to "Ninguna (datos crudos)",
+                        SnesPreview.DECOMPRESS_AUTO to "Auto-detectar códec",
+                        SnesPreview.DECOMPRESS_LZ2 to LcLz2.name,
                     )
                 }
                 DropdownField(
@@ -1443,7 +1363,7 @@ private fun GfxBankToTilesetSection(state: EditorState, rom: ByteArray, header: 
     var palRow by remember { mutableStateOf(2.coerceIn(0, rowCount - 1)) }
 
     val bank = banks[bankIdx.coerceIn(0, banks.size - 1)]
-    fun paletteRow(): IntArray = paletteRows.getOrNull(palRow) ?: VIVID_16
+    fun paletteRow(): IntArray = paletteRows.getOrNull(palRow) ?: SnesPreview.VIVID_16
 
     val previewSheet = remember(rom, bank.id, palRow, paletteRows) {
         runCatching { SmwGfxLibrary.bankTileSheet(rom, bank.id, paletteRow()) }.getOrNull()
@@ -1585,60 +1505,38 @@ internal fun importSmwLevelMap(
 ): Int {
     val fileName = atlasFile ?: guardarAtlasSmw(state.projectDir, name, m)
     val tsId = state.nextTilesetId()
-    state.addTileset(
-        Tileset(
-            id = tsId, name = "$name (SMW)", image = fileName,
-            tileSize = 16, columns = m.columns, rows = m.rows,
-            passable = m.passable, platformSolidity = m.solidity,
-            platformSlopeShape = m.slopeShapes,
-            animations = m.animations, platformBlockActions = m.blockActions,
-        ),
-    )
-    // Capas en el orden CANÓNICO ([PlatformLayers]): fondo detrás, primer plano delante.
-    // Antes esto se decidía aquí a mano y, cuando el nivel no traía fondo, el terreno se
-    // colaba en la capa 0 —la del fondo—, así que dos niveles del mismo proyecto podían
-    // guardar el terreno en capas distintas y las herramientas del editor pintaban en la
-    // capa contraria según qué nivel tuvieras abierto.
-    val layers = PlatformLayers.layersOf(m.tiles, m.bgTiles, m.mapWidth, m.mapHeight)
-    state.addImportedMap(
-        GameMap(
-            id = 0, name = "SMW $name", width = m.mapWidth, height = m.mapHeight,
-            tilesetId = tsId, layers = layers,
-            platformEnemies = m.enemies.map {
-                PlatformEnemyMark(spriteId = it.first, x = it.second, y = it.third)
-            },
-            platformItems = if (rom != null && hdr != null && level != null)
-                smwGoalMarks(rom, hdr, level, m.mapWidth, m.mapHeight) else emptyList(),
-            platformMusicIndex = if (rom != null && hdr != null && level != null)
-                smwMusicIndex(rom, hdr, level) else -1,
-        ),
-    )
+    // El tileset y el mapa los ARMA :core ([SmwLevelImport]): qué colisión lleva cada tesela y
+    // en qué capa va el terreno son reglas del juego, no de la pantalla. Aquí solo se dan de
+    // alta en el editor, que es lo único que de verdad es de la app.
+    state.addTileset(SmwLevelImport.tilesetOf(tsId, name, fileName, m))
+    // META y MÚSICA reales solo si quien llama dio ROM/cabecera/nivel: son opcionales y sin
+    // ellos el mapa se importa igual, pero sin final y con la canción por defecto.
+    val metas = if (rom != null && hdr != null && level != null) {
+        metasDelNivel(rom, hdr, level, m.mapWidth, m.mapHeight)
+    } else {
+        emptyList()
+    }
+    val musica = if (rom != null && hdr != null && level != null) {
+        SmwLevelImport.musicIndex(rom, hdr, level)
+    } else {
+        -1
+    }
+    state.addImportedMap(SmwLevelImport.gameMapOf(name, m, tsId, metas, musica))
     return tsId
 }
 
 /**
- * Marcas de META del nivel [level] de SMW (cinta/esfera/cerradura reales, [SmwLevelGoal.goalCells])
- * como ítems del mapa, recortadas a [w]×[h]. Vacío si el nivel no tiene meta (castillos con jefe,
- * casas de Yoshi) o si falla la lectura. Con esto el mapa importado se puede SUPERAR al jugarlo:
- * tocar la meta lo marca como completado, igual que la ruta ▶ directa de la ROM.
+ * Marcas de META del nivel [level] de SMW (cinta/esfera/cerradura reales) recortadas a [w]×[h],
+ * leídas por [SmwLevelImport.readGoalMarks]. Con esto el mapa importado se puede SUPERAR al
+ * jugarlo: tocar la meta lo marca como completado, igual que la ruta ▶ directa de la ROM.
+ *
+ * Lo único que aporta la app es la TRAZA: un fallo aquí deja el nivel sin meta —imposible de
+ * superar— y antes se tragaba sin que nadie se enterara.
  */
-private fun smwGoalMarks(rom: ByteArray, hdr: SnesHeader, level: Int, w: Int, h: Int): List<PlatformItemMark> =
-    runCatching {
-        SmwLevelGoal.goalCells(rom, SnesGameRecipes.smwHeaderDeltaPublic(hdr), level)
-            .filter { (x, y) -> x in 0 until w && y in 0 until h }
-            .map { (x, y) -> PlatformItemMark(PlatformItemType.GOAL, x, y) }
-    }.onFailure {
-        // Antes esto se tragaba y el nivel quedaba SIN META sin que nadie lo supiera: un
-        // nivel imposible de superar y ninguna pista de por qué. Ahora al menos queda traza.
+private fun metasDelNivel(rom: ByteArray, hdr: SnesHeader, level: Int, w: Int, h: Int): List<PlatformItemMark> =
+    SmwLevelImport.readGoalMarks(rom, hdr, level, w, h) {
         android.util.Log.w("SnesImport", "sin meta en el nivel ${level.toString(16)}: ${it.message}")
-    }.getOrDefault(emptyList())
-
-/**
- * Índice de MÚSICA del nivel [level] de SMW (de su cabecera), para que el mapa importado toque
- * SU canción real al jugarlo. -1 si no se puede leer (el reproductor cae a la canción por defecto).
- */
-private fun smwMusicIndex(rom: ByteArray, hdr: SnesHeader, level: Int): Int =
-    runCatching { SnesGameRecipes.smwLevelInfo(rom, hdr, level)?.musicIndex ?: -1 }.getOrDefault(-1)
+    }
 
 /**
  * Importa el nivel [level] de SMW como MAPAS del proyecto: el nivel elegido MÁS sus
@@ -1690,7 +1588,7 @@ private fun extraerBundleSmw(
             ?: listOf(level to (SnesGameRecipes.extractSmwLevelAsMap(rom, hdr, level) ?: error("nivel no reconstruible")))
 
     val subniveles = entries.map { (lv, m) ->
-        val subName = if (lv == level) name else "$name·${lv.toString(16).uppercase()}"
+        val subName = SmwLevelImport.subLevelName(name, level, lv)
         SubNivelListo(
             level = lv,
             nombre = subName,
@@ -1699,9 +1597,9 @@ private fun extraerBundleSmw(
             // META del nivel: la cinta/esfera/cerradura reales del sub-nivel, para que al
             // JUGAR el mapa importado tocar la meta cuente como SUPERADO (antes no se sembraba
             // ninguna → el nivel no tenía final).
-            metas = smwGoalMarks(rom, hdr, lv, m.mapWidth, m.mapHeight),
+            metas = metasDelNivel(rom, hdr, lv, m.mapWidth, m.mapHeight),
             // Música real del sub-nivel: al jugar el mapa suena SU canción (no la genérica).
-            musica = smwMusicIndex(rom, hdr, lv),
+            musica = SmwLevelImport.musicIndex(rom, hdr, lv),
             warps = runCatching { SmwWarpTiles.levelWarps(rom, hdr, lv) }.getOrDefault(emptyList()),
         )
     }
