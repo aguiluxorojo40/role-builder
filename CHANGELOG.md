@@ -23,6 +23,21 @@ en [`docs/GUIA_DEL_PROYECTO.md`](docs/GUIA_DEL_PROYECTO.md).
   mandan a la release de la última versión.
 - Las etiquetas `apk-latest` y `apk-snes-latest` quedan como restos históricos: si alguien
   las empuja, el CI avisa de que ya no publican nada.
+- **El Android Gradle Plugin sale del grupo "herramientas" de Dependabot** y pasa a tener el
+  suyo. Estaba junto a detekt, y cada salto mayor de AGP arrastra media migración detrás
+  (Gradle, `compileSdk`, APIs retiradas), así que un parche de linter acababa bloqueado
+  dentro de una PR que ponía todo el CI en rojo. Pasó de verdad: `detekt 1.23.8` viajaba con
+  `AGP 8.10.1 → 9.3.1`.
+
+### Añadido
+- Subidas de dependencias: **Kotlin 2.0.21 → 2.4.10**, kotlinx-serialization 1.7.3 → 1.11.0,
+  coroutines 1.9.0 → 1.11.0, kover 0.9.1 → 0.9.9.
+
+### Pendiente
+- **La migración a Gradle 9 / AGP 9 sigue sin hacer**, y son una sola tarea aunque Dependabot
+  la parta en tres PRs: AGP 9 exige Gradle 9, `androidx.core:core-ktx 1.19.0` exige AGP 9.1+
+  y `compileSdk 37`, y el build usa APIs que Gradle 9 ya no acepta. Fusionar cualquiera de
+  las tres por separado deja el repositorio sin compilar.
 
 ## [0.13.0] — 2026-08-14 — Mezcla de niveles, el caparazón real y un CI que vigila
 

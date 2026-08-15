@@ -8,7 +8,7 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 6
     groups:
       kotlin-y-compose:
         patterns:
@@ -21,6 +21,14 @@ updates:
       herramientas:
         patterns:
           - "io.gitlab.arturbosch.detekt*"
+      # El Android Gradle Plugin va SOLO, y no con las herramientas. Cada salto
+      # mayor suyo arrastra media migración detrás —Gradle, compileSdk, APIs
+      # retiradas—, así que no puede viajar con dependencias que se fusionan de
+      # un vistazo. Estaba agrupado con detekt y pasó lo previsible: un parche
+      # de linter (1.23.7 -> 1.23.8) quedó bloqueado dentro de una PR que subía
+      # AGP de 8.10.1 a 9.3.1 y ponía TODO el CI en rojo.
+      android-gradle-plugin:
+        patterns:
           - "com.android.*"
 
   - package-ecosystem: github-actions
